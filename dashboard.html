@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - CareerCraft AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -257,8 +258,8 @@
     <div class="topnav">
         <div class="logo">🚀 CareerCraft AI</div>
         <div class="user-menu">
-            <div class="user-avatar">A</div>
-            <a href="index.html" class="logout-btn">Sign Out</a>
+            <div class="user-avatar" id="avatarInitial">A</div>
+            <button class="logout-btn" onclick="logout()">Sign Out</button>
         </div>
     </div>
 
@@ -267,7 +268,7 @@
         <!-- Welcome Section -->
         <div class="welcome">
             <div>
-                <h1>Welcome back, Alex! 👋</h1>
+                <h1 id="welcomeName">Welcome back! 👋</h1>
                 <p>What do you want to work on today?</p>
                 <span class="plan-badge">Free plan — 3 uses left</span>
             </div>
@@ -308,28 +309,55 @@
         <!-- Recent Activity -->
         <div class="activity-section">
             <h2>Recent Activity</h2>
-            <div class="activity-item">
-                <div class="activity-info">
-                    <div class="activity-title">Resume created: "Software Engineer"</div>
-                    <div class="activity-time">2 hours ago</div>
+            <div id="activityList">
+                <div class="activity-item">
+                    <div class="activity-info">
+                        <div class="activity-title">Welcome to CareerCraft!</div>
+                        <div class="activity-time">Just now</div>
+                    </div>
+                    <span class="activity-badge">Welcome</span>
                 </div>
-                <span class="activity-badge">Downloaded</span>
-            </div>
-            <div class="activity-item">
-                <div class="activity-info">
-                    <div class="activity-title">Cover letter generated</div>
-                    <div class="activity-time">Yesterday</div>
-                </div>
-                <span class="activity-badge">Completed</span>
-            </div>
-            <div class="activity-item">
-                <div class="activity-info">
-                    <div class="activity-title">Interview practice session</div>
-                    <div class="activity-time">2 days ago</div>
-                </div>
-                <span class="activity-badge">Score: 8.5/10</span>
             </div>
         </div>
     </div>
+
+    <script>
+        // Initialize Supabase with YOUR keys
+        const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
+
+        const { createClient } = supabase;
+        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Check if user is logged in
+        function checkAuth() {
+            const userEmail = localStorage.getItem('userEmail');
+            const userName = localStorage.getItem('userName');
+
+            if (!userEmail || !userName) {
+                // Not logged in, redirect to login
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Welcome the user
+            const firstLetter = userName.charAt(0).toUpperCase();
+            document.getElementById('avatarInitial').textContent = firstLetter;
+            document.getElementById('welcomeName').textContent = `Welcome back, ${userName}! 👋`;
+        }
+
+        function logout() {
+            // Clear localStorage
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userId');
+
+            // Redirect to home
+            window.location.href = 'index.html';
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', checkAuth);
+    </script>
 </body>
 </html>
