@@ -337,24 +337,24 @@
             submitBtn.textContent = 'Creating account...';
 
             try {
-                // Create user in Supabase Auth
-                const { data: authData, error: authError } = await client.auth.signUp({
+                // ✅ BETTER - Use Supabase built-in auth
+                const { data, error } = await client.auth.signUp({
                     email: email,
-                    password: password
+                    password: password  // Supabase handles hashing securely
                 });
 
-                if (authError) {
-                    throw new Error(authError.message);
+                if (error) {
+                    throw new Error(error.message);
                 }
 
-                // Store user profile in users table
+                // Then store only user info, not password
                 const { error: dbError } = await client
                     .from('users')
                     .insert([
                         {
                             email: email,
-                            password: password,
                             full_name: fullName
+                            // No password stored in database!
                         }
                     ]);
 
