@@ -22,6 +22,41 @@
             padding: 2rem;
         }
 
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 14, 39, 0.95);
+            border-bottom: 1px solid rgba(124, 58, 237, 0.2);
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            text-decoration: none;
+        }
+
+        .back-btn {
+            background: transparent;
+            color: #cbd5e1;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            cursor: pointer;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .back-btn:hover {
+            color: #f1f5f9;
+        }
+
         .container {
             width: 100%;
             max-width: 420px;
@@ -30,13 +65,7 @@
             border-radius: 1rem;
             padding: 3rem 2rem;
             backdrop-filter: blur(10px);
-        }
-
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            text-align: center;
+            margin-top: 6rem;
         }
 
         h1 {
@@ -94,22 +123,9 @@
             font-size: 0.9rem;
         }
 
-        .remember label {
-            margin: 0;
-            font-weight: 400;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
         .remember a {
             color: #7c3aed;
             text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .remember a:hover {
-            color: #a855f7;
         }
 
         .btn-signin {
@@ -188,47 +204,39 @@
             color: #7c3aed;
             text-decoration: none;
             font-weight: 600;
-            transition: color 0.3s;
         }
 
         .signup-link a:hover {
             color: #a855f7;
         }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 2rem 1.5rem;
-            }
-
-            h1 {
-                font-size: 1.5rem;
-            }
-        }
     </style>
 </head>
 <body>
+    <nav>
+        <a href="index.html" class="logo">🚀 CareerCraft</a>
+        <a href="index.html" class="back-btn">← Back to Home</a>
+    </nav>
+
     <div class="container">
-        <div class="logo">🚀 CareerCraft</div>
         <h1>Sign In</h1>
         <p class="subtitle">Welcome back! Sign in to your account.</p>
 
         <form onsubmit="handleLogin(event)">
             <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" placeholder="you@example.com" required>
+                <label>Email Address</label>
+                <input type="email" placeholder="you@example.com" required>
             </div>
 
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" placeholder="••••••••" required>
+                <label>Password</label>
+                <input type="password" placeholder="••••••••" required>
             </div>
 
             <div class="remember">
                 <label>
-                    <input type="checkbox" style="width: auto;">
-                    Remember me
+                    <input type="checkbox" style="width: auto;"> Remember me
                 </label>
-                <a href="#forgot">Forgot password?</a>
+                <a href="#">Forgot password?</a>
             </div>
 
             <button type="submit" class="btn-signin">Sign In</button>
@@ -237,8 +245,8 @@
         <div class="divider">Or continue with</div>
 
         <div class="social-signin">
-            <button class="social-btn">Google</button>
-            <button class="social-btn">GitHub</button>
+            <button class="social-btn" type="button">Google</button>
+            <button class="social-btn" type="button">GitHub</button>
         </div>
 
         <p class="signup-link">
@@ -249,8 +257,7 @@
     <script>
         function handleLogin(event) {
             event.preventDefault();
-            const email = document.getElementById('email').value;
-            alert(`Signed in as ${email}. (Demo - redirecting to dashboard)`);
+            alert('Signed in! Redirecting to dashboard...');
             window.location.href = 'dashboard.html';
         }
     </script>
