@@ -3,61 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Career Craft AI</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #ffffff;
-            color: #333;
-        }
-        header {
-            background-color: #001f3f; /* Deep navy */
-            color: #ffffff;
-            padding: 20px;
-            text-align: center;
-        }
-        main {
-            padding: 20px;
-            line-height: 1.6;
-        }
-        h1 {
-            color: #00bcd4; /* Accent teal */
-        }
-        section {
-            margin: 20px 0;
-            padding: 20px;
-            background-color: #f1f1f1; /* Soft gray */
-            border-radius: 5px;
-        }
-        footer {
-            text-align: center;
-            padding: 10px;
-            background-color: #001f3f;
-            color: #ffffff;
-            position: relative;
-            bottom: 0;
-            width: 100%;
-        }
-    </style>
+    <title>Professional Dark-Themed Dashboard</title>
+    <link rel="stylesheet" href="styles.css">  
 </head>
 <body>
-    <header>
-        <h1>Welcome to Career Craft AI</h1>
-    </header>
-    <main>
-        <section>
-            <h2>Your journey starts here!</h2>
-            <p>Explore our innovative tools and resources designed to enhance your career path.</p>
-        </section>
-        <section>
-            <h2>Get Started</h2>
-            <p>Sign up now and unlock a world of opportunities!</p>
-        </section>
-    </main>
-    <footer>
-        <p>&copy; 2026 Career Craft AI. All rights reserved.</p>
-    </footer>
+    <div class="container">
+        <div class="editor-panel">
+            <h2>Editor</h2>
+            <textarea id="editor" placeholder="Write your content here..."></textarea>
+        </div>
+        <div class="preview-panel">
+            <h2>Preview</h2>
+            <div id="preview"></div>
+        </div>
+        <div class="ai-assistant-panel">
+            <h2>AI Assistant</h2>
+            <div id="ai-assistant">
+                <p>How can I assist you today?</p>
+                <textarea id="assistant-input" placeholder="Ask your question..."></textarea>
+                <button id="ai-send">Send</button>
+            </div>
+        </div>
+        <div class="resume-preview-panel">
+            <h2>Resume Preview</h2>
+            <div id="resume-preview">
+                <p>Your resume will be displayed here.</p>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>
