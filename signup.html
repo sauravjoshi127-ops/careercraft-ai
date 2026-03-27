@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - CareerCraft AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -157,6 +158,11 @@
             box-shadow: 0 12px 32px rgba(124, 58, 237, 0.3);
         }
 
+        .btn-signup:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .divider {
             display: flex;
             align-items: center;
@@ -220,6 +226,24 @@
         .signin-link a:hover {
             color: #a855f7;
         }
+
+        .error-msg {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .success-msg {
+            background: #dcfce7;
+            color: #166534;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -232,25 +256,28 @@
         <h1>Create Account</h1>
         <p class="subtitle">Join 500+ students landing their dream jobs.</p>
 
-        <form onsubmit="handleSignup(event)">
+        <div id="errorMsg" class="error-msg"></div>
+        <div id="successMsg" class="success-msg"></div>
+
+        <form id="signupForm" onsubmit="handleSignup(event)">
             <div class="form-group">
                 <label>Full Name</label>
-                <input type="text" placeholder="Your name" required>
+                <input type="text" id="fullName" placeholder="Your name" required>
             </div>
 
             <div class="form-group">
                 <label>Email Address</label>
-                <input type="email" placeholder="you@example.com" required>
+                <input type="email" id="email" placeholder="you@example.com" required>
             </div>
 
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" placeholder="At least 8 characters" required>
+                <input type="password" id="password" placeholder="At least 8 characters" required minlength="8">
             </div>
 
             <div class="form-group">
                 <label>Confirm Password</label>
-                <input type="password" placeholder="Confirm password" required>
+                <input type="password" id="confirmPassword" placeholder="Confirm password" required>
             </div>
 
             <div class="terms">
@@ -260,7 +287,7 @@
                 </label>
             </div>
 
-            <button type="submit" class="btn-signup">Create Account</button>
+            <button type="submit" class="btn-signup" id="submitBtn">Create Account</button>
         </form>
 
         <div class="divider">Or sign up with</div>
@@ -276,10 +303,85 @@
     </div>
 
     <script>
-        function handleSignup(event) {
+        // Initialize Supabase with YOUR keys
+        const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
+
+        const { createClient } = supabase;
+        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function handleSignup(event) {
             event.preventDefault();
-            alert('Account created! Redirecting to dashboard...');
-            window.location.href = 'dashboard.html';
+
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const errorMsg = document.getElementById('errorMsg');
+            const successMsg = document.getElementById('successMsg');
+
+            // Reset messages
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                errorMsg.textContent = '❌ Passwords do not match!';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            // Disable button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating account...';
+
+            try {
+                // Create user in Supabase Auth
+                const { data: authData, error: authError } = await client.auth.signUp({
+                    email: email,
+                    password: password
+                });
+
+                if (authError) {
+                    throw new Error(authError.message);
+                }
+
+                // Store user profile in users table
+                const { error: dbError } = await client
+                    .from('users')
+                    .insert([
+                        {
+                            email: email,
+                            password: password,
+                            full_name: fullName
+                        }
+                    ]);
+
+                if (dbError) {
+                    throw new Error(dbError.message);
+                }
+
+                // Success!
+                successMsg.textContent = '✅ Account created successfully! Redirecting to dashboard...';
+                successMsg.style.display = 'block';
+
+                // Store email in localStorage for dashboard
+                localStorage.setItem('userEmail', email);
+                localStorage.setItem('userName', fullName);
+
+                // Redirect after 2 seconds
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error:', error);
+                errorMsg.textContent = `❌ Error: ${error.message}`;
+                errorMsg.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Account';
+            }
         }
     </script>
 </body>
