@@ -36,7 +36,7 @@
             font-size: 1.5rem;
             font-weight: 700;
             color: #f1f5f9;
-            letter-spacing: -0.5px;
+            text-decoration: none;
         }
 
         .nav-links {
@@ -70,6 +70,7 @@
             cursor: pointer;
             font-size: 0.95rem;
             transition: color 0.3s;
+            text-decoration: none;
         }
 
         .btn-signin:hover {
@@ -86,6 +87,8 @@
             cursor: pointer;
             transition: all 0.3s;
             font-size: 0.95rem;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .btn-primary:hover {
@@ -126,11 +129,6 @@
             line-height: 1.8;
         }
 
-        .hero .btn-primary {
-            padding: 1rem 2.5rem;
-            font-size: 1rem;
-        }
-
         /* Tools Section */
         .tools {
             padding: 5rem 2rem;
@@ -158,7 +156,6 @@
             border-radius: 1rem;
             padding: 2.5rem;
             transition: all 0.3s;
-            cursor: pointer;
         }
 
         .tool-card:hover {
@@ -185,7 +182,7 @@
             line-height: 1.7;
         }
 
-        /* Testimonials Section */
+        /* Testimonials */
         .testimonials {
             padding: 5rem 2rem;
             background: rgba(20, 24, 41, 0.3);
@@ -242,7 +239,7 @@
             color: #94a3b8;
         }
 
-        /* Pricing Section */
+        /* Pricing */
         .pricing {
             padding: 5rem 2rem;
             max-width: 1400px;
@@ -371,6 +368,8 @@
             cursor: pointer;
             font-size: 1rem;
             transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .btn-light:hover {
@@ -410,7 +409,6 @@
             color: #a855f7;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             nav {
                 flex-direction: column;
@@ -420,23 +418,14 @@
 
             .nav-links {
                 gap: 1rem;
-                font-size: 0.9rem;
             }
 
             .hero h1 {
                 font-size: 2.2rem;
             }
 
-            .hero p {
-                font-size: 1rem;
-            }
-
             .section-title {
                 font-size: 1.8rem;
-            }
-
-            .pricing-card.featured {
-                transform: scale(1);
             }
 
             .tools-grid,
@@ -445,13 +434,11 @@
                 grid-template-columns: 1fr;
             }
 
-            .footer-links {
-                flex-direction: column;
-                gap: 1rem;
+            .pricing-card.featured {
+                transform: scale(1);
             }
         }
 
-        /* Animations */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -471,29 +458,25 @@
     </style>
 </head>
 <body>
-    <!-- Navigation -->
     <nav>
-        <div class="logo">🚀 CareerCraft AI</div>
+        <a href="index.html" class="logo">🚀 CareerCraft AI</a>
         <ul class="nav-links">
             <li><a href="#tools">Tools</a></li>
             <li><a href="#testimonials">Testimonials</a></li>
             <li><a href="#pricing">Pricing</a></li>
-            <li><a href="#contact">Resources</a></li>
         </ul>
         <div class="nav-buttons">
-            <button class="btn-signin">Sign In</button>
-            <button class="btn-primary">Get Started</button>
+            <a href="login.html" class="btn-signin">Sign In</a>
+            <a href="signup.html" class="btn-primary">Get Started</a>
         </div>
     </nav>
 
-    <!-- Hero Section -->
     <section class="hero">
         <h1>Land your dream job — <span class="highlight">faster with AI</span></h1>
         <p>Resume builder, cover letter, cold email, and interview coach. Everything you need to get hired. Built for students.</p>
-        <button class="btn-primary">Start Free — No Card Required</button>
+        <a href="signup.html" class="btn-primary" style="padding: 1rem 2.5rem; font-size: 1rem;">Start Free — No Card Required</a>
     </section>
 
-    <!-- Tools Section -->
     <section class="tools" id="tools">
         <h2 class="section-title">Your AI Career Toolkit</h2>
         <div class="tools-grid">
@@ -520,7 +503,6 @@
         </div>
     </section>
 
-    <!-- Testimonials Section -->
     <section class="testimonials" id="testimonials">
         <div class="testimonials-container">
             <h2 class="section-title">Loved by Students</h2>
@@ -533,13 +515,13 @@
                 </div>
                 <div class="testimonial-card">
                     <div class="stars">★★★★★</div>
-                    <p class="testimonial-text">"Built my resume in 10 minutes. Got 5 interview calls within a week. Best ₹299 spent."</p>
+                    <p class="testimonial-text">"Built my resume in 10 minutes. Got 5 interview calls within a week."</p>
                     <p class="testimonial-author">Priya Sharma</p>
                     <p class="testimonial-role">BITS Pilani</p>
                 </div>
                 <div class="testimonial-card">
                     <div class="stars">★★★★★</div>
-                    <p class="testimonial-text">"The cold email feature got me 3 offers from startups. Game changer for founders."</p>
+                    <p class="testimonial-text">"The cold email feature got me 3 offers from startups. Game changer!"</p>
                     <p class="testimonial-author">Arjun Patel</p>
                     <p class="testimonial-role">Delhi University</p>
                 </div>
@@ -547,7 +529,6 @@
         </div>
     </section>
 
-    <!-- Pricing Section -->
     <section class="pricing" id="pricing">
         <h2 class="section-title">Simple Pricing</h2>
         <div class="pricing-cards">
@@ -560,9 +541,8 @@
                     <li>3 cover letters</li>
                     <li>3 cold emails</li>
                     <li>1 interview session</li>
-                    <li>Text mode only</li>
                 </ul>
-                <button class="btn-primary">Get Started</button>
+                <a href="signup.html" class="btn-primary">Get Started</a>
             </div>
             <div class="pricing-card featured">
                 <h3>Pro</h3>
@@ -573,36 +553,31 @@
                     <li>Unlimited cover letters</li>
                     <li>Unlimited cold emails</li>
                     <li>Unlimited interviews</li>
-                    <li>Audio + Video modes</li>
                     <li>All 3 templates</li>
-                    <li>Priority support</li>
                 </ul>
-                <button class="btn-primary">Start Pro Trial</button>
+                <a href="signup.html" class="btn-primary">Start Pro Trial</a>
             </div>
             <div class="pricing-card">
                 <h3>Enterprise</h3>
                 <div class="price">Custom</div>
-                <p style="color: #cbd5e1; margin-bottom: 1.5rem;">For teams and organizations.</p>
+                <p style="color: #cbd5e1; margin-bottom: 1.5rem;">For teams.</p>
                 <ul class="features-list">
                     <li>Custom features</li>
                     <li>Dedicated support</li>
                     <li>Team collaboration</li>
-                    <li>Custom integrations</li>
-                    <li>SSO & Advanced security</li>
+                    <li>SSO & security</li>
                 </ul>
                 <button class="btn-primary">Contact Sales</button>
             </div>
         </div>
     </section>
 
-    <!-- CTA Section -->
     <section class="cta-section">
         <h2>Ready to get hired?</h2>
         <p>Join 500+ students who landed their dream jobs with CareerCraft</p>
-        <button class="btn-light">Try Free Today</button>
+        <a href="signup.html" class="btn-light">Try Free Today</a>
     </section>
 
-    <!-- Footer -->
     <footer>
         <p>&copy; 2026 CareerCraft AI. All rights reserved.</p>
         <p>Built by students, for students.</p>
