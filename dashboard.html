@@ -63,6 +63,7 @@
             cursor: pointer;
             transition: all 0.3s;
             font-size: 0.9rem;
+            text-decoration: none;
         }
 
         .logout-btn:hover {
@@ -163,7 +164,8 @@
             margin-bottom: 1.5rem;
         }
 
-        .tool-card button {
+        .tool-card a {
+            display: block;
             width: 100%;
             padding: 0.75rem;
             background: rgba(124, 58, 237, 0.1);
@@ -173,9 +175,11 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+            text-align: center;
+            text-decoration: none;
         }
 
-        .tool-card button:hover {
+        .tool-card a:hover {
             background: rgba(124, 58, 237, 0.2);
         }
 
@@ -231,7 +235,6 @@
             .topnav {
                 flex-direction: column;
                 gap: 1rem;
-                padding: 1rem;
             }
 
             .welcome {
@@ -255,7 +258,7 @@
         <div class="logo">🚀 CareerCraft AI</div>
         <div class="user-menu">
             <div class="user-avatar">A</div>
-            <button class="logout-btn" onclick="logout()">Sign Out</button>
+            <a href="index.html" class="logout-btn">Sign Out</a>
         </div>
     </div>
 
@@ -277,28 +280,28 @@
                 <div class="tool-icon">📝</div>
                 <h3>Resume Builder</h3>
                 <p>Create a professional ATS-ready resume in minutes.</p>
-                <button onclick="navigate('resume.html')">Start Now</button>
+                <a href="resume.html">Start Now</a>
             </div>
 
             <div class="tool-card">
                 <div class="tool-icon">📨</div>
                 <h3>Cover Letter AI</h3>
                 <p>Generate tailored cover letters for any job posting.</p>
-                <button>Start Now</button>
+                <a href="#">Start Now</a>
             </div>
 
             <div class="tool-card">
                 <div class="tool-icon">✉️</div>
                 <h3>Cold Email Writer</h3>
                 <p>Write outreach emails that actually get replies.</p>
-                <button>Start Now</button>
+                <a href="#">Start Now</a>
             </div>
 
             <div class="tool-card">
                 <div class="tool-icon">🎤</div>
                 <h3>Interview Coach</h3>
                 <p>Practice interviews with AI feedback and scoring.</p>
-                <button>Start Now</button>
+                <a href="#">Start Now</a>
             </div>
         </div>
 
@@ -328,16 +331,5 @@
             </div>
         </div>
     </div>
-
-    <script>
-        function logout() {
-            alert('Signed out successfully!');
-            window.location.href = 'index.html';
-        }
-
-        function navigate(page) {
-            window.location.href = page;
-        }
-    </script>
 </body>
 </html>
