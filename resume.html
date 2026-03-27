@@ -280,33 +280,41 @@
             
             <div class="form-group">
                 <label>Full Name</label>
-                <input type="text" id="fullName" placeholder="Your Name" value="Alexander Sterling" onchange="updatePreview()">
+                <input type="text" id="fullName" placeholder="Your Name" value="Alexander Sterling" oninput="updatePreview()">
             </div>
 
             <div class="form-group">
                 <label>Email & Phone</label>
-                <input type="text" id="contact" placeholder="email@example.com | (123) 456-7890" value="alex@example.com | (555) 123-4567" onchange="updatePreview()">
+                <input type="text" id="contact" placeholder="email@example.com | (123) 456-7890" value="alex@example.com | (555) 123-4567" oninput="updatePreview()">
             </div>
 
             <div class="form-group">
                 <label>Professional Summary</label>
-                <textarea id="summary" placeholder="Brief overview of your background..." onchange="updatePreview()">Experienced product designer with 5+ years creating user-centered digital experiences for Fortune 500 companies.</textarea>
+                <textarea id="summary" placeholder="Brief overview of your background..." oninput="updatePreview()">Experienced product designer with 5+ years creating user-centered digital experiences for Fortune 500 companies.</textarea>
             </div>
 
             <div class="form-group">
-                <label>Experience</label>
-                <input type="text" id="exp1Title" placeholder="Job Title" value="Senior Product Designer" onchange="updatePreview()">
-                <input type="text" id="exp1Company" placeholder="Company Name" value="Vanguard Tech" onchange="updatePreview()" style="margin-top: 0.5rem;">
-                <textarea id="exp1Desc" placeholder="Describe your responsibilities..." onchange="updatePreview()" style="margin-top: 0.5rem;">Led design of SaaS platform • Increased user engagement by 40% • Managed team of 3 designers</textarea>
+                <label>Experience - Job Title</label>
+                <input type="text" id="exp1Title" placeholder="Job Title" value="Senior Product Designer" oninput="updatePreview()">
+            </div>
+
+            <div class="form-group">
+                <label>Experience - Company Name</label>
+                <input type="text" id="exp1Company" placeholder="Company Name" value="Vanguard Tech" oninput="updatePreview()">
+            </div>
+
+            <div class="form-group">
+                <label>Experience - Description</label>
+                <textarea id="exp1Desc" placeholder="Describe your responsibilities..." oninput="updatePreview()">Led design of SaaS platform • Increased user engagement by 40% • Managed team of 3 designers</textarea>
             </div>
 
             <div class="form-group">
                 <label>Education</label>
-                <input type="text" id="edu1" placeholder="Degree and School" value="BFA in Graphic Design — RISD" onchange="updatePreview()">
+                <input type="text" id="edu1" placeholder="Degree and School" value="BFA in Graphic Design — RISD" oninput="updatePreview()">
             </div>
 
-            <button class="btn-add">+ Add Experience</button>
-            <button class="btn-add">+ Add Education</button>
+            <button class="btn-add" type="button">+ Add Experience</button>
+            <button class="btn-add" type="button">+ Add Education</button>
         </div>
 
         <!-- Preview Panel -->
@@ -337,19 +345,32 @@
                     </div>
                 </div>
             </div>
-            <button class="download-btn">📥 Download as PDF</button>
+            <button class="download-btn" onclick="downloadResume()">📥 Download as PDF</button>
         </div>
     </div>
 
     <script>
+        // Initialize preview on page load
+        window.addEventListener('load', function() {
+            updatePreview();
+        });
+
         function updatePreview() {
-            document.getElementById('previewName').textContent = document.getElementById('fullName').value || 'Your Name';
-            document.getElementById('previewContact').textContent = document.getElementById('contact').value || 'Contact Info';
-            document.getElementById('previewSummary').textContent = document.getElementById('summary').value || 'Your summary...';
-            document.getElementById('previewExp1Title').textContent = document.getElementById('exp1Title').value || 'Job Title';
-            document.getElementById('previewExp1Company').textContent = document.getElementById('exp1Company').value || 'Company';
-            document.getElementById('previewExp1Desc').textContent = document.getElementById('exp1Desc').value || 'Description...';
-            document.getElementById('previewEdu1').textContent = document.getElementById('edu1').value || 'Education';
+            const fullName = document.getElementById('fullName').value || 'Your Name';
+            const contact = document.getElementById('contact').value || 'Contact Info';
+            const summary = document.getElementById('summary').value || 'Your summary...';
+            const exp1Title = document.getElementById('exp1Title').value || 'Job Title';
+            const exp1Company = document.getElementById('exp1Company').value || 'Company';
+            const exp1Desc = document.getElementById('exp1Desc').value || 'Description...';
+            const edu1 = document.getElementById('edu1').value || 'Education';
+
+            document.getElementById('previewName').textContent = fullName;
+            document.getElementById('previewContact').textContent = contact;
+            document.getElementById('previewSummary').textContent = summary;
+            document.getElementById('previewExp1Title').textContent = exp1Title;
+            document.getElementById('previewExp1Company').textContent = exp1Company;
+            document.getElementById('previewExp1Desc').textContent = exp1Desc;
+            document.getElementById('previewEdu1').textContent = edu1;
         }
 
         function downloadResume() {
