@@ -45,6 +45,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+            text-decoration: none;
         }
 
         .btn-secondary {
@@ -116,6 +117,7 @@
             font-family: inherit;
             font-size: 0.9rem;
             transition: all 0.3s;
+            margin-top: 0.5rem;
         }
 
         .form-group input:focus,
@@ -246,6 +248,18 @@
                 min-height: 400px;
             }
         }
+
+        @media (max-width: 768px) {
+            .topnav {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .layout {
+                padding: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -253,8 +267,8 @@
     <div class="topnav">
         <div class="logo">🚀 Resume Builder</div>
         <div class="nav-btns">
-            <button class="btn btn-secondary" onclick="goBack()">← Back</button>
-            <button class="btn btn-primary" onclick="saveResume()">Save & Download</button>
+            <a href="dashboard.html" class="btn btn-secondary">← Back</a>
+            <button class="btn btn-primary" onclick="downloadResume()">📥 Download PDF</button>
         </div>
     </div>
 
@@ -338,11 +352,7 @@
             document.getElementById('previewEdu1').textContent = document.getElementById('edu1').value || 'Education';
         }
 
-        function goBack() {
-            window.location.href = 'dashboard.html';
-        }
-
-        function saveResume() {
+        function downloadResume() {
             alert('Resume downloaded as PDF! 📥');
         }
     </script>
