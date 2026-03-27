@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder - CareerCraft AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0e27;
+            color: #f1f5f9;
+            min-height: 100vh;
+        }
+
+        /* Top Navigation */
+        .topnav {
+            background: rgba(10, 14, 39, 0.95);
+            border-bottom: 1px solid rgba(124, 58, 237, 0.2);
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .nav-btns {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            color: #cbd5e1;
+        }
+
+        .btn-secondary:hover {
+            border-color: #7c3aed;
+            color: #7c3aed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(124, 58, 237, 0.3);
+        }
+
+        /* Main Layout */
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            height: calc(100vh - 80px);
+            overflow: hidden;
+        }
+
+        /* Editor Panel */
+        .editor-panel {
+            background: rgba(20, 24, 41, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 1rem;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .editor-panel h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(10, 14, 39, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            border-radius: 0.5rem;
+            color: #f1f5f9;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: rgba(124, 58, 237, 0.5);
+            background: rgba(124, 58, 237, 0.05);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn-add {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(124, 58, 237, 0.1);
+            border: 1px dashed rgba(124, 58, 237, 0.3);
+            color: #7c3aed;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .btn-add:hover {
+            background: rgba(124, 58, 237, 0.2);
+        }
+
+        /* Preview Panel */
+        .preview-panel {
+            background: rgba(20, 24, 41, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 1rem;
+            padding: 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-panel h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #f1f5f9;
+        }
+
+        .resume-preview {
+            background: #faf8ff;
+            color: #1a1a1a;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            flex: 1;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            line-height: 1.8;
+        }
+
+        .resume-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .resume-contact {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #000;
+            padding-bottom: 1rem;
+        }
+
+        .resume-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .resume-section-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #000;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 0.5rem;
+        }
+
+        .resume-item {
+            margin-bottom: 0.75rem;
+        }
+
+        .resume-item-title {
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .resume-item-subtitle {
+            font-size: 0.8rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        .download-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(124, 58, 237, 0.3);
+        }
+
+        @media (max-width: 1024px) {
+            .layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .editor-panel,
+            .preview-panel {
+                min-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="topnav">
+        <div class="logo">🚀 Resume Builder</div>
+        <div class="nav-btns">
+            <button class="btn btn-secondary" onclick="goBack()">← Back</button>
+            <button class="btn btn-primary" onclick="saveResume()">Save & Download</button>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="layout">
+        <!-- Editor Panel -->
+        <div class="editor-panel">
+            <h2>Edit Your Resume</h2>
+            
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="fullName" placeholder="Your Name" value="Alexander Sterling" onchange="updatePreview()">
+            </div>
+
+            <div class="form-group">
+                <label>Email & Phone</label>
+                <input type="text" id="contact" placeholder="email@example.com | (123) 456-7890" value="alex@example.com | (555) 123-4567" onchange="updatePreview()">
+            </div>
+
+            <div class="form-group">
+                <label>Professional Summary</label>
+                <textarea id="summary" placeholder="Brief overview of your background..." onchange="updatePreview()">Experienced product designer with 5+ years creating user-centered digital experiences for Fortune 500 companies.</textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Experience</label>
+                <input type="text" id="exp1Title" placeholder="Job Title" value="Senior Product Designer" onchange="updatePreview()">
+                <input type="text" id="exp1Company" placeholder="Company Name" value="Vanguard Tech" onchange="updatePreview()" style="margin-top: 0.5rem;">
+                <textarea id="exp1Desc" placeholder="Describe your responsibilities..." onchange="updatePreview()" style="margin-top: 0.5rem;">Led design of SaaS platform • Increased user engagement by 40% • Managed team of 3 designers</textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Education</label>
+                <input type="text" id="edu1" placeholder="Degree and School" value="BFA in Graphic Design — RISD" onchange="updatePreview()">
+            </div>
+
+            <button class="btn-add">+ Add Experience</button>
+            <button class="btn-add">+ Add Education</button>
+        </div>
+
+        <!-- Preview Panel -->
+        <div class="preview-panel">
+            <h2>Live Preview</h2>
+            <div class="resume-preview" id="preview">
+                <div class="resume-name" id="previewName">Alexander Sterling</div>
+                <div class="resume-contact" id="previewContact">alex@example.com | (555) 123-4567</div>
+
+                <div class="resume-section">
+                    <div class="resume-section-title">Professional Summary</div>
+                    <div id="previewSummary">Experienced product designer with 5+ years creating user-centered digital experiences for Fortune 500 companies.</div>
+                </div>
+
+                <div class="resume-section">
+                    <div class="resume-section-title">Experience</div>
+                    <div class="resume-item">
+                        <div class="resume-item-title" id="previewExp1Title">Senior Product Designer</div>
+                        <div class="resume-item-subtitle" id="previewExp1Company">Vanguard Tech</div>
+                        <div id="previewExp1Desc">Led design of SaaS platform • Increased user engagement by 40% • Managed team of 3 designers</div>
+                    </div>
+                </div>
+
+                <div class="resume-section">
+                    <div class="resume-section-title">Education</div>
+                    <div class="resume-item">
+                        <div class="resume-item-title" id="previewEdu1">BFA in Graphic Design — RISD</div>
+                    </div>
+                </div>
+            </div>
+            <button class="download-btn">📥 Download as PDF</button>
+        </div>
+    </div>
+
+    <script>
+        function updatePreview() {
+            document.getElementById('previewName').textContent = document.getElementById('fullName').value || 'Your Name';
+            document.getElementById('previewContact').textContent = document.getElementById('contact').value || 'Contact Info';
+            document.getElementById('previewSummary').textContent = document.getElementById('summary').value || 'Your summary...';
+            document.getElementById('previewExp1Title').textContent = document.getElementById('exp1Title').value || 'Job Title';
+            document.getElementById('previewExp1Company').textContent = document.getElementById('exp1Company').value || 'Company';
+            document.getElementById('previewExp1Desc').textContent = document.getElementById('exp1Desc').value || 'Description...';
+            document.getElementById('previewEdu1').textContent = document.getElementById('edu1').value || 'Education';
+        }
+
+        function goBack() {
+            window.location.href = 'dashboard.html';
+        }
+
+        function saveResume() {
+            alert('Resume downloaded as PDF! 📥');
+        }
+    </script>
+</body>
+</html>
