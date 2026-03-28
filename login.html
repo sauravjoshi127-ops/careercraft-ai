@@ -307,16 +307,26 @@
             submitBtn.textContent = 'Signing in...';
 
             try {
-                // Query users table for email and password
+                // ✅ Use Supabase Auth to sign in
+                const { data, error } = await client.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    throw new Error(error.message);
+                }
+
+                // Get user info from users table
                 const { data: userData, error: userError } = await client
                     .from('users')
-                    .select('*')
+                    .select('full_name')
                     .eq('email', email)
-                    .eq('password', password)
                     .single();
 
-                if (userError || !userData) {
-                    throw new Error('Invalid email or password');
+                if (userError) {
+                    console.warn('Could not fetch user data:', userError);
+                    // Still proceed with login even if user data fetch fails
                 }
 
                 // Success!
@@ -325,8 +335,9 @@
 
                 // Store in localStorage
                 localStorage.setItem('userEmail', email);
-                localStorage.setItem('userName', userData.full_name);
-                localStorage.setItem('userId', userData.id);
+                localStorage.setItem('userName', userData?.full_name || email.split('@')[0]);
+                localStorage.setItem('userId', data.user.id);
+                localStorage.setItem('userToken', data.session.access_token);
 
                 // Redirect after 1 second
                 setTimeout(() => {
