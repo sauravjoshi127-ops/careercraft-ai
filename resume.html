@@ -1314,42 +1314,49 @@
 
         // ── PDF Export ────────────────────────────────────────────────────────────
         async function downloadPDF(resumeId) {
-            try {
-                const { data, error } = await client
-                    .from('resumes')
-                    .select('*')
-                    .eq('id', resumeId)
-                    .single();
+    try {
+        const { data, error } = await client
+            .from('resumes')
+            .select('*')
+            .eq('id', resumeId)
+            .single();
 
-                if (error || !data) {
-                    showAlert('error', '❌ Could not fetch resume data for PDF.');
-                    return;
-                }
-
-                const template = data.template_name || 'modern';
-                const html = generateResumeHTML(data, template);
-
-                const wrapper = document.createElement('div');
-                wrapper.innerHTML = html;
-                wrapper.style.position = 'absolute';
-                wrapper.style.left = '-9999px';
-                document.body.appendChild(wrapper);
-
-                const opt = {
-                    margin: [0.45, 0.45, 0.45, 0.45],
-                    filename: `${(data.full_name || 'resume').replace(/\s+/g, '_')}_resume.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, logging: false },
-                    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-                };
-
-                await html2pdf().set(opt).from(wrapper).save();
-                document.body.removeChild(wrapper);
-            } catch (err) {
-                console.error('PDF error:', err);
-                showAlert('error', '❌ Failed to generate PDF: ' + err.message);
-            }
+        if (error || !data) {
+            showAlert('error', '❌ Could not fetch resume data for PDF.');
+            return;
         }
+
+        const template = data.template_name || 'modern';
+        const html = generateResumeHTML(data, template);
+
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = html;
+        wrapper.style.position = 'fixed';
+        wrapper.style.top = '0';
+        wrapper.style.left = '0';
+        wrapper.style.width = '100%';
+        wrapper.style.height = '100%';
+        wrapper.style.visibility = 'hidden';
+        wrapper.style.zIndex = '-9999';
+        wrapper.style.backgroundColor = 'white';
+        document.body.appendChild(wrapper);
+
+        const opt = {
+            margin: [0.45, 0.45, 0.45, 0.45],
+            filename: `${(data.full_name || 'resume').replace(/\s+/g, '_')}_resume.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+        };
+
+        await html2pdf().set(opt).from(wrapper).save();
+        document.body.removeChild(wrapper);
+        showAlert('success', '✅ Resume downloaded as PDF!');
+    } catch (err) {
+        console.error('PDF error:', err);
+        showAlert('error', '❌ Failed to generate PDF: ' + err.message);
+    }
+}
 
         function generateResumeHTML(data, template) {
             const exp = data.experience || [];
@@ -1545,52 +1552,58 @@
         }
 
         // ── AI Suggestions ────────────────────────────────────────────────────────
-        async function getAISuggestions(section) {
-            currentAISection = section;
-            currentAISuggestion = '';
+      async function getAISuggestions(section) {
+    currentAISection = section;
+    currentAISuggestion = '';
 
-            const box = document.getElementById('aiSuggestionsBox');
-            const acceptBtn = document.getElementById('aiAcceptBtn');
-            box.textContent = '⏳ Getting AI suggestions…';
-            acceptBtn.style.display = 'none';
-            document.getElementById('aiModal').classList.add('active');
+    const box = document.getElementById('aiSuggestionsBox');
+    const acceptBtn = document.getElementById('aiAcceptBtn');
+    box.textContent = '⏳ Getting AI suggestions…';
+    acceptBtn.style.display = 'none';
+    document.getElementById('aiModal').classList.add('active');
 
-            const resumeData = collectFormData();
-            let content = '';
-            if (section === 'summary') {
-                content = resumeData.professional_summary;
-            } else if (section === 'experience') {
-                content = (resumeData.experience || []).map(e =>
-                    `${e.title || ''} at ${e.company || ''} (${e.start || ''}${e.end ? ' – ' + e.end : ''}):\n${e.description || ''}`
-                ).join('\n\n');
-            } else if (section === 'skills') {
-                content = (resumeData.skills || []).join(', ');
-            }
+    const resumeData = collectFormData();
+    let content = '';
+    if (section === 'summary') {
+        content = resumeData.professional_summary;
+    } else if (section === 'experience') {
+        content = (resumeData.experience || []).map(e =>
+            `${e.title || ''} at ${e.company || ''} (${e.start || ''}${e.end ? ' – ' + e.end : ''}):\n${e.description || ''}`
+        ).join('\n\n');
+    } else if (section === 'skills') {
+        content = (resumeData.skills || []).join(', ');
+    }
 
-            try {
-                const response = await fetch('/api/ai-suggestions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ section, content, resumeData }),
-                });
+    try {
+        console.log('📤 Sending AI request for section:', section);
+        console.log('📝 Content:', content);
+        
+        const response = await fetch('/api/ai-suggestions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ section, content, resumeData }),
+        });
 
-                const result = await response.json();
+        console.log('📨 Response status:', response.status);
+        
+        const result = await response.json();
+        console.log('📦 API Result:', result);
 
-                if (!response.ok) {
-                    throw new Error(result.error || 'API request failed');
-                }
-
-                currentAISuggestion = result.suggestions || '';
-                box.textContent = currentAISuggestion || '(No suggestion returned)';
-
-                if (currentAISuggestion && (section === 'summary' || section === 'skills')) {
-                    acceptBtn.style.display = 'inline-flex';
-                }
-            } catch (err) {
-                console.error('AI suggestions error:', err);
-                box.textContent = '⚠️ Could not get AI suggestions at this time. Please try again later.';
-            }
+        if (!response.ok) {
+            throw new Error(result.error || `API Error: ${response.status}`);
         }
+
+        currentAISuggestion = result.suggestions || '';
+        box.textContent = currentAISuggestion || '(No suggestion returned)';
+
+        if (currentAISuggestion && (section === 'summary' || section === 'skills')) {
+            acceptBtn.style.display = 'inline-flex';
+        }
+    } catch (err) {
+        console.error('❌ AI Suggestions Error:', err);
+        box.textContent = '❌ Error: ' + err.message;
+    }
+}
 
         function acceptAISuggestion() {
             if (!currentAISuggestion) return;
