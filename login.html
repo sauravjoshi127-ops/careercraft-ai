@@ -307,14 +307,22 @@
             submitBtn.textContent = 'Signing in...';
 
             try {
+                console.log('Attempting login with:', email);
+
                 // ✅ Use Supabase Auth to sign in
                 const { data, error } = await client.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
 
+                console.log('Auth response:', { data, error });
+
                 if (error) {
                     throw new Error(error.message);
+                }
+
+                if (!data.user) {
+                    throw new Error('No user returned from authentication');
                 }
 
                 // Get user info from users table
@@ -324,10 +332,7 @@
                     .eq('email', email)
                     .single();
 
-                if (userError) {
-                    console.warn('Could not fetch user data:', userError);
-                    // Still proceed with login even if user data fetch fails
-                }
+                console.log('User data:', { userData, userError });
 
                 // Success!
                 successMsg.textContent = '✅ Signed in successfully! Redirecting...';
@@ -339,13 +344,15 @@
                 localStorage.setItem('userId', data.user.id);
                 localStorage.setItem('userToken', data.session.access_token);
 
+                console.log('Login successful, redirecting...');
+
                 // Redirect after 1 second
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 1000);
 
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Login error:', error);
                 errorMsg.textContent = `❌ Error: ${error.message}`;
                 errorMsg.style.display = 'block';
                 submitBtn.disabled = false;
