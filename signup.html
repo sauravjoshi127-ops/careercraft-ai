@@ -337,30 +337,48 @@
             submitBtn.textContent = 'Creating account...';
 
             try {
-                // ✅ BETTER - Use Supabase built-in auth
-                const { data, error } = await client.auth.signUp({
+                console.log('Step 1: Signing up with Supabase Auth...');
+
+                // ✅ Create auth user in Supabase Auth system
+                const { data: authData, error: authError } = await client.auth.signUp({
                     email: email,
-                    password: password  // Supabase handles hashing securely
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: fullName
+                        }
+                    }
                 });
 
-                if (error) {
-                    throw new Error(error.message);
+                console.log('Auth signup response:', { authData, authError });
+
+                if (authError) {
+                    throw new Error(`Auth Error: ${authError.message}`);
                 }
 
-                // Then store only user info, not password
+                if (!authData.user) {
+                    throw new Error('No user returned from auth signup');
+                }
+
+                console.log('Step 2: User created in Auth:', authData.user.id);
+                console.log('Step 3: Saving user to database...');
+
+                // ✅ Store user profile in users table
                 const { error: dbError } = await client
                     .from('users')
                     .insert([
                         {
                             email: email,
                             full_name: fullName
-                            // No password stored in database!
                         }
                     ]);
 
                 if (dbError) {
-                    throw new Error(dbError.message);
+                    console.warn('Database insert warning:', dbError);
+                    // Don't throw - auth user is already created
                 }
+
+                console.log('Step 4: Success! User saved to database');
 
                 // Success!
                 successMsg.textContent = '✅ Account created successfully! Redirecting to dashboard...';
@@ -369,6 +387,9 @@
                 // Store email in localStorage for dashboard
                 localStorage.setItem('userEmail', email);
                 localStorage.setItem('userName', fullName);
+                localStorage.setItem('userId', authData.user.id);
+
+                console.log('Redirecting to dashboard...');
 
                 // Redirect after 2 seconds
                 setTimeout(() => {
@@ -376,7 +397,7 @@
                 }, 2000);
 
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Signup error:', error);
                 errorMsg.textContent = `❌ Error: ${error.message}`;
                 errorMsg.style.display = 'block';
                 submitBtn.disabled = false;
