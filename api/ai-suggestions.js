@@ -47,37 +47,53 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'No content provided to improve.' });
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-        return res.status(500).json({ error: 'OpenAI API key is not configured on this server.' });
+        return res.status(500).json({ error: 'Gemini API key is not configured on this server.' });
     }
 
     try {
-        const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        console.log('Calling Gemini API for section:', section);
+        
+        // Call Google Gemini API
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userContent },
+                contents: [
+                    {
+                        parts: [
+                            {
+                                text: `${systemPrompt}\n\nContent to improve:\n${userContent}`,
+                            },
+                        ],
+                    },
                 ],
-                max_tokens: 600,
-                temperature: 0.7,
+                generationConfig: {
+                    maxOutputTokens: 600,
+                    temperature: 0.7,
+                },
             }),
         });
 
-        if (!openaiRes.ok) {
-            const errData = await openaiRes.json().catch(() => ({}));
-            throw new Error(errData?.error?.message || `OpenAI error: ${openaiRes.status}`);
+        console.log('Gemini API Response Status:', geminiRes.status);
+
+        if (!geminiRes.ok) {
+            const errData = await geminiRes.json().catch(() => ({}));
+            console.error('Gemini API Error:', errData);
+            throw new Error(errData?.error?.message || `Gemini error: ${geminiRes.status}`);
         }
 
-        const result = await openaiRes.json();
-        const suggestions = result.choices?.[0]?.message?.content?.trim() || '';
+        const result = await geminiRes.json();
+        const suggestions = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
 
+        if (!suggestions) {
+            throw new Error('No suggestions returned from Gemini API');
+        }
+
+        console.log('Suggestions generated successfully');
         return res.status(200).json({ suggestions });
     } catch (err) {
         console.error('AI suggestions error:', err);
