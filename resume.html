@@ -1491,7 +1491,13 @@
                 if (existing) {
                     shareToken = existing.shareToken;
                 } else {
-                    shareToken = crypto.randomUUID();
+                    // crypto.randomUUID() is available in modern browsers and Node 18+;
+                    // fall back to a hex-based random token for older clients.
+                    shareToken = typeof crypto.randomUUID === 'function'
+                        ? crypto.randomUUID()
+                        : Array.from(crypto.getRandomValues(new Uint8Array(16)))
+                              .map(b => b.toString(16).padStart(2, '0'))
+                              .join('');
                     const { error } = await client
                         .from('resume_shares')
                         .insert([{ resume_id: resumeId, share_token: shareToken, is_active: true }]);
@@ -1521,9 +1527,17 @@
         }
 
         function fallbackCopy(input) {
-            input.select();
-            document.execCommand('copy');
-            showAlert('success', '✅ Share link copied!');
+            try {
+                input.select();
+                const ok = document.execCommand('copy');
+                if (ok) {
+                    showAlert('success', '✅ Share link copied!');
+                } else {
+                    showAlert('error', '⚠️ Could not copy automatically. Please select the link and copy manually.');
+                }
+            } catch (e) {
+                showAlert('error', '⚠️ Automatic copy not supported. Please select the link and copy manually.');
+            }
         }
 
         function closeShareModal() {
@@ -1573,7 +1587,8 @@
                     acceptBtn.style.display = 'inline-flex';
                 }
             } catch (err) {
-                box.textContent = '⚠️ Could not get AI suggestions. Please try again later.\n\nError: ' + err.message;
+                console.error('AI suggestions error:', err);
+                box.textContent = '⚠️ Could not get AI suggestions at this time. Please try again later.';
             }
         }
 

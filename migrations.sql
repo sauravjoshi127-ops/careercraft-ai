@@ -1,5 +1,6 @@
 -- ── Resume Template Column ───────────────────────────────────────────────────
-ALTER TABLE resumes ADD COLUMN IF NOT EXISTS template_name VARCHAR DEFAULT 'modern';
+ALTER TABLE resumes ADD COLUMN IF NOT EXISTS template_name VARCHAR DEFAULT 'modern'
+    CHECK (template_name IN ('modern', 'classic', 'creative'));
 
 -- ── Resume Shares Table ───────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS resume_shares (
