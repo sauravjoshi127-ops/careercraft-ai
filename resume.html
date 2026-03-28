@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resume Builder - CareerCraft AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -22,10 +23,13 @@
         .topnav {
             background: rgba(10, 14, 39, 0.95);
             border-bottom: 1px solid rgba(124, 58, 237, 0.2);
-            padding: 1.5rem 2rem;
+            padding: 1.2rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .logo {
@@ -36,16 +40,21 @@
         .nav-btns {
             display: flex;
             gap: 1rem;
+            align-items: center;
         }
 
         .btn {
-            padding: 0.7rem 1.5rem;
+            padding: 0.65rem 1.3rem;
             border-radius: 0.5rem;
             border: none;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
             text-decoration: none;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
         }
 
         .btn-secondary {
@@ -66,58 +75,95 @@
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 32px rgba(124, 58, 237, 0.3);
+            box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
         }
 
-        /* Main Layout */
-        .layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            padding: 2rem;
-            max-width: 1400px;
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1100px;
             margin: 0 auto;
-            height: calc(100vh - 80px);
-            overflow: hidden;
+            padding: 2rem;
         }
 
-        /* Editor Panel */
-        .editor-panel {
+        /* Page Sections */
+        .page-section {
+            margin-bottom: 3rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        /* Card */
+        .card {
             background: rgba(20, 24, 41, 0.6);
             border: 1px solid rgba(148, 163, 184, 0.1);
             border-radius: 1rem;
             padding: 2rem;
-            overflow-y: auto;
         }
 
-        .editor-panel h2 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
+        /* Form styles */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem;
+            margin-bottom: 1.2rem;
         }
 
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
         }
 
         .form-group label {
             display: block;
             font-weight: 600;
             margin-bottom: 0.5rem;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
         .form-group input,
         .form-group textarea {
             width: 100%;
-            padding: 0.75rem;
+            padding: 0.75rem 1rem;
             background: rgba(10, 14, 39, 0.8);
             border: 1px solid rgba(148, 163, 184, 0.15);
             border-radius: 0.5rem;
             color: #f1f5f9;
             font-family: inherit;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             transition: all 0.3s;
-            margin-top: 0.5rem;
         }
 
         .form-group input:focus,
@@ -125,139 +171,336 @@
             outline: none;
             border-color: rgba(124, 58, 237, 0.5);
             background: rgba(124, 58, 237, 0.05);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: #475569;
         }
 
         .form-group textarea {
             resize: vertical;
-            min-height: 100px;
+            min-height: 90px;
+            line-height: 1.6;
         }
 
-        .btn-add {
+        .form-group input.invalid,
+        .form-group textarea.invalid {
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        /* Section heading within form */
+        .form-section-heading {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin: 1.8rem 0 1rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid rgba(124, 58, 237, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Dynamic entry card */
+        .entry-card {
+            background: rgba(10, 14, 39, 0.5);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .entry-card .remove-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border-radius: 0.4rem;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .entry-card .remove-btn:hover {
+            background: rgba(239, 68, 68, 0.25);
+        }
+
+        .btn-add-entry {
             width: 100%;
-            padding: 0.75rem;
-            background: rgba(124, 58, 237, 0.1);
-            border: 1px dashed rgba(124, 58, 237, 0.3);
-            color: #7c3aed;
+            padding: 0.7rem;
+            background: rgba(124, 58, 237, 0.08);
+            border: 1px dashed rgba(124, 58, 237, 0.35);
+            color: #a78bfa;
             border-radius: 0.5rem;
             font-weight: 600;
+            font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.3s;
-            margin-top: 1rem;
+            margin-top: 0.5rem;
         }
 
-        .btn-add:hover {
+        .btn-add-entry:hover {
+            background: rgba(124, 58, 237, 0.15);
+            border-color: rgba(124, 58, 237, 0.6);
+        }
+
+        /* Skills */
+        .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            min-height: 2.5rem;
+            padding: 0.5rem;
+            background: rgba(10, 14, 39, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            border-radius: 0.5rem;
+            cursor: text;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s;
+        }
+
+        .skills-container:focus-within {
+            border-color: rgba(124, 58, 237, 0.5);
+            background: rgba(124, 58, 237, 0.05);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        }
+
+        .skill-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
             background: rgba(124, 58, 237, 0.2);
+            border: 1px solid rgba(124, 58, 237, 0.4);
+            color: #c4b5fd;
+            padding: 0.3rem 0.7rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 500;
         }
 
-        /* Preview Panel */
-        .preview-panel {
+        .skill-tag button {
+            background: none;
+            border: none;
+            color: #a78bfa;
+            cursor: pointer;
+            font-size: 1rem;
+            line-height: 1;
+            padding: 0;
+            transition: color 0.2s;
+        }
+
+        .skill-tag button:hover {
+            color: #f87171;
+        }
+
+        .skill-input {
+            border: none;
+            background: transparent;
+            color: #f1f5f9;
+            font-size: 0.95rem;
+            outline: none;
+            min-width: 120px;
+            flex: 1;
+            padding: 0.2rem 0.3rem;
+            font-family: inherit;
+        }
+
+        .skill-input::placeholder {
+            color: #475569;
+        }
+
+        /* Messages */
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+            display: none;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+        }
+
+        /* Save bar */
+        .save-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        /* Saved resumes */
+        .resume-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .resume-card {
             background: rgba(20, 24, 41, 0.6);
             border: 1px solid rgba(148, 163, 184, 0.1);
             border-radius: 1rem;
-            padding: 2rem;
-            overflow-y: auto;
+            padding: 1.5rem;
+            transition: all 0.3s;
             display: flex;
             flex-direction: column;
         }
 
-        .preview-panel h2 {
-            font-size: 1.5rem;
-            margin-bottom: 1.5rem;
-            color: #f1f5f9;
+        .resume-card:hover {
+            border-color: rgba(124, 58, 237, 0.4);
+            background: rgba(20, 24, 41, 0.8);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
         }
 
-        .resume-preview {
-            background: #faf8ff;
-            color: #1a1a1a;
-            padding: 2rem;
-            border-radius: 0.75rem;
-            flex: 1;
-            overflow-y: auto;
+        .resume-card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+
+        .resume-card-meta {
             font-size: 0.85rem;
-            line-height: 1.8;
+            color: #94a3b8;
+            margin-bottom: 1rem;
         }
 
-        .resume-name {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
+        .resume-card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 1rem;
+            flex: 1;
         }
 
-        .resume-contact {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 1.5rem;
-            border-bottom: 2px solid #000;
-            padding-bottom: 1rem;
+        .resume-card-tag {
+            background: rgba(124, 58, 237, 0.15);
+            color: #c4b5fd;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.78rem;
         }
 
-        .resume-section {
-            margin-bottom: 1.5rem;
+        .resume-card-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: auto;
         }
 
-        .resume-section-title {
-            font-size: 0.9rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: #000;
-            margin-bottom: 0.75rem;
-            border-bottom: 1px solid #ccc;
-            padding-bottom: 0.5rem;
+        .resume-card-actions .btn {
+            flex: 1;
+            justify-content: center;
+            font-size: 0.85rem;
+            padding: 0.55rem 0.75rem;
         }
 
-        .resume-item {
-            margin-bottom: 0.75rem;
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #64748b;
         }
 
-        .resume-item-title {
-            font-weight: 700;
-            color: #1a1a1a;
+        .empty-state .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
         }
 
-        .resume-item-subtitle {
-            font-size: 0.8rem;
-            color: #666;
-            font-style: italic;
+        .empty-state p {
+            font-size: 1rem;
         }
 
-        .download-btn {
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Modal (for edit/delete confirm) */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            display: none;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #141829;
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 420px;
             width: 100%;
-            padding: 0.75rem;
-            background: linear-gradient(135deg, #7c3aed, #a855f7);
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 1rem;
         }
 
-        .download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 32px rgba(124, 58, 237, 0.3);
+        .modal h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
         }
 
-        @media (max-width: 1024px) {
-            .layout {
-                grid-template-columns: 1fr;
-                height: auto;
-            }
+        .modal p {
+            color: #94a3b8;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
 
-            .editor-panel,
-            .preview-panel {
-                min-height: 400px;
-            }
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
         }
 
         @media (max-width: 768px) {
             .topnav {
                 flex-direction: column;
-                gap: 1rem;
+                gap: 0.75rem;
                 padding: 1rem;
             }
 
-            .layout {
+            .container {
                 padding: 1rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .resume-cards {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -265,117 +508,582 @@
 <body>
     <!-- Top Navigation -->
     <div class="topnav">
-        <div class="logo">🚀 Resume Builder</div>
+        <div class="logo">📝 Resume Builder</div>
         <div class="nav-btns">
-            <a href="dashboard.html" class="btn btn-secondary">← Back</a>
-            <button class="btn btn-primary" onclick="downloadResume()">📥 Download PDF</button>
+            <a href="dashboard.html" class="btn btn-secondary">← Dashboard</a>
         </div>
     </div>
 
-    <!-- Main Layout -->
-    <div class="layout">
-        <!-- Editor Panel -->
-        <div class="editor-panel">
-            <h2>Edit Your Resume</h2>
-            
-            <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" id="fullName" placeholder="Your Name" value="Alexander Sterling" oninput="updatePreview()">
-            </div>
+    <!-- Main Container -->
+    <div class="container">
 
-            <div class="form-group">
-                <label>Email & Phone</label>
-                <input type="text" id="contact" placeholder="email@example.com | (123) 456-7890" value="alex@example.com | (555) 123-4567" oninput="updatePreview()">
-            </div>
+        <!-- Alert Messages -->
+        <div id="alertError" class="alert alert-error"></div>
+        <div id="alertSuccess" class="alert alert-success"></div>
 
-            <div class="form-group">
-                <label>Professional Summary</label>
-                <textarea id="summary" placeholder="Brief overview of your background..." oninput="updatePreview()">Experienced product designer with 5+ years creating user-centered digital experiences for Fortune 500 companies.</textarea>
+        <!-- My Saved Resumes -->
+        <div class="page-section">
+            <div class="section-header">
+                <h2 class="section-title">📂 My Saved Resumes</h2>
             </div>
-
-            <div class="form-group">
-                <label>Experience - Job Title</label>
-                <input type="text" id="exp1Title" placeholder="Job Title" value="Senior Product Designer" oninput="updatePreview()">
+            <div id="resumeList">
+                <div class="empty-state">
+                    <div class="empty-icon">📄</div>
+                    <p>Loading your resumes...</p>
+                </div>
             </div>
-
-            <div class="form-group">
-                <label>Experience - Company Name</label>
-                <input type="text" id="exp1Company" placeholder="Company Name" value="Vanguard Tech" oninput="updatePreview()">
-            </div>
-
-            <div class="form-group">
-                <label>Experience - Description</label>
-                <textarea id="exp1Desc" placeholder="Describe your responsibilities..." oninput="updatePreview()">Led design of SaaS platform • Increased user engagement by 40% • Managed team of 3 designers</textarea>
-            </div>
-
-            <div class="form-group">
-                <label>Education</label>
-                <input type="text" id="edu1" placeholder="Degree and School" value="BFA in Graphic Design — RISD" oninput="updatePreview()">
-            </div>
-
-            <button class="btn-add" type="button">+ Add Experience</button>
-            <button class="btn-add" type="button">+ Add Education</button>
         </div>
 
-        <!-- Preview Panel -->
-        <div class="preview-panel">
-            <h2>Live Preview</h2>
-            <div class="resume-preview" id="preview">
-                <div class="resume-name" id="previewName">Alexander Sterling</div>
-                <div class="resume-contact" id="previewContact">alex@example.com | (555) 123-4567</div>
-
-                <div class="resume-section">
-                    <div class="resume-section-title">Professional Summary</div>
-                    <div id="previewSummary">Experienced product designer with 5+ years creating user-centered digital experiences for Fortune 500 companies.</div>
-                </div>
-
-                <div class="resume-section">
-                    <div class="resume-section-title">Experience</div>
-                    <div class="resume-item">
-                        <div class="resume-item-title" id="previewExp1Title">Senior Product Designer</div>
-                        <div class="resume-item-subtitle" id="previewExp1Company">Vanguard Tech</div>
-                        <div id="previewExp1Desc">Led design of SaaS platform • Increased user engagement by 40% • Managed team of 3 designers</div>
-                    </div>
-                </div>
-
-                <div class="resume-section">
-                    <div class="resume-section-title">Education</div>
-                    <div class="resume-item">
-                        <div class="resume-item-title" id="previewEdu1">BFA in Graphic Design — RISD</div>
-                    </div>
-                </div>
+        <!-- Build / Edit Resume Form -->
+        <div class="page-section">
+            <div class="section-header">
+                <h2 class="section-title" id="formTitle">✏️ Build New Resume</h2>
+                <button class="btn btn-secondary" id="cancelEditBtn" onclick="cancelEdit()" style="display:none;">✕ Cancel Edit</button>
             </div>
-            <button class="download-btn" onclick="downloadResume()">📥 Download as PDF</button>
+            <div class="card">
+                <form id="resumeForm" onsubmit="handleSave(event)" novalidate>
+
+                    <!-- Personal Info -->
+                    <div class="form-section-heading">👤 Personal Information</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Full Name *</label>
+                            <input type="text" id="fullName" placeholder="Jane Doe" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email *</label>
+                            <input type="email" id="email" placeholder="jane@example.com" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="phone" placeholder="+1 (555) 000-0000">
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" id="location" placeholder="New York, NY">
+                        </div>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="form-section-heading">📋 Professional Summary</div>
+                    <div class="form-group">
+                        <label>Summary</label>
+                        <textarea id="summary" placeholder="A brief overview of your background, skills, and career goals..." rows="4"></textarea>
+                    </div>
+
+                    <!-- Work Experience -->
+                    <div class="form-section-heading">💼 Work Experience</div>
+                    <div id="experienceContainer"></div>
+                    <button type="button" class="btn-add-entry" onclick="addExperience()">+ Add Work Experience</button>
+
+                    <!-- Education -->
+                    <div class="form-section-heading">🎓 Education</div>
+                    <div id="educationContainer"></div>
+                    <button type="button" class="btn-add-entry" onclick="addEducation()">+ Add Education</button>
+
+                    <!-- Skills -->
+                    <div class="form-section-heading">🛠️ Skills</div>
+                    <div class="form-group">
+                        <label>Add Skills (press Enter or comma to add)</label>
+                        <div class="skills-container" id="skillsContainer" onclick="document.getElementById('skillInput').focus()">
+                            <input type="text" id="skillInput" class="skill-input" placeholder="e.g. JavaScript, Python, Project Management...">
+                        </div>
+                    </div>
+
+                    <!-- Certifications -->
+                    <div class="form-section-heading">🏅 Certifications</div>
+                    <div class="form-group">
+                        <label>Certifications</label>
+                        <textarea id="certifications" placeholder="e.g. AWS Certified Solutions Architect (2023), PMP Certification (2022)..." rows="3"></textarea>
+                    </div>
+
+                    <!-- Save Bar -->
+                    <div class="save-bar">
+                        <button type="submit" class="btn btn-primary" id="saveBtn">
+                            💾 Save Resume
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <h3>🗑️ Delete Resume</h3>
+            <p>Are you sure you want to delete this resume? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">Delete</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // Initialize preview on page load
-        window.addEventListener('load', function() {
-            updatePreview();
+        // ── Supabase Setup ────────────────────────────────────────────────────────
+        const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
+        const { createClient } = supabase;
+        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // ── State ─────────────────────────────────────────────────────────────────
+        let currentUserId = null;
+        let editingResumeId = null;
+        let deleteTargetId = null;
+        let skills = [];
+        let expCount = 0;
+        let eduCount = 0;
+
+        // ── Auth Check ────────────────────────────────────────────────────────────
+        async function initPage() {
+            const { data: { session } } = await client.auth.getSession();
+            if (session && session.user) {
+                currentUserId = session.user.id;
+            } else {
+                // Fall back to localStorage userId
+                currentUserId = localStorage.getItem('userId');
+            }
+
+            if (!currentUserId) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            addExperience();
+            addEducation();
+            await loadResumes();
+        }
+
+        // ── Load Saved Resumes ────────────────────────────────────────────────────
+        async function loadResumes() {
+            const listEl = document.getElementById('resumeList');
+            listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>Loading resumes...</p></div>';
+
+            const { data, error } = await client
+                .from('resumes')
+                .select('*')
+                .eq('user_id', currentUserId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Could not load resumes. Please refresh the page.</p></div>';
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                listEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📄</div>
+                        <p>No saved resumes yet. Fill in the form below and hit <strong>Save Resume</strong>!</p>
+                    </div>`;
+                return;
+            }
+
+            const cards = data.map(r => buildResumeCard(r)).join('');
+            listEl.innerHTML = `<div class="resume-cards">${cards}</div>`;
+        }
+
+        function buildResumeCard(r) {
+            const exp = r.experience || [];
+            const edu = r.education || [];
+            const skList = r.skills || [];
+            const date = new Date(r.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            const updatedDate = r.updated_at ? new Date(r.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : null;
+
+            const skillTags = skList.slice(0, 4).map(s => `<span class="resume-card-tag">${escapeHtml(s)}</span>`).join('');
+            const extraSkills = skList.length > 4 ? `<span class="resume-card-tag">+${skList.length - 4} more</span>` : '';
+
+            return `
+                <div class="resume-card" id="card-${r.id}">
+                    <div class="resume-card-title">${escapeHtml(r.full_name || 'Untitled Resume')}</div>
+                    <div class="resume-card-meta">
+                        ${escapeHtml(r.email || '')}
+                        ${r.location ? ' · ' + escapeHtml(r.location) : ''}
+                        <br>
+                        ${exp.length} experience${exp.length !== 1 ? 's' : ''} · ${edu.length} education ${edu.length === 1 ? 'entry' : 'entries'}
+                        <br>
+                        Saved ${date}${updatedDate && updatedDate !== date ? ' · Updated ' + updatedDate : ''}
+                    </div>
+                    <div class="resume-card-tags">
+                        ${skillTags}${extraSkills}
+                    </div>
+                    <div class="resume-card-actions">
+                        <button class="btn btn-secondary" onclick="editResume('${r.id}')">✏️ Edit</button>
+                        <button class="btn btn-danger" onclick="openDeleteModal('${r.id}')">🗑️ Delete</button>
+                    </div>
+                </div>`;
+        }
+
+        // ── Dynamic Experience ────────────────────────────────────────────────────
+        function addExperience(data) {
+            expCount++;
+            const idx = expCount;
+            const container = document.getElementById('experienceContainer');
+            const div = document.createElement('div');
+            div.className = 'entry-card';
+            div.id = `exp-${idx}`;
+            div.innerHTML = `
+                <button type="button" class="remove-btn" onclick="removeEntry('exp-${idx}')">✕ Remove</button>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Job Title</label>
+                        <input type="text" id="expTitle-${idx}" placeholder="e.g. Software Engineer" value="${escapeHtml(data?.title || '')}">
+                    </div>
+                    <div class="form-group">
+                        <label>Company</label>
+                        <input type="text" id="expCompany-${idx}" placeholder="e.g. Google" value="${escapeHtml(data?.company || '')}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="text" id="expStart-${idx}" placeholder="e.g. Jan 2022" value="${escapeHtml(data?.start || '')}">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date</label>
+                        <input type="text" id="expEnd-${idx}" placeholder="e.g. Present" value="${escapeHtml(data?.end || '')}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="expDesc-${idx}" placeholder="Describe your key responsibilities and achievements...">${escapeHtml(data?.description || '')}</textarea>
+                </div>`;
+            container.appendChild(div);
+        }
+
+        // ── Dynamic Education ─────────────────────────────────────────────────────
+        function addEducation(data) {
+            eduCount++;
+            const idx = eduCount;
+            const container = document.getElementById('educationContainer');
+            const div = document.createElement('div');
+            div.className = 'entry-card';
+            div.id = `edu-${idx}`;
+            div.innerHTML = `
+                <button type="button" class="remove-btn" onclick="removeEntry('edu-${idx}')">✕ Remove</button>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Degree / Qualification</label>
+                        <input type="text" id="eduDegree-${idx}" placeholder="e.g. B.Tech Computer Science" value="${escapeHtml(data?.degree || '')}">
+                    </div>
+                    <div class="form-group">
+                        <label>School / University</label>
+                        <input type="text" id="eduSchool-${idx}" placeholder="e.g. MIT" value="${escapeHtml(data?.school || '')}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Year</label>
+                        <input type="text" id="eduYear-${idx}" placeholder="e.g. 2018 – 2022" value="${escapeHtml(data?.year || '')}">
+                    </div>
+                    <div class="form-group">
+                        <label>Grade / GPA (optional)</label>
+                        <input type="text" id="eduGrade-${idx}" placeholder="e.g. 8.5 CGPA" value="${escapeHtml(data?.grade || '')}">
+                    </div>
+                </div>`;
+            container.appendChild(div);
+        }
+
+        function removeEntry(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        // ── Skills ────────────────────────────────────────────────────────────────
+        document.getElementById('skillInput').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                addSkill(this.value.trim().replace(/,$/, ''));
+                this.value = '';
+            } else if (e.key === 'Backspace' && this.value === '' && skills.length > 0) {
+                removeSkill(skills[skills.length - 1]);
+            }
         });
 
-        function updatePreview() {
-            const fullName = document.getElementById('fullName').value || 'Your Name';
-            const contact = document.getElementById('contact').value || 'Contact Info';
-            const summary = document.getElementById('summary').value || 'Your summary...';
-            const exp1Title = document.getElementById('exp1Title').value || 'Job Title';
-            const exp1Company = document.getElementById('exp1Company').value || 'Company';
-            const exp1Desc = document.getElementById('exp1Desc').value || 'Description...';
-            const edu1 = document.getElementById('edu1').value || 'Education';
-
-            document.getElementById('previewName').textContent = fullName;
-            document.getElementById('previewContact').textContent = contact;
-            document.getElementById('previewSummary').textContent = summary;
-            document.getElementById('previewExp1Title').textContent = exp1Title;
-            document.getElementById('previewExp1Company').textContent = exp1Company;
-            document.getElementById('previewExp1Desc').textContent = exp1Desc;
-            document.getElementById('previewEdu1').textContent = edu1;
+        function addSkill(value) {
+            if (!value || skills.includes(value)) return;
+            skills.push(value);
+            renderSkills();
         }
 
-        function downloadResume() {
-            alert('Resume downloaded as PDF! 📥');
+        function removeSkill(skill) {
+            skills = skills.filter(s => s !== skill);
+            renderSkills();
         }
+
+        function renderSkills() {
+            const container = document.getElementById('skillsContainer');
+            const input = document.getElementById('skillInput');
+            container.innerHTML = '';
+            skills.forEach(s => {
+                const tag = document.createElement('span');
+                tag.className = 'skill-tag';
+                const text = document.createTextNode(s);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.title = 'Remove';
+                btn.textContent = '\u00d7';
+                btn.dataset.skill = s;
+                btn.addEventListener('click', function () { removeSkill(this.dataset.skill); });
+                tag.appendChild(text);
+                tag.appendChild(btn);
+                container.appendChild(tag);
+            });
+            container.appendChild(input);
+        }
+
+        // ── Collect Form Data ─────────────────────────────────────────────────────
+        function collectFormData() {
+            // Experiences
+            const experience = [];
+            document.querySelectorAll('#experienceContainer .entry-card').forEach(card => {
+                const id = card.id.replace('exp-', '');
+                experience.push({
+                    title: document.getElementById(`expTitle-${id}`)?.value.trim() || '',
+                    company: document.getElementById(`expCompany-${id}`)?.value.trim() || '',
+                    start: document.getElementById(`expStart-${id}`)?.value.trim() || '',
+                    end: document.getElementById(`expEnd-${id}`)?.value.trim() || '',
+                    description: document.getElementById(`expDesc-${id}`)?.value.trim() || '',
+                });
+            });
+
+            // Education
+            const education = [];
+            document.querySelectorAll('#educationContainer .entry-card').forEach(card => {
+                const id = card.id.replace('edu-', '');
+                education.push({
+                    degree: document.getElementById(`eduDegree-${id}`)?.value.trim() || '',
+                    school: document.getElementById(`eduSchool-${id}`)?.value.trim() || '',
+                    year: document.getElementById(`eduYear-${id}`)?.value.trim() || '',
+                    grade: document.getElementById(`eduGrade-${id}`)?.value.trim() || '',
+                });
+            });
+
+            return {
+                full_name: document.getElementById('fullName').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                location: document.getElementById('location').value.trim(),
+                summary: document.getElementById('summary').value.trim(),
+                experience,
+                education,
+                skills: [...skills],
+                certifications: document.getElementById('certifications').value.trim(),
+            };
+        }
+
+        // ── Validation ────────────────────────────────────────────────────────────
+        function validateForm(data) {
+            const errors = [];
+            document.getElementById('fullName').classList.remove('invalid');
+            document.getElementById('email').classList.remove('invalid');
+
+            if (!data.full_name) {
+                errors.push('Full Name is required.');
+                document.getElementById('fullName').classList.add('invalid');
+            }
+            if (!data.email) {
+                errors.push('Email is required.');
+                document.getElementById('email').classList.add('invalid');
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+                errors.push('Please enter a valid email address.');
+                document.getElementById('email').classList.add('invalid');
+            }
+            return errors;
+        }
+
+        // ── Save Resume ───────────────────────────────────────────────────────────
+        async function handleSave(event) {
+            event.preventDefault();
+            hideAlerts();
+
+            const data = collectFormData();
+            const errors = validateForm(data);
+
+            if (errors.length > 0) {
+                showAlert('error', '⚠️ ' + errors.join(' '));
+                return;
+            }
+
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="loading-spinner"></span> Saving...';
+
+            try {
+                if (editingResumeId) {
+                    // Update existing
+                    const { error } = await client
+                        .from('resumes')
+                        .update(data)
+                        .eq('id', editingResumeId)
+                        .eq('user_id', currentUserId);
+
+                    if (error) throw error;
+                    showAlert('success', '✅ Resume updated successfully!');
+                    cancelEdit();
+                } else {
+                    // Insert new
+                    const { error } = await client
+                        .from('resumes')
+                        .insert([{ ...data, user_id: currentUserId }]);
+
+                    if (error) throw error;
+                    showAlert('success', '✅ Resume saved successfully!');
+                    resetForm();
+                }
+
+                await loadResumes();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (err) {
+                console.error('Save error:', err);
+                showAlert('error', '❌ Failed to save resume: ' + err.message);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = editingResumeId ? '💾 Update Resume' : '💾 Save Resume';
+            }
+        }
+
+        // ── Edit Resume ───────────────────────────────────────────────────────────
+        async function editResume(id) {
+            hideAlerts();
+            const { data, error } = await client
+                .from('resumes')
+                .select('*')
+                .eq('id', id)
+                .eq('user_id', currentUserId)
+                .single();
+
+            if (error || !data) {
+                showAlert('error', '❌ Could not load resume for editing.');
+                return;
+            }
+
+            editingResumeId = id;
+            document.getElementById('formTitle').textContent = '✏️ Edit Resume';
+            document.getElementById('cancelEditBtn').style.display = 'inline-flex';
+            document.getElementById('saveBtn').innerHTML = '💾 Update Resume';
+
+            // Populate personal info
+            document.getElementById('fullName').value = data.full_name || '';
+            document.getElementById('email').value = data.email || '';
+            document.getElementById('phone').value = data.phone || '';
+            document.getElementById('location').value = data.location || '';
+            document.getElementById('summary').value = data.summary || '';
+            document.getElementById('certifications').value = data.certifications || '';
+
+            // Populate experience
+            document.getElementById('experienceContainer').innerHTML = '';
+            expCount = 0;
+            (data.experience || []).forEach(exp => addExperience(exp));
+            if ((data.experience || []).length === 0) addExperience();
+
+            // Populate education
+            document.getElementById('educationContainer').innerHTML = '';
+            eduCount = 0;
+            (data.education || []).forEach(edu => addEducation(edu));
+            if ((data.education || []).length === 0) addEducation();
+
+            // Populate skills
+            skills = data.skills || [];
+            renderSkills();
+
+            // Scroll to form
+            document.getElementById('resumeForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function cancelEdit() {
+            editingResumeId = null;
+            document.getElementById('formTitle').textContent = '✏️ Build New Resume';
+            document.getElementById('cancelEditBtn').style.display = 'none';
+            document.getElementById('saveBtn').innerHTML = '💾 Save Resume';
+            resetForm();
+        }
+
+        // ── Delete Resume ─────────────────────────────────────────────────────────
+        function openDeleteModal(id) {
+            deleteTargetId = id;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            deleteTargetId = null;
+            document.getElementById('deleteModal').classList.remove('active');
+        }
+
+        async function confirmDelete() {
+            if (!deleteTargetId) return;
+
+            const btn = document.getElementById('confirmDeleteBtn');
+            btn.disabled = true;
+            btn.textContent = 'Deleting...';
+
+            const { error } = await client
+                .from('resumes')
+                .delete()
+                .eq('id', deleteTargetId)
+                .eq('user_id', currentUserId);
+
+            closeDeleteModal();
+            btn.disabled = false;
+            btn.textContent = 'Delete';
+
+            if (error) {
+                showAlert('error', '❌ Failed to delete resume: ' + error.message);
+            } else {
+                showAlert('success', '✅ Resume deleted successfully.');
+                await loadResumes();
+            }
+        }
+
+        // ── Helpers ───────────────────────────────────────────────────────────────
+        function resetForm() {
+            document.getElementById('resumeForm').reset();
+            document.getElementById('experienceContainer').innerHTML = '';
+            document.getElementById('educationContainer').innerHTML = '';
+            expCount = 0;
+            eduCount = 0;
+            addExperience();
+            addEducation();
+            skills = [];
+            renderSkills();
+            document.getElementById('fullName').classList.remove('invalid');
+            document.getElementById('email').classList.remove('invalid');
+        }
+
+        function showAlert(type, message) {
+            hideAlerts();
+            const el = document.getElementById(type === 'error' ? 'alertError' : 'alertSuccess');
+            el.textContent = message;
+            el.style.display = 'block';
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            setTimeout(() => { el.style.display = 'none'; }, 6000);
+        }
+
+        function hideAlerts() {
+            document.getElementById('alertError').style.display = 'none';
+            document.getElementById('alertSuccess').style.display = 'none';
+        }
+
+        function escapeHtml(str) {
+            if (typeof str !== 'string') return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // Close delete modal on overlay click
+        document.getElementById('deleteModal').addEventListener('click', function (e) {
+            if (e.target === this) closeDeleteModal();
+        });
+
+        // ── Bootstrap ─────────────────────────────────────────────────────────────
+        window.addEventListener('load', initPage);
     </script>
 </body>
 </html>
