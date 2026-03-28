@@ -867,7 +867,7 @@
                 email: document.getElementById('email').value.trim(),
                 phone: document.getElementById('phone').value.trim(),
                 location: document.getElementById('location').value.trim(),
-                summary: document.getElementById('summary').value.trim(),
+                professional_summary: document.getElementById('summary').value.trim(),
                 experience,
                 education,
                 skills: [...skills],
@@ -971,7 +971,7 @@
             document.getElementById('email').value = data.email || '';
             document.getElementById('phone').value = data.phone || '';
             document.getElementById('location').value = data.location || '';
-            document.getElementById('summary').value = data.summary || '';
+            document.getElementById('summary').value = data.professional_summary || '';
             document.getElementById('certifications').value = data.certifications || '';
 
             // Populate experience
