@@ -462,22 +462,34 @@
     btn.textContent = 'Deleting permanently...';
 
     try {
-        // Call backend API to delete user
-        const response = await fetch('/api/delete-user', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                userId: currentUser.id
-            })
-        });
+        // Create admin client to delete user
+        const adminClient = supabase.createClient(
+            'https://eduogxolvpqdtvtdiqav.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc'
+        );
 
-        const data = await response.json();
+        const userId = currentUser.id;
 
-        if (!response.ok) {
-            throw new Error(data.error || 'Failed to delete account');
-        }
+        // Delete resumes
+        await adminClient.from('resumes').delete().eq('user_id', userId);
+
+        // Delete profile
+        await adminClient.from('profiles').delete().eq('id', userId);
+
+        // Sign out and redirect
+        await client.auth.signOut();
+        localStorage.clear();
+
+        showToast('✅ Account deleted! Redirecting...', 'success');
+        setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+
+    } catch (error) {
+        console.error('Delete error:', error);
+        showToast(`❌ ${error.message}`, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Delete Account';
+    }
+}
 
         // Sign out locally
         await client.auth.signOut();
