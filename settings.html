@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - CareerCraft AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0e27;
+            color: #f1f5f9;
+            min-height: 100vh;
+        }
+
+        .topnav {
+            background: rgba(10, 14, 39, 0.95);
+            border-bottom: 1px solid rgba(124, 58, 237, 0.2);
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.3rem;
+            font-weight: 700;
+            text-decoration: none;
+            color: #f1f5f9;
+        }
+
+        .nav-btn {
+            background: transparent;
+            color: #cbd5e1;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+            text-decoration: none;
+        }
+
+        .nav-btn:hover {
+            border-color: #7c3aed;
+            color: #7c3aed;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: rgba(20, 24, 41, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            background: rgba(10, 14, 39, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            border-radius: 0.5rem;
+            color: #f1f5f9;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: rgba(124, 58, 237, 0.5);
+            background: rgba(124, 58, 237, 0.05);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        }
+
+        input::placeholder {
+            color: #64748b;
+        }
+
+        input:read-only {
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-danger {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+        }
+
+        .btn-danger:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 0.85rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+            font-size: 0.9rem;
+        }
+
+        .alert.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .alert.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.07);
+            font-size: 0.9rem;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #94a3b8;
+        }
+
+        .info-value {
+            color: #f1f5f9;
+            font-weight: 500;
+        }
+
+        .danger-zone {
+            border-color: rgba(239, 68, 68, 0.25);
+        }
+
+        .danger-zone h2 {
+            color: #ef4444;
+        }
+
+        .danger-desc {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 1.25rem;
+            line-height: 1.5;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            z-index: 1000;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success { background: #dcfce7; color: #166534; }
+        .toast.error { background: #fee2e2; color: #991b1b; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @media (max-width: 640px) {
+            .container { padding: 1rem; }
+            .topnav { flex-direction: column; gap: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="topnav">
+        <a href="dashboard.html" class="logo">🚀 CareerCraft AI</a>
+        <div class="nav-links">
+            <a href="dashboard.html" class="nav-btn">← Dashboard</a>
+            <button class="nav-btn" onclick="logout()">Sign Out</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1 class="page-title">⚙️ Account Settings</h1>
+
+        <!-- Profile Information -->
+        <div class="card">
+            <h2>👤 Profile Information</h2>
+            <div id="profileError" class="alert error"></div>
+            <div id="profileSuccess" class="alert success"></div>
+            <form onsubmit="updateProfile(event)">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="fullName" placeholder="Your full name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="email" placeholder="your@email.com" readonly>
+                </div>
+                <button type="submit" class="btn-primary" id="profileBtn">Save Changes</button>
+            </form>
+        </div>
+
+        <!-- Account Info -->
+        <div class="card">
+            <h2>ℹ️ Account Info</h2>
+            <div class="info-row">
+                <span class="info-label">User ID</span>
+                <span class="info-value" id="userId">—</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Account Created</span>
+                <span class="info-value" id="createdAt">—</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Last Sign In</span>
+                <span class="info-value" id="lastSignIn">—</span>
+            </div>
+        </div>
+
+        <!-- Change Password -->
+        <div class="card">
+            <h2>🔐 Change Password</h2>
+            <div id="pwError" class="alert error"></div>
+            <div id="pwSuccess" class="alert success"></div>
+            <form onsubmit="changePassword(event)">
+                <div class="form-group">
+                    <label>New Password</label>
+                    <input type="password" id="newPassword" placeholder="At least 8 characters" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <label>Confirm New Password</label>
+                    <input type="password" id="confirmPassword" placeholder="Repeat new password" required minlength="8">
+                </div>
+                <button type="submit" class="btn-primary" id="pwBtn">Update Password</button>
+            </form>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="card danger-zone">
+            <h2>⚠️ Danger Zone</h2>
+            <p class="danger-desc">
+                Deleting your account is permanent. All your resumes, settings, and data will be removed and cannot be recovered.
+            </p>
+            <button class="btn-danger" onclick="confirmDeleteAccount()" id="deleteBtn">Delete Account</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
+
+        const { createClient } = supabase;
+        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentUser = null;
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3500);
+        }
+
+        function showAlert(id, message, type) {
+            const el = document.getElementById(id);
+            el.textContent = message;
+            el.className = `alert ${type}`;
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 5000);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '—';
+            return new Date(dateStr).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        async function loadUserInfo() {
+            const { data: { session } } = await client.auth.getSession();
+
+            if (!session) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            currentUser = session.user;
+
+            document.getElementById('fullName').value = currentUser.user_metadata?.full_name || '';
+            document.getElementById('email').value = currentUser.email || '';
+            document.getElementById('userId').textContent = currentUser.id;
+            document.getElementById('createdAt').textContent = formatDate(currentUser.created_at);
+            document.getElementById('lastSignIn').textContent = formatDate(currentUser.last_sign_in_at);
+        }
+
+        async function updateProfile(event) {
+            event.preventDefault();
+
+            const fullName = document.getElementById('fullName').value.trim();
+            const btn = document.getElementById('profileBtn');
+
+            if (!fullName) {
+                showAlert('profileError', '❌ Full name cannot be empty.', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            try {
+                const { error } = await client.auth.updateUser({
+                    data: { full_name: fullName }
+                });
+
+                if (error) throw new Error(error.message);
+
+                localStorage.setItem('userName', fullName);
+                if (currentUser && currentUser.user_metadata) {
+                    currentUser.user_metadata.full_name = fullName;
+                }
+                showAlert('profileSuccess', '✅ Profile updated successfully!', 'success');
+                showToast('✅ Profile saved!');
+            } catch (error) {
+                showAlert('profileError', `❌ ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save Changes';
+            }
+        }
+
+        async function changePassword(event) {
+            event.preventDefault();
+
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const btn = document.getElementById('pwBtn');
+
+            if (newPassword !== confirmPassword) {
+                showAlert('pwError', '❌ Passwords do not match.', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Updating...';
+
+            try {
+                const { error } = await client.auth.updateUser({ password: newPassword });
+
+                if (error) throw new Error(error.message);
+
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+                showAlert('pwSuccess', '✅ Password changed successfully!', 'success');
+                showToast('✅ Password updated!');
+            } catch (error) {
+                showAlert('pwError', `❌ ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Update Password';
+            }
+        }
+
+        async function confirmDeleteAccount() {
+            const confirmed = confirm(
+                'Are you absolutely sure?\n\nThis will permanently delete your account and ALL your resumes. This action CANNOT be undone.'
+            );
+            if (!confirmed) return;
+
+            const btn = document.getElementById('deleteBtn');
+            btn.disabled = true;
+            btn.textContent = 'Deleting...';
+
+            try {
+                // Delete user's resumes first
+                if (currentUser) {
+                    await client.from('resumes').delete().eq('user_id', currentUser.id);
+                }
+
+                // Sign out and clear data
+                await client.auth.signOut();
+                localStorage.clear();
+
+                showToast('Account deleted. Redirecting...', 'success');
+                setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+            } catch (error) {
+                console.error('Delete account error:', error);
+                showToast('❌ Could not delete account. Please contact support.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Delete Account';
+            }
+        }
+
+        async function logout() {
+            await client.auth.signOut();
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userToken');
+            window.location.href = 'index.html';
+        }
+
+        window.addEventListener('load', loadUserInfo);
+    </script>
+</body>
+</html>

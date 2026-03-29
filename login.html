@@ -263,7 +263,7 @@
                 <label>
                     <input type="checkbox" style="width: auto;"> Remember me
                 </label>
-                <a href="#">Forgot password?</a>
+                <a href="reset-password.html">Forgot password?</a>
             </div>
 
             <button type="submit" class="btn-signin" id="submitBtn">Sign In</button>
@@ -289,10 +289,19 @@
         const { createClient } = supabase;
         const client = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // Redirect if already logged in
+        async function checkExistingSession() {
+            const { data: { session } } = await client.auth.getSession();
+            if (session) {
+                window.location.href = 'dashboard.html';
+            }
+        }
+        checkExistingSession();
+
         async function handleLogin(event) {
             event.preventDefault();
 
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const submitBtn = document.getElementById('submitBtn');
             const errorMsg = document.getElementById('errorMsg');
@@ -302,20 +311,22 @@
             errorMsg.style.display = 'none';
             successMsg.style.display = 'none';
 
+            if (!email || !password) {
+                errorMsg.textContent = '❌ Please enter your email and password.';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
             // Disable button
             submitBtn.disabled = true;
             submitBtn.textContent = 'Signing in...';
 
             try {
-                console.log('Attempting login with:', email);
-
-                // ✅ Use Supabase Auth to sign in
+                // ✅ Use Supabase Auth to sign in (session persisted automatically)
                 const { data, error } = await client.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
-
-                console.log('Auth response:', { data, error });
 
                 if (error) {
                     throw new Error(error.message);
@@ -325,35 +336,30 @@
                     throw new Error('No user returned from authentication');
                 }
 
-                // Get user info from users table
-                const { data: userData, error: userError } = await client
-                    .from('users')
-                    .select('full_name')
-                    .eq('email', email)
-                    .single();
+                const name = data.user.user_metadata?.full_name || email.split('@')[0];
 
-                console.log('User data:', { userData, userError });
-
-                // Success!
+                // Success! Keep localStorage in sync for fallback
                 successMsg.textContent = '✅ Signed in successfully! Redirecting...';
                 successMsg.style.display = 'block';
 
-                // Store in localStorage
                 localStorage.setItem('userEmail', email);
-                localStorage.setItem('userName', userData?.full_name || email.split('@')[0]);
+                localStorage.setItem('userName', name);
                 localStorage.setItem('userId', data.user.id);
                 localStorage.setItem('userToken', data.session.access_token);
 
-                console.log('Login successful, redirecting...');
-
-                // Redirect after 1 second
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 1000);
 
             } catch (error) {
                 console.error('Login error:', error);
-                errorMsg.textContent = `❌ Error: ${error.message}`;
+                let message = error.message;
+                if (message.includes('Invalid login credentials')) {
+                    message = 'Invalid email or password. Please try again.';
+                } else if (message.includes('Email not confirmed')) {
+                    message = 'Please verify your email before signing in.';
+                }
+                errorMsg.textContent = `❌ ${message}`;
                 errorMsg.style.display = 'block';
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Sign In';
