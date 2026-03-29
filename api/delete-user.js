@@ -1,50 +1,61 @@
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
+    // Only accept POST
     if (req.method !== 'POST') {
-        res.setHeader('Allow', ['POST']);
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
     const { userId } = req.body;
 
+    // Validate userId
     if (!userId) {
         return res.status(400).json({ error: 'User ID is required' });
     }
 
     try {
+        // Get environment variables
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-        if (!supabaseUrl || !supabaseServiceKey) {
-            throw new Error('Missing Supabase environment variables');
+        // Check if env vars exist
+        if (!supabaseUrl || !serviceRoleKey) {
+            console.error('Missing env vars');
+            return res.status(500).json({ error: 'Server configuration error' });
         }
 
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        // Create Supabase client with service role
+        const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-        console.log(`Deleting user: ${userId}`);
+        // Delete resumes
+        const { error: resumeErr } = await supabase
+            .from('resumes')
+            .delete()
+            .eq('user_id', userId);
 
-        // Step 1: Delete user resumes
-        await supabase.from('resumes').delete().eq('user_id', userId);
+        if (resumeErr) console.warn('Resume delete warning:', resumeErr);
 
-        // Step 2: Delete user profile
-        await supabase.from('profiles').delete().eq('id', userId);
+        // Delete profile
+        const { error: profileErr } = await supabase
+            .from('profiles')
+            .delete()
+            .eq('id', userId);
 
-        // Step 3: Delete auth user permanently
-        const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+        if (profileErr) console.warn('Profile delete warning:', profileErr);
 
-        if (authError) {
-            throw new Error(`Failed to delete auth user: ${authError.message}`);
+        // Delete auth user (PERMANENT)
+        const { error: deleteErr } = await supabase.auth.admin.deleteUser(userId);
+
+        if (deleteErr) {
+            console.error('Auth delete error:', deleteErr);
+            return res.status(400).json({ error: `Auth error: ${deleteErr.message}` });
         }
 
-        console.log(`✅ User ${userId} deleted successfully`);
-        return res.status(200).json({ 
-            success: true,
-            message: 'Account deleted permanently' 
-        });
+        console.log(`✅ User ${userId} deleted`);
+        return res.status(200).json({ success: true, message: 'Account deleted' });
 
-    } catch (error) {
-        console.error('Delete error:', error);
-        return res.status(500).json({ error: error.message });
+    } catch (err) {
+        console.error('Error:', err.message);
+        return res.status(500).json({ error: err.message });
     }
 }
