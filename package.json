@@ -3,4 +3,6 @@
   "version": "1.0.0",
   "engines": { "node": "20.x" },
   "dependencies": {
-    "@supabase/sup
+    "@supabase/supabase-js": "^2.49.1"
+  }
+}
