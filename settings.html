@@ -452,34 +452,47 @@
         }
 
         async function confirmDeleteAccount() {
-            const confirmed = confirm(
-                'Are you absolutely sure?\n\nThis will permanently delete your account and ALL your resumes. This action CANNOT be undone.'
-            );
-            if (!confirmed) return;
+    const confirmed = confirm(
+        'Are you absolutely sure?\n\nThis will permanently delete your account and ALL your resumes. This action CANNOT be undone.'
+    );
+    if (!confirmed) return;
 
-            const btn = document.getElementById('deleteBtn');
-            btn.disabled = true;
-            btn.textContent = 'Deleting...';
+    const btn = document.getElementById('deleteBtn');
+    btn.disabled = true;
+    btn.textContent = 'Deleting permanently...';
 
-            try {
-                // Delete user's resumes first
-                if (currentUser) {
-                    await client.from('resumes').delete().eq('user_id', currentUser.id);
-                }
+    try {
+        // Call backend API to delete user
+        const response = await fetch('/api/delete-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId: currentUser.id
+            })
+        });
 
-                // Sign out and clear data
-                await client.auth.signOut();
-                localStorage.clear();
+        const data = await response.json();
 
-                showToast('Account deleted. Redirecting...', 'success');
-                setTimeout(() => { window.location.href = 'index.html'; }, 1500);
-            } catch (error) {
-                console.error('Delete account error:', error);
-                showToast('❌ Could not delete account. Please contact support.', 'error');
-                btn.disabled = false;
-                btn.textContent = 'Delete Account';
-            }
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to delete account');
         }
+
+        // Sign out locally
+        await client.auth.signOut();
+        localStorage.clear();
+
+        showToast('✅ Account permanently deleted!', 'success');
+        setTimeout(() => { window.location.href = 'index.html'; }, 2000);
+
+    } catch (error) {
+        console.error('Delete account error:', error);
+        showToast(`❌ ${error.message}`, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Delete Account';
+    }
+}
 
         async function logout() {
             await client.auth.signOut();
