@@ -838,49 +838,20 @@
                         </div>
                     </div>
 
-                    <!-- Summary -->
-                    <div class="form-section-heading">📋 Professional Summary <button type="button" class="btn-ai" onclick="getAISuggestions('summary')">💡 AI Suggest</button></div>
-                    <div class="form-group">
-                        <label>Summary</label>
-                        <textarea id="summary" placeholder="A brief overview of your background, skills, and career goals..." rows="4"></textarea>
-                    </div>
+                   <!-- Summary -->
+            <div class="form-section-heading">📋 Step 3: Professional Summary <button type="button" class="btn-ai" onclick="getAISuggestions('summary')">💡 AI Suggest</button></div>
 
-                    <!-- Work Experience -->
-                    <div class="form-section-heading">💼 Work Experience <button type="button" class="btn-ai" onclick="getAISuggestions('experience')">💡 AI Suggest</button></div>
-                    <div id="experienceContainer"></div>
-                    <button type="button" class="btn-add-entry" onclick="addExperience()">+ Add Work Experience</button>
+            <!-- Work Experience -->
+            <div class="form-section-heading">💼 Step 4: Work Experience</div>
 
-                    <!-- Education -->
-                    <div class="form-section-heading">🎓 Education</div>
-                    <div id="educationContainer"></div>
-                    <button type="button" class="btn-add-entry" onclick="addEducation()">+ Add Education</button>
+            <!-- Education -->
+            <div class="form-section-heading">🎓 Step 5: Education</div>
 
-                    <!-- Skills -->
-                    <div class="form-section-heading">🛠️ Skills <button type="button" class="btn-ai" onclick="getAISuggestions('skills')">💡 AI Suggest</button></div>
-                    <div class="form-group">
-                        <label>Add Skills (press Enter or comma to add)</label>
-                        <div class="skills-container" id="skillsContainer" onclick="document.getElementById('skillInput').focus()">
-                            <input type="text" id="skillInput" class="skill-input" placeholder="e.g. JavaScript, Python, Project Management...">
-                        </div>
-                    </div>
+            <!-- Skills -->
+            <div class="form-section-heading">🛠️ Step 6: Skills <button type="button" class="btn-ai" onclick="getAISuggestions('skills')">💡 AI Suggest</button></div>
+            <!-- Certifications -->
+            <div class="form-section-heading">🏅 Step 7: Certifications</div>
 
-                    <!-- Certifications -->
-                    <div class="form-section-heading">🏅 Certifications</div>
-                    <div class="form-group">
-                        <label>Certifications</label>
-                        <textarea id="certifications" placeholder="e.g. AWS Certified Solutions Architect (2023), PMP Certification (2022)..." rows="3"></textarea>
-                    </div>
-
-                    <!-- Template Selector -->
-                    <div class="form-section-heading">🎨 Template</div>
-                    <div class="form-group">
-                        <label>Choose Template</label>
-                        <select id="templateName">
-                            <option value="modern">Modern (Default)</option>
-                            <option value="classic">Classic</option>
-                            <option value="creative">Creative</option>
-                        </select>
-                    </div>
 
                     <!-- Save Bar -->
                     <div class="save-bar">
@@ -1353,6 +1324,22 @@
             // Scroll to form
             document.getElementById('resumeForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+        function selectTemplate(templateName) {
+    // Update hidden input
+    document.getElementById('templateName').value = templateName;
+    
+    // Update UI
+    document.querySelectorAll('.template-preview').forEach(preview => {
+        preview.classList.remove('selected');
+    });
+    
+    // Find and highlight selected template
+    const templateClass = templateName === 'modern' ? 'modern' : 
+                         templateName === 'classic' ? 'template-classic' : 'creative';
+    document.querySelector(`.template-preview.${templateClass}`).classList.add('selected');
+    
+    console.log('✅ Template selected:', templateName);
+}
 
         function cancelEdit() {
             editingResumeId = null;
