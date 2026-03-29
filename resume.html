@@ -1326,34 +1326,55 @@
             return;
         }
 
+        console.log('📥 Fetched resume data:', data.full_name);
+        
         const template = data.template_name || 'modern';
         const html = generateResumeHTML(data, template);
 
-        const wrapper = document.createElement('div');
-        wrapper.innerHTML = html;
-        wrapper.style.position = 'fixed';
-        wrapper.style.top = '0';
-        wrapper.style.left = '0';
-        wrapper.style.width = '100%';
-        wrapper.style.height = '100%';
-        wrapper.style.visibility = 'hidden';
-        wrapper.style.zIndex = '-9999';
-        wrapper.style.backgroundColor = 'white';
-        document.body.appendChild(wrapper);
+        console.log('📄 Generated HTML length:', html.length);
+
+        // Create a dedicated container for PDF generation
+        const pdfContainer = document.createElement('div');
+        pdfContainer.id = 'pdf-container-' + Date.now();
+        pdfContainer.innerHTML = html;
+        pdfContainer.style.position = 'fixed';
+        pdfContainer.style.top = '0';
+        pdfContainer.style.left = '0';
+        pdfContainer.style.width = '8.5in';
+        pdfContainer.style.height = '11in';
+        pdfContainer.style.visibility = 'hidden';
+        pdfContainer.style.zIndex = '-9999';
+        pdfContainer.style.overflow = 'hidden';
+        document.body.appendChild(pdfContainer);
+
+        console.log('✅ Container added to DOM');
+
+        // Wait for content to render
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const opt = {
-            margin: [0.45, 0.45, 0.45, 0.45],
+            margin: [0.3, 0.3, 0.3, 0.3],
             filename: `${(data.full_name || 'resume').replace(/\s+/g, '_')}_resume.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false, allowTaint: true },
+            html2canvas: { 
+                scale: 2, 
+                useCORS: true, 
+                logging: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff'
+            },
             jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         };
 
-        await html2pdf().set(opt).from(wrapper).save();
-        document.body.removeChild(wrapper);
-        showAlert('success', '✅ Resume downloaded as PDF!');
+        console.log('🎨 Starting PDF generation...');
+        await html2pdf().set(opt).from(pdfContainer).save();
+        console.log('✅ PDF generated successfully');
+        
+        document.body.removeChild(pdfContainer);
+        showAlert('success', '✅ Resume PDF downloaded successfully!');
     } catch (err) {
-        console.error('PDF error:', err);
+        console.error('❌ PDF generation error:', err);
         showAlert('error', '❌ Failed to generate PDF: ' + err.message);
     }
 }
