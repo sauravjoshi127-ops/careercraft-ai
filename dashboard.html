@@ -40,7 +40,7 @@
         .user-menu {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1rem;
         }
 
         .user-avatar {
@@ -53,9 +53,10 @@
             justify-content: center;
             font-weight: 700;
             font-size: 1.1rem;
+            cursor: pointer;
         }
 
-        .logout-btn {
+        .nav-btn {
             background: transparent;
             color: #cbd5e1;
             border: 1px solid rgba(148, 163, 184, 0.2);
@@ -67,7 +68,7 @@
             text-decoration: none;
         }
 
-        .logout-btn:hover {
+        .nav-btn:hover {
             border-color: #7c3aed;
             color: #7c3aed;
         }
@@ -83,7 +84,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
             background: rgba(20, 24, 41, 0.6);
             border: 1px solid rgba(148, 163, 184, 0.1);
             border-radius: 1rem;
@@ -100,14 +101,9 @@
             margin-bottom: 1rem;
         }
 
-        .plan-badge {
-            display: inline-block;
-            background: #fef9c3;
-            color: #854d0e;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
+        .welcome-email {
             font-size: 0.85rem;
-            font-weight: 600;
+            color: #94a3b8;
         }
 
         .upgrade-btn {
@@ -119,6 +115,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+            white-space: nowrap;
         }
 
         .upgrade-btn:hover {
@@ -131,7 +128,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 2rem;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
         }
 
         .tool-card {
@@ -140,13 +137,12 @@
             border-radius: 1rem;
             padding: 2rem;
             transition: all 0.3s;
-            cursor: pointer;
         }
 
         .tool-card:hover {
             border-color: rgba(124, 58, 237, 0.5);
             background: rgba(20, 24, 41, 0.8);
-            transform: translateY(-8px);
+            transform: translateY(-4px);
         }
 
         .tool-icon {
@@ -184,52 +180,157 @@
             background: rgba(124, 58, 237, 0.2);
         }
 
-        /* Recent Activity */
-        .activity-section {
+        /* Resumes Section */
+        .section {
             background: rgba(20, 24, 41, 0.6);
             border: 1px solid rgba(148, 163, 184, 0.1);
             border-radius: 1rem;
             padding: 2rem;
+            margin-bottom: 2rem;
         }
 
-        .activity-section h2 {
-            font-size: 1.3rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .activity-item {
+        .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem 0;
-            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            margin-bottom: 1.5rem;
         }
 
-        .activity-item:last-child {
-            border-bottom: none;
+        .section-header h2 {
+            font-size: 1.3rem;
         }
 
-        .activity-info {
-            flex: 1;
-        }
-
-        .activity-title {
+        .btn-new {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.5rem;
             font-weight: 600;
-            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
         }
 
-        .activity-time {
-            font-size: 0.85rem;
+        .btn-new:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+        }
+
+        .resume-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s;
+        }
+
+        .resume-item:hover {
+            border-color: rgba(124, 58, 237, 0.3);
+            background: rgba(124, 58, 237, 0.05);
+        }
+
+        .resume-info h4 {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .resume-meta {
+            font-size: 0.8rem;
             color: #94a3b8;
         }
 
-        .activity-badge {
+        .resume-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .resume-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .btn-action {
+            background: transparent;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            color: #cbd5e1;
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.4rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .btn-action:hover {
+            border-color: #7c3aed;
+            color: #7c3aed;
+        }
+
+        .btn-action.delete {
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .btn-action.delete:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
+        }
+
+        .empty-state .empty-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .empty-state p {
+            margin-bottom: 1rem;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            z-index: 1000;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success {
             background: #dcfce7;
             color: #166534;
-            padding: 0.3rem 0.8rem;
-            border-radius: 0.3rem;
-            font-size: 0.8rem;
-            font-weight: 600;
+        }
+
+        .toast.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
 
         @media (max-width: 768px) {
@@ -250,6 +351,16 @@
             .container {
                 padding: 1rem;
             }
+
+            .resume-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .resume-stats {
+                flex-wrap: wrap;
+            }
         }
     </style>
 </head>
@@ -258,8 +369,9 @@
     <div class="topnav">
         <div class="logo">🚀 CareerCraft AI</div>
         <div class="user-menu">
-            <div class="user-avatar" id="avatarInitial">A</div>
-            <button class="logout-btn" onclick="logout()">Sign Out</button>
+            <div class="user-avatar" id="avatarInitial" title="Account">A</div>
+            <a href="settings.html" class="nav-btn">⚙️ Settings</a>
+            <button class="nav-btn" onclick="logout()">Sign Out</button>
         </div>
     </div>
 
@@ -269,10 +381,21 @@
         <div class="welcome">
             <div>
                 <h1 id="welcomeName">Welcome back! 👋</h1>
+                <p id="welcomeEmail" class="welcome-email"></p>
                 <p>What do you want to work on today?</p>
-                <span class="plan-badge">Free plan — 3 uses left</span>
             </div>
             <button class="upgrade-btn">Upgrade to Pro ₹299/mo</button>
+        </div>
+
+        <!-- My Resumes -->
+        <div class="section">
+            <div class="section-header">
+                <h2>📄 My Resumes</h2>
+                <a href="resume.html" class="btn-new">+ New Resume</a>
+            </div>
+            <div id="resumeList">
+                <div class="loading-state">⏳ Loading your resumes...</div>
+            </div>
         </div>
 
         <!-- Tools Grid -->
@@ -288,76 +411,204 @@
                 <div class="tool-icon">📨</div>
                 <h3>Cover Letter AI</h3>
                 <p>Generate tailored cover letters for any job posting.</p>
-                <a href="#">Start Now</a>
+                <a href="#">Coming Soon</a>
             </div>
 
             <div class="tool-card">
                 <div class="tool-icon">✉️</div>
                 <h3>Cold Email Writer</h3>
                 <p>Write outreach emails that actually get replies.</p>
-                <a href="#">Start Now</a>
+                <a href="#">Coming Soon</a>
             </div>
 
             <div class="tool-card">
                 <div class="tool-icon">🎤</div>
                 <h3>Interview Coach</h3>
                 <p>Practice interviews with AI feedback and scoring.</p>
-                <a href="#">Start Now</a>
-            </div>
-        </div>
-
-        <!-- Recent Activity -->
-        <div class="activity-section">
-            <h2>Recent Activity</h2>
-            <div id="activityList">
-                <div class="activity-item">
-                    <div class="activity-info">
-                        <div class="activity-title">Welcome to CareerCraft!</div>
-                        <div class="activity-time">Just now</div>
-                    </div>
-                    <span class="activity-badge">Welcome</span>
-                </div>
+                <a href="#">Coming Soon</a>
             </div>
         </div>
     </div>
 
+    <div id="toast" class="toast"></div>
+
     <script>
-        // Initialize Supabase with YOUR keys
         const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
 
         const { createClient } = supabase;
         const client = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Check if user is logged in
-        function checkAuth() {
-            const userEmail = localStorage.getItem('userEmail');
-            const userName = localStorage.getItem('userName');
+        let currentUserId = null;
 
-            if (!userEmail || !userName) {
-                // Not logged in, redirect to login
-                window.location.href = 'login.html';
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Unknown date';
+            return new Date(dateStr).toLocaleDateString('en-US', {
+                year: 'numeric', month: 'short', day: 'numeric'
+            });
+        }
+
+        async function loadResumes() {
+            const listEl = document.getElementById('resumeList');
+
+            const { data, error } = await client
+                .from('resumes')
+                .select('*')
+                .eq('user_id', currentUserId)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Could not load resumes. Please refresh the page.</p></div>';
                 return;
             }
 
-            // Welcome the user
-            const firstLetter = userName.charAt(0).toUpperCase();
-            document.getElementById('avatarInitial').textContent = firstLetter;
-            document.getElementById('welcomeName').textContent = `Welcome back, ${userName}! 👋`;
+            if (!data || data.length === 0) {
+                listEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📄</div>
+                        <p>No resumes yet. Create your first one!</p>
+                        <a href="resume.html" class="btn-new">+ Create Resume</a>
+                    </div>`;
+                return;
+            }
+
+            // Fetch share info for view counts
+            const resumeIds = data.map(r => r.id);
+            const { data: sharesData } = await client
+                .from('resume_shares')
+                .select('resume_id, share_token')
+                .in('resume_id', resumeIds)
+                .eq('is_active', true);
+
+            const shareMap = {};
+            (sharesData || []).forEach(s => { shareMap[s.resume_id] = s; });
+
+            listEl.innerHTML = data.map(resume => {
+                const id = isValidUUID(resume.id) ? resume.id : '';
+                const name = resume.full_name
+                    ? `${resume.full_name}'s Resume`
+                    : (resume.title || 'Untitled Resume');
+                const createdAt = formatDate(resume.created_at);
+                const template = resume.template_name || 'modern';
+                const hasShare = shareMap[resume.id];
+
+                return `
+                    <div class="resume-item" id="resume-${id}">
+                        <div class="resume-info">
+                            <h4>${escapeHtml(name)}</h4>
+                            <div class="resume-meta">
+                                Created ${createdAt} &bull; Template: ${template}
+                            </div>
+                            <div class="resume-stats">
+                                ${hasShare ? `<span>🔗 Shared</span>` : '<span>🔒 Private</span>'}
+                            </div>
+                        </div>
+                        <div class="resume-actions">
+                            <a href="resume.html?edit=${id}" class="btn-action">✏️ Edit</a>
+                            <button class="btn-action delete" onclick="deleteResume('${id}')">🗑️ Delete</button>
+                        </div>
+                    </div>`;
+            }).join('');
         }
 
-        function logout() {
-            // Clear localStorage
+        function isValidUUID(str) {
+            return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+        }
+
+        async function deleteResume(resumeId) {
+            if (!isValidUUID(resumeId)) return;
+            if (!confirm('Are you sure you want to delete this resume? This cannot be undone.')) return;
+
+            const { error } = await client
+                .from('resumes')
+                .delete()
+                .eq('id', resumeId)
+                .eq('user_id', currentUserId);
+
+            if (error) {
+                showToast('❌ Could not delete resume. Please try again.', 'error');
+                return;
+            }
+
+            const el = document.getElementById(`resume-${resumeId}`);
+            if (el) el.remove();
+
+            const listEl = document.getElementById('resumeList');
+            if (!listEl.querySelector('.resume-item')) {
+                listEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📄</div>
+                        <p>No resumes yet. Create your first one!</p>
+                        <a href="resume.html" class="btn-new">+ Create Resume</a>
+                    </div>`;
+            }
+
+            showToast('✅ Resume deleted successfully.');
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
+        async function logout() {
+            await client.auth.signOut();
             localStorage.removeItem('userEmail');
             localStorage.removeItem('userName');
             localStorage.removeItem('userId');
-
-            // Redirect to home
+            localStorage.removeItem('userToken');
             window.location.href = 'index.html';
         }
 
-        // Initialize on page load
-        window.addEventListener('load', checkAuth);
+        async function initPage() {
+            // Use Supabase session for persistence; fall back to localStorage
+            const { data: { session } } = await client.auth.getSession();
+
+            if (session && session.user) {
+                currentUserId = session.user.id;
+                const name = session.user.user_metadata?.full_name
+                    || localStorage.getItem('userName')
+                    || session.user.email.split('@')[0];
+                const email = session.user.email;
+
+                document.getElementById('avatarInitial').textContent = name.charAt(0).toUpperCase();
+                document.getElementById('welcomeName').textContent = `Welcome back, ${name}! 👋`;
+                document.getElementById('welcomeEmail').textContent = email;
+
+                // Keep localStorage in sync
+                localStorage.setItem('userEmail', email);
+                localStorage.setItem('userName', name);
+                localStorage.setItem('userId', currentUserId);
+            } else {
+                // Fall back to localStorage
+                const userId = localStorage.getItem('userId');
+                const userName = localStorage.getItem('userName');
+                const userEmail = localStorage.getItem('userEmail');
+
+                if (!userId) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                currentUserId = userId;
+                document.getElementById('avatarInitial').textContent = (userName || 'A').charAt(0).toUpperCase();
+                document.getElementById('welcomeName').textContent = `Welcome back, ${userName || 'User'}! 👋`;
+                document.getElementById('welcomeEmail').textContent = userEmail || '';
+            }
+
+            await loadResumes();
+        }
+
+        window.addEventListener('load', initPage);
     </script>
 </body>
 </html>
