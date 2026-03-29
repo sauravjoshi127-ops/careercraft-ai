@@ -6,6 +6,8 @@
     <title>Resume Builder - CareerCraft AI</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -1313,7 +1315,7 @@
         });
 
         // ── PDF Export ────────────────────────────────────────────────────────────
-        async function downloadPDF(resumeId) {
+async function downloadPDF(resumeId) {
     try {
         const { data, error } = await client
             .from('resumes')
@@ -1326,55 +1328,91 @@
             return;
         }
 
-        console.log('📥 Fetched resume data:', data.full_name);
-        
+        console.log('📥 Resume Data:', data);
+
+        // Generate HTML
         const template = data.template_name || 'modern';
         const html = generateResumeHTML(data, template);
+        
+        console.log('📄 Generated HTML:', html.substring(0, 200));
 
-        console.log('📄 Generated HTML length:', html.length);
-
-        // Create a dedicated container for PDF generation
-        const pdfContainer = document.createElement('div');
-        pdfContainer.id = 'pdf-container-' + Date.now();
-        pdfContainer.innerHTML = html;
-        pdfContainer.style.position = 'fixed';
-        pdfContainer.style.top = '0';
-        pdfContainer.style.left = '0';
-        pdfContainer.style.width = '8.5in';
-        pdfContainer.style.height = '11in';
-        pdfContainer.style.visibility = 'hidden';
-        pdfContainer.style.zIndex = '-9999';
-        pdfContainer.style.overflow = 'hidden';
-        document.body.appendChild(pdfContainer);
+        // Create container and add to DOM
+        const container = document.createElement('div');
+        container.id = 'pdf-render-' + Date.now();
+        container.innerHTML = html;
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.top = '0';
+        container.style.width = '800px';
+        container.style.background = 'white';
+        document.body.appendChild(container);
 
         console.log('✅ Container added to DOM');
-
-        // Wait for content to render
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        const opt = {
-            margin: [0.3, 0.3, 0.3, 0.3],
-            filename: `${(data.full_name || 'resume').replace(/\s+/g, '_')}_resume.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { 
-                scale: 2, 
-                useCORS: true, 
-                logging: true,
-                allowTaint: true,
-                backgroundColor: '#ffffff'
-            },
-            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        };
-
-        console.log('🎨 Starting PDF generation...');
-        await html2pdf().set(opt).from(pdfContainer).save();
-        console.log('✅ PDF generated successfully');
         
-        document.body.removeChild(pdfContainer);
+        // Wait for rendering
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Get the actual content div
+        const content = container.querySelector('.container') || container;
+        
+        console.log('🎨 Starting html2canvas...');
+
+        // Convert to canvas
+        const canvas = await html2canvas(content, {
+            scale: 2,
+            useCORS: true,
+            logging: true,
+            backgroundColor: '#ffffff',
+            allowTaint: true
+        });
+
+        console.log('✅ Canvas created, size:', canvas.width, 'x', canvas.height);
+
+        // Create PDF
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgWidth = 210; // A4 width in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        let yPosition = 0;
+        let heightLeft = imgHeight;
+
+        // Handle multi-page PDFs
+        while (heightLeft > 0) {
+            const pageHeight = 297; // A4 height in mm
+            let position = 0;
+
+            if (heightLeft >= pageHeight) {
+                position = heightLeft - pageHeight;
+            }
+
+            pdf.addImage(imgData, 'JPEG', 0, yPosition, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+            yPosition = position;
+
+            if (heightLeft > 0) {
+                pdf.addPage();
+            }
+        }
+
+        // Save PDF
+        const filename = (data.full_name || 'resume').replace(/\s+/g, '_') + '_resume.pdf';
+        pdf.save(filename);
+
+        console.log('✅ PDF saved as:', filename);
+
+        // Clean up
+        document.body.removeChild(container);
         showAlert('success', '✅ Resume PDF downloaded successfully!');
+
     } catch (err) {
-        console.error('❌ PDF generation error:', err);
+        console.error('❌ PDF Error:', err);
         showAlert('error', '❌ Failed to generate PDF: ' + err.message);
     }
 }
