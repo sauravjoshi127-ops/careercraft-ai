@@ -1,3 +1,34 @@
+function parseGeminiResponse(text) {
+  // Remove code fences if present
+  text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+
+  // Extract the JSON object
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    text = jsonMatch[0];
+  }
+
+  // If JSON is missing the closing brace, add it (best-effort recovery; may yield partial data)
+  if (text.startsWith('{') && !text.endsWith('}')) {
+    console.warn('Gemini response appears truncated; appending closing brace for recovery.');
+    text = text + '}';
+  }
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error('JSON parse error:', e.message, '\nText snippet:', text.substring(0, 500));
+    // Fallback: try to extract just the letter field (best-effort; complex escapes may not be handled)
+    const letterMatch = text.match(/"letter"\s*:\s*"([\s\S]*?)"/);
+    return {
+      letter: letterMatch ? letterMatch[1].replace(/\\n/g, '\n') : text,
+      variants: [],
+      keywords_used: [],
+      ats_score: null,
+      relevance_score: null
+    };
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -16,7 +47,8 @@ You are a professional career writer. Generate:
 3. Extract 6-12 important keywords from the job description
 4. Provide ATS score (0-100) and relevance score (0-100)
 
-Return ONLY valid JSON:
+Return ONLY valid JSON. No markdown. No extra text.
+
 {
  "letter": "...",
  "variants": ["...","...","..."],
@@ -39,21 +71,38 @@ Closing: ${closing}
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 900 }
+        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
       })
     });
 
+    if (!r.ok) {
+      const errText = await r.text();
+      console.error('Gemini API HTTP error:', r.status, errText);
+      return res.status(502).json({ error: `AI service error: ${r.status}. Please try again.` });
+    }
+
     const result = await r.json();
-    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    // Try to extract JSON
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('AI did not return JSON.');
+    if (!result?.candidates?.[0]?.content?.parts?.[0]) {
+      console.error('Unexpected Gemini response structure:', JSON.stringify(result));
+      return res.status(502).json({ error: 'Unexpected response from AI service. Please try again.' });
+    }
 
-    const data = JSON.parse(jsonMatch[0]);
+    const rawText = result.candidates[0].content.parts[0].text || '';
+    console.log('Gemini raw response snippet:', rawText.substring(0, 200));
+
+    const data = parseGeminiResponse(rawText);
+
+    // Ensure all required fields are present and correctly typed
+    data.letter = typeof data.letter === 'string' ? data.letter : '';
+    data.variants = Array.isArray(data.variants) ? data.variants : [];
+    data.keywords_used = Array.isArray(data.keywords_used) ? data.keywords_used : [];
+    data.ats_score = typeof data.ats_score === 'number' ? data.ats_score : null;
+    data.relevance_score = typeof data.relevance_score === 'number' ? data.relevance_score : null;
+
     return res.status(200).json(data);
-
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error('Cover letter generation error:', err);
+    return res.status(500).json({ error: 'Failed to generate cover letter. Please try again.' });
   }
 }

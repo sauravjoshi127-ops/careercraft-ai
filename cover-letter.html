@@ -159,11 +159,11 @@ async function generateCoverLetter(regen=false){
     if(!res.ok) throw new Error(data.error||'Failed');
 
     lastGenerated = data;
-    letterOutput.textContent = data.letter;
-    variantsBox.textContent = data.variants.join('\n\n---\n\n');
-    atsScore.textContent = `ATS Score: ${data.ats_score}`;
-    relScore.textContent = `Relevance: ${data.relevance_score}`;
-    keywordsBox.innerHTML = data.keywords_used.map(k=>`<span class="tag">${k}</span>`).join('');
+    letterOutput.textContent = data.letter || '';
+    variantsBox.textContent = (data.variants || []).join('\n\n---\n\n');
+    atsScore.textContent = `ATS Score: ${data.ats_score ?? '—'}`;
+    relScore.textContent = `Relevance: ${data.relevance_score ?? '—'}`;
+    keywordsBox.innerHTML = (data.keywords_used || []).map(k=>`<span class="tag">${k}</span>`).join('');
   } catch(err){
     showAlert('error', err.message);
   }
