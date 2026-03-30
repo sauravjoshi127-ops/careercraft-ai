@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Cover Letter AI - CareerCraft</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body {font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0e27;color:#f1f5f9;margin:0;}
+    .topnav{background:rgba(10,14,39,.95);padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(124,58,237,.2);}
+    .btn{padding:.6rem 1.2rem;border-radius:.5rem;border:none;font-weight:600;cursor:pointer}
+    .btn-primary{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;}
+    .btn-secondary{background:transparent;border:1px solid rgba(148,163,184,.2);color:#cbd5e1;}
+    .container{max-width:1000px;margin:0 auto;padding:2rem;}
+    .card{background:rgba(20,24,41,.6);border:1px solid rgba(148,163,184,.1);border-radius:1rem;padding:2rem;margin-bottom:2rem;}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+    input,textarea,select{width:100%;padding:.8rem;background:rgba(10,14,39,.8);border:1px solid rgba(148,163,184,.15);border-radius:.5rem;color:#f1f5f9;margin-top:.4rem;}
+    textarea{min-height:100px;}
+    .alert{display:none;padding:.75rem 1rem;border-radius:.5rem;margin-bottom:1rem;}
+    .alert-error{background:#fee2e2;color:#991b1b;}
+    .alert-success{background:#dcfce7;color:#166534;}
+    .output-box{background:rgba(10,14,39,.8);border:1px solid rgba(148,163,184,.2);padding:1rem;border-radius:.5rem;white-space:pre-wrap;line-height:1.6;}
+    .tools{display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap;}
+    .score-box{display:flex;gap:1rem;margin-top:1rem;}
+    .score{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.4);padding:.5rem 1rem;border-radius:.5rem;}
+    .tag{display:inline-block;padding:.25rem .6rem;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);border-radius:9999px;margin:.2rem;font-size:.8rem;}
+    .history-card{border:1px solid rgba(148,163,184,.15);border-radius:.75rem;padding:1rem;margin-bottom:.75rem;}
+  </style>
+</head>
+<body>
+  <div class="topnav">
+    <div class="logo">📨 Cover Letter AI</div>
+    <a href="dashboard.html" class="btn btn-secondary">← Dashboard</a>
+  </div>
+
+  <div class="container">
+    <div id="alertError" class="alert alert-error"></div>
+    <div id="alertSuccess" class="alert alert-success"></div>
+
+    <div class="card">
+      <h2>Create Cover Letter</h2>
+
+      <div class="form-row">
+        <div>
+          <label>Job Title</label>
+          <input id="jobTitle" placeholder="e.g. Frontend Developer" />
+        </div>
+        <div>
+          <label>Company Name</label>
+          <input id="companyName" placeholder="e.g. Google" />
+        </div>
+      </div>
+
+      <label>Job Description</label>
+      <textarea id="jobDescription" placeholder="Paste job posting here..."></textarea>
+
+      <label>Your Key Highlights</label>
+      <textarea id="highlights" placeholder="2–4 bullets about your skills/achievements"></textarea>
+
+      <div class="form-row">
+        <div>
+          <label>Tone</label>
+          <select id="tone">
+            <option>Professional</option>
+            <option>Friendly</option>
+            <option>Enthusiastic</option>
+          </select>
+        </div>
+        <div>
+          <label>Length</label>
+          <select id="length">
+            <option>Short</option>
+            <option selected>Medium</option>
+            <option>Long</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Custom Opening (optional)</label>
+      <textarea id="opening" placeholder="Dear Hiring Manager..."></textarea>
+
+      <label>Custom Closing (optional)</label>
+      <textarea id="closing" placeholder="Thank you for your time..."></textarea>
+
+      <div class="tools">
+        <button class="btn btn-primary" onclick="generateCoverLetter()">✨ Generate</button>
+        <button class="btn btn-secondary" onclick="generateCoverLetter(true)">🔁 Regenerate</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Generated Cover Letter</h2>
+      <div id="letterOutput" class="output-box">Your letter will appear here...</div>
+
+      <div class="tools">
+        <button class="btn btn-primary" onclick="copyLetter()">📋 Copy</button>
+        <button class="btn btn-primary" onclick="downloadPDF()">⬇ Download PDF</button>
+        <button class="btn btn-secondary" onclick="saveCoverLetter()">💾 Save</button>
+      </div>
+
+      <div class="score-box">
+        <div class="score" id="atsScore">ATS Score: —</div>
+        <div class="score" id="relScore">Relevance: —</div>
+      </div>
+
+      <div id="keywordsBox"></div>
+
+      <h3>Variants (3)</h3>
+      <div id="variantsBox" class="output-box"></div>
+    </div>
+
+    <div class="card">
+      <h2>Saved Cover Letters</h2>
+      <div id="historyList">Loading...</div>
+    </div>
+  </div>
+
+<script>
+const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
+const SUPABASE_KEY = 'YOUR_ANON_KEY';
+const { createClient } = supabase;
+const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+let currentUser = null;
+let lastGenerated = null;
+
+async function init() {
+  const { data: { session } } = await client.auth.getSession();
+  if (!session) return window.location.href = 'login.html';
+  currentUser = session.user;
+  await loadHistory();
+}
+
+function showAlert(type, msg) {
+  const el = document.getElementById(type === 'error' ? 'alertError' : 'alertSuccess');
+  el.textContent = msg; el.style.display='block';
+  setTimeout(()=>el.style.display='none', 5000);
+}
+
+async function generateCoverLetter(regen=false){
+  try {
+    const payload = {
+      jobTitle: jobTitle.value,
+      companyName: companyName.value,
+      jobDescription: jobDescription.value,
+      highlights: highlights.value,
+      tone: tone.value,
+      length: length.value,
+      opening: opening.value,
+      closing: closing.value
+    };
+
+    const res = await fetch('/api/cover-letter', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error||'Failed');
+
+    lastGenerated = data;
+    letterOutput.textContent = data.letter;
+    variantsBox.textContent = data.variants.join('\n\n---\n\n');
+    atsScore.textContent = `ATS Score: ${data.ats_score}`;
+    relScore.textContent = `Relevance: ${data.relevance_score}`;
+    keywordsBox.innerHTML = data.keywords_used.map(k=>`<span class="tag">${k}</span>`).join('');
+  } catch(err){
+    showAlert('error', err.message);
+  }
+}
+
+async function saveCoverLetter(){
+  if(!lastGenerated) return showAlert('error','Generate first.');
+  const { error } = await client.from('cover_letters').insert([{
+    user_id: currentUser.id,
+    job_title: jobTitle.value,
+    company_name: companyName.value,
+    job_description: jobDescription.value,
+    tone: tone.value,
+    length: length.value,
+    opening: opening.value,
+    closing: closing.value,
+    highlights: highlights.value,
+    generated_letter: lastGenerated.letter,
+    variants: lastGenerated.variants,
+    keywords_used: lastGenerated.keywords_used,
+    ats_score: lastGenerated.ats_score,
+    relevance_score: lastGenerated.relevance_score
+  }]);
+  if(error) return showAlert('error', error.message);
+  showAlert('success','✅ Saved');
+  loadHistory();
+}
+
+async function loadHistory(){
+  const { data, error } = await client
+    .from('cover_letters')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at',{ascending:false});
+  if(error) return historyList.textContent='Failed to load';
+  if(!data.length) return historyList.textContent='No saved letters yet.';
+  historyList.innerHTML = data.map(c=>`
+    <div class="history-card">
+      <strong>${c.job_title||'Untitled'} @ ${c.company_name||''}</strong>
+      <div style="font-size:.85rem;color:#94a3b8;">${new Date(c.created_at).toLocaleString()}</div>
+      <button class="btn btn-secondary" onclick="previewSaved('${c.id}')">View</button>
+    </div>
+  `).join('');
+}
+
+async function previewSaved(id){
+  const { data } = await client.from('cover_letters').select('*').eq('id',id).single();
+  if(!data) return;
+  letterOutput.textContent = data.generated_letter;
+  variantsBox.textContent = (data.variants||[]).join('\n\n---\n\n');
+  atsScore.textContent = `ATS Score: ${data.ats_score||'—'}`;
+  relScore.textContent = `Relevance: ${data.relevance_score||'—'}`;
+  keywordsBox.innerHTML = (data.keywords_used||[]).map(k=>`<span class="tag">${k}</span>`).join('');
+}
+
+function copyLetter(){ navigator.clipboard.writeText(letterOutput.textContent); }
+function downloadPDF(){
+  const el = document.createElement('div');
+  el.innerHTML = `<h2>Cover Letter</h2><p>${letterOutput.textContent.replace(/\n/g,'<br>')}</p>`;
+  html2pdf().from(el).save('cover-letter.pdf');
+}
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
