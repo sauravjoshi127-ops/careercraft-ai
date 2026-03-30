@@ -16,7 +16,8 @@ You are a professional career writer. Generate:
 3. Extract 6-12 important keywords from the job description
 4. Provide ATS score (0-100) and relevance score (0-100)
 
-Return ONLY valid JSON:
+Return ONLY valid JSON. No markdown. No extra text.
+
 {
  "letter": "...",
  "variants": ["...","...","..."],
@@ -44,11 +45,13 @@ Closing: ${closing}
     });
 
     const result = await r.json();
-    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    let text = result?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    // Try to extract JSON
+    // Remove code fences if returned
+    text = text.replace(/```json|```/g, '').trim();
+
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('AI did not return JSON.');
+    if (!jsonMatch) throw new Error('AI did not return JSON. Raw response: ' + text.slice(0, 200));
 
     const data = JSON.parse(jsonMatch[0]);
     return res.status(200).json(data);
