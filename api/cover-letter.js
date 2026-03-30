@@ -35,12 +35,16 @@ Closing: ${closing}
 `;
 
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        const r = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 900 }
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 900,
+          response_mime_type: "application/json"
+        }
       })
     });
 
@@ -50,13 +54,26 @@ Closing: ${closing}
     // Remove code fences if returned
     text = text.replace(/```json|```/g, '').trim();
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('AI did not return JSON. Raw response: ' + text.slice(0, 200));
+    // If Gemini forgets the closing brace, add it
+    if (text.startsWith('{') && !text.endsWith('}')) {
+      text = text + '}';
+    }
 
-    const data = JSON.parse(jsonMatch[0]);
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      // Fallback: extract just the letter if full JSON fails
+      const letterMatch = text.match(/"letter"\s*:\s*"([\s\S]*)"/);
+      data = {
+        letter: letterMatch ? letterMatch[1].replace(/\\n/g, '\n') : text,
+        variants: [],
+        keywords_used: [],
+        ats_score: null,
+        relevance_score: null
+      };
+    }
+
     return res.status(200).json(data);
-
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
   }
 }
