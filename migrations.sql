@@ -80,3 +80,51 @@ CREATE POLICY "public_view_shared_resumes"
               AND resume_shares.is_active = TRUE
         )
     );
+-- ── Cover Letters Table ────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS cover_letters (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  job_title TEXT,
+  company_name TEXT,
+  job_description TEXT,
+  highlights TEXT,
+  tone TEXT,
+  length TEXT,
+  opening TEXT,
+  closing TEXT,
+  generated_letter TEXT,
+  variants JSONB,
+  keywords_used TEXT[],
+  ats_score INT,
+  relevance_score INT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS cover_letter_feedback (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  cover_letter_id UUID NOT NULL REFERENCES cover_letters(id) ON DELETE CASCADE,
+  suggestions TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE cover_letters ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cover_letter_feedback ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "auth_manage_cover_letters"
+ON cover_letters FOR ALL
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "auth_manage_cover_letter_feedback"
+ON cover_letter_feedback FOR ALL
+USING (EXISTS (
+  SELECT 1 FROM cover_letters
+  WHERE cover_letters.id = cover_letter_feedback.cover_letter_id
+  AND cover_letters.user_id = auth.uid()
+))
+WITH CHECK (EXISTS (
+  SELECT 1 FROM cover_letters
+  WHERE cover_letters.id = cover_letter_feedback.cover_letter_id
+  AND cover_letters.user_id = auth.uid()
+));
