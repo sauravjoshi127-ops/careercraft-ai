@@ -29,6 +29,37 @@ function parseGeminiResponse(text) {
   }
 }
 
+async function callGeminiWithRetry(apiKey, body, maxRetries = 3) {
+  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if (r.status !== 429) return r;
+
+    const retryAfter = parseInt(r.headers.get('Retry-After') || '0', 10);
+    const waitMs = retryAfter > 0 ? retryAfter * 1000 : Math.pow(2, attempt + 1) * 1000;
+    console.warn(`Gemini API rate limited (429). Waiting ${waitMs}ms before retry ${attempt + 1}/${maxRetries}.`);
+    await new Promise(resolve => setTimeout(resolve, waitMs));
+  }
+
+  // Final attempt (no retry after this)
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (r.status === 429) {
+    const err = new Error('AI service is busy (rate limited). Please try again in a moment.');
+    err.status = 429;
+    throw err;
+  }
+  return r;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -66,14 +97,16 @@ Closing: ${closing}
 `;
 
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    let r;
+    try {
+      r = await callGeminiWithRetry(apiKey, {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
-      })
-    });
+      });
+    } catch (retryErr) {
+      console.error('Gemini API rate limit exhausted:', retryErr.message);
+      return res.status(429).json({ error: retryErr.message });
+    }
 
     if (!r.ok) {
       const errText = await r.text();
