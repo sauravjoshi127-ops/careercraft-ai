@@ -220,10 +220,38 @@ async function previewSaved(id){
 }
 
 function copyLetter(){ navigator.clipboard.writeText(letterOutput.textContent); }
-function downloadPDF(){
+async function downloadPDF(){
+  const text = letterOutput.textContent;
+  if(!text || text === 'Your letter will appear here...'){
+    showAlert('error','Please generate a cover letter first.');
+    return;
+  }
+
+  const title = document.getElementById('jobTitle').value.trim();
+  const company = document.getElementById('companyName').value.trim();
+  const heading = [title, company].filter(Boolean).join(' – ') || 'Cover Letter';
+  const body = text.replace(/\n/g,'<br>');
+
   const el = document.createElement('div');
-  el.innerHTML = `<h2>Cover Letter</h2><p>${letterOutput.textContent.replace(/\n/g,'<br>')}</p>`;
-  html2pdf().from(el).save('cover-letter.pdf');
+  el.style.cssText = 'font-family:Arial,sans-serif;font-size:12pt;color:#000;padding:20px;';
+  el.innerHTML = `<h2 style="margin-bottom:16px;">${heading}</h2><p style="line-height:1.6;">${body}</p>`;
+  el.style.position = 'absolute';
+  el.style.left = '-9999px';
+  document.body.appendChild(el);
+
+  try {
+    await html2pdf().set({
+      margin: 10,
+      filename: 'cover-letter.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+    }).from(el).save();
+  } catch(err){
+    showAlert('error','Failed to generate PDF: ' + err.message);
+  } finally {
+    if(el.parentNode) document.body.removeChild(el);
+  }
 }
 
 window.addEventListener('load', init);
