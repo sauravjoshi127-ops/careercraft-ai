@@ -159,7 +159,15 @@ async function generateCoverLetter(regen=false){
     if(!res.ok) throw new Error(data.error||'Failed');
 
     lastGenerated = data;
-    letterOutput.textContent = data.letter || '';
+    // Parse the letter if it's a string, handle JSON format
+let letterText = data.letter || '';
+
+// If letter contains escaped newlines, convert them
+if (typeof letterText === 'string') {
+  letterText = letterText.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+}
+
+letterOutput.textContent = letterText;
     variantsBox.textContent = (data.variants || []).join('\n\n---\n\n');
     atsScore.textContent = `ATS Score: ${data.ats_score ?? '—'}`;
     relScore.textContent = `Relevance: ${data.relevance_score ?? '—'}`;
