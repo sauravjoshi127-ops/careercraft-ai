@@ -124,6 +124,14 @@ const client = createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentUser = null;
 let lastGenerated = null;
 
+// Helper function to format letter text
+function formatLetterText(text) {
+  if (typeof text === 'string') {
+    return text.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\/g, '');
+  }
+  return text;
+}
+
 async function init() {
   const { data: { session } } = await client.auth.getSession();
   if (!session) return window.location.href = 'login.html';
@@ -159,15 +167,10 @@ async function generateCoverLetter(regen=false){
     if(!res.ok) throw new Error(data.error||'Failed');
 
     lastGenerated = data;
-    // Parse the letter if it's a string, handle JSON format
-let letterText = data.letter || '';
-
-// If letter contains escaped newlines, convert them
-if (typeof letterText === 'string') {
-  letterText = letterText.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
-}
-
-letterOutput.textContent = letterText;
+    
+    // Parse and format the letter properly
+    letterOutput.textContent = formatLetterText(data.letter);
+    
     variantsBox.textContent = (data.variants || []).join('\n\n---\n\n');
     atsScore.textContent = `ATS Score: ${data.ats_score ?? '—'}`;
     relScore.textContent = `Relevance: ${data.relevance_score ?? '—'}`;
@@ -220,7 +223,10 @@ async function loadHistory(){
 async function previewSaved(id){
   const { data } = await client.from('cover_letters').select('*').eq('id',id).single();
   if(!data) return;
-  letterOutput.textContent = data.generated_letter;
+  
+  // Format the letter text properly
+  letterOutput.textContent = formatLetterText(data.generated_letter);
+  
   variantsBox.textContent = (data.variants||[]).join('\n\n---\n\n');
   atsScore.textContent = `ATS Score: ${data.ats_score||'—'}`;
   relScore.textContent = `Relevance: ${data.relevance_score||'—'}`;
