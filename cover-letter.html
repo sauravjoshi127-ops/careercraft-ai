@@ -220,38 +220,37 @@ async function previewSaved(id){
 }
 
 function copyLetter(){ navigator.clipboard.writeText(letterOutput.textContent); }
-async function downloadPDF(){
-  const text = letterOutput.textContent;
-  if(!text || text === 'Your letter will appear here...'){
-    showAlert('error','Please generate a cover letter first.');
+
+function downloadPDF(){
+  // Check if letter exists
+  if(!letterOutput.textContent || letterOutput.textContent === 'Your letter will appear here...') {
+    alert('Please generate a cover letter first.');
     return;
   }
-
-  const title = document.getElementById('jobTitle').value.trim();
-  const company = document.getElementById('companyName').value.trim();
-  const heading = [title, company].filter(Boolean).join(' – ') || 'Cover Letter';
-  const body = text.replace(/\n/g,'<br>');
-
-  const el = document.createElement('div');
-  el.style.cssText = 'font-family:Arial,sans-serif;font-size:12pt;color:#000;padding:20px;';
-  el.innerHTML = `<h2 style="margin-bottom:16px;">${heading}</h2><p style="line-height:1.6;">${body}</p>`;
-  el.style.position = 'absolute';
-  el.style.left = '-9999px';
-  document.body.appendChild(el);
-
-  try {
-    await html2pdf().set({
-      margin: 10,
-      filename: 'cover-letter.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
-    }).from(el).save();
-  } catch(err){
-    showAlert('error','Failed to generate PDF: ' + err.message);
-  } finally {
-    if(el.parentNode) document.body.removeChild(el);
-  }
+  
+  // Create container with proper styling
+  const element = document.createElement('div');
+  element.style.padding = '20px';
+  element.style.fontFamily = 'Arial, sans-serif';
+  element.style.lineHeight = '1.6';
+  element.innerHTML = `
+    <h3>${jobTitle.value} @ ${companyName.value}</h3>
+    <div style="white-space: pre-wrap;">${letterOutput.textContent}</div>
+  `;
+  
+  // Configure and generate PDF
+  const opt = {
+    margin: [10, 10, 10, 10],
+    filename: `cover-letter-${new Date().getTime()}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, logging: false },
+    jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+  };
+  
+  html2pdf().set(opt).from(element).save().catch(err => {
+    console.error('PDF generation error:', err);
+    alert('Failed to generate PDF. Please try again.');
+  });
 }
 
 window.addEventListener('load', init);
