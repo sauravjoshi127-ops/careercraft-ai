@@ -123,6 +123,7 @@ const { createClient } = supabase;
 const client = createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentUser = null;
 let lastGenerated = null;
+let isGenerating = false; // Track if generation is in progress
 
 // Helper function to format letter text
 function formatLetterText(text) {
@@ -146,7 +147,38 @@ function showAlert(type, msg) {
 }
 
 async function generateCoverLetter(regen=false){
+  // Prevent multiple clicks while generating
+  if (isGenerating) {
+    alert('⏳ Already generating... Please wait!');
+    return;
+  }
+
+  // Validate form fields
+  if (!jobTitle.value.trim()) {
+    showAlert('error', '❌ Please enter a Job Title');
+    return;
+  }
+  if (!companyName.value.trim()) {
+    showAlert('error', '❌ Please enter a Company Name');
+    return;
+  }
+  if (!jobDescription.value.trim()) {
+    showAlert('error', '❌ Please paste the Job Description');
+    return;
+  }
+
   try {
+    isGenerating = true;
+    
+    // Update button to show loading state
+    const generateBtn = event.target;
+    const originalText = generateBtn.textContent;
+    generateBtn.textContent = '⏳ Generating...';
+    generateBtn.disabled = true;
+    
+    // Show loading message in output
+    letterOutput.textContent = '⏳ Generating your cover letter...\n\nThis may take 10-15 seconds...';
+    
     const payload = {
       jobTitle: jobTitle.value,
       companyName: companyName.value,
@@ -158,13 +190,26 @@ async function generateCoverLetter(regen=false){
       closing: closing.value
     };
 
+    console.log('📤 Sending request to API...');
+
     const res = await fetch('/api/cover-letter', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', 
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify(payload)
     });
 
+    console.log('📥 Response received. Status:', res.status);
+    
     const data = await res.json();
-    if(!res.ok) throw new Error(data.error||'Failed');
+    console.log('✅ Data parsed:', data);
+    
+    if(!res.ok) {
+      throw new Error(data.error || `API Error: ${res.status}`);
+    }
+
+    if (!data.letter) {
+      throw new Error('No letter content received from API');
+    }
 
     lastGenerated = data;
     
@@ -175,8 +220,27 @@ async function generateCoverLetter(regen=false){
     atsScore.textContent = `ATS Score: ${data.ats_score ?? '—'}`;
     relScore.textContent = `Relevance: ${data.relevance_score ?? '—'}`;
     keywordsBox.innerHTML = (data.keywords_used || []).map(k=>`<span class="tag">${k}</span>`).join('');
+    
+    showAlert('success', '✅ Cover letter generated successfully!');
+    console.log('✨ Generation complete!');
+    
+    // Restore button
+    generateBtn.textContent = originalText;
+    generateBtn.disabled = false;
+    
   } catch(err){
-    showAlert('error', err.message);
+    console.error('❌ Error:', err.message);
+    letterOutput.textContent = '❌ Error generating cover letter. Please check the console for details.';
+    showAlert('error', '❌ ' + err.message);
+    
+    // Restore button
+    if (event.target) {
+      event.target.textContent = '✨ Generate';
+      event.target.disabled = false;
+    }
+    
+  } finally {
+    isGenerating = false;
   }
 }
 
@@ -233,7 +297,10 @@ async function previewSaved(id){
   keywordsBox.innerHTML = (data.keywords_used||[]).map(k=>`<span class="tag">${k}</span>`).join('');
 }
 
-function copyLetter(){ navigator.clipboard.writeText(letterOutput.textContent); }
+function copyLetter(){ 
+  navigator.clipboard.writeText(letterOutput.textContent);
+  showAlert('success', '✅ Copied to clipboard!');
+}
 
 function downloadPDF(){
   // Check if letter exists
