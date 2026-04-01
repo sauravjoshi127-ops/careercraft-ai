@@ -84,8 +84,8 @@
       <textarea id="closing" placeholder="Thank you for your time..."></textarea>
 
       <div class="tools">
-        <button class="btn btn-primary" onclick="generateCoverLetter()">✨ Generate</button>
-        <button class="btn btn-secondary" onclick="generateCoverLetter(true)">🔁 Regenerate</button>
+        <button id="generateBtn" class="btn btn-primary" onclick="generateCoverLetter(event)">✨ Generate</button>
+        <button id="regenerateBtn" class="btn btn-secondary" onclick="generateCoverLetter(event, true)">🔁 Regenerate</button>
       </div>
     </div>
 
@@ -123,7 +123,7 @@ const { createClient } = supabase;
 const client = createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentUser = null;
 let lastGenerated = null;
-let isGenerating = false; // Track if generation is in progress
+let isGenerating = false;
 
 // Helper function to format letter text
 function formatLetterText(text) {
@@ -134,19 +134,35 @@ function formatLetterText(text) {
 }
 
 async function init() {
-  const { data: { session } } = await client.auth.getSession();
-  if (!session) return window.location.href = 'login.html';
-  currentUser = session.user;
-  await loadHistory();
+  try {
+    const { data: { session } } = await client.auth.getSession();
+    if (!session) {
+      console.log('No session, redirecting to login...');
+      return window.location.href = 'login.html';
+    }
+    currentUser = session.user;
+    console.log('✅ User logged in:', currentUser.email);
+    await loadHistory();
+  } catch (err) {
+    console.error('❌ Init error:', err);
+    showAlert('error', 'Failed to initialize: ' + err.message);
+  }
 }
 
 function showAlert(type, msg) {
   const el = document.getElementById(type === 'error' ? 'alertError' : 'alertSuccess');
-  el.textContent = msg; el.style.display='block';
-  setTimeout(()=>el.style.display='none', 5000);
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 5000);
 }
 
-async function generateCoverLetter(regen=false){
+async function generateCoverLetter(event, regen = false) {
+  // Prevent default and stop propagation
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
   // Prevent multiple clicks while generating
   if (isGenerating) {
     alert('⏳ Already generating... Please wait!');
@@ -169,16 +185,16 @@ async function generateCoverLetter(regen=false){
 
   try {
     isGenerating = true;
-    
-    // Update button to show loading state
-    const generateBtn = event.target;
+
+    // Get button and update UI
+    const generateBtn = document.getElementById('generateBtn');
     const originalText = generateBtn.textContent;
     generateBtn.textContent = '⏳ Generating...';
     generateBtn.disabled = true;
-    
-    // Show loading message in output
+
+    // Show loading message
     letterOutput.textContent = '⏳ Generating your cover letter...\n\nThis may take 10-15 seconds...';
-    
+
     const payload = {
       jobTitle: jobTitle.value,
       companyName: companyName.value,
@@ -193,17 +209,17 @@ async function generateCoverLetter(regen=false){
     console.log('📤 Sending request to API...');
 
     const res = await fetch('/api/cover-letter', {
-      method:'POST', 
-      headers:{'Content-Type':'application/json'},
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
     console.log('📥 Response received. Status:', res.status);
-    
+
     const data = await res.json();
     console.log('✅ Data parsed:', data);
-    
-    if(!res.ok) {
+
+    if (!res.ok) {
       throw new Error(data.error || `API Error: ${res.status}`);
     }
 
@@ -212,40 +228,39 @@ async function generateCoverLetter(regen=false){
     }
 
     lastGenerated = data;
-    
+
     // Parse and format the letter properly
     letterOutput.textContent = formatLetterText(data.letter);
-    
+
     variantsBox.textContent = (data.variants || []).join('\n\n---\n\n');
     atsScore.textContent = `ATS Score: ${data.ats_score ?? '—'}`;
     relScore.textContent = `Relevance: ${data.relevance_score ?? '—'}`;
-    keywordsBox.innerHTML = (data.keywords_used || []).map(k=>`<span class="tag">${k}</span>`).join('');
-    
+    keywordsBox.innerHTML = (data.keywords_used || []).map(k => `<span class="tag">${k}</span>`).join('');
+
     showAlert('success', '✅ Cover letter generated successfully!');
     console.log('✨ Generation complete!');
-    
+
     // Restore button
     generateBtn.textContent = originalText;
     generateBtn.disabled = false;
-    
-  } catch(err){
+
+  } catch (err) {
     console.error('❌ Error:', err.message);
-    letterOutput.textContent = '❌ Error generating cover letter. Please check the console for details.';
+    letterOutput.textContent = '❌ Error generating cover letter.\n\n' + err.message;
     showAlert('error', '❌ ' + err.message);
-    
+
     // Restore button
-    if (event.target) {
-      event.target.textContent = '✨ Generate';
-      event.target.disabled = false;
-    }
-    
+    const generateBtn = document.getElementById('generateBtn');
+    generateBtn.textContent = '✨ Generate';
+    generateBtn.disabled = false;
+
   } finally {
     isGenerating = false;
   }
 }
 
-async function saveCoverLetter(){
-  if(!lastGenerated) return showAlert('error','Generate first.');
+async function saveCoverLetter() {
+  if (!lastGenerated) return showAlert('error', 'Generate first.');
   const { error } = await client.from('cover_letters').insert([{
     user_id: currentUser.id,
     job_title: jobTitle.value,
@@ -262,54 +277,55 @@ async function saveCoverLetter(){
     ats_score: lastGenerated.ats_score,
     relevance_score: lastGenerated.relevance_score
   }]);
-  if(error) return showAlert('error', error.message);
-  showAlert('success','✅ Saved');
+  if (error) return showAlert('error', error.message);
+  showAlert('success', '✅ Saved');
   loadHistory();
 }
 
-async function loadHistory(){
-  const { data, error } = await client
-    .from('cover_letters')
-    .select('*')
-    .eq('user_id', currentUser.id)
-    .order('created_at',{ascending:false});
-  if(error) return historyList.textContent='Failed to load';
-  if(!data.length) return historyList.textContent='No saved letters yet.';
-  historyList.innerHTML = data.map(c=>`
-    <div class="history-card">
-      <strong>${c.job_title||'Untitled'} @ ${c.company_name||''}</strong>
-      <div style="font-size:.85rem;color:#94a3b8;">${new Date(c.created_at).toLocaleString()}</div>
-      <button class="btn btn-secondary" onclick="previewSaved('${c.id}')">View</button>
-    </div>
-  `).join('');
+async function loadHistory() {
+  try {
+    const { data, error } = await client
+      .from('cover_letters')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+    if (error) return historyList.textContent = 'Failed to load';
+    if (!data.length) return historyList.textContent = 'No saved letters yet.';
+    historyList.innerHTML = data.map(c => `
+      <div class="history-card">
+        <strong>${c.job_title || 'Untitled'} @ ${c.company_name || ''}</strong>
+        <div style="font-size:.85rem;color:#94a3b8;">${new Date(c.created_at).toLocaleString()}</div>
+        <button class="btn btn-secondary" onclick="previewSaved('${c.id}')">View</button>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('Error loading history:', err);
+  }
 }
 
-async function previewSaved(id){
-  const { data } = await client.from('cover_letters').select('*').eq('id',id).single();
-  if(!data) return;
-  
-  // Format the letter text properly
+async function previewSaved(id) {
+  const { data } = await client.from('cover_letters').select('*').eq('id', id).single();
+  if (!data) return;
+
   letterOutput.textContent = formatLetterText(data.generated_letter);
-  
-  variantsBox.textContent = (data.variants||[]).join('\n\n---\n\n');
-  atsScore.textContent = `ATS Score: ${data.ats_score||'—'}`;
-  relScore.textContent = `Relevance: ${data.relevance_score||'—'}`;
-  keywordsBox.innerHTML = (data.keywords_used||[]).map(k=>`<span class="tag">${k}</span>`).join('');
+
+  variantsBox.textContent = (data.variants || []).join('\n\n---\n\n');
+  atsScore.textContent = `ATS Score: ${data.ats_score || '—'}`;
+  relScore.textContent = `Relevance: ${data.relevance_score || '—'}`;
+  keywordsBox.innerHTML = (data.keywords_used || []).map(k => `<span class="tag">${k}</span>`).join('');
 }
 
-function copyLetter(){ 
+function copyLetter() {
   navigator.clipboard.writeText(letterOutput.textContent);
   showAlert('success', '✅ Copied to clipboard!');
 }
 
-function downloadPDF(){
-  // Check if letter exists
-  if(!letterOutput.textContent || letterOutput.textContent === 'Your letter will appear here...') {
+function downloadPDF() {
+  if (!letterOutput.textContent || letterOutput.textContent === 'Your letter will appear here...') {
     alert('Please generate a cover letter first.');
     return;
   }
-  
-  // Create container with proper styling
+
   const element = document.createElement('div');
   element.style.padding = '20px';
   element.style.fontFamily = 'Arial, sans-serif';
@@ -318,8 +334,7 @@ function downloadPDF(){
     <h3>${jobTitle.value} @ ${companyName.value}</h3>
     <div style="white-space: pre-wrap;">${letterOutput.textContent}</div>
   `;
-  
-  // Configure and generate PDF
+
   const opt = {
     margin: [10, 10, 10, 10],
     filename: `cover-letter-${new Date().getTime()}.pdf`,
@@ -327,7 +342,7 @@ function downloadPDF(){
     html2canvas: { scale: 2, logging: false },
     jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
   };
-  
+
   html2pdf().set(opt).from(element).save().catch(err => {
     console.error('PDF generation error:', err);
     alert('Failed to generate PDF. Please try again.');
