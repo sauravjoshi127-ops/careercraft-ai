@@ -86,6 +86,9 @@ module.exports = async function handler(req, res) {
   const opening = String(body.opening || '').trim();
   const closing = String(body.closing || '').trim();
 
+  const resumeText = String(body.resumeText || '').trim();
+  const mirrorStructure = Boolean(body.mirrorStructure);
+
   if (!jobTitle || !companyName || !jobDescription) {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
@@ -93,32 +96,52 @@ module.exports = async function handler(req, res) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'Gemini API key not set.' });
 
-  const prompt = `You are an expert professional career writer. Write a compelling, expressive cover letter with proper structure and well-developed paragraphs.
+  const resumeSection = resumeText
+    ? `\nCANDIDATE RESUME (use for context, skills and achievements):\n${resumeText.slice(0, 3000)}\n`
+    : '';
 
-STRUCTURE REQUIREMENTS:
-- Opening paragraph: Strong hook mentioning the specific role and company, showing genuine enthusiasm
-- Body paragraph 1: Highlight 2-3 most relevant technical skills and experiences from the candidate's highlights
-- Body paragraph 2: Connect the candidate's achievements to the company's specific needs from the job description
-- Closing paragraph: Clear call to action, expressing eagerness for an interview
+  const mirrorNote = mirrorStructure && resumeText
+    ? `\nSTRUCTURE NOTE: The candidate has requested their cover letter mirror the structure and style of their resume. Analyze the resume sections, order, and phrasing style, then shape the cover letter layout to reflect that structure and voice.\n`
+    : '';
 
+  const prompt = `You are an elite professional career writer. Write a compelling, well-crafted cover letter that strictly follows the standard professional structure used by hiring managers worldwide (as described by Indeed Career Advice).
+
+QUALITY STANDARDS:
+- If the candidate's input is generic or weak, actively improve and elevate it — never write bland output
+- Use specific, confident, results-oriented language
+- Show genuine enthusiasm for the role and company
+- Avoid clichés like "I am writing to apply" or "I believe I would be a great fit"
+- Every sentence should add value and demonstrate suitability
+- AI must enhance weak or missing details with strong, plausible professional language
+
+REQUIRED LETTER STRUCTURE (follow this exactly, in order):
+1. DATE: Write today's date on its own line (e.g. "April 2, 2026")
+2. GREETING: Formal salutation — use "Dear Hiring Manager," unless a specific name is inferable from the job description; end with a comma
+3. OPENING PARAGRAPH: Introduce yourself, name the exact role you are applying for, name the company, and express genuine enthusiasm for the opportunity. Make a strong first impression — do NOT open with "I am writing to apply…"
+4. SKILLS & EXPERIENCE PARAGRAPH: Highlight 2–3 of the most relevant technical skills, accomplishments, or experiences that directly match the job requirements. Quantify achievements where possible (e.g. "reduced load time by 40%"). Connect your background to the role's core needs.
+5. COMPANY FIT PARAGRAPH: Explain why this specific company excites you — its mission, culture, product, or values. Show that you have researched the company and that your work style, values, and approach make you a natural fit for their team.
+6. CLOSING PARAGRAPH: Thank the reader for their time, express eagerness for an interview to discuss your qualifications further, and provide a clear call to action.
+7. PROFESSIONAL SIGN-OFF: Use "Sincerely," or "Best regards," on its own line, followed by a blank line, then the candidate's name (if provided, otherwise leave a blank signature line).
+${resumeSection}${mirrorNote}
 FORMATTING RULES:
-- Use "\\n\\n" between each paragraph (double newline for spacing)
-- Each paragraph should be 3-5 sentences
+- Use "\\n\\n" between each section/paragraph (double newline for spacing)
+- Use "\\n" for line breaks within the greeting and sign-off
 - Tone: ${tone || 'Professional'}
-- Length: ${length || 'Medium'} (Short=3 paragraphs, Medium=4 paragraphs, Long=5 paragraphs)
+- Length: ${length || 'Medium'} (Short=4 paragraphs, Medium=5 paragraphs, Long=6 paragraphs)
 - Write in first person
-- Do NOT use placeholder text like [Your Name] — write the letter body only
-${opening ? `- Start with this custom opening: "${opening}"` : ''}
+- Do NOT include placeholder text like [Your Name], [Date], [Address] — write real content only
+- Do NOT include contact info blocks or address headers unless specifically provided
+${opening ? `- Start with this custom opening line: "${opening}"` : ''}
 ${closing ? `- End with this custom closing: "${closing}"` : ''}
 
 CANDIDATE DETAILS:
 Job Title Applying For: ${jobTitle}
 Target Company: ${companyName}
 Job Description: ${jobDescription}
-Key Highlights: ${highlights || 'Not provided'}
+Key Highlights: ${highlights || 'Not provided — infer from resume if available and enhance with strong, plausible professional language'}
 
 ALSO GENERATE:
-1. Three (3) alternative cover letter variants (different tones/angles), each fully written with paragraphs
+1. Three (3) alternative cover letter variants (different tones/angles), each fully written with all required sections
 2. Extract 6-12 important ATS keywords from the job description
 3. ATS score (0-100): how well the letter matches the job description keywords
 4. Relevance score (0-100): how well the candidate's highlights match the job requirements

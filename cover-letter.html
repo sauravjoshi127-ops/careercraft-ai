@@ -114,7 +114,7 @@
       <div class="field-group">
         <label>Upload Resume (optional — PDF or DOCX)</label>
         <div class="upload-area" id="uploadArea" onclick="document.getElementById('resumeFile').click()">
-          <input type="file" id="resumeFile" accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="handleResumeUpload(this)" />
+          <input type="file" id="resumeFile" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="handleResumeUpload(this)" />
           <div class="upload-icon">📄</div>
           <div class="upload-text">Click to upload or drag & drop</div>
           <div class="upload-hint">PDF or DOCX · Max 5 MB</div>
@@ -276,8 +276,12 @@ async function handleResumeUpload(input) {
   if (!file) return;
 
   const allowed = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-  if (!allowed.includes(file.type)) {
-    setResumeStatus('error', '❌ Only PDF or DOCX files are accepted.');
+  const allowedExts = ['.pdf', '.docx'];
+  const ext = (file.name || '').toLowerCase().match(/\.[^.]+$/)?.[0] || '';
+  const mimeOk = allowed.includes(file.type);
+  const extOk  = allowedExts.includes(ext);
+  if (!mimeOk && !extOk) {
+    setResumeStatus('error', `❌ Unsupported file type (${file.type || ext || 'unknown'}). Only PDF or DOCX files are accepted.`);
     return;
   }
   if (file.size > 5 * 1024 * 1024) {
@@ -294,11 +298,18 @@ async function handleResumeUpload(input) {
 
   try {
     const res = await fetch('/api/upload-resume', { method: 'POST', body: form });
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch (_) {
+      data = {};
+    }
     showProgress(false);
 
     if (!res.ok) {
-      setResumeStatus('error', '❌ ' + (data.error || 'Failed to parse resume.'));
+      const reason = data.error || `Server error (HTTP ${res.status}). Please try again.`;
+      setResumeStatus('error', '❌ ' + reason);
+      console.error('[upload] Server rejected file:', res.status, reason);
       resumeText = '';
       document.getElementById('mirrorRow').style.display = 'none';
       document.getElementById('resumeClearRow').style.display = 'none';
@@ -311,8 +322,8 @@ async function handleResumeUpload(input) {
     document.getElementById('resumeClearRow').style.display = 'block';
   } catch (err) {
     showProgress(false);
-    console.error('Resume upload error:', err);
-    setResumeStatus('error', '❌ Upload failed. Please try again.');
+    console.error('[upload] Fetch error:', err);
+    setResumeStatus('error', '❌ Upload failed: ' + (err.message || 'Network error. Check your connection and try again.'));
     resumeText = '';
   }
 }

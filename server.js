@@ -15,13 +15,27 @@ app.use(express.static(path.join(__dirname)));
 
 // ─── Multer (resume upload) ──────────────────────────────────────────────────
 
+const RESUME_ALLOWED_MIMES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+];
+const RESUME_ALLOWED_EXTS = ['.pdf', '.docx'];
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
   fileFilter: (_req, file, cb) => {
-    const allowed = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    if (allowed.includes(file.mimetype)) return cb(null, true);
-    cb(new Error('Only PDF and DOCX files are accepted.'));
+    const mime = file.mimetype || '';
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    // Accept if MIME type matches OR if MIME is generic/unknown but extension is allowed
+    // (some browsers — especially mobile — send application/octet-stream for all files)
+    const mimeOk = RESUME_ALLOWED_MIMES.includes(mime);
+    const extOk  = RESUME_ALLOWED_EXTS.includes(ext);
+    if (mimeOk || (mime === 'application/octet-stream' && extOk) || (!mime && extOk)) {
+      return cb(null, true);
+    }
+    console.warn(`[upload] Rejected file: originalname="${file.originalname}" mime="${mime}" ext="${ext}"`);
+    cb(new Error(`Only PDF and DOCX files are accepted. Received: ${mime || 'unknown type'}.`));
   }
 });
 
@@ -108,6 +122,7 @@ app.post('/api/upload-resume', (req, res, next) => {
       const message = err.code === 'LIMIT_FILE_SIZE'
         ? 'File too large. Maximum size is 5 MB.'
         : (err.message || 'Invalid file.');
+      console.error('[upload] Multer error:', message);
       return res.status(status).json({ error: message });
     }
     next();
@@ -117,21 +132,36 @@ app.post('/api/upload-resume', (req, res, next) => {
     return res.status(400).json({ error: 'No file uploaded. Please upload a PDF or DOCX file.' });
   }
 
+  const { originalname, mimetype, size } = req.file;
+  const ext = path.extname(originalname || '').toLowerCase();
+  console.log(`[upload] Received: name="${originalname}" mime="${mimetype}" ext="${ext}" size=${size}B`);
+
+  // Determine effective file type by MIME first, then fall back to extension
+  const isPDF  = mimetype === 'application/pdf' || ext === '.pdf';
+  const isDOCX = mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || ext === '.docx';
+
+  if (!isPDF && !isDOCX) {
+    console.warn(`[upload] Unsupported file type: mime="${mimetype}" ext="${ext}"`);
+    return res.status(400).json({ error: `Unsupported file type (${mimetype || ext || 'unknown'}). Please upload a PDF or DOCX file.` });
+  }
+
   try {
     let resumeText = '';
 
-    if (req.file.mimetype === 'application/pdf') {
+    if (isPDF) {
+      console.log('[upload] Parsing PDF…');
       const parser = new PDFParse({ data: req.file.buffer });
       const parsed = await parser.getText();
       await parser.destroy();
       resumeText = parsed.text || '';
     } else {
-      // DOCX
+      console.log('[upload] Parsing DOCX…');
       const result = await mammoth.extractRawText({ buffer: req.file.buffer });
       resumeText = result.value || '';
     }
 
     resumeText = resumeText.trim();
+    console.log(`[upload] Extracted ${resumeText.length} characters from "${originalname}"`);
 
     if (!resumeText) {
       return res.status(422).json({ error: 'Could not extract text from the uploaded file. Please ensure the file is not scanned/image-only.' });
@@ -139,8 +169,8 @@ app.post('/api/upload-resume', (req, res, next) => {
 
     return res.status(200).json({ resumeText });
   } catch (err) {
-    console.error('Resume parse error:', err);
-    return res.status(500).json({ error: 'Failed to parse resume. Please try a different file.' });
+    console.error('[upload] Parse error:', err);
+    return res.status(500).json({ error: `Failed to parse resume (${err.message}). Please try a different file.` });
   }
 });
 
@@ -174,30 +204,33 @@ app.post('/api/cover-letter', async (req, res) => {
     ? `\nSTRUCTURE NOTE: The candidate has requested their cover letter mirror the structure and style of their resume. Analyze the resume sections, order, and phrasing style, then shape the cover letter layout to reflect that structure and voice.\n`
     : '';
 
-  const prompt = `You are an elite professional career writer specializing in world-class cover letters. Your task is to write a polished, compelling cover letter that makes a strong first impression.
+  const prompt = `You are an elite professional career writer. Write a compelling, well-crafted cover letter that strictly follows the standard professional structure used by hiring managers worldwide (as described by Indeed Career Advice).
 
 QUALITY STANDARDS:
 - If the candidate's input is generic or weak, actively improve and elevate it — never write bland output
 - Use specific, confident, results-oriented language
 - Show genuine enthusiasm for the role and company
 - Avoid clichés like "I am writing to apply" or "I believe I would be a great fit"
-- Every sentence should add value
+- Every sentence should add value and demonstrate suitability
+- AI must enhance weak or missing details with strong, plausible professional language
 
-REQUIRED LETTER STRUCTURE:
-1. Greeting: Professional salutation (e.g. "Dear Hiring Manager," or addressed to a specific person if inferable)
-2. Introduction (1 paragraph): Powerful opening that names the specific role and company, establishes the candidate's strongest selling point immediately
-3. Skills & Experience (1-2 paragraphs): 2-3 most relevant skills/achievements, quantified where possible; connect directly to job requirements
-4. Company Connection (1 paragraph): Show knowledge of the company, explain why this role/company specifically excites the candidate
-5. Closing (1 paragraph): Confident call to action, express readiness for an interview
-6. Sign-off: "Sincerely," or "Best regards," followed by a blank line for signature
+REQUIRED LETTER STRUCTURE (follow this exactly, in order):
+1. DATE: Write today's date on its own line (e.g. "April 2, 2026")
+2. GREETING: Formal salutation — use "Dear Hiring Manager," unless a specific name is inferable from the job description; end with a comma
+3. OPENING PARAGRAPH: Introduce yourself, name the exact role you are applying for, name the company, and express genuine enthusiasm for the opportunity. Make a strong first impression — do NOT open with "I am writing to apply…"
+4. SKILLS & EXPERIENCE PARAGRAPH: Highlight 2–3 of the most relevant technical skills, accomplishments, or experiences that directly match the job requirements. Quantify achievements where possible (e.g. "reduced load time by 40%"). Connect your background to the role's core needs.
+5. COMPANY FIT PARAGRAPH: Explain why this specific company excites you — its mission, culture, product, or values. Show that you have researched the company and that your work style, values, and approach make you a natural fit for their team.
+6. CLOSING PARAGRAPH: Thank the reader for their time, express eagerness for an interview to discuss your qualifications further, and provide a clear call to action.
+7. PROFESSIONAL SIGN-OFF: Use "Sincerely," or "Best regards," on its own line, followed by a blank line, then the candidate's name (if provided, otherwise leave a blank signature line).
 ${resumeSection}${mirrorNote}
 FORMATTING RULES:
 - Use "\\n\\n" between each section/paragraph (double newline for spacing)
-- Use "\\n" for greeting and sign-off line breaks within the same section
+- Use "\\n" for line breaks within the greeting and sign-off
 - Tone: ${tone || 'Professional'}
 - Length: ${length || 'Medium'} (Short=4 paragraphs, Medium=5 paragraphs, Long=6 paragraphs)
 - Write in first person
-- Do NOT use placeholder text like [Your Name] or [Date] — write the letter body only
+- Do NOT include placeholder text like [Your Name], [Date], [Address] — write real content only
+- Do NOT include contact info blocks or address headers unless specifically provided
 ${opening ? `- Start with this custom opening line: "${opening}"` : ''}
 ${closing ? `- End with this custom closing: "${closing}"` : ''}
 
@@ -208,7 +241,7 @@ Job Description: ${jobDescription}
 Key Highlights: ${highlights || 'Not provided — infer from resume if available and enhance with strong, plausible professional language'}
 
 ALSO GENERATE:
-1. Three (3) alternative cover letter variants (different angles/emphasis), each fully written
+1. Three (3) alternative cover letter variants (different tones/angles), each fully written with all required sections
 2. Extract 6-12 important ATS keywords from the job description
 3. ATS score (0-100): how well the letter matches the job description keywords
 4. Relevance score (0-100): how well the candidate's profile matches the job requirements
