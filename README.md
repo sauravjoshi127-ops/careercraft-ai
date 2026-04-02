@@ -35,7 +35,10 @@ Open [http://localhost:3000](http://localhost:3000) in your browser. 🚀
 
 ```
 careercraft-ai/
-├── server.js          # Express backend — handles /api/cover-letter
+├── server.js          # Express backend — /api/cover-letter & /api/generate-pdf
+├── utils/
+│   ├── pdf-generator.js  # PDFKit-based PDF builder
+│   └── scoring.js        # ATS & relevance score algorithms
 ├── api/               # Vercel serverless functions (deployment)
 │   ├── cover-letter.js
 │   └── ai-suggestions.js
@@ -55,7 +58,18 @@ careercraft-ai/
    - A professionally structured cover letter with proper paragraphs
    - 3 alternative variants
    - ATS keywords extracted from the job description
-   - ATS score and relevance score
+   - ATS score and relevance score (calculated server-side)
+
+### PDF Download
+
+Click **⬇ Download PDF** after generating a letter. The browser sends the letter content and metadata to `POST /api/generate-pdf`, which uses [PDFKit](https://pdfkit.org/) to build a professional A4 PDF with:
+
+- Job title and company header
+- Full letter body with correct paragraph spacing
+- ATS score, relevance score, and matched keywords summary
+- CareerCraft AI footer with the generation date
+
+The server streams the finished PDF back as an `application/pdf` attachment, which the browser saves to your downloads folder. No third-party PDF libraries are loaded in the browser.
 
 ## Deployment
 
