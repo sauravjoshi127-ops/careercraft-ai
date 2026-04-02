@@ -342,14 +342,15 @@ function downloadPDF() {
     // Create a temporary div with the letter content
     const tempDiv = document.createElement('div');
     tempDiv.id = 'pdf-content-temp';
-    tempDiv.style.display = 'none';
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.top = '0';
     tempDiv.style.fontFamily = 'Arial, sans-serif';
     tempDiv.style.padding = '40px';
     tempDiv.style.lineHeight = '1.6';
     tempDiv.style.color = '#000';
     tempDiv.style.backgroundColor = '#fff';
     tempDiv.style.width = '210mm';
-    tempDiv.style.height = '297mm';
     
     // Convert text to HTML with line breaks
     const htmlContent = letterText
