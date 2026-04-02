@@ -1,6 +1,9 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const multer = require('multer');
+const { PDFParse } = require('pdf-parse');
+const mammoth = require('mammoth');
 const { calculateAtsScore, calculateRelevanceScore } = require('./utils/scoring');
 const { generateCoverLetterPDF } = require('./utils/pdf-generator');
 
@@ -9,6 +12,19 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+
+// ─── Multer (resume upload) ──────────────────────────────────────────────────
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (allowed.includes(file.mimetype)) return cb(null, true);
+    cb(new Error('Only PDF and DOCX files are accepted.'));
+  }
+});
+
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -82,6 +98,40 @@ async function callGeminiWithRetry(apiKey, body, maxRetries = 3) {
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
+// ─── Resume Upload & Parse ────────────────────────────────────────────────────
+
+app.post('/api/upload-resume', upload.single('resume'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded. Please upload a PDF or DOCX file.' });
+  }
+
+  try {
+    let resumeText = '';
+
+    if (req.file.mimetype === 'application/pdf') {
+      const parser = new PDFParse({ data: req.file.buffer });
+      const parsed = await parser.getText();
+      await parser.destroy();
+      resumeText = parsed.text || '';
+    } else {
+      // DOCX
+      const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+      resumeText = result.value || '';
+    }
+
+    resumeText = resumeText.trim();
+
+    if (!resumeText) {
+      return res.status(422).json({ error: 'Could not extract text from the uploaded file. Please ensure the file is not scanned/image-only.' });
+    }
+
+    return res.status(200).json({ resumeText });
+  } catch (err) {
+    console.error('Resume parse error:', err);
+    return res.status(500).json({ error: 'Failed to parse resume. Please try a different file.' });
+  }
+});
+
 app.post('/api/cover-letter', async (req, res) => {
   const body = req.body || {};
   const jobTitle = String(body.jobTitle || '').trim();
@@ -92,6 +142,8 @@ app.post('/api/cover-letter', async (req, res) => {
   const length = String(body.length || 'Medium').trim();
   const opening = String(body.opening || '').trim();
   const closing = String(body.closing || '').trim();
+  const resumeText = String(body.resumeText || '').trim();
+  const mirrorStructure = Boolean(body.mirrorStructure);
 
   if (!jobTitle || !companyName || !jobDescription) {
     return res.status(400).json({ error: 'Missing required fields.' });
@@ -102,44 +154,61 @@ app.post('/api/cover-letter', async (req, res) => {
     return res.status(500).json({ error: 'GEMINI_API_KEY is not set. Please add it to your .env file.' });
   }
 
-  const prompt = `You are an expert professional career writer. Write a compelling, expressive cover letter with proper structure and well-developed paragraphs.
+  const resumeSection = resumeText
+    ? `\nCANDIDATE RESUME (use for context, skills and achievements):\n${resumeText.slice(0, 3000)}\n`
+    : '';
 
-STRUCTURE REQUIREMENTS:
-- Opening paragraph: Strong hook mentioning the specific role and company, showing genuine enthusiasm
-- Body paragraph 1: Highlight 2-3 most relevant technical skills and experiences from the candidate's highlights
-- Body paragraph 2: Connect the candidate's achievements to the company's specific needs from the job description
-- Closing paragraph: Clear call to action, expressing eagerness for an interview
+  const mirrorNote = mirrorStructure && resumeText
+    ? `\nSTRUCTURE NOTE: The candidate has requested their cover letter mirror the structure and style of their resume. Analyze the resume sections, order, and phrasing style, then shape the cover letter layout to reflect that structure and voice.\n`
+    : '';
 
+  const prompt = `You are an elite professional career writer specializing in world-class cover letters. Your task is to write a polished, compelling cover letter that makes a strong first impression.
+
+QUALITY STANDARDS:
+- If the candidate's input is generic or weak, actively improve and elevate it — never write bland output
+- Use specific, confident, results-oriented language
+- Show genuine enthusiasm for the role and company
+- Avoid clichés like "I am writing to apply" or "I believe I would be a great fit"
+- Every sentence should add value
+
+REQUIRED LETTER STRUCTURE:
+1. Greeting: Professional salutation (e.g. "Dear Hiring Manager," or addressed to a specific person if inferable)
+2. Introduction (1 paragraph): Powerful opening that names the specific role and company, establishes the candidate's strongest selling point immediately
+3. Skills & Experience (1-2 paragraphs): 2-3 most relevant skills/achievements, quantified where possible; connect directly to job requirements
+4. Company Connection (1 paragraph): Show knowledge of the company, explain why this role/company specifically excites the candidate
+5. Closing (1 paragraph): Confident call to action, express readiness for an interview
+6. Sign-off: "Sincerely," or "Best regards," followed by a blank line for signature
+${resumeSection}${mirrorNote}
 FORMATTING RULES:
-- Use "\\n\\n" between each paragraph (double newline for spacing)
-- Each paragraph should be 3-5 sentences
+- Use "\\n\\n" between each section/paragraph (double newline for spacing)
+- Use "\\n" for greeting and sign-off line breaks within the same section
 - Tone: ${tone || 'Professional'}
-- Length: ${length || 'Medium'} (Short=3 paragraphs, Medium=4 paragraphs, Long=5 paragraphs)
+- Length: ${length || 'Medium'} (Short=4 paragraphs, Medium=5 paragraphs, Long=6 paragraphs)
 - Write in first person
-- Do NOT use placeholder text like [Your Name] — write the letter body only
-${opening ? `- Start with this custom opening: "${opening}"` : ''}
+- Do NOT use placeholder text like [Your Name] or [Date] — write the letter body only
+${opening ? `- Start with this custom opening line: "${opening}"` : ''}
 ${closing ? `- End with this custom closing: "${closing}"` : ''}
 
 CANDIDATE DETAILS:
 Job Title Applying For: ${jobTitle}
 Target Company: ${companyName}
 Job Description: ${jobDescription}
-Key Highlights: ${highlights || 'Not provided'}
+Key Highlights: ${highlights || 'Not provided — infer from resume if available and enhance with strong, plausible professional language'}
 
 ALSO GENERATE:
-1. Three (3) alternative cover letter variants (different tones/angles), each fully written with paragraphs
+1. Three (3) alternative cover letter variants (different angles/emphasis), each fully written
 2. Extract 6-12 important ATS keywords from the job description
 3. ATS score (0-100): how well the letter matches the job description keywords
-4. Relevance score (0-100): how well the candidate's highlights match the job requirements
+4. Relevance score (0-100): how well the candidate's profile matches the job requirements
 
 Return ONLY a single valid JSON object. No markdown fences. No explanatory text outside the JSON.
 
 {
   "letter": "Full cover letter with \\n\\n between paragraphs...",
   "variants": [
-    "Variant 1 full text with \\n\\n between paragraphs...",
-    "Variant 2 full text with \\n\\n between paragraphs...",
-    "Variant 3 full text with \\n\\n between paragraphs..."
+    "Variant 1 full text...",
+    "Variant 2 full text...",
+    "Variant 3 full text..."
   ],
   "keywords_used": ["keyword1", "keyword2", "keyword3"],
   "ats_score": 85,
@@ -208,24 +277,23 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
 // ─── PDF Generation ──────────────────────────────────────────────────────────
 
 app.post('/api/generate-pdf', async (req, res) => {
-  const { letter, jobTitle, companyName, ats_score, relevance_score, keywords_used, matched_keywords } = req.body || {};
+  const { letter, jobTitle, companyName, candidateName } = req.body || {};
 
   if (!letter || !letter.trim()) {
     return res.status(400).json({ error: 'No letter content provided.' });
   }
 
   try {
+    // Only pass content fields — no scores or metrics included in the PDF
     const pdfBuffer = await generateCoverLetterPDF({
       letter,
       jobTitle: jobTitle || 'Cover Letter',
       companyName: companyName || '',
-      ats_score,
-      relevance_score,
-      keywords_used: Array.isArray(keywords_used) ? keywords_used : [],
-      matched_keywords: Array.isArray(matched_keywords) ? matched_keywords : []
+      candidateName: candidateName || ''
     });
 
-    const filename = `CoverLetter-${(jobTitle || 'letter').replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+    const safe = (jobTitle || 'letter').replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-').slice(0, 60);
+    const filename = `CoverLetter-${safe}-${new Date().toISOString().split('T')[0]}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Length', pdfBuffer.length);

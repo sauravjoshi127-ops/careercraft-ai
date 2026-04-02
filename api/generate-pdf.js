@@ -14,21 +14,19 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { letter, jobTitle, companyName, ats_score, relevance_score, keywords_used, matched_keywords } = req.body || {};
+  const { letter, jobTitle, companyName, candidateName } = req.body || {};
 
   if (!letter || !letter.trim()) {
     return res.status(400).json({ error: 'No letter content provided.' });
   }
 
   try {
+    // Only pass content fields — no scores or metrics included in the PDF
     const pdfBuffer = await generateCoverLetterPDF({
       letter,
       jobTitle: jobTitle || 'Cover Letter',
       companyName: companyName || '',
-      ats_score,
-      relevance_score,
-      keywords_used: Array.isArray(keywords_used) ? keywords_used : [],
-      matched_keywords: Array.isArray(matched_keywords) ? matched_keywords : []
+      candidateName: candidateName || ''
     });
 
     const safe = (jobTitle || 'letter').replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-').slice(0, 60);

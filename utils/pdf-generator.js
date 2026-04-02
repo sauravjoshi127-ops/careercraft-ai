@@ -3,16 +3,14 @@
 const PDFDocument = require('pdfkit');
 
 /**
- * Generate a professional cover letter PDF using PDFKit.
+ * Generate a premium, minimalist cover letter PDF using PDFKit.
+ * No ATS/relevance scores or keyword metrics are included in the output.
  *
  * @param {object} data
  * @param {string} data.letter       - Full cover letter text
  * @param {string} data.jobTitle     - Job title being applied for
  * @param {string} data.companyName  - Target company name
- * @param {number} [data.ats_score]  - ATS score (0-100)
- * @param {number} [data.relevance_score] - Relevance score (0-100)
- * @param {string[]} [data.keywords_used]  - Keywords extracted from JD
- * @param {string[]} [data.matched_keywords] - Keywords matched in letter
+ * @param {string} [data.candidateName] - Applicant's name (optional)
  * @returns {Promise<Buffer>} - PDF as a Buffer
  */
 function generateCoverLetterPDF(data) {
@@ -21,19 +19,17 @@ function generateCoverLetterPDF(data) {
       letter = '',
       jobTitle = 'Cover Letter',
       companyName = '',
-      ats_score,
-      relevance_score,
-      keywords_used = [],
-      matched_keywords = []
+      candidateName = ''
     } = data;
 
+    // Premium A4 layout with generous margins for a letter feel
     const doc = new PDFDocument({
-      margin: 60,
+      margins: { top: 72, bottom: 72, left: 80, right: 80 },
       size: 'A4',
       info: {
         Title: `Cover Letter – ${jobTitle}`,
-        Author: 'CareerCraft AI',
-        Subject: `Application for ${jobTitle} at ${companyName}`
+        Author: candidateName || 'CareerCraft AI',
+        Subject: `Application for ${jobTitle}${companyName ? ` at ${companyName}` : ''}`
       }
     });
 
@@ -43,35 +39,51 @@ function generateCoverLetterPDF(data) {
     doc.on('error', reject);
 
     const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
     // ── Header ─────────────────────────────────────────────────────────────────
-    doc
-      .fontSize(20)
-      .fillColor('#1a1a2e')
-      .font('Helvetica-Bold')
-      .text(jobTitle, { align: 'left' });
-
-    if (companyName) {
+    // Candidate name (if provided)
+    if (candidateName) {
       doc
-        .fontSize(13)
-        .fillColor('#555555')
-        .font('Helvetica')
-        .text(`Application to: ${companyName}`, { align: 'left' });
+        .fontSize(18)
+        .fillColor('#111111')
+        .font('Helvetica-Bold')
+        .text(candidateName, { align: 'left' });
+      doc.moveDown(0.3);
     }
 
+    // Date line
     doc
-      .moveDown(0.4)
+      .fontSize(10)
+      .fillColor('#666666')
+      .font('Helvetica')
+      .text(dateStr, { align: 'left' });
+
+    doc.moveDown(0.3);
+
+    // Job title + company (subtle, clean)
+    if (jobTitle) {
+      doc
+        .fontSize(10)
+        .fillColor('#333333')
+        .font('Helvetica-Bold')
+        .text(`Re: ${jobTitle}${companyName ? ` — ${companyName}` : ''}`, { align: 'left' });
+    }
+
+    // Thin separator
+    doc
+      .moveDown(0.8)
       .moveTo(doc.page.margins.left, doc.y)
       .lineTo(doc.page.margins.left + pageWidth, doc.y)
-      .strokeColor('#7c3aed')
-      .lineWidth(2)
+      .strokeColor('#dddddd')
+      .lineWidth(0.75)
       .stroke()
-      .moveDown(0.8);
+      .moveDown(1.2);
 
     // ── Letter body ────────────────────────────────────────────────────────────
     doc
-      .fontSize(11.5)
-      .fillColor('#222222')
+      .fontSize(11)
+      .fillColor('#1a1a1a')
       .font('Helvetica');
 
     // Normalize line endings from escaped \n sequences
@@ -80,63 +92,31 @@ function generateCoverLetterPDF(data) {
       .replace(/\\n/g, '\n')
       .replace(/\\/g, '');
 
+    // Split into paragraphs, preserving single-line breaks as part of a paragraph
     const paragraphs = cleanLetter
       .split(/\n\n+/)
-      .map(p => p.replace(/\n/g, ' ').trim())
+      .map(p => p.trim())
       .filter(Boolean);
 
     paragraphs.forEach((para, idx) => {
-      doc.text(para, {
-        align: 'justify',
-        lineGap: 3
-      });
-      if (idx < paragraphs.length - 1) doc.moveDown(0.8);
+      // Preserve internal single newlines (e.g. greeting/sign-off lines)
+      const lines = para.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length === 1) {
+        doc.text(lines[0], { align: 'justify', lineGap: 4 });
+      } else {
+        lines.forEach((line) => {
+          doc.text(line, { align: 'left', lineGap: 2 });
+        });
+      }
+      if (idx < paragraphs.length - 1) doc.moveDown(0.9);
     });
 
-    // ── Scores section (if available) ─────────────────────────────────────────
-    if (ats_score != null || relevance_score != null) {
-      doc
-        .moveDown(1.2)
-        .moveTo(doc.page.margins.left, doc.y)
-        .lineTo(doc.page.margins.left + pageWidth, doc.y)
-        .strokeColor('#cccccc')
-        .lineWidth(1)
-        .stroke()
-        .moveDown(0.6);
-
-      doc
-        .fontSize(10)
-        .fillColor('#555555')
-        .font('Helvetica-Bold')
-        .text('Analysis Summary', { continued: false });
-
-      doc
-        .moveDown(0.3)
-        .font('Helvetica')
-        .fontSize(10);
-
-      if (ats_score != null) {
-        doc.fillColor('#7c3aed').text(`ATS Score: ${ats_score}/100`, { continued: true });
-        doc.fillColor('#888888').text('   — keyword alignment with job description', { continued: false });
-      }
-      if (relevance_score != null) {
-        doc.fillColor('#059669').text(`Relevance Score: ${relevance_score}/100`, { continued: true });
-        doc.fillColor('#888888').text('   — match between your profile and requirements', { continued: false });
-      }
-
-      // Matched keywords
-      if (matched_keywords.length > 0) {
-        doc.moveDown(0.4).font('Helvetica-Bold').fillColor('#444444').text('Matched keywords: ', { continued: true });
-        doc.font('Helvetica').fillColor('#333333').text(matched_keywords.slice(0, 12).join(', '));
-      }
-    }
-
     // ── Footer ─────────────────────────────────────────────────────────────────
-    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     doc
       .fontSize(8)
-      .fillColor('#aaaaaa')
-      .text(`Generated by CareerCraft AI · ${dateStr}`, doc.page.margins.left, doc.page.height - 40, {
+      .fillColor('#bbbbbb')
+      .font('Helvetica')
+      .text('CareerCraft AI', doc.page.margins.left, doc.page.height - 50, {
         align: 'center',
         width: pageWidth
       });
