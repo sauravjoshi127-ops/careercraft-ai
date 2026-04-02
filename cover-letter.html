@@ -321,32 +321,67 @@ function copyLetter() {
 }
 
 function downloadPDF() {
+  // Check if letter exists
   if (!letterOutput.textContent || letterOutput.textContent === 'Your letter will appear here...') {
     alert('Please generate a cover letter first.');
     return;
   }
 
-  const element = document.createElement('div');
-  element.style.padding = '20px';
-  element.style.fontFamily = 'Arial, sans-serif';
-  element.style.lineHeight = '1.6';
-  element.innerHTML = `
-    <h3>${jobTitle.value} @ ${companyName.value}</h3>
-    <div style="white-space: pre-wrap;">${letterOutput.textContent}</div>
-  `;
+  try {
+    // Get the letter text
+    const letterText = letterOutput.textContent;
+    
+    // Create a new element with proper HTML structure
+    const element = document.createElement('div');
+    element.style.fontFamily = 'Arial, sans-serif';
+    element.style.padding = '20px';
+    element.style.lineHeight = '1.8';
+    element.style.color = '#000';
+    element.style.backgroundColor = '#fff';
+    
+    // Build the content with proper formatting
+    element.innerHTML = `
+      <div style="margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px;">
+        <h2 style="margin: 0 0 5px 0; font-size: 18px;">${jobTitle.value || 'Cover Letter'}</h2>
+        <p style="margin: 0; font-size: 14px; color: #666;">${companyName.value || 'Company'}</p>
+      </div>
+      <div style="white-space: pre-wrap; font-size: 12px; line-height: 1.6;">
+        ${letterText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+      </div>
+    `;
 
-  const opt = {
-    margin: [10, 10, 10, 10],
-    filename: `cover-letter-${new Date().getTime()}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, logging: false },
-    jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
-  };
+    // PDF options
+    const opt = {
+      margin: 10,
+      filename: `cover-letter-${jobTitle.value}-${new Date().toISOString().split('T')[0]}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2, 
+        logging: false,
+        backgroundColor: '#ffffff'
+      },
+      jsPDF: { 
+        orientation: 'portrait', 
+        unit: 'mm', 
+        format: 'a4',
+        compress: true
+      }
+    };
 
-  html2pdf().set(opt).from(element).save().catch(err => {
-    console.error('PDF generation error:', err);
-    alert('Failed to generate PDF. Please try again.');
-  });
+    // Generate and download PDF
+    html2pdf().set(opt).from(element).save()
+      .then(() => {
+        showAlert('success', '✅ PDF downloaded successfully!');
+      })
+      .catch(err => {
+        console.error('PDF Error:', err);
+        showAlert('error', '❌ PDF download failed. Please try again.');
+      });
+
+  } catch (err) {
+    console.error('Error:', err);
+    showAlert('error', '❌ Error generating PDF: ' + err.message);
+  }
 }
 
 window.addEventListener('load', init);
