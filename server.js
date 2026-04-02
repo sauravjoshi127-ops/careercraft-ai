@@ -100,7 +100,19 @@ async function callGeminiWithRetry(apiKey, body, maxRetries = 3) {
 
 // ─── Resume Upload & Parse ────────────────────────────────────────────────────
 
-app.post('/api/upload-resume', upload.single('resume'), async (req, res) => {
+app.post('/api/upload-resume', (req, res, next) => {
+  upload.single('resume')(req, res, err => {
+    if (err) {
+      // Multer validation errors (file type, size limit) — return JSON, not HTML
+      const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+      const message = err.code === 'LIMIT_FILE_SIZE'
+        ? 'File too large. Maximum size is 5 MB.'
+        : (err.message || 'Invalid file.');
+      return res.status(status).json({ error: message });
+    }
+    next();
+  });
+}, async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded. Please upload a PDF or DOCX file.' });
   }

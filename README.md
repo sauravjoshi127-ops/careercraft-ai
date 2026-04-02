@@ -35,12 +35,14 @@ Open [http://localhost:3000](http://localhost:3000) in your browser. 🚀
 
 ```
 careercraft-ai/
-├── server.js          # Express backend — /api/cover-letter & /api/generate-pdf
+├── server.js          # Express backend — /api/upload-resume, /api/cover-letter & /api/generate-pdf
 ├── utils/
 │   ├── pdf-generator.js  # PDFKit-based PDF builder
 │   └── scoring.js        # ATS & relevance score algorithms
 ├── api/               # Vercel serverless functions (deployment)
+│   ├── upload-resume.js  # Parses uploaded PDF/DOCX and returns plain text
 │   ├── cover-letter.js
+│   ├── generate-pdf.js
 │   └── ai-suggestions.js
 ├── cover-letter.html  # Cover letter generator UI
 ├── dashboard.html
@@ -51,23 +53,35 @@ careercraft-ai/
 
 ## How it works
 
-1. Fill in the job title, company, and paste the job description
-2. Add your key highlights (skills, achievements)
-3. Choose tone and length
-4. Click **✨ Generate** — the server calls the Gemini API and returns:
+1. *(Optional)* Upload your resume (PDF or DOCX, max 5 MB) — the server extracts the text and passes it to the AI to personalise the letter
+2. Fill in the job title, company, and paste the job description
+3. Add your key highlights (skills, achievements)
+4. Choose tone and length
+5. Click **✨ Generate** — the server calls the Gemini API and returns:
    - A professionally structured cover letter with proper paragraphs
    - 3 alternative variants
    - ATS keywords extracted from the job description
    - ATS score and relevance score (calculated server-side)
 
+### Resume Upload
+
+Click the upload area (or drag-and-drop) in the cover letter generator to upload your resume. The browser POSTs the file to `POST /api/upload-resume`.
+
+- **Accepted formats:** PDF and DOCX (`.pdf` / `.docx`)
+- **Maximum file size:** 5 MB
+- The server extracts plain text from the file using [pdf-parse](https://www.npmjs.com/package/pdf-parse) (PDF) or [mammoth](https://www.npmjs.com/package/mammoth) (DOCX) and returns it as JSON
+- The extracted text is automatically included in the cover letter generation prompt so the AI can reference your actual experience and skills
+- Enable **Mirror my resume structure** to ask the AI to match the layout and voice of your resume
+- Scanned/image-only PDFs cannot be parsed; the server returns a clear error in that case
+
 ### PDF Download
 
 Click **⬇ Download PDF** after generating a letter. The browser sends the letter content and metadata to `POST /api/generate-pdf`, which uses [PDFKit](https://pdfkit.org/) to build a professional A4 PDF with:
 
-- Job title and company header
+- Candidate name (if provided) and date header
+- Job title and company sub-header
 - Full letter body with correct paragraph spacing
-- ATS score, relevance score, and matched keywords summary
-- CareerCraft AI footer with the generation date
+- CareerCraft AI footer
 
 The server streams the finished PDF back as an `application/pdf` attachment, which the browser saves to your downloads folder. No third-party PDF libraries are loaded in the browser.
 
