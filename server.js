@@ -1,14 +1,21 @@
+require('dotenv').config();
+const express = require('express');
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+app.use(express.static(path.join(__dirname)));
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
 function parseGeminiResponse(text) {
-  // Remove code fences if present
   text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
 
-  // Extract the JSON object
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    text = jsonMatch[0];
-  }
+  if (jsonMatch) text = jsonMatch[0];
 
-  // If JSON is missing the closing brace, add it (best-effort recovery; may yield partial data)
   if (text.startsWith('{') && !text.endsWith('}')) {
     console.warn('Gemini response appears truncated; appending closing brace for recovery.');
     text = text + '}';
@@ -19,7 +26,6 @@ function parseGeminiResponse(text) {
     data = JSON.parse(text);
   } catch (e) {
     console.error('JSON parse error:', e.message, '\nText snippet:', text.substring(0, 500));
-    // Fallback: try to extract just the letter field (best-effort; complex escapes may not be handled)
     const letterMatch = text.match(/"letter"\s*:\s*"([\s\S]*?)"/);
     data = {
       letter: letterMatch ? letterMatch[1].replace(/\\n/g, '\n') : text,
@@ -42,6 +48,7 @@ function parseGeminiResponse(text) {
 
 async function callGeminiWithRetry(apiKey, body, maxRetries = 3) {
   const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     const r = await fetch(url, {
       method: 'POST',
@@ -53,11 +60,11 @@ async function callGeminiWithRetry(apiKey, body, maxRetries = 3) {
 
     const retryAfter = parseInt(r.headers.get('Retry-After') || '0', 10);
     const waitMs = retryAfter > 0 ? retryAfter * 1000 : Math.pow(2, attempt + 1) * 1000;
-    console.warn(`Gemini API rate limited (429). Waiting ${waitMs}ms before retry ${attempt + 1}/${maxRetries}.`);
+    console.warn(`Gemini rate limited (429). Waiting ${waitMs}ms before retry ${attempt + 1}/${maxRetries}.`);
     await new Promise(resolve => setTimeout(resolve, waitMs));
   }
 
-  // Final attempt (no retry after this)
+  // Final attempt
   const r = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -71,9 +78,9 @@ async function callGeminiWithRetry(apiKey, body, maxRetries = 3) {
   return r;
 }
 
-module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+// ─── Routes ─────────────────────────────────────────────────────────────────
 
+app.post('/api/cover-letter', async (req, res) => {
   const body = req.body || {};
   const jobTitle = String(body.jobTitle || '').trim();
   const companyName = String(body.companyName || '').trim();
@@ -89,7 +96,9 @@ module.exports = async function handler(req, res) {
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'Gemini API key not set.' });
+  if (!apiKey) {
+    return res.status(500).json({ error: 'GEMINI_API_KEY is not set. Please add it to your .env file.' });
+  }
 
   const prompt = `You are an expert professional career writer. Write a compelling, expressive cover letter with proper structure and well-developed paragraphs.
 
@@ -170,4 +179,16 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
     console.error('Cover letter generation error:', err);
     return res.status(500).json({ error: 'Failed to generate cover letter. Please try again.' });
   }
-}
+});
+
+// Serve index for all non-API routes (SPA fallback)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// ─── Start ───────────────────────────────────────────────────────────────────
+
+app.listen(PORT, () => {
+  console.log(`\n🚀 CareerCraft AI server running at http://localhost:${PORT}`);
+  console.log(`   Press Ctrl+C to stop\n`);
+});
