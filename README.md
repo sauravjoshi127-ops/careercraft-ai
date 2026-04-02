@@ -58,10 +58,17 @@ careercraft-ai/
 3. Add your key highlights (skills, achievements)
 4. Choose tone and length
 5. Click **✨ Generate** — the server calls the Gemini API and returns:
-   - A professionally structured cover letter with proper paragraphs
-   - 3 alternative variants
+   - A professionally structured cover letter following the [Indeed best-practice format](https://www.indeed.com/career-advice/resumes-cover-letters/how-to-write-a-cover-letter):
+     1. Date
+     2. Formal greeting / salutation
+     3. Opening paragraph (role, company, enthusiasm)
+     4. Skills & experience paragraph (quantified achievements)
+     5. Company fit paragraph (mission, culture, values)
+     6. Closing paragraph (call to action)
+     7. Professional sign-off
+   - 3 alternative variants at different tones/angles
    - ATS keywords extracted from the job description
-   - ATS score and relevance score (calculated server-side)
+   - ATS score and relevance score (calculated server-side, shown on-screen only — **never in the PDF**)
 
 ### Resume Upload
 
@@ -69,10 +76,13 @@ Click the upload area (or drag-and-drop) in the cover letter generator to upload
 
 - **Accepted formats:** PDF and DOCX (`.pdf` / `.docx`)
 - **Maximum file size:** 5 MB
-- The server extracts plain text from the file using [pdf-parse](https://www.npmjs.com/package/pdf-parse) (PDF) or [mammoth](https://www.npmjs.com/package/mammoth) (DOCX) and returns it as JSON
+- The server accepts files regardless of what MIME type the browser reports — it falls back to the file extension when the browser sends a generic `application/octet-stream` type (common on mobile and some desktop browsers)
+- The server extracts plain text using [pdf-parse](https://www.npmjs.com/package/pdf-parse) (PDF) or [mammoth](https://www.npmjs.com/package/mammoth) (DOCX) and returns it as JSON
 - The extracted text is automatically included in the cover letter generation prompt so the AI can reference your actual experience and skills
 - Enable **Mirror my resume structure** to ask the AI to match the layout and voice of your resume
-- Scanned/image-only PDFs cannot be parsed; the server returns a clear error in that case
+- Scanned/image-only PDFs cannot be parsed; the server returns a clear error message in that case
+- If upload fails, the UI shows the **actual reason** (wrong file type, file too large, parse error, network error) — not a generic "try again" message
+- Server-side console logs (`[upload]`) trace the full upload flow for debugging
 
 ### PDF Download
 

@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const Busboy = require('busboy');
 const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
@@ -15,6 +16,7 @@ const ALLOWED_MIME_TYPES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 ];
+const ALLOWED_EXTENSIONS = ['.pdf', '.docx'];
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
@@ -84,25 +86,40 @@ module.exports = async function handler(req, res) {
     return res.status(413).json({ error: 'File too large. Maximum size is 5 MB.' });
   }
 
+  const ext = path.extname(resumeFile.originalname || '').toLowerCase();
+
   if (!ALLOWED_MIME_TYPES.includes(resumeFile.mimetype)) {
-    return res.status(400).json({ error: 'Only PDF and DOCX files are accepted.' });
+    // Accept generic MIME types when the file extension is explicitly allowed
+    // (some browsers send application/octet-stream for all file types)
+    const genericMime = resumeFile.mimetype === 'application/octet-stream' || !resumeFile.mimetype;
+    if (!(genericMime && ALLOWED_EXTENSIONS.includes(ext))) {
+      console.warn(`[upload] Rejected: mime="${resumeFile.mimetype}" ext="${ext}"`);
+      return res.status(400).json({ error: `Only PDF and DOCX files are accepted. Received: ${resumeFile.mimetype || 'unknown type'}.` });
+    }
   }
+
+  const isPDF  = resumeFile.mimetype === 'application/pdf' || ext === '.pdf';
+  const isDOCX = resumeFile.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || ext === '.docx';
+
+  console.log(`[upload] Received: name="${resumeFile.originalname}" mime="${resumeFile.mimetype}" ext="${ext}" size=${resumeFile.buffer.length}B`);
 
   try {
     let resumeText = '';
 
-    if (resumeFile.mimetype === 'application/pdf') {
+    if (isPDF) {
+      console.log('[upload] Parsing PDF…');
       const parser = new PDFParse({ data: resumeFile.buffer });
       const parsed = await parser.getText();
       await parser.destroy();
       resumeText = parsed.text || '';
-    } else {
-      // DOCX
+    } else if (isDOCX) {
+      console.log('[upload] Parsing DOCX…');
       const result = await mammoth.extractRawText({ buffer: resumeFile.buffer });
       resumeText = result.value || '';
     }
 
     resumeText = resumeText.trim();
+    console.log(`[upload] Extracted ${resumeText.length} characters`);
 
     if (!resumeText) {
       return res.status(422).json({ error: 'Could not extract text from the uploaded file. Please ensure the file is not scanned/image-only.' });
@@ -110,7 +127,7 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({ resumeText });
   } catch (err) {
-    console.error('Resume parse error:', err);
-    return res.status(500).json({ error: 'Failed to parse resume. Please try a different file.' });
+    console.error('[upload] Parse error:', err);
+    return res.status(500).json({ error: `Failed to parse resume (${err.message}). Please try a different file.` });
   }
 };
