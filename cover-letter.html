@@ -340,6 +340,19 @@ async function previewSaved(id) {
   const { data } = await client.from('cover_letters').select('*').eq('id', id).single();
   if (!data) return;
 
+  lastGenerated = {
+    letter: data.generated_letter,
+    variants: data.variants,
+    keywords_used: data.keywords_used,
+    ats_score: data.ats_score,
+    relevance_score: data.relevance_score,
+    matched_keywords: data.matched_keywords || []
+  };
+
+  // Pre-fill form fields so downloadPDF can use them
+  if (data.job_title) jobTitle.value = data.job_title;
+  if (data.company_name) companyName.value = data.company_name;
+
   letterOutput.textContent = formatLetterText(data.generated_letter);
 
   variantsBox.textContent = (data.variants || []).join('\n\n---\n\n');

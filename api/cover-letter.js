@@ -1,3 +1,5 @@
+const { calculateAtsScore, calculateRelevanceScore } = require('../utils/scoring');
+
 function parseGeminiResponse(text) {
   // Remove code fences if present
   text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
@@ -164,6 +166,23 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
     console.log('Gemini raw response snippet:', rawText.substring(0, 200));
 
     const data = parseGeminiResponse(rawText);
+
+    // Override AI-provided scores with server-side calculated scores
+    const atsResult = calculateAtsScore(data.letter, jobDescription);
+    const relResult = calculateRelevanceScore(data.letter, jobDescription, highlights);
+
+    data.ats_score = atsResult.score;
+    data.relevance_score = relResult.score;
+    data.matched_keywords = atsResult.matchedKeywords;
+    data.missing_keywords = atsResult.missingKeywords;
+    data.score_details = {
+      ats: { totalKeywords: atsResult.totalKeywords, matchCount: atsResult.matchCount },
+      relevance: relResult.details
+    };
+
+    if (!data.keywords_used || data.keywords_used.length === 0) {
+      data.keywords_used = atsResult.matchedKeywords.concat(atsResult.missingKeywords).slice(0, 15);
+    }
 
     return res.status(200).json(data);
   } catch (err) {
