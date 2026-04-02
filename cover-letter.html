@@ -329,58 +329,87 @@ function downloadPDF() {
 
   try {
     // Get the letter text
-    const letterText = letterOutput.textContent;
+    const letterText = letterOutput.textContent.trim();
     
-    // Create a new element with proper HTML structure
-    const element = document.createElement('div');
-    element.style.fontFamily = 'Arial, sans-serif';
-    element.style.padding = '20px';
-    element.style.lineHeight = '1.8';
-    element.style.color = '#000';
-    element.style.backgroundColor = '#fff';
+    if (!letterText) {
+      alert('Letter content is empty');
+      return;
+    }
+
+    console.log('Letter text length:', letterText.length);
+    console.log('First 100 chars:', letterText.substring(0, 100));
+
+    // Create a temporary div with the letter content
+    const tempDiv = document.createElement('div');
+    tempDiv.id = 'pdf-content-temp';
+    tempDiv.style.display = 'none';
+    tempDiv.style.fontFamily = 'Arial, sans-serif';
+    tempDiv.style.padding = '40px';
+    tempDiv.style.lineHeight = '1.6';
+    tempDiv.style.color = '#000';
+    tempDiv.style.backgroundColor = '#fff';
+    tempDiv.style.width = '210mm';
+    tempDiv.style.height = '297mm';
     
-    // Build the content with proper formatting
-    element.innerHTML = `
-      <div style="margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px;">
-        <h2 style="margin: 0 0 5px 0; font-size: 18px;">${jobTitle.value || 'Cover Letter'}</h2>
-        <p style="margin: 0; font-size: 14px; color: #666;">${companyName.value || 'Company'}</p>
+    // Convert text to HTML with line breaks
+    const htmlContent = letterText
+      .split('\n')
+      .map(line => `<p style="margin: 10px 0; font-size: 13px;">${line}</p>`)
+      .join('');
+    
+    tempDiv.innerHTML = `
+      <div style="margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px;">
+        <h2 style="margin: 0 0 5px 0; font-size: 20px; font-weight: bold;">${jobTitle.value || 'Cover Letter'}</h2>
+        <p style="margin: 0; font-size: 14px; color: #666;">@ ${companyName.value || 'Company'}</p>
       </div>
-      <div style="white-space: pre-wrap; font-size: 12px; line-height: 1.6;">
-        ${letterText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+      <div style="margin-top: 20px;">
+        ${htmlContent}
       </div>
     `;
+    
+    // Add to body temporarily
+    document.body.appendChild(tempDiv);
 
     // PDF options
+    const element = tempDiv;
     const opt = {
-      margin: 10,
-      filename: `cover-letter-${jobTitle.value}-${new Date().toISOString().split('T')[0]}.pdf`,
+      margin: [10, 10, 10, 10],
+      filename: `CoverLetter-${jobTitle.value.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { 
-        scale: 2, 
-        logging: false,
-        backgroundColor: '#ffffff'
+        scale: 2,
+        logging: true,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        allowTaint: true
       },
       jsPDF: { 
-        orientation: 'portrait', 
-        unit: 'mm', 
-        format: 'a4',
-        compress: true
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
       }
     };
 
-    // Generate and download PDF
-    html2pdf().set(opt).from(element).save()
+    // Generate PDF
+    html2pdf()
+      .set(opt)
+      .from(element)
+      .save()
       .then(() => {
+        // Remove temporary div
+        document.body.removeChild(tempDiv);
         showAlert('success', '✅ PDF downloaded successfully!');
+        console.log('✅ PDF generated and downloaded');
       })
       .catch(err => {
-        console.error('PDF Error:', err);
-        showAlert('error', '❌ PDF download failed. Please try again.');
+        console.error('❌ PDF Error:', err);
+        document.body.removeChild(tempDiv);
+        showAlert('error', '❌ Failed to generate PDF. Try again.');
       });
 
   } catch (err) {
-    console.error('Error:', err);
-    showAlert('error', '❌ Error generating PDF: ' + err.message);
+    console.error('❌ Error:', err);
+    showAlert('error', '❌ Error: ' + err.message);
   }
 }
 
