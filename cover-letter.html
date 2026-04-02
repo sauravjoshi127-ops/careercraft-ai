@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Cover Letter AI - CareerCraft</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     body {font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0e27;color:#f1f5f9;margin:0;}
     .topnav{background:rgba(10,14,39,.95);padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(124,58,237,.2);}
@@ -22,9 +21,15 @@
     .alert-success{background:#dcfce7;color:#166534;}
     .output-box{background:rgba(10,14,39,.8);border:1px solid rgba(148,163,184,.2);padding:1rem;border-radius:.5rem;white-space:pre-wrap;line-height:1.6;}
     .tools{display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap;}
-    .score-box{display:flex;gap:1rem;margin-top:1rem;}
-    .score{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.4);padding:.5rem 1rem;border-radius:.5rem;}
+    .score-box{display:flex;gap:1rem;margin-top:1rem;flex-wrap:wrap;}
+    .score{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.4);padding:.5rem 1rem;border-radius:.5rem;min-width:160px;}
+    .score-number{font-size:1.5rem;font-weight:700;color:#a855f7;}
+    .score-label{font-size:.8rem;color:#94a3b8;margin-top:.15rem;}
+    .keywords-section{margin-top:1rem;}
+    .keywords-section h4{font-size:.9rem;color:#94a3b8;margin:0 0 .4rem 0;}
     .tag{display:inline-block;padding:.25rem .6rem;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);border-radius:9999px;margin:.2rem;font-size:.8rem;}
+    .tag-matched{background:rgba(5,150,105,.2);border-color:rgba(5,150,105,.5);color:#6ee7b7;}
+    .tag-missing{background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.3);color:#fca5a5;}
     .history-card{border:1px solid rgba(148,163,184,.15);border-radius:.75rem;padding:1rem;margin-bottom:.75rem;}
   </style>
 </head>
@@ -100,11 +105,17 @@
       </div>
 
       <div class="score-box">
-        <div class="score" id="atsScore">ATS Score: —</div>
-        <div class="score" id="relScore">Relevance: —</div>
+        <div class="score">
+          <div class="score-number" id="atsScore">—</div>
+          <div class="score-label">ATS Score / 100</div>
+        </div>
+        <div class="score">
+          <div class="score-number" id="relScore">—</div>
+          <div class="score-label">Relevance Score / 100</div>
+        </div>
       </div>
 
-      <div id="keywordsBox"></div>
+      <div id="keywordsBox" class="keywords-section"></div>
 
       <h3>Variants (3)</h3>
       <div id="variantsBox" class="output-box"></div>
@@ -233,9 +244,31 @@ async function generateCoverLetter(event, regen = false) {
     letterOutput.textContent = formatLetterText(data.letter);
 
     variantsBox.textContent = (data.variants || []).join('\n\n---\n\n');
-    atsScore.textContent = `ATS Score: ${data.ats_score ?? '—'}`;
-    relScore.textContent = `Relevance: ${data.relevance_score ?? '—'}`;
-    keywordsBox.innerHTML = (data.keywords_used || []).map(k => `<span class="tag">${k}</span>`).join('');
+
+    // Update score display
+    atsScore.textContent = data.ats_score != null ? data.ats_score : '—';
+    relScore.textContent = data.relevance_score != null ? data.relevance_score : '—';
+
+    // Keyword breakdown: matched (green) + missing (red)
+    const matched = Array.isArray(data.matched_keywords) ? data.matched_keywords : [];
+    const missing = Array.isArray(data.missing_keywords) ? data.missing_keywords : [];
+    const allKeywords = Array.isArray(data.keywords_used) ? data.keywords_used : [];
+
+    if (matched.length > 0 || missing.length > 0) {
+      keywordsBox.innerHTML =
+        '<h4>✅ Matched Keywords</h4>' +
+        matched.map(k => `<span class="tag tag-matched">${k}</span>`).join('') +
+        (missing.length > 0
+          ? '<h4 style="margin-top:.6rem">❌ Missing Keywords</h4>' +
+            missing.map(k => `<span class="tag tag-missing">${k}</span>`).join('')
+          : '');
+    } else if (allKeywords.length > 0) {
+      keywordsBox.innerHTML =
+        '<h4>Keywords</h4>' +
+        allKeywords.map(k => `<span class="tag">${k}</span>`).join('');
+    } else {
+      keywordsBox.innerHTML = '';
+    }
 
     showAlert('success', '✅ Cover letter generated successfully!');
     console.log('✨ Generation complete!');
@@ -310,8 +343,8 @@ async function previewSaved(id) {
   letterOutput.textContent = formatLetterText(data.generated_letter);
 
   variantsBox.textContent = (data.variants || []).join('\n\n---\n\n');
-  atsScore.textContent = `ATS Score: ${data.ats_score || '—'}`;
-  relScore.textContent = `Relevance: ${data.relevance_score || '—'}`;
+  atsScore.textContent = data.ats_score != null ? data.ats_score : '—';
+  relScore.textContent = data.relevance_score != null ? data.relevance_score : '—';
   keywordsBox.innerHTML = (data.keywords_used || []).map(k => `<span class="tag">${k}</span>`).join('');
 }
 
@@ -320,97 +353,55 @@ function copyLetter() {
   showAlert('success', '✅ Copied to clipboard!');
 }
 
-function downloadPDF() {
-  // Check if letter exists
-  if (!letterOutput.textContent || letterOutput.textContent === 'Your letter will appear here...') {
+async function downloadPDF() {
+  if (!lastGenerated || !lastGenerated.letter) {
     alert('Please generate a cover letter first.');
     return;
   }
 
+  const downloadBtn = document.querySelector('[onclick="downloadPDF()"]');
+  const originalText = downloadBtn.textContent;
+
   try {
-    // Get the letter text
-    const letterText = letterOutput.textContent.trim();
-    
-    if (!letterText) {
-      alert('Letter content is empty');
-      return;
+    downloadBtn.textContent = '⏳ Generating PDF...';
+    downloadBtn.disabled = true;
+
+    const res = await fetch('/api/generate-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        letter: lastGenerated.letter,
+        jobTitle: jobTitle.value,
+        companyName: companyName.value,
+        ats_score: lastGenerated.ats_score,
+        relevance_score: lastGenerated.relevance_score,
+        keywords_used: lastGenerated.keywords_used || [],
+        matched_keywords: lastGenerated.matched_keywords || []
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'PDF generation failed' }));
+      throw new Error(err.error || 'PDF generation failed');
     }
 
-    console.log('Letter text length:', letterText.length);
-    console.log('First 100 chars:', letterText.substring(0, 100));
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `CoverLetter-${(jobTitle.value || 'letter').replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 
-    // Create a temporary div with the letter content
-    const tempDiv = document.createElement('div');
-    tempDiv.id = 'pdf-content-temp';
-    tempDiv.style.position = 'absolute';
-    tempDiv.style.left = '-9999px';
-    tempDiv.style.top = '0';
-    tempDiv.style.fontFamily = 'Arial, sans-serif';
-    tempDiv.style.padding = '40px';
-    tempDiv.style.lineHeight = '1.6';
-    tempDiv.style.color = '#000';
-    tempDiv.style.backgroundColor = '#fff';
-    tempDiv.style.width = '210mm';
-    
-    // Convert text to HTML with line breaks
-    const htmlContent = letterText
-      .split('\n')
-      .map(line => `<p style="margin: 10px 0; font-size: 13px;">${line}</p>`)
-      .join('');
-    
-    tempDiv.innerHTML = `
-      <div style="margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px;">
-        <h2 style="margin: 0 0 5px 0; font-size: 20px; font-weight: bold;">${jobTitle.value || 'Cover Letter'}</h2>
-        <p style="margin: 0; font-size: 14px; color: #666;">@ ${companyName.value || 'Company'}</p>
-      </div>
-      <div style="margin-top: 20px;">
-        ${htmlContent}
-      </div>
-    `;
-    
-    // Add to body temporarily
-    document.body.appendChild(tempDiv);
-
-    // PDF options
-    const element = tempDiv;
-    const opt = {
-      margin: [10, 10, 10, 10],
-      filename: `CoverLetter-${jobTitle.value.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2,
-        logging: true,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        allowTaint: true
-      },
-      jsPDF: { 
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      }
-    };
-
-    // Generate PDF
-    html2pdf()
-      .set(opt)
-      .from(element)
-      .save()
-      .then(() => {
-        // Remove temporary div
-        document.body.removeChild(tempDiv);
-        showAlert('success', '✅ PDF downloaded successfully!');
-        console.log('✅ PDF generated and downloaded');
-      })
-      .catch(err => {
-        console.error('❌ PDF Error:', err);
-        document.body.removeChild(tempDiv);
-        showAlert('error', '❌ Failed to generate PDF. Try again.');
-      });
-
+    showAlert('success', '✅ PDF downloaded successfully!');
   } catch (err) {
-    console.error('❌ Error:', err);
-    showAlert('error', '❌ Error: ' + err.message);
+    console.error('❌ PDF Error:', err);
+    showAlert('error', '❌ PDF download failed: ' + err.message);
+  } finally {
+    downloadBtn.textContent = originalText;
+    downloadBtn.disabled = false;
   }
 }
 

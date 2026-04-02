@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const { calculateAtsScore, calculateRelevanceScore } = require('./utils/scoring');
+const { generateCoverLetterPDF } = require('./utils/pdf-generator');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -174,10 +176,63 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
 
     const data = parseGeminiResponse(rawText);
 
+    // ── Override AI-provided scores with server-side calculated scores ─────────
+    const atsResult = calculateAtsScore(data.letter, jobDescription);
+    const relResult = calculateRelevanceScore(data.letter, jobDescription, highlights);
+
+    data.ats_score = atsResult.score;
+    data.relevance_score = relResult.score;
+    data.matched_keywords = atsResult.matchedKeywords;
+    data.missing_keywords = atsResult.missingKeywords;
+    data.score_details = {
+      ats: {
+        totalKeywords: atsResult.totalKeywords,
+        matchCount: atsResult.matchCount
+      },
+      relevance: relResult.details
+    };
+
+    // Merge keywords_used: AI-provided list is a good starting point; keep it
+    // but also ensure our matched_keywords are available for the UI.
+    if (!data.keywords_used || data.keywords_used.length === 0) {
+      data.keywords_used = atsResult.matchedKeywords.concat(atsResult.missingKeywords).slice(0, 15);
+    }
+
     return res.status(200).json(data);
   } catch (err) {
     console.error('Cover letter generation error:', err);
     return res.status(500).json({ error: 'Failed to generate cover letter. Please try again.' });
+  }
+});
+
+// ─── PDF Generation ──────────────────────────────────────────────────────────
+
+app.post('/api/generate-pdf', async (req, res) => {
+  const { letter, jobTitle, companyName, ats_score, relevance_score, keywords_used, matched_keywords } = req.body || {};
+
+  if (!letter || !letter.trim()) {
+    return res.status(400).json({ error: 'No letter content provided.' });
+  }
+
+  try {
+    const pdfBuffer = await generateCoverLetterPDF({
+      letter,
+      jobTitle: jobTitle || 'Cover Letter',
+      companyName: companyName || '',
+      ats_score,
+      relevance_score,
+      keywords_used: Array.isArray(keywords_used) ? keywords_used : [],
+      matched_keywords: Array.isArray(matched_keywords) ? matched_keywords : []
+    });
+
+    const filename = `CoverLetter-${(jobTitle || 'letter').replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    return res.send(pdfBuffer);
+  } catch (err) {
+    console.error('PDF generation error:', err);
+    return res.status(500).json({ error: 'Failed to generate PDF. Please try again.' });
   }
 });
 
