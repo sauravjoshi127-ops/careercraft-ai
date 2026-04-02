@@ -311,6 +311,7 @@ async function handleResumeUpload(input) {
     document.getElementById('resumeClearRow').style.display = 'block';
   } catch (err) {
     showProgress(false);
+    console.error('Resume upload error:', err);
     setResumeStatus('error', '❌ Upload failed. Please try again.');
     resumeText = '';
   }
