@@ -2,7 +2,13 @@
   "name": "careercraft-ai",
   "version": "1.0.0",
   "engines": { "node": "20.x" },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.1"
+    "@supabase/supabase-js": "^2.49.1",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
   }
 }
