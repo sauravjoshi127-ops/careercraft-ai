@@ -730,7 +730,7 @@ function copyEmail(idx) {
   const text = `Subject: ${v.subject}\n\n${v.body}`;
   navigator.clipboard.writeText(text).then(() => {
     showToast('✅ Copied!');
-    if (currentUser && (isPro)) saveEmailToHistory(v);
+    if (currentUser && isPro) saveEmailToHistory(v);
   }).catch(() => showToast('❌ Copy failed'));
 }
 
