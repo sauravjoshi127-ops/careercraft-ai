@@ -6,6 +6,7 @@ const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
 const { calculateAtsScore, calculateRelevanceScore } = require('./utils/scoring');
 const { generateCoverLetterPDF } = require('./utils/pdf-generator');
+const coldEmailHandler = require('./api/cold-email');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -319,6 +320,10 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
     return res.status(500).json({ error: 'Failed to generate cover letter. Please try again.' });
   }
 });
+
+// ─── Cold Email ──────────────────────────────────────────────────────────────
+
+app.post('/api/cold-email', (req, res) => coldEmailHandler(req, res));
 
 // ─── PDF Generation ──────────────────────────────────────────────────────────
 
