@@ -80,7 +80,8 @@ Click the upload area (or drag-and-drop) in the cover letter generator to upload
 - The server extracts plain text using [pdf-parse](https://www.npmjs.com/package/pdf-parse) (PDF) or [mammoth](https://www.npmjs.com/package/mammoth) (DOCX) and returns it as JSON
 - The extracted text is automatically included in the cover letter generation prompt so the AI can reference your actual experience and skills
 - Enable **Mirror my resume structure** to ask the AI to match the layout and voice of your resume
-- Scanned/image-only PDFs cannot be parsed; the server returns a clear error message in that case
+- Scanned/image-only PDFs cannot be parsed; the server returns a clear `422` error message in that case
+- Encrypted or corrupted PDFs return a `422` error with a specific reason — not a generic 500
 - If upload fails, the UI shows the **actual reason** (wrong file type, file too large, parse error, network error) — not a generic "try again" message
 - Server-side console logs (`[upload]`) trace the full upload flow for debugging
 

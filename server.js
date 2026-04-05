@@ -170,7 +170,8 @@ app.post('/api/upload-resume', (req, res, next) => {
     return res.status(200).json({ resumeText });
   } catch (err) {
     console.error('[upload] Parse error:', err);
-    return res.status(500).json({ error: `Failed to parse resume (${err.message}). Please try a different file.` });
+    // Parsing failures are client-side issues (bad/corrupted/encrypted file) — use 422
+    return res.status(422).json({ error: `Failed to parse resume: ${err.message}. Please ensure the file is a valid, non-encrypted PDF or DOCX.` });
   }
 });
 
@@ -352,6 +353,19 @@ app.post('/api/generate-pdf', async (req, res) => {
 // Serve index for all non-API routes (SPA fallback)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// ─── Global error handler ────────────────────────────────────────────────────
+// Catches any unhandled errors (including async throws in Express 4 routes)
+// and always returns a JSON response so clients never receive an HTML error page.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('[server] Unhandled error:', err);
+  const status = typeof err.status === 'number' ? err.status : 500;
+  const message = err.message || 'An unexpected server error occurred. Please try again.';
+  if (!res.headersSent) {
+    res.status(status).json({ error: message });
+  }
 });
 
 // ─── Start ───────────────────────────────────────────────────────────────────
