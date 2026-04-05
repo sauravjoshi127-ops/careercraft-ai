@@ -80,7 +80,43 @@ CREATE POLICY "public_view_shared_resumes"
               AND resume_shares.is_active = TRUE
         )
     );
--- ── Cover Letters Table ────────────────────────────────────────────────────────
+-- ── Cold Email History Table ────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS email_history (
+  id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id        UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  company        TEXT,
+  recipient_title TEXT,
+  subject        TEXT,
+  body           TEXT,
+  variant        TEXT,
+  status         TEXT        NOT NULL DEFAULT 'draft'
+                             CHECK (status IN ('draft','sent','replied','no_reply')),
+  created_at     TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE email_history ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "auth_manage_email_history"
+ON email_history FOR ALL
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+-- ── Usage Tracking Table ──────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS usage_tracking (
+  id         UUID  PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID  NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  tool       TEXT  NOT NULL,
+  count      INT   NOT NULL DEFAULT 0,
+  reset_date DATE  NOT NULL DEFAULT CURRENT_DATE,
+  UNIQUE (user_id, tool)
+);
+
+ALTER TABLE usage_tracking ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "auth_manage_usage_tracking"
+ON usage_tracking FOR ALL
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
 CREATE TABLE IF NOT EXISTS cover_letters (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,

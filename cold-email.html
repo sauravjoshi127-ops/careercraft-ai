@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Cold Email Writer - CareerCraft AI</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background: #0a0e27; color: #f1f5f9; margin: 0; }
+
+    /* ── Nav ── */
+    .topnav { background: rgba(10,14,39,.95); padding: 1.2rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(124,58,237,.2); }
+    .logo { font-size: 1.2rem; font-weight: 700; text-decoration: none; color: #f1f5f9; }
+    .logo span { background: linear-gradient(135deg,#7c3aed,#a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-links { display: flex; gap: .75rem; align-items: center; }
+    .nav-btn { background: transparent; color: #cbd5e1; border: 1px solid rgba(148,163,184,.2); padding: .5rem 1rem; border-radius: .5rem; cursor: pointer; font-size: .9rem; text-decoration: none; transition: border-color .2s,color .2s; }
+    .nav-btn:hover { border-color: #7c3aed; color: #a855f7; }
+
+    /* ── Layout ── */
+    .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .page-header { text-align: center; margin-bottom: 2rem; }
+    .page-header h1 { font-size: 2rem; margin-bottom: .5rem; }
+    .page-header p { color: #94a3b8; font-size: 1rem; }
+
+    /* ── Usage Banner ── */
+    .usage-banner { display: flex; align-items: center; gap: .75rem; background: rgba(124,58,237,.1); border: 1px solid rgba(124,58,237,.3); border-radius: .75rem; padding: .9rem 1.25rem; margin-bottom: 1.75rem; font-size: .9rem; }
+    .usage-dots { display: flex; gap: .35rem; }
+    .usage-dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(148,163,184,.2); }
+    .usage-dot.used { background: #7c3aed; }
+    .usage-text { color: #c4b5fd; }
+    .usage-text strong { color: #a855f7; }
+
+    /* ── Card ── */
+    .card { background: rgba(20,24,41,.6); border: 1px solid rgba(148,163,184,.1); border-radius: 1rem; padding: 1.75rem; margin-bottom: 1.5rem; }
+    .card-title { font-size: 1rem; font-weight: 700; color: #a855f7; margin-bottom: 1.25rem; display: flex; align-items: center; gap: .5rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .field-group { margin-bottom: 1.1rem; }
+    label { font-size: .85rem; color: #94a3b8; display: block; margin-bottom: .35rem; font-weight: 500; }
+    label .req { color: #f87171; margin-left: 2px; }
+    input, textarea, select {
+      width: 100%; padding: .75rem; background: rgba(10,14,39,.8);
+      border: 1px solid rgba(148,163,184,.15); border-radius: .5rem;
+      color: #f1f5f9; font-size: .95rem; font-family: inherit; transition: border-color .2s;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: rgba(124,58,237,.5); }
+    input::placeholder, textarea::placeholder { color: #475569; }
+    textarea { min-height: 90px; resize: vertical; }
+    select option { background: #1e1b4b; }
+    .field-error { font-size: .8rem; color: #f87171; margin-top: .3rem; display: none; }
+    .field-error.show { display: block; }
+    .input-error { border-color: rgba(248,113,113,.5) !important; }
+    .char-counter { font-size: .78rem; color: #64748b; text-align: right; margin-top: .25rem; }
+    .char-counter.warn { color: #fb923c; }
+
+    /* ── Pill Buttons ── */
+    .pills { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .pill { padding: .45rem .9rem; border-radius: 9999px; border: 1px solid rgba(148,163,184,.2); background: rgba(10,14,39,.8); color: #94a3b8; font-size: .85rem; cursor: pointer; transition: all .2s; user-select: none; }
+    .pill.selected { background: rgba(124,58,237,.25); border-color: #7c3aed; color: #c4b5fd; font-weight: 600; }
+    .pill:hover:not(.selected) { border-color: rgba(124,58,237,.4); color: #c4b5fd; }
+
+    /* ── Length selector ── */
+    .length-options { display: flex; gap: .75rem; flex-wrap: wrap; }
+    .length-opt { flex: 1; min-width: 130px; padding: .75rem; border: 1px solid rgba(148,163,184,.15); border-radius: .75rem; background: rgba(10,14,39,.8); cursor: pointer; text-align: center; transition: all .2s; }
+    .length-opt:hover { border-color: rgba(124,58,237,.4); }
+    .length-opt.selected { border-color: #7c3aed; background: rgba(124,58,237,.15); }
+    .length-opt .lo-title { font-weight: 600; font-size: .9rem; color: #f1f5f9; }
+    .length-opt .lo-sub { font-size: .78rem; color: #64748b; margin-top: .2rem; }
+    .length-opt.selected .lo-sub { color: #a78bfa; }
+
+    /* ── Generate button ── */
+    .generate-btn { width: 100%; padding: 1rem; background: linear-gradient(135deg,#7c3aed,#a855f7); color: #fff; border: none; border-radius: .75rem; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity .2s, transform .2s; margin-top: .5rem; }
+    .generate-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-2px); }
+    .generate-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    /* ── Spinner ── */
+    .spinner { display: none; text-align: center; padding: 2rem; color: #94a3b8; }
+    .spinner.show { display: block; }
+    .spin-icon { font-size: 2rem; animation: spin 1s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Results section ── */
+    #results { display: none; }
+    #results.show { display: block; }
+    .tabs { display: flex; gap: .5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .tab-btn { padding: .55rem 1.1rem; border-radius: .5rem; border: 1px solid rgba(148,163,184,.2); background: transparent; color: #94a3b8; font-size: .9rem; cursor: pointer; transition: all .2s; }
+    .tab-btn.active { background: rgba(124,58,237,.2); border-color: #7c3aed; color: #c4b5fd; font-weight: 600; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .subject-line-box { display: flex; justify-content: space-between; align-items: center; background: rgba(10,14,39,.8); border: 1px solid rgba(148,163,184,.15); border-radius: .5rem; padding: .75rem 1rem; margin-bottom: 1rem; }
+    .subject-line-box .subject-text { font-weight: 600; font-size: 1rem; }
+    .subject-len { font-size: .8rem; color: #64748b; }
+    .subject-len.warn { color: #fb923c; }
+    .email-body-box { background: rgba(10,14,39,.8); border: 1px solid rgba(148,163,184,.15); border-radius: .5rem; padding: 1.25rem; white-space: pre-wrap; line-height: 1.8; font-size: .95rem; min-height: 120px; outline: none; }
+    .spam-highlight { background: rgba(248,113,113,.25); color: #fca5a5; border-radius: 2px; padding: 0 2px; }
+
+    /* ── Score bars ── */
+    .score-bars { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin: 1rem 0; }
+    .score-bar-item label { display: flex; justify-content: space-between; font-size: .82rem; color: #94a3b8; margin-bottom: .35rem; }
+    .score-bar-track { height: 6px; background: rgba(148,163,184,.15); border-radius: 9999px; overflow: hidden; }
+    .score-bar-fill { height: 100%; background: linear-gradient(90deg,#7c3aed,#a855f7); border-radius: 9999px; transition: width .6s ease; }
+
+    /* ── Why this works ── */
+    .why-box { background: rgba(5,150,105,.1); border: 1px solid rgba(5,150,105,.3); border-radius: .5rem; padding: 1rem 1.25rem; margin: 1rem 0; }
+    .why-box h4 { color: #6ee7b7; font-size: .85rem; margin-bottom: .5rem; }
+    .why-box p { color: #a7f3d0; font-size: .88rem; line-height: 1.6; }
+
+    /* ── Meta row ── */
+    .meta-row { display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: .85rem; color: #64748b; margin: .75rem 0 1rem; }
+    .meta-row span { display: flex; align-items: center; gap: .35rem; }
+
+    /* ── Spam warning ── */
+    .spam-warning { background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.3); border-radius: .5rem; padding: .75rem 1rem; margin-bottom: .75rem; font-size: .85rem; }
+    .spam-warning strong { color: #fca5a5; }
+
+    /* ── Action buttons ── */
+    .action-btns { display: flex; gap: .65rem; flex-wrap: wrap; margin-top: 1.25rem; }
+    .action-btn { padding: .55rem 1rem; border-radius: .5rem; border: 1px solid rgba(148,163,184,.2); background: rgba(10,14,39,.8); color: #cbd5e1; font-size: .85rem; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: .4rem; }
+    .action-btn:hover { border-color: rgba(124,58,237,.5); color: #a855f7; }
+    .action-btn.primary { background: rgba(124,58,237,.15); border-color: rgba(124,58,237,.4); color: #c4b5fd; }
+
+    /* ── Pro follow-up blur ── */
+    .followup-section { position: relative; margin-top: 1.5rem; }
+    .followup-blur { filter: blur(4px); pointer-events: none; user-select: none; }
+    .pro-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10,14,39,.7); border-radius: .5rem; gap: .5rem; }
+    .pro-overlay p { font-size: .9rem; color: #c4b5fd; }
+    .pro-overlay button { background: linear-gradient(135deg,#7c3aed,#a855f7); color: #fff; border: none; padding: .6rem 1.25rem; border-radius: .5rem; font-weight: 600; cursor: pointer; }
+
+    /* ── Email History ── */
+    .history-empty { text-align: center; color: #475569; padding: 2rem; font-size: .9rem; }
+    .history-row { display: flex; align-items: center; justify-content: space-between; padding: .9rem 1rem; border: 1px solid rgba(148,163,184,.1); border-radius: .75rem; margin-bottom: .6rem; gap: 1rem; flex-wrap: wrap; }
+    .history-row:hover { border-color: rgba(124,58,237,.3); }
+    .history-info { flex: 1; }
+    .history-company { font-weight: 600; font-size: .95rem; }
+    .history-subject { font-size: .83rem; color: #64748b; margin-top: .15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; }
+    .history-date { font-size: .78rem; color: #475569; }
+    .status-badge { padding: .25rem .7rem; border-radius: 9999px; font-size: .78rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; }
+    .status-draft    { background: rgba(148,163,184,.15); color: #94a3b8; border-color: rgba(148,163,184,.2); }
+    .status-sent     { background: rgba(59,130,246,.15); color: #93c5fd; border-color: rgba(59,130,246,.3); }
+    .status-replied  { background: rgba(5,150,105,.15); color: #6ee7b7; border-color: rgba(5,150,105,.3); }
+    .status-no_reply { background: rgba(248,113,113,.1); color: #fca5a5; border-color: rgba(248,113,113,.25); }
+    .history-search { width: 100%; padding: .65rem 1rem; background: rgba(10,14,39,.8); border: 1px solid rgba(148,163,184,.15); border-radius: .5rem; color: #f1f5f9; font-size: .9rem; margin-bottom: 1rem; }
+    .history-search:focus { outline: none; border-color: rgba(124,58,237,.5); }
+
+    /* ── Toast ── */
+    #toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: rgba(20,24,41,.95); border: 1px solid rgba(124,58,237,.4); color: #c4b5fd; padding: .75rem 1.25rem; border-radius: .75rem; font-size: .9rem; z-index: 999; transform: translateY(10px); opacity: 0; transition: all .3s; pointer-events: none; }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── Upgrade modal ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: #141829; border: 1px solid rgba(124,58,237,.4); border-radius: 1rem; padding: 2rem; max-width: 420px; width: 90%; text-align: center; }
+    .modal h2 { font-size: 1.4rem; margin-bottom: .5rem; }
+    .modal p { color: #94a3b8; font-size: .9rem; margin-bottom: 1.5rem; }
+    .modal-btns { display: flex; gap: .75rem; justify-content: center; }
+    .modal-close { background: transparent; border: 1px solid rgba(148,163,184,.2); color: #cbd5e1; padding: .6rem 1.2rem; border-radius: .5rem; cursor: pointer; }
+    .modal-upgrade { background: linear-gradient(135deg,#7c3aed,#a855f7); color: #fff; border: none; padding: .6rem 1.4rem; border-radius: .5rem; font-weight: 600; cursor: pointer; }
+
+    @media(max-width:600px) {
+      .form-row { grid-template-columns: 1fr; }
+      .score-bars { grid-template-columns: 1fr; }
+      .length-options { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ──────────────────────────────────────────────────────────────────── -->
+<nav class="topnav">
+  <a class="logo" href="dashboard.html">Career<span>Craft</span> AI</a>
+  <div class="nav-links">
+    <a href="dashboard.html" class="nav-btn">← Dashboard</a>
+    <a href="settings.html" class="nav-btn" id="navSettings" style="display:none">Settings</a>
+    <button class="nav-btn" id="navSignOut" style="display:none" onclick="signOut()">Sign Out</button>
+  </div>
+</nav>
+
+<!-- ── Main ──────────────────────────────────────────────────────────────────── -->
+<div class="container">
+  <div class="page-header">
+    <h1>✉️ Cold Email Writer</h1>
+    <p>Generate personalised cold emails that actually get replies — powered by AI.</p>
+  </div>
+
+  <!-- Usage counter -->
+  <div class="usage-banner" id="usageBanner">
+    <div class="usage-dots" id="usageDots"></div>
+    <p class="usage-text" id="usageText">Loading usage…</p>
+  </div>
+
+  <!-- ── Form ── -->
+  <form id="coldEmailForm" novalidate>
+
+    <!-- Recipient & Sender -->
+    <div class="card">
+      <div class="card-title">👤 Recipient &amp; Sender</div>
+      <div class="form-row">
+        <div class="field-group">
+          <label for="company">Company Name <span class="req">*</span></label>
+          <input type="text" id="company" placeholder="e.g. Stripe, Notion, Shopify" />
+          <div class="field-error" id="err-company">Company name is required (min 2 chars).</div>
+        </div>
+        <div class="field-group">
+          <label for="recipientTitle">Recipient Job Title <span class="req">*</span></label>
+          <input type="text" id="recipientTitle" placeholder="e.g. Head of Engineering" />
+          <div class="field-error" id="err-recipientTitle">Job title is required (min 2 chars).</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field-group">
+          <label for="recipientName">Recipient Name <span style="color:#64748b;font-weight:400">(optional)</span></label>
+          <input type="text" id="recipientName" placeholder="e.g. Alex Johnson" />
+        </div>
+        <div class="field-group">
+          <label for="senderName">Your Name <span class="req">*</span></label>
+          <input type="text" id="senderName" placeholder="e.g. Jamie Smith" />
+          <div class="field-error" id="err-senderName">Your name is required (min 2 chars).</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Background & Purpose -->
+    <div class="card">
+      <div class="card-title">📋 Background &amp; Purpose</div>
+      <div class="field-group">
+        <label for="background">Your Background <span class="req">*</span></label>
+        <textarea id="background" placeholder="e.g. 4-year software engineer with experience in React and Node.js, previously at Acme Corp…" maxlength="300"></textarea>
+        <div class="char-counter" id="bgCounter">0 / 300</div>
+        <div class="field-error" id="err-background">Background required (10–300 chars).</div>
+      </div>
+      <div class="form-row">
+        <div class="field-group">
+          <label for="purpose">Purpose <span class="req">*</span></label>
+          <select id="purpose">
+            <option value="">— Select purpose —</option>
+            <option>Job inquiry</option>
+            <option>Internship</option>
+            <option>Collaboration</option>
+            <option>Freelance</option>
+            <option>Networking</option>
+            <option>Other</option>
+          </select>
+          <div class="field-error" id="err-purpose">Please select a purpose.</div>
+        </div>
+        <div class="field-group">
+          <label for="industry">Industry <span class="req">*</span></label>
+          <select id="industry">
+            <option value="">— Select industry —</option>
+            <option>Tech</option>
+            <option>Finance</option>
+            <option>Marketing</option>
+            <option>Healthcare</option>
+            <option>Startups</option>
+            <option>Consulting</option>
+            <option>Other</option>
+          </select>
+          <div class="field-error" id="err-industry">Please select an industry.</div>
+        </div>
+      </div>
+      <div class="field-group">
+        <label for="valueProposition">Value Proposition / Hook <span class="req">*</span></label>
+        <textarea id="valueProposition" placeholder="e.g. I helped reduce deploy time by 60% using a CI/CD pipeline — I'd love to bring that to your team." maxlength="200"></textarea>
+        <div class="char-counter" id="vpCounter">0 / 200</div>
+        <div class="field-error" id="err-valueProposition">Hook required (10–200 chars).</div>
+      </div>
+    </div>
+
+    <!-- Style -->
+    <div class="card">
+      <div class="card-title">🎨 Email Style</div>
+
+      <div class="field-group">
+        <label>Tone</label>
+        <div class="pills" id="tonePills">
+          <span class="pill selected" data-tone="Professional">Professional</span>
+          <span class="pill" data-tone="Formal">Formal</span>
+          <span class="pill" data-tone="Friendly">Friendly</span>
+          <span class="pill" data-tone="Bold">Bold</span>
+          <span class="pill" data-tone="Humble">Humble</span>
+          <span class="pill" data-tone="Casual">Casual</span>
+        </div>
+        <div class="field-error" id="err-tone">Please select a tone.</div>
+      </div>
+
+      <div class="field-group">
+        <label>Email Length</label>
+        <div class="length-options" id="lengthOptions">
+          <div class="length-opt" data-len="Short (under 100 words)">
+            <div class="lo-title">Short</div>
+            <div class="lo-sub">Under 100 words</div>
+          </div>
+          <div class="length-opt selected" data-len="Medium (100-150 words)">
+            <div class="lo-title">Medium</div>
+            <div class="lo-sub">100–150 words</div>
+          </div>
+          <div class="length-opt" data-len="Detailed (150-200 words)">
+            <div class="lo-title">Detailed</div>
+            <div class="lo-sub">150–200 words</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="generate-btn" id="generateBtn">✨ Generate 3 Email Variants</button>
+  </form>
+
+  <!-- Spinner -->
+  <div class="spinner" id="spinner">
+    <div class="spin-icon">⚙️</div>
+    <p style="margin-top:.75rem">Generating your emails…</p>
+  </div>
+
+  <!-- ── Results ── -->
+  <div id="results">
+    <div class="card" id="resultsCard">
+      <div class="card-title">📬 Your Cold Email Variants</div>
+
+      <!-- Spam warning (global) -->
+      <div class="spam-warning" id="globalSpamWarning" style="display:none">
+        ⚠️ <strong>Spam words detected:</strong> <span id="spamWordList"></span>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(0)">Variant A</button>
+        <button class="tab-btn" onclick="switchTab(1)">Variant B</button>
+        <button class="tab-btn" onclick="switchTab(2)">Variant C</button>
+      </div>
+
+      <!-- Variant panels -->
+      <div id="variantPanels"></div>
+
+      <!-- Follow-up (Pro) -->
+      <div class="followup-section" id="followupSection" style="display:none">
+        <div class="card-title" style="margin-top:.5rem">📩 Follow-up Email</div>
+        <div id="followupContent" class="email-body-box"></div>
+        <div class="pro-overlay" id="proOverlay" style="display:none">
+          <p>🔒 Follow-up email is a Pro feature</p>
+          <button onclick="showUpgradeModal()">Upgrade to Pro</button>
+        </div>
+      </div>
+
+      <!-- Best time to send -->
+      <div class="meta-row" id="bestTimeMeta" style="display:none">
+        <span>🕐 <strong>Best time to send:</strong> <span id="bestTimeText"></span></span>
+      </div>
+    </div>
+
+    <!-- Email History (Pro) -->
+    <div class="card" id="historySection" style="display:none">
+      <div class="card-title">📂 Email History</div>
+      <div id="historyProMsg" style="display:none">
+        <div class="history-empty">
+          🔒 Email history is a Pro feature.
+          <br><br>
+          <button onclick="showUpgradeModal()" style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;padding:.6rem 1.2rem;border-radius:.5rem;cursor:pointer;font-weight:600;">Upgrade to Pro</button>
+        </div>
+      </div>
+      <div id="historyContent" style="display:none">
+        <input type="search" class="history-search" id="historySearch" placeholder="🔍 Search by company name…" oninput="filterHistory()" />
+        <div id="historyList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Upgrade modal ── -->
+<div class="modal-overlay" id="upgradeModal">
+  <div class="modal">
+    <div style="font-size:2rem;margin-bottom:.75rem">🚀</div>
+    <h2>Upgrade to Pro</h2>
+    <p>Unlock unlimited cold emails, follow-up drafts, email history, and advanced analytics.</p>
+    <div class="modal-btns">
+      <button class="modal-close" onclick="hideUpgradeModal()">Maybe later</button>
+      <button class="modal-upgrade" onclick="location.href='settings.html'">Upgrade Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
+<div id="toast"></div>
+
+<script>
+// ── Supabase init ────────────────────────────────────────────────────────────
+const SUPABASE_URL  = 'https://qjnneltnecawobygltih.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqbm5lbHRuZWNhd29ieWdsdGloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MjE4MjAsImV4cCI6MjA1ODQ5NzgyMH0.DVJwEjFGU5I2JW8dWVIK_BbGAQRfSz0GHXL_xsqL9k8';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let currentUser = null;
+let isPro = false;
+let sessionToken = null;
+let currentVariants = [];
+let currentScores = {};
+let currentTips = [];
+let currentFollowUp = '';
+let currentBestTime = '';
+let currentSpamWords = [];
+let allHistory = [];
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+(async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    sessionToken = session.access_token;
+    isPro = currentUser.user_metadata?.plan === 'pro' || currentUser.user_metadata?.isPro === true;
+    document.getElementById('navSettings').style.display = '';
+    document.getElementById('navSignOut').style.display = '';
+  }
+  renderUsageBanner();
+  loadFormFromStorage();
+})();
+
+async function signOut() {
+  await supabase.auth.signOut();
+  location.href = 'login.html';
+}
+
+// ── Usage Banner ─────────────────────────────────────────────────────────────
+function renderUsageBanner() {
+  const used = parseInt(localStorage.getItem('ce_usedToday') || '0', 10);
+  const dots = document.getElementById('usageDots');
+  const text = document.getElementById('usageText');
+  dots.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const d = document.createElement('div');
+    d.className = 'usage-dot' + (i < used ? ' used' : '');
+    dots.appendChild(d);
+  }
+  if (isPro) {
+    text.innerHTML = '✨ <strong>Pro Plan</strong> — unlimited emails';
+  } else {
+    text.innerHTML = `<strong>${used} of 3</strong> free emails used today`;
+  }
+}
+
+// ── localStorage persistence ─────────────────────────────────────────────────
+const STORAGE_KEY = 'ce_form_v1';
+const FIELDS = ['company','recipientTitle','recipientName','senderName','background','purpose','valueProposition','industry'];
+
+function saveFormToStorage() {
+  const data = {};
+  FIELDS.forEach(f => { data[f] = document.getElementById(f)?.value || ''; });
+  data.tone = document.querySelector('.pill.selected')?.dataset.tone || 'Professional';
+  data.length = document.querySelector('.length-opt.selected')?.dataset.len || 'Medium (100-150 words)';
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadFormFromStorage() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    FIELDS.forEach(f => { if (saved[f] !== undefined && document.getElementById(f)) document.getElementById(f).value = saved[f]; });
+    if (saved.tone) {
+      document.querySelectorAll('.pill').forEach(p => p.classList.toggle('selected', p.dataset.tone === saved.tone));
+    }
+    if (saved.length) {
+      document.querySelectorAll('.length-opt').forEach(o => o.classList.toggle('selected', o.dataset.len === saved.length));
+    }
+    updateCounters();
+  } catch (_) {}
+}
+
+// Attach storage-save listeners
+FIELDS.forEach(f => {
+  const el = document.getElementById(f);
+  if (el) el.addEventListener('input', () => { saveFormToStorage(); updateCounters(); });
+});
+
+// ── Char counters ─────────────────────────────────────────────────────────────
+function updateCounters() {
+  const bg = document.getElementById('background');
+  const vp = document.getElementById('valueProposition');
+  const bgc = document.getElementById('bgCounter');
+  const vpc = document.getElementById('vpCounter');
+  if (bg && bgc) {
+    bgc.textContent = `${bg.value.length} / 300`;
+    bgc.classList.toggle('warn', bg.value.length > 270);
+  }
+  if (vp && vpc) {
+    vpc.textContent = `${vp.value.length} / 200`;
+    vpc.classList.toggle('warn', vp.value.length > 170);
+  }
+}
+
+// ── Pill tone selector ────────────────────────────────────────────────────────
+document.getElementById('tonePills').addEventListener('click', e => {
+  const pill = e.target.closest('.pill');
+  if (!pill) return;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+  pill.classList.add('selected');
+  saveFormToStorage();
+});
+
+// ── Length selector ───────────────────────────────────────────────────────────
+document.getElementById('lengthOptions').addEventListener('click', e => {
+  const opt = e.target.closest('.length-opt');
+  if (!opt) return;
+  document.querySelectorAll('.length-opt').forEach(o => o.classList.remove('selected'));
+  opt.classList.add('selected');
+  saveFormToStorage();
+});
+
+// ── Validation ────────────────────────────────────────────────────────────────
+function validate() {
+  let firstError = null;
+
+  function check(id, condition, errId) {
+    const el = document.getElementById(id);
+    const err = document.getElementById(errId);
+    const fail = !condition(el?.value?.trim() || '');
+    el?.classList.toggle('input-error', fail);
+    err?.classList.toggle('show', fail);
+    if (fail && !firstError) firstError = el;
+  }
+
+  check('company', v => v.length >= 2, 'err-company');
+  check('recipientTitle', v => v.length >= 2, 'err-recipientTitle');
+  check('senderName', v => v.length >= 2, 'err-senderName');
+  check('background', v => v.length >= 10 && v.length <= 300, 'err-background');
+  check('purpose', v => v.length > 0, 'err-purpose');
+  check('valueProposition', v => v.length >= 10 && v.length <= 200, 'err-valueProposition');
+  check('industry', v => v.length > 0, 'err-industry');
+
+  const toneSelected = !!document.querySelector('.pill.selected');
+  document.getElementById('err-tone').classList.toggle('show', !toneSelected);
+  if (!toneSelected && !firstError) firstError = document.getElementById('tonePills');
+
+  if (firstError) {
+    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return false;
+  }
+  return true;
+}
+
+// ── Form submit ───────────────────────────────────────────────────────────────
+document.getElementById('coldEmailForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!validate()) return;
+
+  const btn = document.getElementById('generateBtn');
+  const spinner = document.getElementById('spinner');
+  btn.disabled = true;
+  btn.textContent = 'Generating your emails…';
+  spinner.classList.add('show');
+  document.getElementById('results').classList.remove('show');
+
+  const payload = {
+    company:          document.getElementById('company').value.trim(),
+    recipientTitle:   document.getElementById('recipientTitle').value.trim(),
+    recipientName:    document.getElementById('recipientName').value.trim(),
+    senderName:       document.getElementById('senderName').value.trim(),
+    background:       document.getElementById('background').value.trim(),
+    purpose:          document.getElementById('purpose').value,
+    valueProposition: document.getElementById('valueProposition').value.trim(),
+    industry:         document.getElementById('industry').value,
+    tone:             document.querySelector('.pill.selected')?.dataset.tone || 'Professional',
+    length:           document.querySelector('.length-opt.selected')?.dataset.len || 'Medium (100-150 words)'
+  };
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (sessionToken) headers['Authorization'] = `Bearer ${sessionToken}`;
+
+    const res = await fetch('/api/cold-email', { method: 'POST', headers, body: JSON.stringify(payload) });
+    const data = await res.json();
+
+    if (res.status === 403 && data.usageLimitReached) {
+      showUpgradeModal();
+      return;
+    }
+    if (!res.ok) throw new Error(data.error || 'Generation failed.');
+
+    // Track usage locally
+    if (!isPro) {
+      const used = Math.min(3, parseInt(localStorage.getItem('ce_usedToday') || '0', 10) + 1);
+      localStorage.setItem('ce_usedToday', String(used));
+      localStorage.setItem('ce_usedDate', new Date().toISOString().split('T')[0]);
+      renderUsageBanner();
+    }
+
+    renderResults(data);
+    document.getElementById('results').classList.add('show');
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (err) {
+    showToast('❌ ' + err.message, 4000);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ Generate 3 Email Variants';
+    spinner.classList.remove('show');
+  }
+});
+
+// ── Render results ────────────────────────────────────────────────────────────
+function renderResults(data) {
+  currentVariants  = data.variants  || [];
+  currentScores    = data.scores    || {};
+  currentTips      = data.tips      || [];
+  currentFollowUp  = data.followUp  || '';
+  currentBestTime  = data.bestTimeToSend || '';
+  currentSpamWords = data.spamWords  || [];
+  const dataIsPro  = data.isPro     || isPro;
+
+  // Spam warning
+  const gWarn = document.getElementById('globalSpamWarning');
+  if (currentSpamWords.length > 0) {
+    document.getElementById('spamWordList').textContent = currentSpamWords.join(', ');
+    gWarn.style.display = '';
+  } else {
+    gWarn.style.display = 'none';
+  }
+
+  // Build panels
+  const container = document.getElementById('variantPanels');
+  container.innerHTML = '';
+  currentVariants.forEach((v, i) => {
+    const label = ['A','B','C'][i];
+    const subjLen = v.subject.length;
+    const words = v.body.trim().split(/\s+/).length;
+    const readSec = Math.round(words / 200 * 60);
+    const readStr = readSec < 60 ? `${readSec}s read` : `${Math.round(readSec/60)}m read`;
+    const highlightedBody = highlightSpam(escapeHtml(v.body), currentSpamWords);
+
+    const panel = document.createElement('div');
+    panel.className = 'tab-panel' + (i === 0 ? ' active' : '');
+    panel.id = `panel-${i}`;
+    panel.innerHTML = `
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;">
+        <span style="font-size:.8rem;color:#64748b;font-weight:600">VARIANT ${label}</span>
+        <span style="font-size:.8rem;color:#7c3aed;background:rgba(124,58,237,.15);padding:.15rem .5rem;border-radius:9999px">${escapeHtml(v.approach)}</span>
+      </div>
+
+      <div class="subject-line-box">
+        <span class="subject-text">📧 ${escapeHtml(v.subject)}</span>
+        <span class="subject-len ${subjLen > 50 ? 'warn' : ''}">${subjLen} chars${subjLen > 50 ? ' ⚠️' : ''}</span>
+      </div>
+
+      <div class="email-body-box" id="body-${i}" contenteditable="false">${highlightedBody}</div>
+
+      <div class="score-bars">
+        ${scoreBar('Personalisation', currentScores.personalisation)}
+        ${scoreBar('Clarity', currentScores.clarity)}
+        ${scoreBar('CTA Strength', currentScores.cta)}
+        ${scoreBar('Length', currentScores.length)}
+      </div>
+
+      ${currentTips[i] ? `<div class="why-box"><h4>💡 Why this works</h4><p>${escapeHtml(currentTips[i])}</p></div>` : ''}
+
+      <div class="meta-row">
+        <span>🕐 <strong>Best time:</strong> ${escapeHtml(currentBestTime)}</span>
+        <span>📖 ${readStr} (${words} words)</span>
+      </div>
+
+      <div class="action-btns">
+        <button class="action-btn primary" onclick="copyEmail(${i})">📋 Copy email</button>
+        <button class="action-btn" onclick="openGmail(${i})">📤 Open in Gmail</button>
+        <button class="action-btn" id="editBtn-${i}" onclick="toggleEdit(${i})">✏️ Edit</button>
+        <button class="action-btn" onclick="regenerate()">🔄 Regenerate</button>
+      </div>`;
+    container.appendChild(panel);
+  });
+
+  // Follow-up
+  const fuSection = document.getElementById('followupSection');
+  const fuContent = document.getElementById('followupContent');
+  const proOverlay = document.getElementById('proOverlay');
+  if (currentFollowUp) {
+    fuSection.style.display = '';
+    fuContent.textContent = currentFollowUp;
+    if (!dataIsPro) {
+      fuContent.classList.add('followup-blur');
+      proOverlay.style.display = 'flex';
+    } else {
+      fuContent.classList.remove('followup-blur');
+      proOverlay.style.display = 'none';
+    }
+  }
+
+  // Best time
+  const btMeta = document.getElementById('bestTimeMeta');
+  if (currentBestTime) {
+    document.getElementById('bestTimeText').textContent = currentBestTime;
+    btMeta.style.display = '';
+  }
+
+  // History section
+  document.getElementById('historySection').style.display = '';
+  if (!dataIsPro && !isPro) {
+    document.getElementById('historyProMsg').style.display = '';
+    document.getElementById('historyContent').style.display = 'none';
+  } else {
+    document.getElementById('historyProMsg').style.display = 'none';
+    document.getElementById('historyContent').style.display = '';
+    loadHistory();
+  }
+}
+
+function scoreBar(label, value) {
+  const v = Math.min(100, Math.max(0, value || 0));
+  return `<div class="score-bar-item">
+    <label><span>${label}</span><span>${v}%</span></label>
+    <div class="score-bar-track"><div class="score-bar-fill" style="width:${v}%"></div></div>
+  </div>`;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function highlightSpam(html, spamWords) {
+  if (!spamWords.length) return html;
+  let result = html;
+  spamWords.forEach(w => {
+    const re = new RegExp('(?<![a-zA-Z])(' + w.replace(/ /g, '\\s+') + ')(?![a-zA-Z])', 'gi');
+    result = result.replace(re, '<span class="spam-highlight">$1</span>');
+  });
+  return result;
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(idx) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+  document.querySelectorAll('.tab-panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+function copyEmail(idx) {
+  const v = currentVariants[idx];
+  if (!v) return;
+  const text = `Subject: ${v.subject}\n\n${v.body}`;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('✅ Copied!');
+    if (currentUser && (isPro)) saveEmailToHistory(v);
+  }).catch(() => showToast('❌ Copy failed'));
+}
+
+function openGmail(idx) {
+  const v = currentVariants[idx];
+  if (!v) return;
+  const url = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(v.subject)}&body=${encodeURIComponent(v.body)}`;
+  window.open(url, '_blank');
+}
+
+function toggleEdit(idx) {
+  const el = document.getElementById(`body-${idx}`);
+  const btn = document.getElementById(`editBtn-${idx}`);
+  if (!el) return;
+  const isEditing = el.contentEditable === 'true';
+  el.contentEditable = isEditing ? 'false' : 'true';
+  el.style.border = isEditing ? '' : '1px solid rgba(124,58,237,.4)';
+  btn.textContent = isEditing ? '✏️ Edit' : '💾 Done';
+  if (!isEditing) el.focus();
+}
+
+function regenerate() {
+  document.getElementById('coldEmailForm').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+}
+
+// ── Email history ─────────────────────────────────────────────────────────────
+async function saveEmailToHistory(variant) {
+  if (!currentUser) return;
+  try {
+    await supabase.from('email_history').insert({
+      user_id:         currentUser.id,
+      company:         document.getElementById('company').value.trim(),
+      recipient_title: document.getElementById('recipientTitle').value.trim(),
+      subject:         variant.subject,
+      body:            variant.body,
+      variant:         variant.approach,
+      status:          'draft'
+    });
+    loadHistory();
+  } catch (e) {
+    console.warn('Could not save email history:', e.message);
+  }
+}
+
+async function loadHistory() {
+  if (!currentUser) return;
+  const { data, error } = await supabase
+    .from('email_history')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+  if (error) return;
+  allHistory = data || [];
+  renderHistory(allHistory);
+}
+
+function filterHistory() {
+  const q = document.getElementById('historySearch').value.toLowerCase();
+  renderHistory(allHistory.filter(r => r.company?.toLowerCase().includes(q)));
+}
+
+function renderHistory(rows) {
+  const list = document.getElementById('historyList');
+  if (!rows.length) {
+    list.innerHTML = '<div class="history-empty">No emails saved yet. Copy an email to save it here.</div>';
+    return;
+  }
+  list.innerHTML = rows.map(r => {
+    const date = new Date(r.created_at).toLocaleDateString();
+    const statusClass = `status-${r.status || 'draft'}`;
+    const statusLabel = (r.status || 'draft').replace('_', ' ');
+    return `<div class="history-row" id="hr-${r.id}">
+      <div class="history-info">
+        <div class="history-company">${escapeHtml(r.company)}</div>
+        <div class="history-subject">${escapeHtml(r.subject)}</div>
+        <div class="history-date">${date}</div>
+      </div>
+      <span class="status-badge ${statusClass}" onclick="cycleStatus('${r.id}','${r.status}')" title="Click to change status">${statusLabel}</span>
+    </div>`;
+  }).join('');
+}
+
+const STATUS_CYCLE = ['draft','sent','replied','no_reply'];
+async function cycleStatus(id, current) {
+  const next = STATUS_CYCLE[(STATUS_CYCLE.indexOf(current) + 1) % STATUS_CYCLE.length];
+  await supabase.from('email_history').update({ status: next }).eq('id', id);
+  const row = allHistory.find(r => r.id === id);
+  if (row) row.status = next;
+  renderHistory(allHistory.filter(r => {
+    const q = document.getElementById('historySearch').value.toLowerCase();
+    return r.company?.toLowerCase().includes(q);
+  }));
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function showToast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function showUpgradeModal() { document.getElementById('upgradeModal').classList.add('show'); }
+function hideUpgradeModal() { document.getElementById('upgradeModal').classList.remove('show'); }
+
+// Reset daily usage counter if it's a new day
+(function resetDailyUsage() {
+  const stored = localStorage.getItem('ce_usedDate');
+  const today = new Date().toISOString().split('T')[0];
+  if (stored !== today) {
+    localStorage.setItem('ce_usedToday', '0');
+    localStorage.setItem('ce_usedDate', today);
+  }
+})();
+</script>
+</body>
+</html>
