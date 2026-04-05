@@ -1,11 +1,2 @@
-# Dependencies
 node_modules/
-
-# Environment variables (never commit secrets)
 .env
-.env.local
-.env.production
-
-# Build artifacts
-dist/
-.vercel/

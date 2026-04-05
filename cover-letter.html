@@ -5,27 +5,93 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Cover Letter AI - CareerCraft</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
+    *, *::before, *::after { box-sizing: border-box; }
     body {font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0e27;color:#f1f5f9;margin:0;}
     .topnav{background:rgba(10,14,39,.95);padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(124,58,237,.2);}
-    .btn{padding:.6rem 1.2rem;border-radius:.5rem;border:none;font-weight:600;cursor:pointer}
+    .btn{padding:.6rem 1.2rem;border-radius:.5rem;border:none;font-weight:600;cursor:pointer;transition:opacity .15s}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
     .btn-primary{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;}
     .btn-secondary{background:transparent;border:1px solid rgba(148,163,184,.2);color:#cbd5e1;}
+    .btn-sm{padding:.4rem .8rem;font-size:.85rem;}
     .container{max-width:1000px;margin:0 auto;padding:2rem;}
     .card{background:rgba(20,24,41,.6);border:1px solid rgba(148,163,184,.1);border-radius:1rem;padding:2rem;margin-bottom:2rem;}
     .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-    input,textarea,select{width:100%;padding:.8rem;background:rgba(10,14,39,.8);border:1px solid rgba(148,163,184,.15);border-radius:.5rem;color:#f1f5f9;margin-top:.4rem;}
-    textarea{min-height:100px;}
-    .alert{display:none;padding:.75rem 1rem;border-radius:.5rem;margin-bottom:1rem;}
+    label{font-size:.9rem;color:#94a3b8;display:block;margin-bottom:.25rem;}
+    input,textarea,select{width:100%;padding:.75rem;background:rgba(10,14,39,.8);border:1px solid rgba(148,163,184,.15);border-radius:.5rem;color:#f1f5f9;font-size:.95rem;}
+    input:focus,textarea:focus,select:focus{outline:none;border-color:rgba(124,58,237,.5);}
+    textarea{min-height:100px;resize:vertical;}
+    .field-group{margin-bottom:1rem;}
+    .alert{display:none;padding:.75rem 1rem;border-radius:.5rem;margin-bottom:1rem;font-size:.9rem;}
     .alert-error{background:#fee2e2;color:#991b1b;}
     .alert-success{background:#dcfce7;color:#166534;}
-    .output-box{background:rgba(10,14,39,.8);border:1px solid rgba(148,163,184,.2);padding:1rem;border-radius:.5rem;white-space:pre-wrap;line-height:1.6;}
+
+    /* Resume upload area */
+    .upload-area{border:2px dashed rgba(124,58,237,.4);border-radius:.75rem;padding:1.5rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;}
+    .upload-area:hover,.upload-area.drag-over{border-color:#a855f7;background:rgba(124,58,237,.08);}
+    .upload-area input[type=file]{display:none;}
+    .upload-icon{font-size:2rem;margin-bottom:.5rem;}
+    .upload-text{color:#94a3b8;font-size:.9rem;}
+    .upload-hint{color:#64748b;font-size:.8rem;margin-top:.25rem;}
+    .resume-status{display:flex;align-items:center;gap:.6rem;padding:.6rem 1rem;border-radius:.5rem;font-size:.85rem;margin-top:.75rem;}
+    .resume-status.success{background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.3);color:#6ee7b7;}
+    .resume-status.error{background:rgba(220,38,38,.12);border:1px solid rgba(220,38,38,.3);color:#fca5a5;}
+    .resume-status.loading{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);color:#c4b5fd;}
+    .resume-progress{height:3px;background:rgba(124,58,237,.2);border-radius:9999px;margin-top:.5rem;overflow:hidden;display:none;}
+    .resume-progress-bar{height:100%;background:linear-gradient(90deg,#7c3aed,#a855f7);width:0;transition:width .3s;}
+
+    /* Toggle / switch */
+    .toggle-row{display:flex;align-items:center;gap:.75rem;margin:.5rem 0;}
+    .toggle-label{font-size:.9rem;color:#cbd5e1;}
+    .toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+    .toggle input{opacity:0;width:0;height:0;}
+    .toggle-slider{position:absolute;inset:0;background:rgba(148,163,184,.25);border-radius:9999px;cursor:pointer;transition:background .2s;}
+    .toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;}
+    .toggle input:checked + .toggle-slider{background:#7c3aed;}
+    .toggle input:checked + .toggle-slider::before{transform:translateX(20px);}
+
+    /* Letter preview */
+    .output-box{background:rgba(10,14,39,.8);border:1px solid rgba(148,163,184,.2);padding:1.25rem;border-radius:.5rem;white-space:pre-wrap;line-height:1.75;font-size:.95rem;min-height:120px;}
+    .letter-section-badge{display:inline-block;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.3);color:#c4b5fd;border-radius:.3rem;padding:.1rem .5rem;font-size:.75rem;font-weight:600;margin-right:.5rem;}
     .tools{display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap;}
-    .score-box{display:flex;gap:1rem;margin-top:1rem;}
-    .score{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.4);padding:.5rem 1rem;border-radius:.5rem;}
+    .score-box{display:flex;gap:1rem;margin-top:1rem;flex-wrap:wrap;}
+    .score{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.4);padding:.75rem 1.25rem;border-radius:.5rem;min-width:160px;}
+    .score-number{font-size:1.6rem;font-weight:700;color:#a855f7;}
+    .score-label{font-size:.8rem;color:#94a3b8;margin-top:.15rem;}
+    .keywords-section{margin-top:1rem;}
+    .keywords-section h4{font-size:.85rem;color:#94a3b8;margin:0 0 .4rem 0;text-transform:uppercase;letter-spacing:.05em;}
     .tag{display:inline-block;padding:.25rem .6rem;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);border-radius:9999px;margin:.2rem;font-size:.8rem;}
+    .tag-matched{background:rgba(5,150,105,.2);border-color:rgba(5,150,105,.5);color:#6ee7b7;}
+    .tag-missing{background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.3);color:#fca5a5;}
     .history-card{border:1px solid rgba(148,163,184,.15);border-radius:.75rem;padding:1rem;margin-bottom:.75rem;}
+    .section-title{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:.75rem;font-weight:600;}
+    .candidate-name-hint{font-size:.8rem;color:#64748b;margin-top:.25rem;}
+    @media(max-width:600px){.form-row{grid-template-columns:1fr;}.score-box{flex-direction:column;}.score-def{grid-template-columns:1fr !important;}}
+
+    /* ATS/Relevance Education Panel */
+    .ats-edu-panel{background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(168,85,247,.06));border:1px solid rgba(124,58,237,.3);border-radius:.75rem;padding:1.25rem 1.5rem;margin-bottom:1.5rem;}
+    .ats-edu-panel h3{margin:0 0 .5rem 0;color:#c4b5fd;font-size:1rem;}
+    .ats-edu-panel p{margin:.25rem 0;font-size:.87rem;color:#94a3b8;line-height:1.6;}
+    .score-def{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.75rem;}
+    .score-def-item{background:rgba(10,14,39,.55);border:1px solid rgba(148,163,184,.1);border-radius:.5rem;padding:.8rem 1rem;}
+    .score-def-item .sdi-title{font-weight:700;color:#a855f7;margin-bottom:.3rem;font-size:.9rem;}
+    .score-def-item .sdi-desc{font-size:.82rem;color:#94a3b8;line-height:1.5;}
+    .edu-tip{font-size:.8rem;color:#64748b;margin:.75rem 0 0 0;}
+
+    /* Score Optimizer Accordion */
+    .optimizer-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;padding:.65rem .9rem;background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);border-radius:.5rem;color:#c4b5fd;font-weight:600;font-size:.9rem;transition:background .2s;}
+    .optimizer-toggle:hover{background:rgba(124,58,237,.2);}
+    .optimizer-arrow{transition:transform .25s;display:inline-block;}
+    .optimizer-arrow.open{transform:rotate(180deg);}
+    .optimizer-content{display:none;padding:.8rem 0 0 0;}
+    .optimizer-content.open{display:block;}
+    .opt-hint{font-size:.75rem;color:#64748b;margin-top:.2rem;}
+
+    /* Enhanced score display */
+    .score-number.score-high{color:#34d399;}
+    .score-number.score-mid{color:#fbbf24;}
+    .score-number.score-low{color:#f87171;}
+    .score-tip{font-size:.75rem;color:#64748b;margin-top:.3rem;line-height:1.4;}
   </style>
 </head>
 <body>
@@ -38,37 +104,92 @@
     <div id="alertError" class="alert alert-error"></div>
     <div id="alertSuccess" class="alert alert-success"></div>
 
+    <!-- ── Form Card ──────────────────────────────────────────────────── -->
     <div class="card">
-      <h2>Create Cover Letter</h2>
+      <h2 style="margin-top:0">Create Cover Letter</h2>
+
+      <!-- ATS & Relevance Score Education Panel -->
+      <div class="ats-edu-panel">
+        <h3>📊 What are ATS Score &amp; Relevance Score?</h3>
+        <p>Every application you submit faces two filters — an algorithm and a human. These two scores predict how well your cover letter will pass both:</p>
+        <div class="score-def">
+          <div class="score-def-item">
+            <div class="sdi-title">🤖 ATS Score (Applicant Tracking System)</div>
+            <div class="sdi-desc">Most companies use ATS software to <strong style="color:#e2e8f0">automatically scan and filter</strong> applications before any human reads them. The ATS looks for <em>keywords and phrases</em> from the job description. A low ATS score means your application may never reach the hiring manager. <strong style="color:#e2e8f0">Aim for 70 or higher.</strong></div>
+          </div>
+          <div class="score-def-item">
+            <div class="sdi-title">🎯 Relevance Score</div>
+            <div class="sdi-desc">Once past the ATS, a real person reads your letter. The Relevance Score measures how closely your <strong style="color:#e2e8f0">skills, experience, achievements, and personality</strong> match what the hiring manager actually wants. High relevance = interview invitation. <strong style="color:#e2e8f0">Aim for 75 or higher.</strong></div>
+          </div>
+        </div>
+        <p class="edu-tip">💡 <strong style="color:#94a3b8">How to improve both scores:</strong> Fill in the <em>Score Optimizer</em> section below. The more context you provide, the more the AI can tailor your letter with exactly the right keywords, achievements, and alignment — dramatically boosting both scores.</p>
+      </div>
 
       <div class="form-row">
-        <div>
-          <label>Job Title</label>
+        <div class="field-group">
+          <label for="jobTitle">Job Title</label>
           <input id="jobTitle" placeholder="e.g. Frontend Developer" />
         </div>
-        <div>
-          <label>Company Name</label>
+        <div class="field-group">
+          <label for="companyName">Company Name</label>
           <input id="companyName" placeholder="e.g. Google" />
         </div>
       </div>
 
-      <label>Job Description</label>
-      <textarea id="jobDescription" placeholder="Paste job posting here..."></textarea>
+      <div class="field-group">
+        <label for="candidateName">Your Name (optional — appears in PDF header)</label>
+        <input id="candidateName" placeholder="e.g. Jane Smith" />
+        <div class="candidate-name-hint">Leave blank to omit from the downloaded PDF.</div>
+      </div>
 
-      <label>Your Key Highlights</label>
-      <textarea id="highlights" placeholder="2–4 bullets about your skills/achievements"></textarea>
+      <div class="field-group">
+        <label for="jobDescription">Job Description</label>
+        <textarea id="jobDescription" placeholder="Paste job posting here..."></textarea>
+      </div>
+
+      <div class="field-group">
+        <label for="highlights">Your Key Highlights</label>
+        <textarea id="highlights" placeholder="2–4 bullets about your skills/achievements (AI will enhance if needed)"></textarea>
+      </div>
+
+      <!-- ── Resume Upload ─────────────────────────────────────────── -->
+      <div class="field-group">
+        <label>Upload Resume (optional — PDF or DOCX)</label>
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('resumeFile').click()">
+          <input type="file" id="resumeFile" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="handleResumeUpload(this)" />
+          <div class="upload-icon">📄</div>
+          <div class="upload-text">Click to upload or drag & drop</div>
+          <div class="upload-hint">PDF or DOCX · Max 5 MB</div>
+        </div>
+        <div class="resume-progress" id="resumeProgress">
+          <div class="resume-progress-bar" id="resumeProgressBar"></div>
+        </div>
+        <div id="resumeStatus" style="display:none" class="resume-status"></div>
+        <div id="resumeClearRow" style="display:none;margin-top:.5rem;">
+          <button class="btn btn-secondary btn-sm" onclick="clearResume()">✕ Remove resume</button>
+        </div>
+
+        <!-- Mirror structure toggle — shown only when resume is loaded -->
+        <div class="toggle-row" id="mirrorRow" style="display:none;margin-top:.75rem;">
+          <label class="toggle">
+            <input type="checkbox" id="mirrorStructure" />
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-label">Mirror my resume structure</span>
+        </div>
+      </div>
 
       <div class="form-row">
-        <div>
-          <label>Tone</label>
+        <div class="field-group">
+          <label for="tone">Tone</label>
           <select id="tone">
             <option>Professional</option>
             <option>Friendly</option>
             <option>Enthusiastic</option>
           </select>
         </div>
-        <div>
-          <label>Length</label>
+        <div class="field-group">
+          <label for="length">Length</label>
           <select id="length">
             <option>Short</option>
             <option selected>Medium</option>
@@ -77,11 +198,68 @@
         </div>
       </div>
 
-      <label>Custom Opening (optional)</label>
-      <textarea id="opening" placeholder="Dear Hiring Manager..."></textarea>
+      <div class="field-group">
+        <label for="opening">Custom Opening (optional)</label>
+        <textarea id="opening" style="min-height:60px" placeholder="e.g. Dear Ms. Johnson,"></textarea>
+      </div>
 
-      <label>Custom Closing (optional)</label>
-      <textarea id="closing" placeholder="Thank you for your time..."></textarea>
+      <div class="field-group">
+        <label for="closing">Custom Closing (optional)</label>
+        <textarea id="closing" style="min-height:60px" placeholder="e.g. Thank you for your time and consideration."></textarea>
+      </div>
+
+      <!-- Score Optimizer Questions -->
+      <div style="margin-bottom:1.25rem">
+        <div class="optimizer-toggle" onclick="toggleOptimizer(this)" role="button" aria-expanded="false">
+          <span>🎯 Score Optimizer — Answer questions to maximize your ATS &amp; Relevance Scores</span>
+          <span class="optimizer-arrow">▼</span>
+        </div>
+        <div class="optimizer-content" id="optimizerContent">
+          <p style="font-size:.83rem;color:#64748b;margin:.1rem 0 .9rem 0">The AI uses your answers to tailor every sentence of your letter — matching exact keywords, echoing your real achievements, and showing genuine fit for the role and company.</p>
+
+          <div class="field-group">
+            <label for="mustHaveSkills">1. What are the must-have skills or requirements listed in the job description?</label>
+            <textarea id="mustHaveSkills" style="min-height:70px" placeholder="e.g. 5+ years Python, REST API design, AWS certification, team leadership, Agile/Scrum…"></textarea>
+            <div class="opt-hint">✅ The AI will echo these exact terms so the ATS recognizes them and scores your letter higher.</div>
+          </div>
+
+          <div class="field-group">
+            <label for="keyAchievements">2. What measurable results or achievements are you most proud of?</label>
+            <textarea id="keyAchievements" style="min-height:70px" placeholder="e.g. Reduced API latency by 60%, grew team from 3 to 12 engineers, increased revenue by $2M in one year…"></textarea>
+            <div class="opt-hint">✅ Quantified achievements are the #1 factor that impresses both ATS filters and hiring managers.</div>
+          </div>
+
+          <div class="field-group">
+            <label for="workHistoryAlignment">3. Which of your past roles or projects most closely match this job's responsibilities?</label>
+            <textarea id="workHistoryAlignment" style="min-height:70px" placeholder="e.g. 3 yrs as backend engineer at FinTech startup doing similar API integrations; led cross-functional teams…"></textarea>
+            <div class="opt-hint">✅ Aligning your history to the job duties signals to the ATS that you are a strong structural match.</div>
+          </div>
+
+          <div class="field-group">
+            <label for="softSkills">4. Which soft skills or personality traits best describe you? (culture fit &amp; communication)</label>
+            <textarea id="softSkills" style="min-height:60px" placeholder="e.g. collaborative problem-solver, self-starter, strong written communicator, mentors junior team members…"></textarea>
+            <div class="opt-hint">✅ Soft skills signal culture fit — hiring managers shortlist candidates they can picture working with.</div>
+          </div>
+
+          <div class="field-group">
+            <label for="companyResearch">5. What excites you specifically about this company? (mission, product, culture, recent news)</label>
+            <textarea id="companyResearch" style="min-height:60px" placeholder="e.g. Love their open-source commitment; saw their Series B funding; use their product daily and want to help build it…"></textarea>
+            <div class="opt-hint">✅ Genuine, specific enthusiasm for the company is the single biggest driver of your Relevance Score.</div>
+          </div>
+
+          <div class="field-group">
+            <label for="volunteerProjects">6. Any volunteer work, side projects, or extra activities that show passion or relevant skills?</label>
+            <textarea id="volunteerProjects" style="min-height:60px" placeholder="e.g. Open source contributor (500+ GitHub stars), coding bootcamp mentor, Hackathon winner, tech blog author…"></textarea>
+            <div class="opt-hint">✅ Extra-curricular activities demonstrate passion and initiative beyond the standard CV.</div>
+          </div>
+
+          <div class="field-group">
+            <label for="extraKeywords">7. Any specific keywords, technologies, or certifications from the job posting that must appear in your letter?</label>
+            <textarea id="extraKeywords" style="min-height:60px" placeholder="e.g. Kubernetes, TypeScript, PMP certification, HIPAA compliance, machine learning, CI/CD pipelines…"></textarea>
+            <div class="opt-hint">✅ These keywords are directly checked by the ATS — including them can push your score from 60 to 90+.</div>
+          </div>
+        </div>
+      </div>
 
       <div class="tools">
         <button id="generateBtn" class="btn btn-primary" onclick="generateCoverLetter(event)">✨ Generate</button>
@@ -89,8 +267,9 @@
       </div>
     </div>
 
+    <!-- ── Output Card ────────────────────────────────────────────────── -->
     <div class="card">
-      <h2>Generated Cover Letter</h2>
+      <h2 style="margin-top:0">Generated Cover Letter</h2>
       <div id="letterOutput" class="output-box">Your letter will appear here...</div>
 
       <div class="tools">
@@ -99,19 +278,31 @@
         <button class="btn btn-secondary" onclick="saveCoverLetter()">💾 Save</button>
       </div>
 
-      <div class="score-box">
-        <div class="score" id="atsScore">ATS Score: —</div>
-        <div class="score" id="relScore">Relevance: —</div>
+      <!-- Scores shown on-screen only — never in the PDF -->
+      <div class="score-box" id="scoreBox" style="display:none">
+        <div class="score">
+          <div class="score-number" id="atsScore">—</div>
+          <div class="score-label">ATS Score / 100</div>
+          <div class="score-tip" id="atsScoreTip">Measures keyword match with the job description — higher = better chance of passing automated filters.</div>
+        </div>
+        <div class="score">
+          <div class="score-number" id="relScore">—</div>
+          <div class="score-label">Relevance Score / 100</div>
+          <div class="score-tip" id="relScoreTip">Measures how well your skills and experience align with what the hiring manager is looking for.</div>
+        </div>
       </div>
 
-      <div id="keywordsBox"></div>
+      <div id="keywordsBox" class="keywords-section"></div>
 
-      <h3>Variants (3)</h3>
-      <div id="variantsBox" class="output-box"></div>
+      <div id="variantsSection" style="display:none">
+        <h3 style="color:#94a3b8;font-size:.95rem;text-transform:uppercase;letter-spacing:.05em;">Variants (3)</h3>
+        <div id="variantsBox" class="output-box" style="font-size:.88rem;opacity:.85;"></div>
+      </div>
     </div>
 
+    <!-- ── History Card ───────────────────────────────────────────────── -->
     <div class="card">
-      <h2>Saved Cover Letters</h2>
+      <h2 style="margin-top:0">Saved Cover Letters</h2>
       <div id="historyList">Loading...</div>
     </div>
   </div>
@@ -121,11 +312,31 @@ const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
 const { createClient } = supabase;
 const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+
 let currentUser = null;
 let lastGenerated = null;
 let isGenerating = false;
+let resumeText = '';
 
-// Helper function to format letter text
+// ── Score Optimizer accordion ──────────────────────────────────────────────
+
+function toggleOptimizer(toggleEl) {
+  const content = document.getElementById('optimizerContent');
+  const arrow = toggleEl.querySelector('.optimizer-arrow');
+  const isOpen = content.classList.contains('open');
+  if (isOpen) {
+    content.classList.remove('open');
+    arrow.classList.remove('open');
+    toggleEl.setAttribute('aria-expanded', 'false');
+  } else {
+    content.classList.add('open');
+    arrow.classList.add('open');
+    toggleEl.setAttribute('aria-expanded', 'true');
+  }
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
 function formatLetterText(text) {
   if (typeof text === 'string') {
     return text.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\/g, '');
@@ -136,17 +347,33 @@ function formatLetterText(text) {
 async function init() {
   try {
     const { data: { session } } = await client.auth.getSession();
-    if (!session) {
-      console.log('No session, redirecting to login...');
-      return window.location.href = 'login.html';
-    }
+    if (!session) return window.location.href = 'login.html';
     currentUser = session.user;
-    console.log('✅ User logged in:', currentUser.email);
     await loadHistory();
   } catch (err) {
-    console.error('❌ Init error:', err);
     showAlert('error', 'Failed to initialize: ' + err.message);
   }
+
+  // Drag-and-drop on upload area
+  const area = document.getElementById('uploadArea');
+  area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('drag-over'); });
+  area.addEventListener('dragleave', () => area.classList.remove('drag-over'));
+  area.addEventListener('drop', e => {
+    e.preventDefault();
+    area.classList.remove('drag-over');
+    const file = e.dataTransfer?.files?.[0];
+    if (file) {
+      const input = document.getElementById('resumeFile');
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+      } catch (_) {
+        // DataTransfer not supported (older Safari) — handle file directly
+      }
+      handleResumeUpload({ files: [file] });
+    }
+  });
 }
 
 function showAlert(type, msg) {
@@ -156,57 +383,144 @@ function showAlert(type, msg) {
   setTimeout(() => el.style.display = 'none', 5000);
 }
 
+// ── Resume upload ──────────────────────────────────────────────────────────
+
+async function handleResumeUpload(input) {
+  const file = (input.files && (input.files[0] || input.files.item(0))) || null;
+  if (!file) return;
+
+  const allowed = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  const allowedExts = ['.pdf', '.docx'];
+  const ext = (file.name || '').toLowerCase().match(/\.[^.]+$/)?.[0] || '';
+  const mimeOk = allowed.includes(file.type);
+  const extOk  = allowedExts.includes(ext);
+  if (!mimeOk && !extOk) {
+    setResumeStatus('error', `❌ Unsupported file type (${file.type || ext || 'unknown'}). Only PDF or DOCX files are accepted.`);
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    setResumeStatus('error', '❌ File too large. Maximum size is 5 MB.');
+    return;
+  }
+
+  setResumeStatus('loading', `⏳ Parsing ${file.name}…`);
+  showProgress(true);
+  animateProgress();
+
+  const form = new FormData();
+  form.append('resume', file);
+
+  try {
+    const res = await fetch('/api/upload-resume', { method: 'POST', body: form });
+    let data;
+    try {
+      data = await res.json();
+    } catch (_) {
+      data = {};
+    }
+    showProgress(false);
+
+    if (!res.ok) {
+      const reason = data.error || `Server error (HTTP ${res.status}). Please try again.`;
+      setResumeStatus('error', '❌ ' + reason);
+      console.error('[upload] Server rejected file:', res.status, reason);
+      resumeText = '';
+      document.getElementById('mirrorRow').style.display = 'none';
+      document.getElementById('resumeClearRow').style.display = 'none';
+      return;
+    }
+
+    resumeText = data.resumeText || '';
+    setResumeStatus('success', `✅ Resume parsed: ${file.name}`);
+    document.getElementById('mirrorRow').style.display = 'flex';
+    document.getElementById('resumeClearRow').style.display = 'block';
+  } catch (err) {
+    showProgress(false);
+    console.error('[upload] Fetch error:', err);
+    setResumeStatus('error', '❌ Upload failed: ' + (err.message || 'Network error. Check your connection and try again.'));
+    resumeText = '';
+  }
+}
+
+function setResumeStatus(type, msg) {
+  const el = document.getElementById('resumeStatus');
+  el.className = 'resume-status ' + type;
+  el.textContent = msg;
+  el.style.display = 'flex';
+}
+
+function showProgress(show) {
+  const bar = document.getElementById('resumeProgress');
+  bar.style.display = show ? 'block' : 'none';
+  if (!show) document.getElementById('resumeProgressBar').style.width = '0';
+}
+
+function animateProgress() {
+  let w = 0;
+  const bar = document.getElementById('resumeProgressBar');
+  const iv = setInterval(() => {
+    w = Math.min(w + Math.random() * 15, 85);
+    bar.style.width = w + '%';
+    if (w >= 85) clearInterval(iv);
+  }, 200);
+}
+
+function clearResume() {
+  resumeText = '';
+  document.getElementById('resumeFile').value = '';
+  document.getElementById('resumeStatus').style.display = 'none';
+  document.getElementById('mirrorRow').style.display = 'none';
+  document.getElementById('resumeClearRow').style.display = 'none';
+  document.getElementById('mirrorStructure').checked = false;
+}
+
+// ── Cover letter generation ────────────────────────────────────────────────
+
 async function generateCoverLetter(event, regen = false) {
-  // Prevent default and stop propagation
-  if (event) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
+  if (event) { event.preventDefault(); event.stopPropagation(); }
+  if (isGenerating) { alert('⏳ Already generating… Please wait!'); return; }
 
-  // Prevent multiple clicks while generating
-  if (isGenerating) {
-    alert('⏳ Already generating... Please wait!');
-    return;
-  }
+  const jobTitleVal = document.getElementById('jobTitle').value.trim();
+  const companyNameVal = document.getElementById('companyName').value.trim();
+  const jobDescriptionVal = document.getElementById('jobDescription').value.trim();
 
-  // Validate form fields
-  if (!jobTitle.value.trim()) {
-    showAlert('error', '❌ Please enter a Job Title');
-    return;
-  }
-  if (!companyName.value.trim()) {
-    showAlert('error', '❌ Please enter a Company Name');
-    return;
-  }
-  if (!jobDescription.value.trim()) {
-    showAlert('error', '❌ Please paste the Job Description');
-    return;
-  }
+  if (!jobTitleVal) return showAlert('error', '❌ Please enter a Job Title');
+  if (!companyNameVal) return showAlert('error', '❌ Please enter a Company Name');
+  if (!jobDescriptionVal) return showAlert('error', '❌ Please paste the Job Description');
+
+  const generateBtn = document.getElementById('generateBtn');
+  const originalText = generateBtn.textContent;
 
   try {
     isGenerating = true;
-
-    // Get button and update UI
-    const generateBtn = document.getElementById('generateBtn');
-    const originalText = generateBtn.textContent;
-    generateBtn.textContent = '⏳ Generating...';
+    generateBtn.textContent = '⏳ Generating…';
     generateBtn.disabled = true;
 
-    // Show loading message
-    letterOutput.textContent = '⏳ Generating your cover letter...\n\nThis may take 10-15 seconds...';
+    document.getElementById('letterOutput').textContent = '⏳ Generating your cover letter…\n\nThis may take 10–15 seconds…';
+    document.getElementById('scoreBox').style.display = 'none';
+    document.getElementById('variantsSection').style.display = 'none';
+    document.getElementById('keywordsBox').innerHTML = '';
 
     const payload = {
-      jobTitle: jobTitle.value,
-      companyName: companyName.value,
-      jobDescription: jobDescription.value,
-      highlights: highlights.value,
-      tone: tone.value,
-      length: length.value,
-      opening: opening.value,
-      closing: closing.value
+      jobTitle: jobTitleVal,
+      companyName: companyNameVal,
+      jobDescription: jobDescriptionVal,
+      highlights: document.getElementById('highlights').value,
+      tone: document.getElementById('tone').value,
+      length: document.getElementById('length').value,
+      opening: document.getElementById('opening').value,
+      closing: document.getElementById('closing').value,
+      resumeText: resumeText || '',
+      mirrorStructure: document.getElementById('mirrorStructure').checked,
+      // Score Optimizer answers
+      mustHaveSkills: document.getElementById('mustHaveSkills').value.trim(),
+      keyAchievements: document.getElementById('keyAchievements').value.trim(),
+      workHistoryAlignment: document.getElementById('workHistoryAlignment').value.trim(),
+      softSkills: document.getElementById('softSkills').value.trim(),
+      companyResearch: document.getElementById('companyResearch').value.trim(),
+      volunteerProjects: document.getElementById('volunteerProjects').value.trim(),
+      extraKeywords: document.getElementById('extraKeywords').value.trim()
     };
-
-    console.log('📤 Sending request to API...');
 
     const res = await fetch('/api/cover-letter', {
       method: 'POST',
@@ -214,63 +528,84 @@ async function generateCoverLetter(event, regen = false) {
       body: JSON.stringify(payload)
     });
 
-    console.log('📥 Response received. Status:', res.status);
-
     const data = await res.json();
-    console.log('✅ Data parsed:', data);
-
-    if (!res.ok) {
-      throw new Error(data.error || `API Error: ${res.status}`);
-    }
-
-    if (!data.letter) {
-      throw new Error('No letter content received from API');
-    }
+    if (!res.ok) throw new Error(data.error || `API Error: ${res.status}`);
+    if (!data.letter) throw new Error('No letter content received from API');
 
     lastGenerated = data;
+    document.getElementById('letterOutput').textContent = formatLetterText(data.letter);
 
-    // Parse and format the letter properly
-    letterOutput.textContent = formatLetterText(data.letter);
+    // Variants
+    const variants = (data.variants || []);
+    if (variants.length > 0) {
+      document.getElementById('variantsBox').textContent = variants.join('\n\n---\n\n');
+      document.getElementById('variantsSection').style.display = 'block';
+    }
 
-    variantsBox.textContent = (data.variants || []).join('\n\n---\n\n');
-    atsScore.textContent = `ATS Score: ${data.ats_score ?? '—'}`;
-    relScore.textContent = `Relevance: ${data.relevance_score ?? '—'}`;
-    keywordsBox.innerHTML = (data.keywords_used || []).map(k => `<span class="tag">${k}</span>`).join('');
+    // Scores (on-screen only) with color-coding
+    const atsVal = data.ats_score != null ? data.ats_score : null;
+    const relVal = data.relevance_score != null ? data.relevance_score : null;
+    const atsEl = document.getElementById('atsScore');
+    const relEl = document.getElementById('relScore');
+    atsEl.textContent = atsVal != null ? atsVal : '—';
+    relEl.textContent = relVal != null ? relVal : '—';
+    atsEl.className = 'score-number' + (atsVal == null ? '' : atsVal >= 70 ? ' score-high' : atsVal >= 50 ? ' score-mid' : ' score-low');
+    relEl.className = 'score-number' + (relVal == null ? '' : relVal >= 75 ? ' score-high' : relVal >= 55 ? ' score-mid' : ' score-low');
+    document.getElementById('atsScoreTip').textContent = atsVal == null ? 'Measures keyword match with the job description — higher = better chance of passing automated filters.' :
+      atsVal >= 70 ? '✅ Great ATS match! Your letter contains the right keywords to pass automated screening.' :
+      atsVal >= 50 ? '⚠️ Moderate match. Consider adding more job-description keywords using the Score Optimizer.' :
+      '❌ Low ATS match. Fill in the Score Optimizer questions to add matching keywords and improve this score.';
+    document.getElementById('relScoreTip').textContent = relVal == null ? 'Measures how well your skills and experience align with what the hiring manager is looking for.' :
+      relVal >= 75 ? '✅ Highly relevant! Your background strongly aligns with what the hiring manager wants.' :
+      relVal >= 55 ? '⚠️ Good relevance. Adding achievements and company research can push this higher.' :
+      '❌ Low relevance. Use the Score Optimizer to highlight matching experience and enthusiasm for the role.';
+    document.getElementById('scoreBox').style.display = 'flex';
+
+    // Keywords
+    const matched = Array.isArray(data.matched_keywords) ? data.matched_keywords : [];
+    const missing = Array.isArray(data.missing_keywords) ? data.missing_keywords : [];
+    const allKeywords = Array.isArray(data.keywords_used) ? data.keywords_used : [];
+    const kbEl = document.getElementById('keywordsBox');
+
+    if (matched.length > 0 || missing.length > 0) {
+      kbEl.innerHTML =
+        '<h4>✅ Matched Keywords</h4>' +
+        matched.map(k => `<span class="tag tag-matched">${k}</span>`).join('') +
+        (missing.length > 0
+          ? '<h4 style="margin-top:.6rem">❌ Missing Keywords</h4>' +
+            missing.map(k => `<span class="tag tag-missing">${k}</span>`).join('')
+          : '');
+    } else if (allKeywords.length > 0) {
+      kbEl.innerHTML = '<h4>Keywords</h4>' + allKeywords.map(k => `<span class="tag">${k}</span>`).join('');
+    } else {
+      kbEl.innerHTML = '';
+    }
 
     showAlert('success', '✅ Cover letter generated successfully!');
-    console.log('✨ Generation complete!');
-
-    // Restore button
-    generateBtn.textContent = originalText;
-    generateBtn.disabled = false;
-
   } catch (err) {
-    console.error('❌ Error:', err.message);
-    letterOutput.textContent = '❌ Error generating cover letter.\n\n' + err.message;
+    document.getElementById('letterOutput').textContent = '❌ Error generating cover letter.\n\n' + err.message;
     showAlert('error', '❌ ' + err.message);
-
-    // Restore button
-    const generateBtn = document.getElementById('generateBtn');
-    generateBtn.textContent = '✨ Generate';
-    generateBtn.disabled = false;
-
   } finally {
     isGenerating = false;
+    generateBtn.textContent = originalText;
+    generateBtn.disabled = false;
   }
 }
+
+// ── Save / History ─────────────────────────────────────────────────────────
 
 async function saveCoverLetter() {
   if (!lastGenerated) return showAlert('error', 'Generate first.');
   const { error } = await client.from('cover_letters').insert([{
     user_id: currentUser.id,
-    job_title: jobTitle.value,
-    company_name: companyName.value,
-    job_description: jobDescription.value,
-    tone: tone.value,
-    length: length.value,
-    opening: opening.value,
-    closing: closing.value,
-    highlights: highlights.value,
+    job_title: document.getElementById('jobTitle').value,
+    company_name: document.getElementById('companyName').value,
+    job_description: document.getElementById('jobDescription').value,
+    tone: document.getElementById('tone').value,
+    length: document.getElementById('length').value,
+    opening: document.getElementById('opening').value,
+    closing: document.getElementById('closing').value,
+    highlights: document.getElementById('highlights').value,
     generated_letter: lastGenerated.letter,
     variants: lastGenerated.variants,
     keywords_used: lastGenerated.keywords_used,
@@ -289,13 +624,14 @@ async function loadHistory() {
       .select('*')
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false });
-    if (error) return historyList.textContent = 'Failed to load';
-    if (!data.length) return historyList.textContent = 'No saved letters yet.';
-    historyList.innerHTML = data.map(c => `
+    const listEl = document.getElementById('historyList');
+    if (error) return (listEl.textContent = 'Failed to load');
+    if (!data.length) return (listEl.textContent = 'No saved letters yet.');
+    listEl.innerHTML = data.map(c => `
       <div class="history-card">
         <strong>${c.job_title || 'Untitled'} @ ${c.company_name || ''}</strong>
         <div style="font-size:.85rem;color:#94a3b8;">${new Date(c.created_at).toLocaleString()}</div>
-        <button class="btn btn-secondary" onclick="previewSaved('${c.id}')">View</button>
+        <button class="btn btn-secondary btn-sm" style="margin-top:.5rem" onclick="previewSaved('${c.id}')">View</button>
       </div>
     `).join('');
   } catch (err) {
@@ -307,46 +643,89 @@ async function previewSaved(id) {
   const { data } = await client.from('cover_letters').select('*').eq('id', id).single();
   if (!data) return;
 
-  letterOutput.textContent = formatLetterText(data.generated_letter);
+  lastGenerated = {
+    letter: data.generated_letter,
+    variants: data.variants,
+    keywords_used: data.keywords_used,
+    ats_score: data.ats_score,
+    relevance_score: data.relevance_score,
+    matched_keywords: data.matched_keywords || []
+  };
 
-  variantsBox.textContent = (data.variants || []).join('\n\n---\n\n');
-  atsScore.textContent = `ATS Score: ${data.ats_score || '—'}`;
-  relScore.textContent = `Relevance: ${data.relevance_score || '—'}`;
-  keywordsBox.innerHTML = (data.keywords_used || []).map(k => `<span class="tag">${k}</span>`).join('');
+  if (data.job_title) document.getElementById('jobTitle').value = data.job_title;
+  if (data.company_name) document.getElementById('companyName').value = data.company_name;
+
+  document.getElementById('letterOutput').textContent = formatLetterText(data.generated_letter);
+
+  const variants = data.variants || [];
+  if (variants.length > 0) {
+    document.getElementById('variantsBox').textContent = variants.join('\n\n---\n\n');
+    document.getElementById('variantsSection').style.display = 'block';
+  }
+
+  document.getElementById('atsScore').textContent = data.ats_score != null ? data.ats_score : '—';
+  document.getElementById('relScore').textContent = data.relevance_score != null ? data.relevance_score : '—';
+  document.getElementById('scoreBox').style.display = 'flex';
+  document.getElementById('keywordsBox').innerHTML = (data.keywords_used || []).map(k => `<span class="tag">${k}</span>`).join('');
 }
 
+// ── Copy ───────────────────────────────────────────────────────────────────
+
 function copyLetter() {
-  navigator.clipboard.writeText(letterOutput.textContent);
+  navigator.clipboard.writeText(document.getElementById('letterOutput').textContent);
   showAlert('success', '✅ Copied to clipboard!');
 }
 
-function downloadPDF() {
-  if (!letterOutput.textContent || letterOutput.textContent === 'Your letter will appear here...') {
-    alert('Please generate a cover letter first.');
-    return;
+// ── PDF Download ───────────────────────────────────────────────────────────
+
+async function downloadPDF() {
+  if (!lastGenerated || !lastGenerated.letter) {
+    return showAlert('error', 'Please generate a cover letter first.');
   }
 
-  const element = document.createElement('div');
-  element.style.padding = '20px';
-  element.style.fontFamily = 'Arial, sans-serif';
-  element.style.lineHeight = '1.6';
-  element.innerHTML = `
-    <h3>${jobTitle.value} @ ${companyName.value}</h3>
-    <div style="white-space: pre-wrap;">${letterOutput.textContent}</div>
-  `;
+  const downloadBtn = document.querySelector('[onclick="downloadPDF()"]');
+  const originalText = downloadBtn.textContent;
 
-  const opt = {
-    margin: [10, 10, 10, 10],
-    filename: `cover-letter-${new Date().getTime()}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, logging: false },
-    jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
-  };
+  try {
+    downloadBtn.textContent = '⏳ Generating PDF…';
+    downloadBtn.disabled = true;
 
-  html2pdf().set(opt).from(element).save().catch(err => {
-    console.error('PDF generation error:', err);
-    alert('Failed to generate PDF. Please try again.');
-  });
+    const res = await fetch('/api/generate-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        letter: lastGenerated.letter,
+        jobTitle: document.getElementById('jobTitle').value,
+        companyName: document.getElementById('companyName').value,
+        candidateName: document.getElementById('candidateName').value
+        // scores and keywords are intentionally omitted — clean PDF only
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'PDF generation failed' }));
+      throw new Error(err.error || 'PDF generation failed');
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const safe = (document.getElementById('jobTitle').value || 'letter').replace(/\s+/g, '-');
+    a.download = `CoverLetter-${safe}-${new Date().toISOString().split('T')[0]}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showAlert('success', '✅ PDF downloaded successfully!');
+  } catch (err) {
+    console.error('❌ PDF Error:', err);
+    showAlert('error', '❌ PDF download failed: ' + err.message);
+  } finally {
+    downloadBtn.textContent = originalText;
+    downloadBtn.disabled = false;
+  }
 }
 
 window.addEventListener('load', init);
