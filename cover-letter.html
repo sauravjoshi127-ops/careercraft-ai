@@ -66,7 +66,32 @@
     .history-card{border:1px solid rgba(148,163,184,.15);border-radius:.75rem;padding:1rem;margin-bottom:.75rem;}
     .section-title{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:.75rem;font-weight:600;}
     .candidate-name-hint{font-size:.8rem;color:#64748b;margin-top:.25rem;}
-    @media(max-width:600px){.form-row{grid-template-columns:1fr;}.score-box{flex-direction:column;}}
+    @media(max-width:600px){.form-row{grid-template-columns:1fr;}.score-box{flex-direction:column;}.score-def{grid-template-columns:1fr !important;}}
+
+    /* ATS/Relevance Education Panel */
+    .ats-edu-panel{background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(168,85,247,.06));border:1px solid rgba(124,58,237,.3);border-radius:.75rem;padding:1.25rem 1.5rem;margin-bottom:1.5rem;}
+    .ats-edu-panel h3{margin:0 0 .5rem 0;color:#c4b5fd;font-size:1rem;}
+    .ats-edu-panel p{margin:.25rem 0;font-size:.87rem;color:#94a3b8;line-height:1.6;}
+    .score-def{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.75rem;}
+    .score-def-item{background:rgba(10,14,39,.55);border:1px solid rgba(148,163,184,.1);border-radius:.5rem;padding:.8rem 1rem;}
+    .score-def-item .sdi-title{font-weight:700;color:#a855f7;margin-bottom:.3rem;font-size:.9rem;}
+    .score-def-item .sdi-desc{font-size:.82rem;color:#94a3b8;line-height:1.5;}
+    .edu-tip{font-size:.8rem;color:#64748b;margin:.75rem 0 0 0;}
+
+    /* Score Optimizer Accordion */
+    .optimizer-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;padding:.65rem .9rem;background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);border-radius:.5rem;color:#c4b5fd;font-weight:600;font-size:.9rem;transition:background .2s;}
+    .optimizer-toggle:hover{background:rgba(124,58,237,.2);}
+    .optimizer-arrow{transition:transform .25s;display:inline-block;}
+    .optimizer-arrow.open{transform:rotate(180deg);}
+    .optimizer-content{display:none;padding:.8rem 0 0 0;}
+    .optimizer-content.open{display:block;}
+    .opt-hint{font-size:.75rem;color:#64748b;margin-top:.2rem;}
+
+    /* Enhanced score display */
+    .score-number.score-high{color:#34d399;}
+    .score-number.score-mid{color:#fbbf24;}
+    .score-number.score-low{color:#f87171;}
+    .score-tip{font-size:.75rem;color:#64748b;margin-top:.3rem;line-height:1.4;}
   </style>
 </head>
 <body>
@@ -82,6 +107,23 @@
     <!-- ── Form Card ──────────────────────────────────────────────────── -->
     <div class="card">
       <h2 style="margin-top:0">Create Cover Letter</h2>
+
+      <!-- ATS & Relevance Score Education Panel -->
+      <div class="ats-edu-panel">
+        <h3>📊 What are ATS Score &amp; Relevance Score?</h3>
+        <p>Every application you submit faces two filters — an algorithm and a human. These two scores predict how well your cover letter will pass both:</p>
+        <div class="score-def">
+          <div class="score-def-item">
+            <div class="sdi-title">🤖 ATS Score (Applicant Tracking System)</div>
+            <div class="sdi-desc">Most companies use ATS software to <strong style="color:#e2e8f0">automatically scan and filter</strong> applications before any human reads them. The ATS looks for <em>keywords and phrases</em> from the job description. A low ATS score means your application may never reach the hiring manager. <strong style="color:#e2e8f0">Aim for 70 or higher.</strong></div>
+          </div>
+          <div class="score-def-item">
+            <div class="sdi-title">🎯 Relevance Score</div>
+            <div class="sdi-desc">Once past the ATS, a real person reads your letter. The Relevance Score measures how closely your <strong style="color:#e2e8f0">skills, experience, achievements, and personality</strong> match what the hiring manager actually wants. High relevance = interview invitation. <strong style="color:#e2e8f0">Aim for 75 or higher.</strong></div>
+          </div>
+        </div>
+        <p class="edu-tip">💡 <strong style="color:#94a3b8">How to improve both scores:</strong> Fill in the <em>Score Optimizer</em> section below. The more context you provide, the more the AI can tailor your letter with exactly the right keywords, achievements, and alignment — dramatically boosting both scores.</p>
+      </div>
 
       <div class="form-row">
         <div class="field-group">
@@ -166,6 +208,59 @@
         <textarea id="closing" style="min-height:60px" placeholder="e.g. Thank you for your time and consideration."></textarea>
       </div>
 
+      <!-- Score Optimizer Questions -->
+      <div style="margin-bottom:1.25rem">
+        <div class="optimizer-toggle" onclick="toggleOptimizer(this)" role="button" aria-expanded="false">
+          <span>🎯 Score Optimizer — Answer questions to maximize your ATS &amp; Relevance Scores</span>
+          <span class="optimizer-arrow">▼</span>
+        </div>
+        <div class="optimizer-content" id="optimizerContent">
+          <p style="font-size:.83rem;color:#64748b;margin:.1rem 0 .9rem 0">The AI uses your answers to tailor every sentence of your letter — matching exact keywords, echoing your real achievements, and showing genuine fit for the role and company.</p>
+
+          <div class="field-group">
+            <label for="mustHaveSkills">1. What are the must-have skills or requirements listed in the job description?</label>
+            <textarea id="mustHaveSkills" style="min-height:70px" placeholder="e.g. 5+ years Python, REST API design, AWS certification, team leadership, Agile/Scrum…"></textarea>
+            <div class="opt-hint">✅ The AI will echo these exact terms so the ATS recognizes them and scores your letter higher.</div>
+          </div>
+
+          <div class="field-group">
+            <label for="keyAchievements">2. What measurable results or achievements are you most proud of?</label>
+            <textarea id="keyAchievements" style="min-height:70px" placeholder="e.g. Reduced API latency by 60%, grew team from 3 to 12 engineers, increased revenue by $2M in one year…"></textarea>
+            <div class="opt-hint">✅ Quantified achievements are the #1 factor that impresses both ATS filters and hiring managers.</div>
+          </div>
+
+          <div class="field-group">
+            <label for="workHistoryAlignment">3. Which of your past roles or projects most closely match this job's responsibilities?</label>
+            <textarea id="workHistoryAlignment" style="min-height:70px" placeholder="e.g. 3 yrs as backend engineer at FinTech startup doing similar API integrations; led cross-functional teams…"></textarea>
+            <div class="opt-hint">✅ Aligning your history to the job duties signals to the ATS that you are a strong structural match.</div>
+          </div>
+
+          <div class="field-group">
+            <label for="softSkills">4. Which soft skills or personality traits best describe you? (culture fit &amp; communication)</label>
+            <textarea id="softSkills" style="min-height:60px" placeholder="e.g. collaborative problem-solver, self-starter, strong written communicator, mentors junior team members…"></textarea>
+            <div class="opt-hint">✅ Soft skills signal culture fit — hiring managers shortlist candidates they can picture working with.</div>
+          </div>
+
+          <div class="field-group">
+            <label for="companyResearch">5. What excites you specifically about this company? (mission, product, culture, recent news)</label>
+            <textarea id="companyResearch" style="min-height:60px" placeholder="e.g. Love their open-source commitment; saw their Series B funding; use their product daily and want to help build it…"></textarea>
+            <div class="opt-hint">✅ Genuine, specific enthusiasm for the company is the single biggest driver of your Relevance Score.</div>
+          </div>
+
+          <div class="field-group">
+            <label for="volunteerProjects">6. Any volunteer work, side projects, or extra activities that show passion or relevant skills?</label>
+            <textarea id="volunteerProjects" style="min-height:60px" placeholder="e.g. Open source contributor (500+ GitHub stars), coding bootcamp mentor, Hackathon winner, tech blog author…"></textarea>
+            <div class="opt-hint">✅ Extra-curricular activities demonstrate passion and initiative beyond the standard CV.</div>
+          </div>
+
+          <div class="field-group">
+            <label for="extraKeywords">7. Any specific keywords, technologies, or certifications from the job posting that must appear in your letter?</label>
+            <textarea id="extraKeywords" style="min-height:60px" placeholder="e.g. Kubernetes, TypeScript, PMP certification, HIPAA compliance, machine learning, CI/CD pipelines…"></textarea>
+            <div class="opt-hint">✅ These keywords are directly checked by the ATS — including them can push your score from 60 to 90+.</div>
+          </div>
+        </div>
+      </div>
+
       <div class="tools">
         <button id="generateBtn" class="btn btn-primary" onclick="generateCoverLetter(event)">✨ Generate</button>
         <button id="regenerateBtn" class="btn btn-secondary" onclick="generateCoverLetter(event, true)">🔁 Regenerate</button>
@@ -188,10 +283,12 @@
         <div class="score">
           <div class="score-number" id="atsScore">—</div>
           <div class="score-label">ATS Score / 100</div>
+          <div class="score-tip" id="atsScoreTip">Measures keyword match with the job description — higher = better chance of passing automated filters.</div>
         </div>
         <div class="score">
           <div class="score-number" id="relScore">—</div>
           <div class="score-label">Relevance Score / 100</div>
+          <div class="score-tip" id="relScoreTip">Measures how well your skills and experience align with what the hiring manager is looking for.</div>
         </div>
       </div>
 
@@ -220,6 +317,23 @@ let currentUser = null;
 let lastGenerated = null;
 let isGenerating = false;
 let resumeText = '';
+
+// ── Score Optimizer accordion ──────────────────────────────────────────────
+
+function toggleOptimizer(toggleEl) {
+  const content = document.getElementById('optimizerContent');
+  const arrow = toggleEl.querySelector('.optimizer-arrow');
+  const isOpen = content.classList.contains('open');
+  if (isOpen) {
+    content.classList.remove('open');
+    arrow.classList.remove('open');
+    toggleEl.setAttribute('aria-expanded', 'false');
+  } else {
+    content.classList.add('open');
+    arrow.classList.add('open');
+    toggleEl.setAttribute('aria-expanded', 'true');
+  }
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -397,7 +511,15 @@ async function generateCoverLetter(event, regen = false) {
       opening: document.getElementById('opening').value,
       closing: document.getElementById('closing').value,
       resumeText: resumeText || '',
-      mirrorStructure: document.getElementById('mirrorStructure').checked
+      mirrorStructure: document.getElementById('mirrorStructure').checked,
+      // Score Optimizer answers
+      mustHaveSkills: document.getElementById('mustHaveSkills').value.trim(),
+      keyAchievements: document.getElementById('keyAchievements').value.trim(),
+      workHistoryAlignment: document.getElementById('workHistoryAlignment').value.trim(),
+      softSkills: document.getElementById('softSkills').value.trim(),
+      companyResearch: document.getElementById('companyResearch').value.trim(),
+      volunteerProjects: document.getElementById('volunteerProjects').value.trim(),
+      extraKeywords: document.getElementById('extraKeywords').value.trim()
     };
 
     const res = await fetch('/api/cover-letter', {
@@ -420,9 +542,23 @@ async function generateCoverLetter(event, regen = false) {
       document.getElementById('variantsSection').style.display = 'block';
     }
 
-    // Scores (on-screen only)
-    document.getElementById('atsScore').textContent = data.ats_score != null ? data.ats_score : '—';
-    document.getElementById('relScore').textContent = data.relevance_score != null ? data.relevance_score : '—';
+    // Scores (on-screen only) with color-coding
+    const atsVal = data.ats_score != null ? data.ats_score : null;
+    const relVal = data.relevance_score != null ? data.relevance_score : null;
+    const atsEl = document.getElementById('atsScore');
+    const relEl = document.getElementById('relScore');
+    atsEl.textContent = atsVal != null ? atsVal : '—';
+    relEl.textContent = relVal != null ? relVal : '—';
+    atsEl.className = 'score-number' + (atsVal == null ? '' : atsVal >= 70 ? ' score-high' : atsVal >= 50 ? ' score-mid' : ' score-low');
+    relEl.className = 'score-number' + (relVal == null ? '' : relVal >= 75 ? ' score-high' : relVal >= 55 ? ' score-mid' : ' score-low');
+    document.getElementById('atsScoreTip').textContent = atsVal == null ? 'Measures keyword match with the job description — higher = better chance of passing automated filters.' :
+      atsVal >= 70 ? '✅ Great ATS match! Your letter contains the right keywords to pass automated screening.' :
+      atsVal >= 50 ? '⚠️ Moderate match. Consider adding more job-description keywords using the Score Optimizer.' :
+      '❌ Low ATS match. Fill in the Score Optimizer questions to add matching keywords and improve this score.';
+    document.getElementById('relScoreTip').textContent = relVal == null ? 'Measures how well your skills and experience align with what the hiring manager is looking for.' :
+      relVal >= 75 ? '✅ Highly relevant! Your background strongly aligns with what the hiring manager wants.' :
+      relVal >= 55 ? '⚠️ Good relevance. Adding achievements and company research can push this higher.' :
+      '❌ Low relevance. Use the Score Optimizer to highlight matching experience and enthusiasm for the role.';
     document.getElementById('scoreBox').style.display = 'flex';
 
     // Keywords

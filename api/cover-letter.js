@@ -89,6 +89,15 @@ module.exports = async function handler(req, res) {
   const resumeText = String(body.resumeText || '').trim();
   const mirrorStructure = Boolean(body.mirrorStructure);
 
+  // Score Optimizer inputs
+  const mustHaveSkills = String(body.mustHaveSkills || '').trim();
+  const keyAchievements = String(body.keyAchievements || '').trim();
+  const workHistoryAlignment = String(body.workHistoryAlignment || '').trim();
+  const softSkills = String(body.softSkills || '').trim();
+  const companyResearch = String(body.companyResearch || '').trim();
+  const volunteerProjects = String(body.volunteerProjects || '').trim();
+  const extraKeywords = String(body.extraKeywords || '').trim();
+
   if (!jobTitle || !companyName || !jobDescription) {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
@@ -102,6 +111,19 @@ module.exports = async function handler(req, res) {
 
   const mirrorNote = mirrorStructure && resumeText
     ? `\nSTRUCTURE NOTE: The candidate has requested their cover letter mirror the structure and style of their resume. Analyze the resume sections, order, and phrasing style, then shape the cover letter layout to reflect that structure and voice.\n`
+    : '';
+
+  // Build score optimizer section from user answers
+  const optimizerLines = [];
+  if (mustHaveSkills) optimizerLines.push(`MUST-HAVE SKILLS/REQUIREMENTS (from job posting — incorporate these exact terms for ATS): ${mustHaveSkills}`);
+  if (keyAchievements) optimizerLines.push(`MEASURABLE ACHIEVEMENTS (use these quantified results in the letter): ${keyAchievements}`);
+  if (workHistoryAlignment) optimizerLines.push(`WORK HISTORY ALIGNMENT (past roles/projects that match this job — emphasize these): ${workHistoryAlignment}`);
+  if (softSkills) optimizerLines.push(`SOFT SKILLS / PERSONALITY TRAITS (weave these naturally into the letter for culture fit): ${softSkills}`);
+  if (companyResearch) optimizerLines.push(`COMPANY ENTHUSIASM (why this company specifically — include this genuine detail in the company-fit paragraph): ${companyResearch}`);
+  if (volunteerProjects) optimizerLines.push(`VOLUNTEER WORK / SIDE PROJECTS (mention to demonstrate passion and initiative): ${volunteerProjects}`);
+  if (extraKeywords) optimizerLines.push(`EXTRA KEYWORDS / TECHNOLOGIES TO INCLUDE (ensure every one of these appears in the letter): ${extraKeywords}`);
+  const optimizerSection = optimizerLines.length > 0
+    ? `\nSCORE OPTIMIZER — CRITICAL INPUTS (use ALL of the following to maximize ATS and Relevance scores):\n${optimizerLines.join('\n')}\n`
     : '';
 
   const prompt = `You are an elite professional career writer. Write a compelling, well-crafted cover letter that strictly follows the standard professional structure used by hiring managers worldwide (as described by Indeed Career Advice).
@@ -122,7 +144,7 @@ REQUIRED LETTER STRUCTURE (follow this exactly, in order):
 5. COMPANY FIT PARAGRAPH: Explain why this specific company excites you — its mission, culture, product, or values. Show that you have researched the company and that your work style, values, and approach make you a natural fit for their team.
 6. CLOSING PARAGRAPH: Thank the reader for their time, express eagerness for an interview to discuss your qualifications further, and provide a clear call to action.
 7. PROFESSIONAL SIGN-OFF: Use "Sincerely," or "Best regards," on its own line, followed by a blank line, then the candidate's name (if provided, otherwise leave a blank signature line).
-${resumeSection}${mirrorNote}
+${resumeSection}${mirrorNote}${optimizerSection}
 FORMATTING RULES:
 - Use "\\n\\n" between each section/paragraph (double newline for spacing)
 - Use "\\n" for line breaks within the greeting and sign-off
@@ -191,8 +213,11 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
     const data = parseGeminiResponse(rawText);
 
     // Override AI-provided scores with server-side calculated scores
+    // Combine highlights with optimizer answers for a richer relevance calculation
+    const combinedHighlights = [highlights, mustHaveSkills, keyAchievements, workHistoryAlignment, softSkills]
+      .filter(Boolean).join(' ');
     const atsResult = calculateAtsScore(data.letter, jobDescription);
-    const relResult = calculateRelevanceScore(data.letter, jobDescription, highlights);
+    const relResult = calculateRelevanceScore(data.letter, jobDescription, combinedHighlights || highlights);
 
     data.ats_score = atsResult.score;
     data.relevance_score = relResult.score;
