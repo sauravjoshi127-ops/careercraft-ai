@@ -128,6 +128,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ resumeText });
   } catch (err) {
     console.error('[upload] Parse error:', err);
-    return res.status(500).json({ error: `Failed to parse resume (${err.message}). Please try a different file.` });
+    // Parsing failures are client-side issues (bad/corrupted/encrypted file) — use 422
+    return res.status(422).json({ error: `Failed to parse resume: ${err.message}. Please ensure the file is a valid, non-encrypted PDF or DOCX.` });
   }
 };
