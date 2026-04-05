@@ -85,6 +85,34 @@ Click the upload area (or drag-and-drop) in the cover letter generator to upload
 - If upload fails, the UI shows the **actual reason** (wrong file type, file too large, parse error, network error) — not a generic "try again" message
 - Server-side console logs (`[upload]`) trace the full upload flow for debugging
 
+### Troubleshooting: Resume Upload
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `400 Only PDF and DOCX files are accepted` | Wrong file type selected | Choose a `.pdf` or `.docx` file |
+| `413 File too large. Maximum size is 5 MB` | File exceeds the 5 MB limit | Compress or trim the file |
+| `422 Could not extract text…` | Scanned/image-only PDF | Use a text-based PDF or DOCX |
+| `422 Failed to parse resume…` | Corrupted or encrypted PDF/DOCX | Re-export from Word/Google Docs |
+| `500` or no response | Server not running / crash on startup | Run `npm install` then `npm start`; check console for errors |
+| Upload hangs / no status update | Network issue or server not running | Verify `npm start` is running on port 3000 |
+
+**Common setup mistakes:**
+1. **Forgot to run `npm install`** — run it after every `git pull` to pick up new dependencies.
+2. **Missing `.env` file** — copy `.env.example` to `.env` and fill in `GEMINI_API_KEY`.
+3. **Wrong Node.js version** — the project requires **Node.js 20.16 or later** (check with `node --version`). The `pdf-parse` v2 dependency requires `>=20.16.0`.
+4. **Server not restarted after code change** — stop (`Ctrl+C`) and restart (`npm start`) the server.
+
+**Reading the server logs:**  
+Every upload prints lines like:
+
+```
+[upload] Received: name="resume.pdf" mime="application/pdf" ext=".pdf" size=87432B
+[upload] Parsing PDF…
+[upload] Extracted 3241 characters from "resume.pdf"
+```
+
+If you see `[upload] Parse error:` or `[upload] Multer error:`, the full error message explains the problem. All errors are returned as JSON to the browser — the UI will display the reason instead of a generic "try again" message.
+
 ### PDF Download
 
 Click **⬇ Download PDF** after generating a letter. The browser sends the letter content and metadata to `POST /api/generate-pdf`, which uses [PDFKit](https://pdfkit.org/) to build a professional A4 PDF with:

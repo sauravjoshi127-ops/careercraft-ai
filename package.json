@@ -2,11 +2,12 @@
   "name": "careercraft-ai",
   "version": "1.0.0",
   "engines": {
-    "node": "20.x"
+    "node": ">=20.16.0"
   },
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "test": "node --test tests/upload-resume.test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
@@ -17,5 +18,8 @@
     "multer": "^2.1.1",
     "pdf-parse": "^2.4.5",
     "pdfkit": "^0.15.2"
+  },
+  "devDependencies": {
+    "supertest": "^7.2.2"
   }
 }

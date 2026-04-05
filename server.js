@@ -370,7 +370,11 @@ app.use((err, req, res, next) => {
 
 // ─── Start ───────────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
-  console.log(`\n🚀 CareerCraft AI server running at http://localhost:${PORT}`);
-  console.log(`   Press Ctrl+C to stop\n`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 CareerCraft AI server running at http://localhost:${PORT}`);
+    console.log(`   Press Ctrl+C to stop\n`);
+  });
+}
+
+module.exports = app;
