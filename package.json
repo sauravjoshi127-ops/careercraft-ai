@@ -2,8 +2,8 @@
   "name": "careercraft-ai",
   "version": "1.0.0",
   "engines": {
-    "node": ">=20.16.0"
-  },
+  "node": "20.x"
+},
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
