@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const multer = require('multer');
-const pdfParse = require('pdf-parse/lib/pdf-parse.js');
+const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
 const { calculateAtsScore, calculateRelevanceScore } = require('./utils/scoring');
 const { generateCoverLetterPDF } = require('./utils/pdf-generator');
@@ -150,10 +150,13 @@ app.post('/api/upload-resume', (req, res, next) => {
     let resumeText = '';
 
     if (isPDF) {
-      console.log('[upload] Parsing PDF…');
-      const parsed = await pdfParse(req.file.buffer);
-      resumeText = parsed.text || '';
-    } else {
+    console.log('[upload] Parsing PDF…');
+    const parser = new PDFParse({ data: req.file.buffer });
+    const parsed = await parser.getText();
+    await parser.destroy();
+    resumeText = parsed.text || '';
+} else {
+    console.log('[upload] Parsing DOCX…');
       console.log('[upload] Parsing DOCX…');
       const result = await mammoth.extractRawText({ buffer: req.file.buffer });
       resumeText = result.value || '';
