@@ -5,13 +5,6 @@ const Busboy = require('busboy');
 const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
 
-// Disable Vercel's default body parser so we can handle multipart/form-data ourselves.
-module.exports.config = {
-  api: {
-    bodyParser: false
-  }
-};
-
 const ALLOWED_MIME_TYPES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -82,6 +75,10 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'No file uploaded. Please upload a PDF or DOCX file.' });
   }
 
+  if (!resumeFile.buffer || resumeFile.buffer.length === 0) {
+    return res.status(422).json({ error: 'File appears to be empty.' });
+  }
+
   if (resumeFile.truncated || resumeFile.buffer.length > MAX_FILE_SIZE) {
     return res.status(413).json({ error: 'File too large. Maximum size is 5 MB.' });
   }
@@ -130,5 +127,13 @@ module.exports = async function handler(req, res) {
     console.error('[upload] Parse error:', err);
     // Parsing failures are client-side issues (bad/corrupted/encrypted file) — use 422
     return res.status(422).json({ error: `Failed to parse resume: ${err.message}. Please ensure the file is a valid, non-encrypted PDF or DOCX.` });
+  }
+};
+
+// Disable Vercel's default body parser so busboy can receive the raw multipart stream.
+// This MUST be set after `module.exports = ...` so it is not overwritten.
+module.exports.config = {
+  api: {
+    bodyParser: false
   }
 };
