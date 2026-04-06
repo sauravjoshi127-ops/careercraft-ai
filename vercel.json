@@ -1,7 +1,18 @@
 {
   "functions": {
     "api/**/*.js": {
-      "runtime": "nodejs20.x"
+      "maxDuration": 60
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/signup", "destination": "/signup.html" },
+    { "source": "/resume", "destination": "/resume.html" },
+    { "source": "/resume-share", "destination": "/resume-share.html" },
+    { "source": "/cover-letter", "destination": "/cover-letter.html" },
+    { "source": "/cold-email", "destination": "/cold-email.html" },
+    { "source": "/settings", "destination": "/settings.html" },
+    { "source": "/reset-password", "destination": "/reset-password.html" }
+  ]
 }
