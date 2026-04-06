@@ -2,7 +2,7 @@
 
 const path = require('path');
 const Busboy = require('busboy');
-const pdfParse = require('pdf-parse');
+const pdfParse = require('pdf-parse/lib/pdf-parse.js');
 const mammoth = require('mammoth');
 
 const ALLOWED_MIME_TYPES = [
