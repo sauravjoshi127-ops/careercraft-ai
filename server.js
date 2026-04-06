@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const multer = require('multer');
-const pdfParse = require('pdf-parse');
+const pdfParse = require('pdf-parse/lib/pdf-parse.js');
 const mammoth = require('mammoth');
 const { calculateAtsScore, calculateRelevanceScore } = require('./utils/scoring');
 const { generateCoverLetterPDF } = require('./utils/pdf-generator');
