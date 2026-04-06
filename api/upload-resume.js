@@ -2,7 +2,7 @@
 
 const path = require('path');
 const Busboy = require('busboy');
-const { PDFParse } = require('pdf-parse');
+const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 
 const ALLOWED_MIME_TYPES = [
@@ -105,9 +105,7 @@ module.exports = async function handler(req, res) {
 
     if (isPDF) {
       console.log('[upload] Parsing PDF…');
-      const parser = new PDFParse({ data: resumeFile.buffer });
-      const parsed = await parser.getText();
-      await parser.destroy();
+      const parsed = await pdfParse(resumeFile.buffer);
       resumeText = parsed.text || '';
     } else if (isDOCX) {
       console.log('[upload] Parsing DOCX…');
