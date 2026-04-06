@@ -323,7 +323,7 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
 
 // ─── Cold Email ──────────────────────────────────────────────────────────────
 
-app.post('/api/cold-email', (req, res) => coldEmailHandler(req, res));
+app.post('/api/cold-email', async (req, res) => coldEmailHandler(req, res));
 
 // ─── PDF Generation ──────────────────────────────────────────────────────────
 

@@ -454,6 +454,11 @@ function loadFormFromStorage() {
     if (saved.tone) {
       document.querySelectorAll('.pill').forEach(p => p.classList.toggle('selected', p.dataset.tone === saved.tone));
     }
+    // Ensure at least one pill is always selected (fallback to Professional)
+    if (!document.querySelector('.pill.selected')) {
+      const defaultPill = document.querySelector('.pill[data-tone="Professional"]');
+      if (defaultPill) defaultPill.classList.add('selected');
+    }
     if (saved.length) {
       document.querySelectorAll('.length-opt').forEach(o => o.classList.toggle('selected', o.dataset.len === saved.length));
     }
@@ -536,7 +541,15 @@ function validate() {
 // ── Form submit ───────────────────────────────────────────────────────────────
 document.getElementById('coldEmailForm').addEventListener('submit', async e => {
   e.preventDefault();
-  if (!validate()) return;
+  let isValid = false;
+  try {
+    isValid = validate();
+  } catch (err) {
+    console.error('[cold-email] Validation error:', err);
+    showToast('❌ Validation error. Please check your inputs.', 4000);
+    return;
+  }
+  if (!isValid) return;
 
   const btn = document.getElementById('generateBtn');
   const spinner = document.getElementById('spinner');
@@ -615,11 +628,14 @@ function renderResults(data) {
   container.innerHTML = '';
   currentVariants.forEach((v, i) => {
     const label = ['A','B','C'][i];
-    const subjLen = v.subject.length;
-    const words = v.body.trim().split(/\s+/).length;
+    const subject = v.subject || '';
+    const body = v.body || '';
+    const approach = v.approach || '';
+    const subjLen = subject.length;
+    const words = body.trim() ? body.trim().split(/\s+/).length : 0;
     const readSec = Math.round(words / 200 * 60);
     const readStr = readSec < 60 ? `${readSec}s read` : `${Math.round(readSec/60)}m read`;
-    const highlightedBody = highlightSpam(escapeHtml(v.body), currentSpamWords);
+    const highlightedBody = highlightSpam(escapeHtml(body), currentSpamWords);
 
     const panel = document.createElement('div');
     panel.className = 'tab-panel' + (i === 0 ? ' active' : '');
@@ -627,11 +643,11 @@ function renderResults(data) {
     panel.innerHTML = `
       <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;">
         <span style="font-size:.8rem;color:#64748b;font-weight:600">VARIANT ${label}</span>
-        <span style="font-size:.8rem;color:#7c3aed;background:rgba(124,58,237,.15);padding:.15rem .5rem;border-radius:9999px">${escapeHtml(v.approach)}</span>
+        <span style="font-size:.8rem;color:#7c3aed;background:rgba(124,58,237,.15);padding:.15rem .5rem;border-radius:9999px">${escapeHtml(approach)}</span>
       </div>
 
       <div class="subject-line-box">
-        <span class="subject-text">📧 ${escapeHtml(v.subject)}</span>
+        <span class="subject-text">📧 ${escapeHtml(subject)}</span>
         <span class="subject-len ${subjLen > 50 ? 'warn' : ''}">${subjLen} chars${subjLen > 50 ? ' ⚠️' : ''}</span>
       </div>
 
