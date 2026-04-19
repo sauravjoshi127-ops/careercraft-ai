@@ -524,7 +524,8 @@ async function loadSavedResumesDropdown() {
   try {
     const { data, error } = await supabase.from('resumes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
     if (error || !data || !data.length) {
-      select.style.display = 'none';
+      select.innerHTML = '<option value="">— No saved resumes. Build one first! —</option>';
+      select.disabled = true;
       return;
     }
     data.forEach(r => {

@@ -497,7 +497,8 @@ async function loadSavedResumesDropdown() {
   try {
     const { data, error } = await client.from('resumes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
     if (error || !data || !data.length) {
-      select.innerHTML = '<option value="">— No saved resumes found —</option>';
+      select.innerHTML = '<option value="">— No saved resumes. Build one first! —</option>';
+      select.disabled = true;
       return;
     }
     select.innerHTML = '<option value="">✨ — Select from your Saved Resumes —</option>';
