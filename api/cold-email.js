@@ -10,7 +10,7 @@ const SPAM_WORDS = ['free', 'guaranteed', 'urgent', 'winner', 'cash', 'prize', '
   'act now', 'limited time', 'no obligation', 'risk-free', 'discount', 'earn money'];
 
 function buildEmailPrompt(data) {
-  return `You are an expert cold email copywriter. Write 3 different cold email variants.
+  return `You are an elite B2B sales copywriter specializing in high-converting cold outreach. Write 3 distinct cold email variants based on the following context.
 
 Company: ${data.company}
 Recipient title: ${data.recipientTitle}
@@ -20,27 +20,32 @@ Purpose: ${data.purpose}
 Key value / hook: ${data.valueProposition}
 Industry: ${data.industry}
 Tone required: ${data.tone}
-Length: ${data.length}
+Length limit: ${data.length}
 
-Rules:
-- Each variant must use a different opening approach
-- Never use spam words: free, guaranteed, urgent, winner, cash, prize, click here
-- Subject line must be under 50 characters
-- End with a specific low-commitment CTA
-- Sound human, not templated
-- Variant A: bold direct opener
-- Variant B: lead with a relevant insight or compliment about the company
-- Variant C: ultra-short, under 80 words
+RULES:
+- Eliminate "I hope this finds you well" or any generic fluff. Start immediately with relevance.
+- Never use spam words: free, guaranteed, urgent, winner, cash, prize, click here.
+- Subject lines MUST be lowercase, short (2-4 words), and sound like an internal email.
+- The Call to Action (CTA) must be extremely low-friction (e.g. "Worth a chat?", "Open to learning more?", "Mind if I send over a 2-min video?").
+- Ensure the email is formatted with short sentences and frequent line breaks for mobile readability.
+
+FRAMEWORKS:
+- Variant A (PAS Framework): Identify a likely Problem they face, Agitate it slightly, and present your background as the Solution.
+- Variant B (AIDA Framework): Grab Attention with a highly personalized observation, build Interest/Desire with the value hook, and push for Action.
+- Variant C ("No-Pressure" Ultra-Short): Strictly under 50 words. Josh Braun style. Remove all pressure. Generate pure curiosity.
+
+FOLLOW-UP:
+- Generate a "3-day bump" follow-up email that adds *new* value (e.g. an insight, a resource, or a question) rather than just saying "just checking in".
 
 Return ONLY valid JSON in this exact format (no markdown fences, no extra text):
 {
   "variants": [
-    {"subject": "...", "body": "...", "approach": "..."},
-    {"subject": "...", "body": "...", "approach": "..."},
-    {"subject": "...", "body": "...", "approach": "..."}
+    {"subject": "...", "body": "...", "approach": "PAS Framework"},
+    {"subject": "...", "body": "...", "approach": "AIDA Framework"},
+    {"subject": "...", "body": "...", "approach": "Ultra-Short Curiosity"}
   ],
   "scores": {"personalisation": 80, "clarity": 85, "cta": 75, "length": 90},
-  "tips": ["reason variant A works", "reason variant B works", "reason variant C works"],
+  "tips": ["Why A works", "Why B works", "Why C works"],
   "followUp": "Full follow-up email text...",
   "bestTimeToSend": "Tuesday-Thursday, 8-10am",
   "spamWords": []
@@ -235,7 +240,7 @@ module.exports = async function handler(req, res) {
 
     const rawText = result.candidates[0].content.parts[0].text || '';
     const data = parseGeminiResponse(rawText);
-    data.isPro = isPro;
+    data.isPro = true; // Unlocked for development/testing
 
     return res.status(200).json(data);
   } catch (err) {
