@@ -170,6 +170,8 @@
 <nav class="topnav">
   <a class="logo" href="dashboard.html">Career<span>Craft</span> AI</a>
   <div class="nav-links">
+    <a href="resume.html" class="nav-btn">📝 Resume</a>
+    <a href="cover-letter.html" class="nav-btn">📨 Cover Letter</a>
     <a href="dashboard.html" class="nav-btn">← Dashboard</a>
     <a href="settings.html" class="nav-btn" id="navSettings" style="display:none">Settings</a>
     <button class="nav-btn" id="navSignOut" style="display:none" onclick="signOut()">Sign Out</button>
@@ -222,7 +224,12 @@
 
     <!-- Background & Purpose -->
     <div class="card">
-      <div class="card-title">📋 Background &amp; Purpose</div>
+      <div class="card-title" style="justify-content: space-between; display: flex; width: 100%;">
+        <span>📋 Background &amp; Purpose</span>
+        <select id="savedResumeSelect" onchange="autoFillBackground(this)" style="width:auto; padding:0.3rem 0.6rem; font-size:0.85rem; background:rgba(124,58,237,.1); border-color:rgba(124,58,237,.3); color:#c4b5fd;">
+          <option value="">✨ Auto-fill from Saved Resume</option>
+        </select>
+      </div>
       <div class="field-group">
         <label for="background">Your Background <span class="req">*</span></label>
         <textarea id="background" placeholder="e.g. 4-year software engineer with experience in React and Node.js, previously at Acme Corp…" maxlength="300"></textarea>
@@ -410,6 +417,7 @@ let allHistory = [];
   }
   renderUsageBanner();
   loadFormFromStorage();
+  await loadSavedResumesDropdown();
 })();
 
 async function signOut() {
@@ -505,6 +513,67 @@ document.getElementById('lengthOptions').addEventListener('click', e => {
   opt.classList.add('selected');
   saveFormToStorage();
 });
+
+// ── Saved Resumes Autofill ───────────────────────────────────────────────────
+let savedResumesData = {};
+
+async function loadSavedResumesDropdown() {
+  if (!currentUser) return;
+  const select = document.getElementById('savedResumeSelect');
+  if(!select) return;
+  try {
+    const { data, error } = await supabase.from('resumes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
+    if (error || !data || !data.length) {
+      select.style.display = 'none';
+      return;
+    }
+    data.forEach(r => {
+      savedResumesData[r.id] = r;
+      const opt = document.createElement('option');
+      opt.value = r.id;
+      opt.textContent = r.full_name ? `${r.full_name}'s Resume (${r.title || 'Untitled'})` : (r.title || 'Untitled Resume');
+      select.appendChild(opt);
+    });
+  } catch(e) {
+    console.error('Error loading saved resumes:', e);
+  }
+}
+
+function autoFillBackground(selectEl) {
+  const id = selectEl.value;
+  if (!id) return;
+  
+  const r = savedResumesData[id];
+  if (!r) return;
+  
+  let bg = '';
+  if (r.summary) {
+    bg += r.summary + ' ';
+  }
+  if (r.experience && r.experience.length > 0) {
+    const ex = r.experience[0];
+    bg += `Currently/Previously ${ex.title} at ${ex.company}. `;
+  }
+  if (r.skills && r.skills.length > 0) {
+    bg += `Key skills: ${r.skills.slice(0, 5).join(', ')}.`;
+  }
+  
+  if (bg.length > 300) {
+    bg = bg.substring(0, 297) + '...';
+  }
+  
+  const bgInput = document.getElementById('background');
+  bgInput.value = bg.trim();
+  const sn = document.getElementById('senderName');
+  if (r.full_name && (!sn.value || sn.value === '')) {
+    sn.value = r.full_name;
+  }
+  
+  updateCounters();
+  saveFormToStorage();
+  showToast('✅ Background auto-filled!');
+  selectEl.value = ''; 
+}
 
 // ── Validation ────────────────────────────────────────────────────────────────
 function validate() {

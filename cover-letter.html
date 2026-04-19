@@ -97,7 +97,11 @@
 <body>
   <div class="topnav">
     <div class="logo">📨 Cover Letter AI</div>
-    <a href="dashboard.html" class="btn btn-secondary">← Dashboard</a>
+    <div style="display:flex;gap:1rem;">
+      <a href="resume.html" class="btn btn-secondary btn-sm">📝 Resume</a>
+      <a href="cold-email.html" class="btn btn-secondary btn-sm">✉️ Cold Email</a>
+      <a href="dashboard.html" class="btn btn-primary btn-sm">← Dashboard</a>
+    </div>
   </div>
 
   <div class="container">
@@ -154,12 +158,19 @@
 
       <!-- ── Resume Upload ─────────────────────────────────────────── -->
       <div class="field-group">
-        <label>Upload Resume (optional — PDF or DOCX)</label>
+        <label>Provide Resume (optional — Select Saved or Upload File)</label>
+        
+        <div style="margin-bottom:1rem">
+          <select id="savedResumeSelect" onchange="handleSavedResumeSelect(this)" style="background:rgba(124,58,237,.1);border-color:rgba(124,58,237,.3);font-weight:600;color:#c4b5fd;">
+            <option value="">✨ — Select from your Saved Resumes —</option>
+          </select>
+        </div>
+
         <div class="upload-area" id="uploadArea" onclick="document.getElementById('resumeFile').click()">
           <input type="file" id="resumeFile" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="handleResumeUpload(this)" />
           <div class="upload-icon">📄</div>
-          <div class="upload-text">Click to upload or drag & drop</div>
-          <div class="upload-hint">PDF or DOCX · Max 5 MB</div>
+          <div class="upload-text">Or click to upload a new PDF/DOCX</div>
+          <div class="upload-hint">Max 5 MB</div>
         </div>
         <div class="resume-progress" id="resumeProgress">
           <div class="resume-progress-bar" id="resumeProgressBar"></div>
@@ -349,6 +360,7 @@ async function init() {
     const { data: { session } } = await client.auth.getSession();
     if (!session) return window.location.href = 'login.html';
     currentUser = session.user;
+    await loadSavedResumesDropdown();
     await loadHistory();
   } catch (err) {
     showAlert('error', 'Failed to initialize: ' + err.message);
@@ -468,10 +480,75 @@ function animateProgress() {
 function clearResume() {
   resumeText = '';
   document.getElementById('resumeFile').value = '';
+  const sel = document.getElementById('savedResumeSelect');
+  if(sel) sel.value = '';
   document.getElementById('resumeStatus').style.display = 'none';
   document.getElementById('mirrorRow').style.display = 'none';
   document.getElementById('resumeClearRow').style.display = 'none';
   document.getElementById('mirrorStructure').checked = false;
+}
+
+// ── Saved Resumes Dropdown ──────────────────────────────────────────────────
+let savedResumesData = {};
+
+async function loadSavedResumesDropdown() {
+  if (!currentUser) return;
+  const select = document.getElementById('savedResumeSelect');
+  try {
+    const { data, error } = await client.from('resumes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
+    if (error || !data || !data.length) {
+      select.innerHTML = '<option value="">— No saved resumes found —</option>';
+      return;
+    }
+    select.innerHTML = '<option value="">✨ — Select from your Saved Resumes —</option>';
+    data.forEach(r => {
+      savedResumesData[r.id] = r;
+      const opt = document.createElement('option');
+      opt.value = r.id;
+      opt.textContent = r.full_name ? `${r.full_name}'s Resume (${r.title || 'Untitled'})` : (r.title || 'Untitled Resume');
+      select.appendChild(opt);
+    });
+  } catch(e) {
+    console.error('Error loading saved resumes:', e);
+  }
+}
+
+function handleSavedResumeSelect(selectEl) {
+  const id = selectEl.value;
+  if (!id) {
+    clearResume();
+    return;
+  }
+  
+  const r = savedResumesData[id];
+  if (!r) return;
+  
+  // Format resume as text for the AI
+  let txt = `Name: ${r.full_name || ''}\nEmail: ${r.email || ''}\nPhone: ${r.phone || ''}\n\n`;
+  if (r.summary) txt += `Summary:\n${r.summary}\n\n`;
+  
+  if (r.experience && Array.isArray(r.experience)) {
+    txt += `Experience:\n`;
+    r.experience.forEach(ex => {
+      txt += `${ex.title} at ${ex.company} (${ex.startDate} - ${ex.endDate || 'Present'})\n${ex.description}\n\n`;
+    });
+  }
+  if (r.education && Array.isArray(r.education)) {
+    txt += `Education:\n`;
+    r.education.forEach(ed => {
+      txt += `${ed.degree} from ${ed.school} (${ed.startDate} - ${ed.endDate})\n\n`;
+    });
+  }
+  if (r.skills && Array.isArray(r.skills)) {
+    txt += `Skills: ${r.skills.join(', ')}\n\n`;
+  }
+  
+  resumeText = txt;
+  document.getElementById('candidateName').value = r.full_name || '';
+  document.getElementById('resumeFile').value = ''; // clear file upload
+  setResumeStatus('success', `✅ Loaded saved resume: ${selectEl.options[selectEl.selectedIndex].text}`);
+  document.getElementById('mirrorRow').style.display = 'flex';
+  document.getElementById('resumeClearRow').style.display = 'block';
 }
 
 // ── Cover letter generation ────────────────────────────────────────────────
