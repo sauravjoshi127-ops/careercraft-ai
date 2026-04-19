@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname), { extensions: ['html'] }));
 
 // ─── Multer (resume upload) ──────────────────────────────────────────────────
 
@@ -153,8 +153,7 @@ app.post('/api/upload-resume', (req, res, next) => {
     console.log('[upload] Parsing PDF…');
     const parsed = await pdfParse(req.file.buffer);
     resumeText = parsed.text || '';
-} else {
-    console.log('[upload] Parsing DOCX…');
+    } else {
       console.log('[upload] Parsing DOCX…');
       const result = await mammoth.extractRawText({ buffer: req.file.buffer });
       resumeText = result.value || '';
