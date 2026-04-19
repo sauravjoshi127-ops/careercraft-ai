@@ -575,6 +575,7 @@
     <div class="nav-links">
       <a href="resume.html" class="nav-btn">📝 Resume</a>
       <a href="cover-letter.html" class="nav-btn">📨 Cover Letter</a>
+      <a href="interview-coach.html" class="nav-btn">🎤 Interview Coach</a>
       <a href="dashboard.html" class="nav-btn primary">← Dashboard</a>
     </div>
   </nav>
@@ -745,11 +746,11 @@
     // ── Supabase Init ────────────────────────────────────────────────────────
     const SUPABASE_URL  = 'https://eduogxolvpqdtvtdiqav.supabase.co';
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
-    const supabase = window.supabase && typeof window.supabase.createClient === 'function'
+    const supabaseClient = window.supabase && typeof window.supabase.createClient === 'function'
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
       : null;
-    const nexusUnavailable = !supabase;
-    if (!supabase) {
+    const nexusUnavailable = !supabaseClient;
+    if (!supabaseClient) {
       console.warn('Supabase client unavailable; Nexus import is disabled. Please refresh the page to retry.');
     }
 
@@ -758,9 +759,14 @@
     let currentData = null;
 
     (async () => {
-      if (!supabase) return;
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) currentUser = session.user;
+      if (!supabaseClient) return;
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        currentUser = session.user;
+      } else {
+        const localId = localStorage.getItem('userId');
+        if (localId) currentUser = { id: localId };
+      }
     })();
 
     // ── UI Logic ─────────────────────────────────────────────────────────────
@@ -812,13 +818,13 @@
 
     // ── Nexus Feature ────────────────────────────────────────────────────────
     async function openNexusModal() {
-      if (!supabase) {
+      if (!supabaseClient) {
         return showToast('Nexus is currently unavailable. Please refresh the page or fill details manually.', true);
       }
       if (!currentUser) return showToast('Please log in first to access your saved resumes.', true);
       document.getElementById('nexusModal').classList.add('show');
       
-      const { data, error } = await supabase.from('resumes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
+      const { data, error } = await supabaseClient.from('resumes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
       const list = document.getElementById('resumeList');
       
       if (error || !data || data.length === 0) {
