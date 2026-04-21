@@ -596,15 +596,25 @@
     </div>
 
     <!-- NEXUS Hub -->
-    <div class="nexus-box">
-      <div class="nexus-text">
-        <h3>✨ The Nexus: Import your Context</h3>
-        <p>Skip the typing. Instantly load your background from your saved resumes.</p>
+    <div class="nexus-box" style="flex-direction: column; align-items: stretch; gap: 1rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div class="nexus-text">
+          <h3>✨ The Nexus: Import your Context</h3>
+          <p>Skip the typing. Instantly load your background from a saved resume or PDF.</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button type="button" class="nexus-btn" onclick="document.getElementById('resumeFileInput').click()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            Upload PDF
+          </button>
+          <input type="file" id="resumeFileInput" accept=".pdf,.docx,application/pdf" style="display:none" onchange="handlePDFUpload(this)">
+          <button type="button" class="nexus-btn" onclick="openNexusModal()">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
+            Select Saved
+          </button>
+        </div>
       </div>
-      <button type="button" class="nexus-btn" id="openNexusBtn" aria-label="Open resume selection modal">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
-        Select Resume
-      </button>
+      <div id="pdfUploadStatus" style="display:none; font-size: 0.85rem; padding: 0.5rem; border-radius: 0.5rem; background: rgba(16, 185, 129, 0.1); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3);"></div>
     </div>
 
     <!-- Main Form -->
@@ -746,6 +756,7 @@
     // ── Supabase Init ────────────────────────────────────────────────────────
     const SUPABASE_URL  = 'https://eduogxolvpqdtvtdiqav.supabase.co';
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
+<<<<<<< HEAD
     const supabaseClient = window.supabase && typeof window.supabase.createClient === 'function'
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
       : null;
@@ -754,20 +765,44 @@
       console.warn('Supabase client unavailable; Nexus import is disabled. Please refresh the page to retry.');
     }
 
+=======
+    
+    let supabaseClient = null;
+>>>>>>> a97b3c2 (Fix cold email UI interactivity and add PDF upload)
     let currentUser = null;
     let savedResumes = [];
     let currentData = null;
 
+<<<<<<< HEAD
     (async () => {
       if (!supabaseClient) return;
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (session) {
         currentUser = session.user;
+=======
+    try {
+      if (window.supabase) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+        (async () => {
+          try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+              currentUser = session.user;
+            } else {
+              const localId = localStorage.getItem('userId');
+              if (localId) currentUser = { id: localId };
+            }
+          } catch (e) {
+            console.warn('Auth session error:', e);
+          }
+        })();
+>>>>>>> a97b3c2 (Fix cold email UI interactivity and add PDF upload)
       } else {
-        const localId = localStorage.getItem('userId');
-        if (localId) currentUser = { id: localId };
+        console.warn('Supabase JS not loaded from CDN.');
       }
-    })();
+    } catch (e) {
+      console.warn('Supabase initialization failed:', e);
+    }
 
     // ── UI Logic ─────────────────────────────────────────────────────────────
     function showToast(msg, isError = false) {
@@ -790,10 +825,17 @@
     // Pills interaction
     document.querySelectorAll('.pill-group').forEach(group => {
       group.addEventListener('click', e => {
+<<<<<<< HEAD
         const clickedPill = e.target.closest('.pill');
         if (!clickedPill || !group.contains(clickedPill)) return;
         e.stopPropagation();
         setActivePill(group, clickedPill);
+=======
+        const pill = e.target.closest('.pill');
+        if (!pill) return;
+        group.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+>>>>>>> a97b3c2 (Fix cold email UI interactivity and add PDF upload)
       });
       group.querySelectorAll('.pill').forEach(pill => {
         pill.addEventListener('click', e => {
@@ -822,6 +864,8 @@
         return showToast('Nexus is currently unavailable. Please refresh the page or fill details manually.', true);
       }
       if (!currentUser) return showToast('Please log in first to access your saved resumes.', true);
+      if (!supabaseClient) return showToast('Supabase connection unavailable. Please check your connection or configuration.', true);
+      
       document.getElementById('nexusModal').classList.add('show');
       
       const { data, error } = await supabaseClient.from('resumes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
@@ -884,6 +928,53 @@
       
       closeNexusModal();
       showToast('✨ Context imported successfully!');
+    }
+
+    async function handlePDFUpload(input) {
+      const file = (input.files && (input.files[0] || input.files.item(0))) || null;
+      if (!file) return;
+
+      const statusEl = document.getElementById('pdfUploadStatus');
+      statusEl.style.display = 'block';
+      statusEl.textContent = `⏳ Parsing ${file.name}...`;
+      statusEl.style.color = '#c4b5fd';
+      statusEl.style.background = 'rgba(124,58,237,.15)';
+      statusEl.style.borderColor = 'rgba(124,58,237,.3)';
+
+      const form = new FormData();
+      form.append('resume', file);
+
+      try {
+        const res = await fetch('/api/upload-resume', { method: 'POST', body: form });
+        const data = await res.json().catch(() => ({}));
+        
+        if (!res.ok) {
+          throw new Error(data.error || `Server error ${res.status}`);
+        }
+
+        if (data.resumeText) {
+          const bgInput = document.getElementById('background');
+          bgInput.value = data.resumeText.substring(0, 400).trim();
+          document.getElementById('bgCounter').textContent = `${bgInput.value.length} / 400`;
+          
+          statusEl.textContent = `✅ Successfully imported context from ${file.name}`;
+          statusEl.style.color = '#6ee7b7';
+          statusEl.style.background = 'rgba(16, 185, 129, 0.1)';
+          statusEl.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+          showToast('✨ PDF imported successfully!');
+        } else {
+          throw new Error('No text could be extracted from this file.');
+        }
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = `❌ Upload failed: ${err.message}`;
+        statusEl.style.color = '#fca5a5';
+        statusEl.style.background = 'rgba(239, 68, 68, 0.1)';
+        statusEl.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+      }
+      
+      // Clear input so same file can be selected again
+      input.value = '';
     }
 
     // ── Form Submission ──────────────────────────────────────────────────────
