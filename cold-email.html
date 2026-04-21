@@ -255,6 +255,7 @@
       cursor: pointer;
       transition: all 0.2s;
       user-select: none;
+      pointer-events: auto;
     }
     .pill:hover { border-color: rgba(255, 255, 255, 0.3); }
     .pill.active {
@@ -454,12 +455,20 @@
       inset: 0;
       background: rgba(0, 0, 0, 0.7);
       backdrop-filter: blur(5px);
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
     }
-    .modal-backdrop.show { display: flex; animation: fadeIn 0.2s ease; }
+    .modal-backdrop.show {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      animation: fadeIn 0.2s ease;
+    }
     .modal {
       background: var(--bg);
       border: 1px solid var(--border);
@@ -504,6 +513,13 @@
       cursor: pointer;
     }
     .modal-close:hover { background: rgba(255,255,255,0.05); }
+
+    /* Ensure interactive controls always receive clicks */
+    button, input, textarea, select, .action-btn, .nexus-btn, .resume-item, .tab {
+      pointer-events: auto;
+      position: relative;
+      z-index: 1;
+    }
 
     /* Toast */
     .toast {
@@ -744,9 +760,11 @@
     // Pills interaction
     document.querySelectorAll('.pill-group').forEach(group => {
       group.addEventListener('click', e => {
-        if (!e.target.classList.contains('pill')) return;
+        const clickedPill = e.target.closest('.pill');
+        if (!clickedPill || !group.contains(clickedPill)) return;
+        e.stopPropagation();
         group.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-        e.target.classList.add('active');
+        clickedPill.classList.add('active');
       });
     });
 
@@ -783,6 +801,12 @@
       document.getElementById('nexusModal').classList.remove('show');
     }
 
+    const nexusModal = document.getElementById('nexusModal');
+    nexusModal.addEventListener('click', e => {
+      if (e.target === nexusModal) closeNexusModal();
+    });
+    nexusModal.querySelector('.modal').addEventListener('click', e => e.stopPropagation());
+
     function applyNexusData(r) {
       if (r.full_name) document.getElementById('senderName').value = r.full_name;
       
@@ -809,6 +833,9 @@
       document.getElementById('loadingSkeletons').classList.add('show');
       document.getElementById('generateBtn').disabled = true;
 
+      const activeTone = document.querySelector('#tonePills .active') || document.querySelector('#tonePills .pill');
+      const activeLength = document.querySelector('#lengthPills .active') || document.querySelector('#lengthPills .pill');
+
       const payload = {
         company: document.getElementById('company').value.trim(),
         recipientTitle: document.getElementById('recipientTitle').value.trim(),
@@ -818,8 +845,8 @@
         industry: document.getElementById('industry').value,
         purpose: document.getElementById('purpose').value,
         valueProposition: document.getElementById('valueProposition').value.trim(),
-        tone: document.querySelector('#tonePills .active').textContent,
-        length: document.querySelector('#lengthPills .active').textContent
+        tone: activeTone ? activeTone.textContent.trim() : 'Professional',
+        length: activeLength ? activeLength.textContent.trim() : 'Short (Under 100 words)'
       };
 
       try {
@@ -937,6 +964,13 @@
     function openGmail(sub, body) {
       window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${sub}&body=${body}`, '_blank');
     }
+
+    // Keep inline handlers reliable across browsers.
+    window.openNexusModal = openNexusModal;
+    window.closeNexusModal = closeNexusModal;
+    window.copyText = copyText;
+    window.openGmail = openGmail;
+    window.switchTab = switchTab;
   </script>
 </body>
 </html>
