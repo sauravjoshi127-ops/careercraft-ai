@@ -488,6 +488,7 @@
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      pointer-events: auto !important;
     }
     .resume-item {
       padding: 1rem;
@@ -498,6 +499,7 @@
       transition: all 0.2s;
       text-align: left;
       color: var(--text-main);
+      pointer-events: auto !important;
     }
     .resume-item:hover {
       border-color: var(--primary);
@@ -522,6 +524,9 @@
       pointer-events: auto !important;
       position: relative;
       z-index: 1;
+    }
+    .pill-group, .pill {
+      pointer-events: auto !important;
     }
 
     /* Toast */
@@ -770,14 +775,25 @@
       showToast('Nexus import is unavailable right now. You can still fill details manually.', true);
     }
 
+    function setActivePill(group, clickedPill) {
+      if (!group || !clickedPill) return;
+      group.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      clickedPill.classList.add('active');
+    }
+
     // Pills interaction
     document.querySelectorAll('.pill-group').forEach(group => {
       group.addEventListener('click', e => {
         const clickedPill = e.target.closest('.pill');
         if (!clickedPill || !group.contains(clickedPill)) return;
         e.stopPropagation();
-        group.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-        clickedPill.classList.add('active');
+        setActivePill(group, clickedPill);
+      });
+      group.querySelectorAll('.pill').forEach(pill => {
+        pill.addEventListener('click', e => {
+          e.stopPropagation();
+          setActivePill(group, pill);
+        });
       });
     });
 
@@ -812,11 +828,11 @@
       
       savedResumes = data;
       list.innerHTML = '';
-      data.forEach(r => {
+      data.forEach((r, idx) => {
         const div = document.createElement('div');
         div.className = 'resume-item';
+        div.dataset.resumeIndex = String(idx);
         div.innerHTML = `<h4>${r.full_name || 'Untitled'}</h4><p>${r.title || 'No job title'}</p>`;
-        div.onclick = () => applyNexusData(r);
         list.appendChild(div);
       });
     }
@@ -835,10 +851,18 @@
     });
 
     const nexusModal = document.getElementById('nexusModal');
+    const resumeList = document.getElementById('resumeList');
     nexusModal.addEventListener('click', e => {
       if (e.target === nexusModal) closeNexusModal();
     });
     nexusModal.querySelector('.modal').addEventListener('click', e => e.stopPropagation());
+    resumeList.addEventListener('click', e => {
+      const resumeItem = e.target.closest('.resume-item');
+      if (!resumeItem || !resumeList.contains(resumeItem)) return;
+      const idx = Number.parseInt(resumeItem.dataset.resumeIndex, 10);
+      if (Number.isNaN(idx) || !savedResumes[idx]) return;
+      applyNexusData(savedResumes[idx]);
+    });
 
     function applyNexusData(r) {
       if (r.full_name) document.getElementById('senderName').value = r.full_name;
