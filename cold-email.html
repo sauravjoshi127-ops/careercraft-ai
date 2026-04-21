@@ -595,7 +595,7 @@
         <h3>✨ The Nexus: Import your Context</h3>
         <p>Skip the typing. Instantly load your background from your saved resumes.</p>
       </div>
-      <button type="button" class="nexus-btn" id="openNexusBtn">
+      <button type="button" class="nexus-btn" id="openNexusBtn" aria-label="Open resume selection modal">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
         Select Resume
       </button>
@@ -705,10 +705,10 @@
     <div id="resultsSection">
       <h2 style="font-size:1.5rem; margin-bottom:1.5rem; text-align:center;">📬 Your Elite Variants</h2>
       
-      <div class="tabs" id="variantTabs">
-        <button type="button" class="tab active" data-tab-index="0">Variant A (PAS)</button>
-        <button type="button" class="tab" data-tab-index="1">Variant B (AIDA)</button>
-        <button type="button" class="tab" data-tab-index="2">Variant C (Ultra-Short)</button>
+      <div class="tabs" id="variantTabs" role="tablist">
+        <button type="button" class="tab active" data-tab-index="0" role="tab" aria-selected="true" aria-controls="vpanel-0">Variant A (PAS)</button>
+        <button type="button" class="tab" data-tab-index="1" role="tab" aria-selected="false" aria-controls="vpanel-1">Variant B (AIDA)</button>
+        <button type="button" class="tab" data-tab-index="2" role="tab" aria-selected="false" aria-controls="vpanel-2">Variant C (Ultra-Short)</button>
       </div>
 
       <div id="panelsContainer"></div>
@@ -730,7 +730,7 @@
       <div id="resumeList" class="resume-list">
         <p style="color:var(--text-muted);text-align:center;">Loading resumes...</p>
       </div>
-      <button type="button" class="modal-close" id="closeNexusBtn">Cancel</button>
+      <button type="button" class="modal-close" id="closeNexusBtn" aria-label="Close resume selection modal">Cancel</button>
     </div>
   </div>
 
@@ -743,6 +743,10 @@
     const supabase = window.supabase && typeof window.supabase.createClient === 'function'
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
       : null;
+    const nexusUnavailable = !supabase;
+    if (!supabase) {
+      console.warn('Supabase client unavailable; Nexus import is disabled. Please refresh the page to retry.');
+    }
 
     let currentUser = null;
     let savedResumes = [];
@@ -762,6 +766,9 @@
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 3000);
     }
+    if (nexusUnavailable) {
+      showToast('Nexus import is unavailable right now. You can still fill details manually.', true);
+    }
 
     // Pills interaction
     document.querySelectorAll('.pill-group').forEach(group => {
@@ -778,8 +785,8 @@
       const tab = e.target.closest('.tab');
       if (!tab) return;
       e.stopPropagation();
-      const idx = parseInt(tab.dataset.tabIndex, 10);
-      if (!Number.isNaN(idx)) switchTab(idx);
+      const tabIndex = parseInt(tab.dataset.tabIndex, 10);
+      if (!Number.isNaN(tabIndex) && tabIndex >= 0) switchTab(tabIndex);
     });
 
     // Character counter
@@ -790,7 +797,7 @@
     // ── Nexus Feature ────────────────────────────────────────────────────────
     async function openNexusModal() {
       if (!supabase) {
-        return showToast('Nexus is temporarily unavailable. You can still fill details manually.', true);
+        return showToast('Nexus is currently unavailable. Please refresh the page or fill details manually.', true);
       }
       if (!currentUser) return showToast('Please log in first to access your saved resumes.', true);
       document.getElementById('nexusModal').classList.add('show');
@@ -852,11 +859,6 @@
     // ── Form Submission ──────────────────────────────────────────────────────
     document.getElementById('emailForm').addEventListener('submit', async e => {
       e.preventDefault();
-      e.stopPropagation();
-      if (!e.target.checkValidity()) {
-        e.target.reportValidity();
-        return;
-      }
       
       // Hide old results/errors, show skeletons
       document.getElementById('errorAlert').classList.remove('show');
@@ -939,8 +941,8 @@
             <div class="email-body" id="body-${idx}">${v.body}</div>
             
             <div class="action-row">
-              <button type="button" class="action-btn copy" data-copy-target="body-${idx}">📋 Copy Email</button>
-              <button type="button" class="action-btn" data-gmail-sub="${encodeURIComponent(v.subject)}" data-gmail-body="${encodeURIComponent(v.body)}">📤 Open in Gmail</button>
+              <button type="button" class="action-btn copy" data-copy-target="body-${idx}" aria-label="Copy email variant ${idx + 1}">📋 Copy Email</button>
+              <button type="button" class="action-btn" data-gmail-sub="${encodeURIComponent(v.subject)}" data-gmail-body="${encodeURIComponent(v.body)}" aria-label="Open email variant ${idx + 1} in Gmail">📤 Open in Gmail</button>
             </div>
 
             <div class="card" style="padding:1.5rem; background: rgba(0,0,0,0.2);">
@@ -982,7 +984,11 @@
     }
 
     function switchTab(idx) {
-      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+      document.querySelectorAll('.tab').forEach((t, i) => {
+        const isActive = i === idx;
+        t.classList.toggle('active', isActive);
+        t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
       document.querySelectorAll('.variant-panel').forEach((p, i) => p.classList.toggle('active', i === idx));
     }
 
@@ -998,16 +1004,15 @@
 
     document.addEventListener('click', e => {
       const copyBtn = e.target.closest('[data-copy-target]');
+      const gmailBtn = e.target.closest('[data-gmail-sub][data-gmail-body]');
+
       if (copyBtn) {
         e.stopPropagation();
         copyText(copyBtn.dataset.copyTarget);
-        return;
+      } else if (gmailBtn) {
+        e.stopPropagation();
+        openGmail(gmailBtn.dataset.gmailSub, gmailBtn.dataset.gmailBody);
       }
-
-      const gmailBtn = e.target.closest('[data-gmail-sub][data-gmail-body]');
-      if (!gmailBtn) return;
-      e.stopPropagation();
-      openGmail(gmailBtn.dataset.gmailSub, gmailBtn.dataset.gmailBody);
     });
 
   </script>
