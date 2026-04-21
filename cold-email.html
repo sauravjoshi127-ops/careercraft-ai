@@ -768,7 +768,6 @@
       group.addEventListener('click', e => {
         const clickedPill = e.target.closest('.pill');
         if (!clickedPill || !group.contains(clickedPill)) return;
-        e.preventDefault();
         e.stopPropagation();
         group.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
         clickedPill.classList.add('active');
@@ -778,7 +777,6 @@
     document.getElementById('variantTabs').addEventListener('click', e => {
       const tab = e.target.closest('.tab');
       if (!tab) return;
-      e.preventDefault();
       e.stopPropagation();
       const idx = parseInt(tab.dataset.tabIndex, 10);
       if (!Number.isNaN(idx)) switchTab(idx);
@@ -821,12 +819,10 @@
     }
 
     document.getElementById('openNexusBtn').addEventListener('click', e => {
-      e.preventDefault();
       e.stopPropagation();
       openNexusModal();
     });
     document.getElementById('closeNexusBtn').addEventListener('click', e => {
-      e.preventDefault();
       e.stopPropagation();
       closeNexusModal();
     });
@@ -1003,7 +999,6 @@
     document.addEventListener('click', e => {
       const copyBtn = e.target.closest('[data-copy-target]');
       if (copyBtn) {
-        e.preventDefault();
         e.stopPropagation();
         copyText(copyBtn.dataset.copyTarget);
         return;
@@ -1011,17 +1006,10 @@
 
       const gmailBtn = e.target.closest('[data-gmail-sub][data-gmail-body]');
       if (!gmailBtn) return;
-      e.preventDefault();
       e.stopPropagation();
       openGmail(gmailBtn.dataset.gmailSub, gmailBtn.dataset.gmailBody);
     });
 
-    // Keep inline handlers reliable across browsers.
-    window.openNexusModal = openNexusModal;
-    window.closeNexusModal = closeNexusModal;
-    window.copyText = copyText;
-    window.openGmail = openGmail;
-    window.switchTab = switchTab;
   </script>
 </body>
 </html>
