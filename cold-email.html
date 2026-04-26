@@ -411,6 +411,7 @@
       align-items: center;
       gap: 0.5rem;
       transition: all 0.2s;
+      pointer-events: auto !important;
     }
     .action-btn:hover { background: rgba(255, 255, 255, 0.1); }
     .action-btn.copy { background: var(--primary); color: white; border: none; }
@@ -722,7 +723,7 @@
       <div class="card" id="followUpCard" style="margin-top:2rem; background: rgba(56, 189, 248, 0.05); border-color: rgba(56, 189, 248, 0.3);">
         <div class="card-title">🔄 3-Day Follow Up Sequence</div>
         <div class="email-body" id="followUpBody"></div>
-        <button type="button" class="action-btn copy" data-copy-target="followUpBody">📋 Copy Follow-up</button>
+        <button type="button" class="action-btn copy" onclick="copyText('followUpBody')">📋 Copy Follow-up</button>
       </div>
     </div>
 
@@ -965,8 +966,8 @@
             <div class="email-body" id="body-${idx}">${v.body}</div>
             
             <div class="action-row">
-              <button type="button" class="action-btn copy" data-copy-target="body-${idx}" aria-label="Copy email variant ${idx + 1}">📋 Copy Email</button>
-              <button type="button" class="action-btn" data-gmail-sub="${encodeURIComponent(v.subject)}" data-gmail-body="${encodeURIComponent(v.body)}" aria-label="Open email variant ${idx + 1} in Gmail">📤 Open in Gmail</button>
+              <button type="button" class="action-btn copy" onclick="copyText('body-${idx}')" aria-label="Copy email variant ${idx + 1}">📋 Copy Email</button>
+              <button type="button" class="action-btn" onclick="openGmail('${encodeURIComponent(v.subject)}', '${encodeURIComponent(v.body)}')" aria-label="Open email variant ${idx + 1} in Gmail">📤 Open in Gmail</button>
             </div>
 
             <div class="card" style="padding:1.5rem; background: rgba(0,0,0,0.2);">
@@ -1026,16 +1027,31 @@
       window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${sub}&body=${body}`, '_blank');
     }
 
-    document.addEventListener('click', e => {
-      const copyBtn = e.target.closest('[data-copy-target]');
-      const gmailBtn = e.target.closest('[data-gmail-sub][data-gmail-body]');
+    // Expose handlers globally so inline onclick attributes can reach them.
+    // Functions declared with `function` in a non-module <script> are already
+    // global, but the explicit window assignments guarantee access even in
+    // environments that might enforce stricter scoping.
+    window.copyText = copyText;
+    window.openGmail = openGmail;
 
-      if (copyBtn) {
+    // Fallback event delegation: handles .action-btn clicks regardless of
+    // which child element (inner text, icon, etc.) the pointer lands on.
+    // .closest() walks up the DOM from the event target to find the button,
+    // so clicks on any descendant are correctly attributed to the button.
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('.action-btn');
+      if (!btn) return;
+
+      const copyTarget = btn.dataset.copyTarget;
+      const gmailSub   = btn.dataset.gmailSub;
+      const gmailBody  = btn.dataset.gmailBody;
+
+      if (copyTarget) {
         e.stopPropagation();
-        copyText(copyBtn.dataset.copyTarget);
-      } else if (gmailBtn) {
+        copyText(copyTarget);
+      } else if (gmailSub && gmailBody) {
         e.stopPropagation();
-        openGmail(gmailBtn.dataset.gmailSub, gmailBtn.dataset.gmailBody);
+        openGmail(gmailSub, gmailBody);
       }
     });
 
