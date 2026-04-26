@@ -756,7 +756,6 @@
     // ── Supabase Init ────────────────────────────────────────────────────────
     const SUPABASE_URL  = 'https://eduogxolvpqdtvtdiqav.supabase.co';
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
-<<<<<<< HEAD
     const supabaseClient = window.supabase && typeof window.supabase.createClient === 'function'
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
       : null;
@@ -765,44 +764,24 @@
       console.warn('Supabase client unavailable; Nexus import is disabled. Please refresh the page to retry.');
     }
 
-=======
-    
-    let supabaseClient = null;
->>>>>>> a97b3c2 (Fix cold email UI interactivity and add PDF upload)
     let currentUser = null;
     let savedResumes = [];
     let currentData = null;
 
-<<<<<<< HEAD
     (async () => {
       if (!supabaseClient) return;
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session) {
-        currentUser = session.user;
-=======
-    try {
-      if (window.supabase) {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-        (async () => {
-          try {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) {
-              currentUser = session.user;
-            } else {
-              const localId = localStorage.getItem('userId');
-              if (localId) currentUser = { id: localId };
-            }
-          } catch (e) {
-            console.warn('Auth session error:', e);
-          }
-        })();
->>>>>>> a97b3c2 (Fix cold email UI interactivity and add PDF upload)
-      } else {
-        console.warn('Supabase JS not loaded from CDN.');
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          currentUser = session.user;
+        } else {
+          const localId = localStorage.getItem('userId');
+          if (localId) currentUser = { id: localId };
+        }
+      } catch (e) {
+        console.warn('Auth session error:', e);
       }
-    } catch (e) {
-      console.warn('Supabase initialization failed:', e);
-    }
+    })();
 
     // ── UI Logic ─────────────────────────────────────────────────────────────
     function showToast(msg, isError = false) {
@@ -825,17 +804,10 @@
     // Pills interaction
     document.querySelectorAll('.pill-group').forEach(group => {
       group.addEventListener('click', e => {
-<<<<<<< HEAD
         const clickedPill = e.target.closest('.pill');
         if (!clickedPill || !group.contains(clickedPill)) return;
         e.stopPropagation();
         setActivePill(group, clickedPill);
-=======
-        const pill = e.target.closest('.pill');
-        if (!pill) return;
-        group.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
->>>>>>> a97b3c2 (Fix cold email UI interactivity and add PDF upload)
       });
       group.querySelectorAll('.pill').forEach(pill => {
         pill.addEventListener('click', e => {
