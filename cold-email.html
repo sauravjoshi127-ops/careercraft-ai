@@ -190,6 +190,7 @@
       align-items: center;
       gap: 0.5rem;
       transition: background 0.2s, transform 0.2s;
+      pointer-events: auto !important;
     }
     .nexus-btn:hover {
       background: var(--primary-hover);
@@ -280,6 +281,7 @@
       cursor: pointer;
       transition: transform 0.2s, box-shadow 0.2s;
       box-shadow: 0 10px 20px -10px rgba(139, 92, 246, 0.6);
+      pointer-events: auto !important;
     }
     .btn-generate:hover:not(:disabled) {
       transform: translateY(-3px);
@@ -344,6 +346,7 @@
       cursor: pointer;
       position: relative;
       transition: color 0.2s;
+      pointer-events: auto !important;
     }
     .tab:hover { color: var(--text-main); }
     .tab.active { color: var(--primary); }
@@ -517,18 +520,9 @@
       color: var(--text-muted);
       border-radius: 0.5rem;
       cursor: pointer;
+      pointer-events: auto !important;
     }
     .modal-close:hover { background: rgba(255,255,255,0.05); }
-
-    /* Ensure interactive controls always receive clicks */
-    button, input, textarea, select, .action-btn, .nexus-btn, .resume-item, .tab, .pill {
-      pointer-events: auto !important;
-      position: relative;
-      z-index: 1;
-    }
-    .pill-group, .pill {
-      pointer-events: auto !important;
-    }
 
     /* Toast */
     .toast {
@@ -601,7 +595,7 @@
         <h3>✨ The Nexus: Import your Context</h3>
         <p>Skip the typing. Instantly load your background from your saved resumes.</p>
       </div>
-      <button type="button" class="nexus-btn" id="openNexusBtn" aria-label="Open resume selection modal">
+      <button type="button" class="nexus-btn" id="openNexusBtn">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
         Select Resume
       </button>
@@ -700,7 +694,7 @@
     <!-- Skeletons -->
     <div class="skeleton-container" id="loadingSkeletons">
       <div style="text-align:center; color:var(--text-muted); margin-bottom:2rem;">
-        <svg class="spin" style="animation: spin 1s linear infinite; width:24px; height:24px; display:inline-block; vertical-align:middle; margin-right:0.5rem;" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-dasharray="32" stroke-linecap="round"></circle></svg>
+        <svg class="spin" style="animation: spin 1s linear infinite; width:24px; height:24px; display:inline-block; vertical-align:middle; margin-right:0.5rem;" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
         Analyzing frameworks & writing copy...
       </div>
       <div class="card"><div class="skeleton" style="height:30px; width:40%;"></div><div class="skeleton" style="height:100px; width:100%;"></div></div>
@@ -711,10 +705,10 @@
     <div id="resultsSection">
       <h2 style="font-size:1.5rem; margin-bottom:1.5rem; text-align:center;">📬 Your Elite Variants</h2>
       
-      <div class="tabs" id="variantTabs" role="tablist">
-        <button type="button" class="tab active" data-tab-index="0" role="tab" aria-selected="true" aria-controls="vpanel-0">Variant A (PAS)</button>
-        <button type="button" class="tab" data-tab-index="1" role="tab" aria-selected="false" aria-controls="vpanel-1">Variant B (AIDA)</button>
-        <button type="button" class="tab" data-tab-index="2" role="tab" aria-selected="false" aria-controls="vpanel-2">Variant C (Ultra-Short)</button>
+      <div class="tabs" id="variantTabs">
+        <button type="button" class="tab active" onclick="switchTab(0)">Variant A (PAS)</button>
+        <button type="button" class="tab" onclick="switchTab(1)">Variant B (AIDA)</button>
+        <button type="button" class="tab" onclick="switchTab(2)">Variant C (Ultra-Short)</button>
       </div>
 
       <div id="panelsContainer"></div>
@@ -736,7 +730,7 @@
       <div id="resumeList" class="resume-list">
         <p style="color:var(--text-muted);text-align:center;">Loading resumes...</p>
       </div>
-      <button type="button" class="modal-close" id="closeNexusBtn" aria-label="Close resume selection modal">Cancel</button>
+      <button type="button" class="modal-close" id="closeNexusBtn">Cancel</button>
     </div>
   </div>
 
@@ -746,20 +740,13 @@
     // ── Supabase Init ────────────────────────────────────────────────────────
     const SUPABASE_URL  = 'https://eduogxolvpqdtvtdiqav.supabase.co';
     const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
-    const supabase = window.supabase && typeof window.supabase.createClient === 'function'
-      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
-      : null;
-    const nexusUnavailable = !supabase;
-    if (!supabase) {
-      console.warn('Supabase client unavailable; Nexus import is disabled. Please refresh the page to retry.');
-    }
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
     let currentUser = null;
     let savedResumes = [];
     let currentData = null;
 
     (async () => {
-      if (!supabase) return;
       const { data: { session } } = await supabase.auth.getSession();
       if (session) currentUser = session.user;
     })();
@@ -772,15 +759,6 @@
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 3000);
     }
-    if (nexusUnavailable) {
-      showToast('Nexus import is unavailable right now. You can still fill details manually.', true);
-    }
-
-    function setActivePill(group, clickedPill) {
-      if (!group || !clickedPill) return;
-      group.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-      clickedPill.classList.add('active');
-    }
 
     // Pills interaction
     document.querySelectorAll('.pill-group').forEach(group => {
@@ -788,22 +766,9 @@
         const clickedPill = e.target.closest('.pill');
         if (!clickedPill || !group.contains(clickedPill)) return;
         e.stopPropagation();
-        setActivePill(group, clickedPill);
+        group.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+        clickedPill.classList.add('active');
       });
-      group.querySelectorAll('.pill').forEach(pill => {
-        pill.addEventListener('click', e => {
-          e.stopPropagation();
-          setActivePill(group, pill);
-        });
-      });
-    });
-
-    document.getElementById('variantTabs').addEventListener('click', e => {
-      const tab = e.target.closest('.tab');
-      if (!tab) return;
-      e.stopPropagation();
-      const tabIndex = parseInt(tab.dataset.tabIndex, 10);
-      if (!Number.isNaN(tabIndex) && tabIndex >= 0) switchTab(tabIndex);
     });
 
     // Character counter
@@ -813,9 +778,6 @@
 
     // ── Nexus Feature ────────────────────────────────────────────────────────
     async function openNexusModal() {
-      if (!supabase) {
-        return showToast('Nexus is currently unavailable. Please refresh the page or fill details manually.', true);
-      }
       if (!currentUser) return showToast('Please log in first to access your saved resumes.', true);
       document.getElementById('nexusModal').classList.add('show');
       
@@ -829,11 +791,12 @@
       
       savedResumes = data;
       list.innerHTML = '';
-      data.forEach((r, idx) => {
+      data.forEach((r, index) => {
         const div = document.createElement('div');
         div.className = 'resume-item';
-        div.dataset.resumeIndex = String(idx);
+        div.dataset.resumeIndex = index;
         div.innerHTML = `<h4>${r.full_name || 'Untitled'}</h4><p>${r.title || 'No job title'}</p>`;
+        div.onclick = () => applyNexusData(r);
         list.appendChild(div);
       });
     }
@@ -842,28 +805,14 @@
       document.getElementById('nexusModal').classList.remove('show');
     }
 
-    document.getElementById('openNexusBtn').addEventListener('click', e => {
-      e.stopPropagation();
-      openNexusModal();
-    });
-    document.getElementById('closeNexusBtn').addEventListener('click', e => {
-      e.stopPropagation();
-      closeNexusModal();
-    });
-
     const nexusModal = document.getElementById('nexusModal');
-    const resumeList = document.getElementById('resumeList');
     nexusModal.addEventListener('click', e => {
       if (e.target === nexusModal) closeNexusModal();
     });
     nexusModal.querySelector('.modal').addEventListener('click', e => e.stopPropagation());
-    resumeList.addEventListener('click', e => {
-      const resumeItem = e.target.closest('.resume-item');
-      if (!resumeItem || !resumeList.contains(resumeItem)) return;
-      const idx = Number.parseInt(resumeItem.dataset.resumeIndex, 10);
-      if (Number.isNaN(idx) || !savedResumes[idx]) return;
-      applyNexusData(savedResumes[idx]);
-    });
+
+    document.getElementById('openNexusBtn').addEventListener('click', openNexusModal);
+    document.getElementById('closeNexusBtn').addEventListener('click', closeNexusModal);
 
     function applyNexusData(r) {
       if (r.full_name) document.getElementById('senderName').value = r.full_name;
@@ -966,8 +915,8 @@
             <div class="email-body" id="body-${idx}">${v.body}</div>
             
             <div class="action-row">
-              <button type="button" class="action-btn copy" onclick="copyText('body-${idx}')" aria-label="Copy email variant ${idx + 1}">📋 Copy Email</button>
-              <button type="button" class="action-btn" onclick="openGmail('${encodeURIComponent(v.subject)}', '${encodeURIComponent(v.body)}')" aria-label="Open email variant ${idx + 1} in Gmail">📤 Open in Gmail</button>
+              <button type="button" class="action-btn copy" onclick="copyText('body-${idx}')" style="pointer-events: auto !important;">📋 Copy Email</button>
+              <button type="button" class="action-btn" onclick="openGmail('${encodeURIComponent(v.subject)}', '${encodeURIComponent(v.body)}')" style="pointer-events: auto !important;">📤 Open in Gmail</button>
             </div>
 
             <div class="card" style="padding:1.5rem; background: rgba(0,0,0,0.2);">
@@ -1009,11 +958,7 @@
     }
 
     function switchTab(idx) {
-      document.querySelectorAll('.tab').forEach((t, i) => {
-        const isActive = i === idx;
-        t.classList.toggle('active', isActive);
-        t.setAttribute('aria-selected', isActive ? 'true' : 'false');
-      });
+      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === idx));
       document.querySelectorAll('.variant-panel').forEach((p, i) => p.classList.toggle('active', i === idx));
     }
 
@@ -1027,34 +972,13 @@
       window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${sub}&body=${body}`, '_blank');
     }
 
-    // Expose handlers globally so inline onclick attributes can reach them.
-    // Functions declared with `function` in a non-module <script> are already
-    // global, but the explicit window assignments guarantee access even in
-    // environments that might enforce stricter scoping.
+    // Keep inline handlers reliable across browsers.
+    window.openNexusModal = openNexusModal;
+    window.closeNexusModal = closeNexusModal;
     window.copyText = copyText;
     window.openGmail = openGmail;
-
-    // Fallback event delegation: handles .action-btn clicks regardless of
-    // which child element (inner text, icon, etc.) the pointer lands on.
-    // .closest() walks up the DOM from the event target to find the button,
-    // so clicks on any descendant are correctly attributed to the button.
-    document.addEventListener('click', e => {
-      const btn = e.target.closest('.action-btn');
-      if (!btn) return;
-
-      const copyTarget = btn.dataset.copyTarget;
-      const gmailSub   = btn.dataset.gmailSub;
-      const gmailBody  = btn.dataset.gmailBody;
-
-      if (copyTarget) {
-        e.stopPropagation();
-        copyText(copyTarget);
-      } else if (gmailSub && gmailBody) {
-        e.stopPropagation();
-        openGmail(gmailSub, gmailBody);
-      }
-    });
-
+    window.switchTab = switchTab;
+    window.showToast = showToast;
   </script>
 </body>
 </html>
