@@ -934,13 +934,55 @@
     }
 
     function copyText(id) {
-      const text = document.getElementById(id).textContent;
-      navigator.clipboard.writeText(text);
-      showToast('✅ Copied to clipboard!');
+      try {
+        const element = document.getElementById(id);
+        if (!element) { showToast('❌ Email content not found.', true); return; }
+        const text = element.textContent.trim();
+        if (!text) { showToast('❌ No email content to copy.', true); return; }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text)
+            .then(() => showToast('✅ Copied to clipboard!'))
+            .catch(() => {
+              fallbackCopy(text);
+            });
+        } else {
+          fallbackCopy(text);
+        }
+      } catch (err) {
+        showToast('❌ Copy failed: ' + err.message, true);
+      }
+    }
+
+    function fallbackCopy(text) {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        // execCommand is deprecated but kept as a fallback for browsers without Clipboard API support
+        const success = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (success) {
+          showToast('✅ Copied to clipboard!');
+        } else {
+          showToast('❌ Copy failed. Please select and copy manually.', true);
+        }
+      } catch (err) {
+        showToast('❌ Copy failed. Please select and copy manually.', true);
+      }
     }
 
     function openGmail(sub, body) {
-      window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`, '_blank');
+      try {
+        window.open(
+          `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(sub || '')}&body=${encodeURIComponent(body || '')}`,
+          '_blank'
+        );
+      } catch (err) {
+        showToast('❌ Could not open Gmail: ' + err.message, true);
+      }
     }
 
     document.getElementById('copyFollowupBtn').addEventListener('click', () => copyText('followUpBody'));
