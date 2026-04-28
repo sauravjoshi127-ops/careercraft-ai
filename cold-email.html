@@ -808,7 +808,7 @@
         if (!res.ok) throw new Error(data.error || 'Unknown error');
 
         currentData = data;
-        renderResults(data);
+        buildEmailResults(data);
         
       } catch (err) {
         console.error(err);
@@ -820,239 +820,197 @@
       }
     });
 
-    function renderResults(data) {
+    // ===== BRAND NEW EMAIL RENDERING FROM SCRATCH =====
+    function buildEmailResults(data) {
       document.getElementById('resultsSection').style.display = 'block';
       document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
       
-      const container = document.getElementById('panelsContainer');
       const tabsContainer = document.getElementById('variantTabs');
-      container.innerHTML = '';
+      const panelsContainer = document.getElementById('panelsContainer');
+      
       tabsContainer.innerHTML = '';
+      panelsContainer.innerHTML = '';
       
       if (data.followUp) {
         document.getElementById('followUpBody').textContent = data.followUp;
         document.getElementById('followUpCard').style.display = 'block';
       }
 
-      data.variants.forEach((v, idx) => {
-        const isFirst = idx === 0;
-        const s = data.scores || { personalisation:80, clarity:80, cta:80, length:80 };
-        
-        // Create tab
+      if (!data.variants || data.variants.length === 0) {
+        panelsContainer.innerHTML = '<p style="color: var(--text-muted);">No variants generated.</p>';
+        return;
+      }
+
+      data.variants.forEach((variant, index) => {
+        // BUILD TAB
         const tab = document.createElement('button');
         tab.type = 'button';
-        tab.className = `tab ${isFirst ? 'active' : ''}`;
-        tab.textContent = ['Variant A (PAS)', 'Variant B (AIDA)', 'Variant C (Ultra-Short)'][idx];
-        tab.addEventListener('click', () => switchTab(idx));
+        tab.className = 'tab' + (index === 0 ? ' active' : '');
+        tab.textContent = ['Variant A (PAS)', 'Variant B (AIDA)', 'Variant C (Ultra-Short)'][index] || `Variant ${index + 1}`;
+        tab.addEventListener('click', () => switchEmailTab(index));
         tabsContainer.appendChild(tab);
-        
-        // Create panel
-        const panel = document.createElement('div');
-        panel.className = `variant-panel ${isFirst ? 'active' : ''}`;
-        panel.id = `vpanel-${idx}`;
 
-        // Subject
-        const subject = document.createElement('div');
-        subject.className = 'email-subject';
-        const subjectSpan = document.createElement('span');
-        subjectSpan.className = 'subject-text';
-        subjectSpan.textContent = `Subject: ${v.subject}`;
+        // BUILD PANEL
+        const panel = document.createElement('div');
+        panel.className = 'variant-panel' + (index === 0 ? ' active' : '');
+        panel.id = `email-panel-${index}`;
+
+        // SUBJECT BOX
+        const subjectBox = document.createElement('div');
+        subjectBox.className = 'email-subject';
+        const subjectText = document.createElement('span');
+        subjectText.className = 'subject-text';
+        subjectText.textContent = `Subject: ${variant.subject || '(No subject)'}`;
         const badge = document.createElement('span');
         badge.className = 'framework-badge';
-        badge.textContent = v.approach || 'Framework';
-        subject.appendChild(subjectSpan);
-        subject.appendChild(badge);
-        panel.appendChild(subject);
+        badge.textContent = variant.approach || 'Framework';
+        subjectBox.appendChild(subjectText);
+        subjectBox.appendChild(badge);
+        panel.appendChild(subjectBox);
 
-        // Body
-        const body = document.createElement('div');
-        body.className = 'email-body';
-        body.id = `body-${idx}`;
-        body.textContent = v.body;
-        panel.appendChild(body);
+        // EMAIL BODY
+        const bodyDiv = document.createElement('div');
+        bodyDiv.className = 'email-body';
+        bodyDiv.id = `email-body-${index}`;
+        bodyDiv.textContent = variant.body || '(No body)';
+        panel.appendChild(bodyDiv);
 
-        // Action buttons - COMPLETE REWRITE
-        const actionRow = document.createElement('div');
-        actionRow.className = 'action-row';
+        // ACTION BUTTONS - FRESH NEW CODE
+        const buttonRow = document.createElement('div');
+        buttonRow.className = 'action-row';
 
-        // Copy Button
+        // COPY BUTTON
         const copyBtn = document.createElement('button');
         copyBtn.type = 'button';
         copyBtn.className = 'action-btn copy';
         copyBtn.textContent = '📋 Copy Email';
-        copyBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          handleCopyEmail(v.body);
-        });
-        actionRow.appendChild(copyBtn);
+        copyBtn.onclick = function() {
+          copyEmailBody(bodyDiv.textContent);
+        };
+        buttonRow.appendChild(copyBtn);
 
-        // Gmail Button
+        // GMAIL BUTTON
         const gmailBtn = document.createElement('button');
         gmailBtn.type = 'button';
         gmailBtn.className = 'action-btn';
         gmailBtn.textContent = '📤 Open in Gmail';
-        gmailBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          handleOpenGmail(v.subject, v.body);
-        });
-        actionRow.appendChild(gmailBtn);
+        gmailBtn.onclick = function() {
+          openEmailInGmail(variant.subject, variant.body);
+        };
+        buttonRow.appendChild(gmailBtn);
 
-        panel.appendChild(actionRow);
+        panel.appendChild(buttonRow);
 
-        // Metrics card
+        // METRICS
         const metricsCard = document.createElement('div');
         metricsCard.className = 'card';
         metricsCard.style.padding = '1.5rem';
         metricsCard.style.background = 'rgba(0,0,0,0.2)';
 
-        const metricsH4 = document.createElement('h4');
-        metricsH4.style.marginBottom = '1rem';
-        metricsH4.style.fontSize = '0.95rem';
-        metricsH4.textContent = 'AI Evaluation Metrics';
-        metricsCard.appendChild(metricsH4);
+        const metricsTitle = document.createElement('h4');
+        metricsTitle.style.marginBottom = '1rem';
+        metricsTitle.style.fontSize = '0.95rem';
+        metricsTitle.textContent = 'AI Evaluation Metrics';
+        metricsCard.appendChild(metricsTitle);
 
         const scoreGrid = document.createElement('div');
         scoreGrid.className = 'score-grid';
-        scoreGrid.innerHTML = renderScoreBar('Personalisation', s.personalisation) +
-                              renderScoreBar('Clarity & Concision', s.clarity) +
-                              renderScoreBar('CTA Friction (Lower is better)', 100 - s.cta) +
-                              renderScoreBar('Readability', s.length);
+        const scores = data.scores || { personalisation: 80, clarity: 80, cta: 80, length: 80 };
+        scoreGrid.innerHTML = 
+          createScoreBars('Personalisation', scores.personalisation) +
+          createScoreBars('Clarity & Concision', scores.clarity) +
+          createScoreBars('CTA Friction (Lower is better)', 100 - scores.cta) +
+          createScoreBars('Readability', scores.length);
         metricsCard.appendChild(scoreGrid);
 
-        const tipsBox = document.createElement('div');
-        tipsBox.className = 'tips-box';
-        const tipsH4 = document.createElement('h4');
-        tipsH4.textContent = '💡 Why this framework works:';
-        const tipsP = document.createElement('p');
-        tipsP.textContent = data.tips && data.tips[idx] ? data.tips[idx] : 'Framework works via psychological triggers.';
-        tipsBox.appendChild(tipsH4);
-        tipsBox.appendChild(tipsP);
-        metricsCard.appendChild(tipsBox);
+        const tipsDiv = document.createElement('div');
+        tipsDiv.className = 'tips-box';
+        const tipsTitle = document.createElement('h4');
+        tipsTitle.textContent = '💡 Why this framework works:';
+        const tipsPara = document.createElement('p');
+        tipsPara.textContent = (data.tips && data.tips[index]) ? data.tips[index] : 'Framework works via psychological triggers.';
+        tipsDiv.appendChild(tipsTitle);
+        tipsDiv.appendChild(tipsPara);
+        metricsCard.appendChild(tipsDiv);
 
         panel.appendChild(metricsCard);
-        container.appendChild(panel);
+        panelsContainer.appendChild(panel);
       });
 
+      // Animate score bars
       setTimeout(() => {
-        document.querySelectorAll('.score-fill').forEach(el => {
-          const val = el.dataset.val;
-          if (val) el.style.width = val + '%';
+        document.querySelectorAll('.score-fill').forEach(bar => {
+          const val = bar.dataset.val;
+          if (val) bar.style.width = val + '%';
         });
       }, 100);
     }
 
-    function renderScoreBar(label, value) {
+    function createScoreBars(label, value) {
       const val = Math.max(0, Math.min(100, parseInt(value) || 80));
       return `<div class="score-item"><label><span>${label}</span> <span>${val}%</span></label><div class="score-track"><div class="score-fill" data-val="${val}"></div></div></div>`;
     }
 
-    function switchTab(idx) {
-      document.querySelectorAll('.tab').forEach((t, i) => {
-        if (i === idx) t.classList.add('active');
-        else t.classList.remove('active');
+    function switchEmailTab(index) {
+      document.querySelectorAll('.tab').forEach((tab, i) => {
+        tab.classList.toggle('active', i === index);
       });
-      document.querySelectorAll('.variant-panel').forEach((p, i) => {
-        if (i === idx) p.classList.add('active');
-        else p.classList.remove('active');
+      document.querySelectorAll('.variant-panel').forEach((panel, i) => {
+        panel.classList.toggle('active', i === index);
       });
     }
 
-    // COMPLETELY REWRITTEN FROM SCRATCH - NO BUGS
-    function handleCopyEmail(emailBody) {
-      // Validate input
-      if (!emailBody || typeof emailBody !== 'string' || emailBody.trim().length === 0) {
-        showToast('❌ No email content to copy.', true);
+    // ===== BUTTON HANDLERS - COMPLETELY FRESH =====
+    function copyEmailBody(text) {
+      if (!text || text.trim().length === 0) {
+        showToast('❌ Nothing to copy!', true);
         return;
       }
 
-      const textToCopy = emailBody.trim();
-
-      // Try modern Clipboard API first
-      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-        navigator.clipboard.writeText(textToCopy)
-          .then(() => {
-            showToast('✅ Email copied to clipboard!');
-          })
-          .catch((error) => {
-            console.error('Clipboard API failed:', error);
-            fallbackCopy(textToCopy);
-          });
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text.trim()).then(() => {
+          showToast('✅ Copied!');
+        }).catch(() => {
+          fallbackCopyEmail(text.trim());
+        });
       } else {
-        // Fallback for older browsers
-        fallbackCopy(textToCopy);
+        fallbackCopyEmail(text.trim());
       }
     }
 
-    function fallbackCopy(text) {
+    function fallbackCopyEmail(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'absolute';
+      textarea.style.left = '-9999px';
+      textarea.style.top = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
       try {
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.style.position = 'fixed';
-        textarea.style.top = '0';
-        textarea.style.left = '0';
-        textarea.style.opacity = '0';
-        textarea.style.zIndex = '-9999';
-        document.body.appendChild(textarea);
-        textarea.focus();
-        textarea.select();
-        
-        const successful = document.execCommand('copy');
-        document.body.removeChild(textarea);
-        
-        if (successful) {
-          showToast('✅ Email copied to clipboard!');
-        } else {
-          showToast('❌ Could not copy. Please try again.', true);
-        }
+        document.execCommand('copy');
+        showToast('✅ Copied!');
       } catch (err) {
-        console.error('Fallback copy failed:', err);
-        showToast('❌ Could not copy. Please try again.', true);
-        document.body.removeChild(document.querySelector('textarea'));
+        showToast('❌ Copy failed!', true);
       }
+      document.body.removeChild(textarea);
     }
 
-    // COMPLETELY REWRITTEN FROM SCRATCH - NO BUGS
-    function handleOpenGmail(subject, body) {
-      // Validate inputs
-      if (!subject || typeof subject !== 'string') subject = '';
-      if (!body || typeof body !== 'string') body = '';
-
-      subject = subject.trim();
-      body = body.trim();
-
-      if (subject.length === 0 && body.length === 0) {
-        showToast('❌ No email content to open.', true);
+    function openEmailInGmail(subject, body) {
+      if (!subject || !body) {
+        showToast('❌ Email content missing!', true);
         return;
       }
 
-      try {
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        window.open(gmailUrl, '_blank', 'noopener,noreferrer');
-        showToast('✅ Opening Gmail...');
-      } catch (error) {
-        console.error('Gmail open failed:', error);
-        showToast('❌ Could not open Gmail. Try copying and pasting manually.', true);
-      }
+      const gmailURL = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(gmailURL, '_blank');
+      showToast('✅ Opening Gmail...');
     }
 
-    // Follow-up copy button
-    document.getElementById('copyFollowupBtn').addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const followUpBody = document.getElementById('followUpBody');
-      if (followUpBody && followUpBody.textContent) {
-        handleCopyEmail(followUpBody.textContent);
-      } else {
-        showToast('❌ No follow-up content to copy.', true);
-      }
+    // Copy followup
+    document.getElementById('copyFollowupBtn').addEventListener('click', function() {
+      const followupText = document.getElementById('followUpBody').textContent;
+      copyEmailBody(followupText);
     });
-
-    // Expose functions to window for backwards compatibility
-    window.handleCopyEmail = handleCopyEmail;
-    window.handleOpenGmail = handleOpenGmail;
-    window.switchTab = switchTab;
   </script>
 </body>
 </html>
