@@ -3,1014 +3,480 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Cold Email 2.0 - CareerCraft AI</title>
+  <title>Cold Email Writer — CareerCraft AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root {
-      --bg: #09090b;
-      --card-bg: rgba(24, 24, 27, 0.7);
-      --border: rgba(255, 255, 255, 0.1);
-      --primary: #8b5cf6;
-      --primary-hover: #7c3aed;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --danger: #ef4444;
-      --success: #10b981;
-    }
+    :root{--bg:#0a0a0f;--surface:rgba(18,18,28,.85);--border:rgba(255,255,255,.08);--primary:#8b5cf6;--primary-glow:rgba(139,92,246,.35);--accent:#38bdf8;--text:#f1f5f9;--text-muted:#64748b;--danger:#ef4444;--success:#10b981;--radius:1rem;--font:'Inter',system-ui,sans-serif}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;overflow-x:hidden}
+    .orb{position:fixed;border-radius:50%;filter:blur(100px);pointer-events:none;z-index:-1}
+    .orb-1{width:55vw;height:55vw;top:-18%;left:-12%;background:radial-gradient(circle,rgba(139,92,246,.12),transparent 65%)}
+    .orb-2{width:45vw;height:45vw;bottom:-15%;right:-10%;background:radial-gradient(circle,rgba(56,189,248,.08),transparent 65%)}
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text-main);
-      line-height: 1.6;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+    /* ── Nav ── */
+    .topnav{display:flex;justify-content:space-between;align-items:center;padding:1rem 2rem;background:rgba(10,10,15,.75);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+    .logo{font-size:1.2rem;font-weight:800;letter-spacing:-.5px;text-decoration:none;color:var(--text)}
+    .logo span{background:linear-gradient(135deg,#8b5cf6,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .nav-links{display:flex;gap:.75rem;flex-wrap:wrap}
+    .nav-btn{padding:.45rem .9rem;border-radius:.5rem;font-size:.82rem;font-weight:500;text-decoration:none;color:var(--text-muted);border:1px solid transparent;transition:.2s;cursor:pointer;background:transparent}
+    .nav-btn:hover{color:var(--text);background:rgba(255,255,255,.04)}
+    .nav-btn.primary{background:rgba(139,92,246,.08);color:#c4b5fd;border:1px solid rgba(139,92,246,.25)}
 
-    .bg-glow {
-      position: fixed;
-      top: -20%;
-      left: -10%;
-      width: 70vw;
-      height: 70vw;
-      background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(0,0,0,0) 60%);
-      z-index: -1;
-      pointer-events: none;
-    }
+    /* ── Layout ── */
+    .container{max-width:880px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+    .hero{text-align:center;margin-bottom:2.5rem;animation:fadeDown .5s ease-out}
+    .hero h1{font-size:2.4rem;font-weight:800;letter-spacing:-1px;margin-bottom:.35rem}
+    .hero h1 em{font-style:normal;background:linear-gradient(135deg,#8b5cf6,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .hero p{font-size:1.05rem;color:var(--text-muted)}
 
-    .bg-glow-2 {
-      position: fixed;
-      bottom: -20%;
-      right: -10%;
-      width: 60vw;
-      height: 60vw;
-      background: radial-gradient(circle, rgba(56,189,248,0.1) 0%, rgba(0,0,0,0) 60%);
-      z-index: -1;
-      pointer-events: none;
-    }
+    /* ── Cards ── */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.75rem;margin-bottom:1.25rem;backdrop-filter:blur(12px);animation:fadeUp .5s ease-out backwards}
+    .card-head{font-size:1.05rem;font-weight:700;margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem;padding-bottom:.65rem;border-bottom:1px solid var(--border)}
 
-    .topnav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.2rem 2rem;
-      background: rgba(9, 9, 11, 0.8);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 50;
-    }
+    /* ── Nexus ── */
+    .nexus{background:linear-gradient(145deg,rgba(139,92,246,.12),rgba(56,189,248,.04));border:1px solid rgba(139,92,246,.22);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.75rem;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:1rem}
+    .nexus h3{font-size:1rem;color:#e2e8f0;margin-bottom:.15rem}
+    .nexus p{font-size:.82rem;color:var(--text-muted)}
+    .nexus-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+    .nbtn{background:var(--primary);color:#fff;border:none;padding:.65rem 1.1rem;border-radius:.5rem;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:.2s}
+    .nbtn:hover{filter:brightness(1.15);transform:translateY(-1px)}
+    .nbtn.outline{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:var(--text)}
+    #pdfStatus{display:none;font-size:.82rem;padding:.5rem .75rem;border-radius:.5rem;margin-top:.5rem;width:100%}
 
-    .logo {
-      font-size: 1.25rem;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      text-decoration: none;
-      color: var(--text-main);
-    }
-    .logo span {
-      background: linear-gradient(135deg, #8b5cf6, #38bdf8);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+    /* ── Forms ── */
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+    .fg{display:flex;flex-direction:column;gap:.4rem}
+    .fg.full{grid-column:span 2}
+    label{font-size:.82rem;font-weight:600;color:var(--text-muted)}
+    label .req{color:var(--danger)}
+    input,textarea,select{background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:.5rem;padding:.7rem .9rem;color:var(--text);font-family:var(--font);font-size:.92rem;transition:.2s}
+    input:focus,textarea:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-glow)}
+    textarea{min-height:90px;resize:vertical}
+    .char-ct{text-align:right;font-size:.72rem;color:var(--text-muted)}
 
-    .nav-links { display: flex; gap: 1rem; }
-    .nav-btn {
-      padding: 0.5rem 1rem;
-      border-radius: 0.5rem;
-      font-size: 0.875rem;
-      font-weight: 500;
-      text-decoration: none;
-      color: var(--text-muted);
-      border: 1px solid transparent;
-      transition: all 0.2s;
-      cursor: pointer;
-      background: transparent;
-    }
-    .nav-btn:hover {
-      color: var(--text-main);
-      background: rgba(255, 255, 255, 0.05);
-    }
-    .nav-btn.primary {
-      background: rgba(139, 92, 246, 0.1);
-      color: #c4b5fd;
-      border: 1px solid rgba(139, 92, 246, 0.3);
-    }
-    .nav-btn.primary:hover {
-      background: rgba(139, 92, 246, 0.2);
-      border-color: rgba(139, 92, 246, 0.5);
-    }
+    /* ── Pills ── */
+    .pills{display:flex;flex-wrap:wrap;gap:.6rem}
+    .pill{background:rgba(255,255,255,.04);border:1px solid var(--border);padding:.55rem 1.1rem;border-radius:999px;font-size:.82rem;font-weight:500;cursor:pointer;transition:.2s;user-select:none;color:var(--text);font-family:var(--font)}
+    .pill:hover{border-color:rgba(255,255,255,.2)}
+    .pill.on{background:rgba(139,92,246,.18);border-color:var(--primary);color:#c4b5fd}
 
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 3rem 1.5rem;
-    }
+    /* ── Generate ── */
+    .gen-wrap{text-align:center;margin-top:1.75rem}
+    .btn-gen{background:linear-gradient(135deg,#8b5cf6,#38bdf8);color:#fff;border:none;padding:.95rem 2.8rem;border-radius:999px;font-size:1.05rem;font-weight:700;cursor:pointer;transition:.25s;box-shadow:0 8px 24px -8px var(--primary-glow);font-family:var(--font)}
+    .btn-gen:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 12px 32px -8px var(--primary-glow)}
+    .btn-gen:disabled{opacity:.5;cursor:not-allowed;transform:none}
 
-    .header-section {
-      text-align: center;
-      margin-bottom: 3rem;
-      animation: fadeInDown 0.6s ease-out;
-    }
-    .header-section h1 {
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin-bottom: 0.5rem;
-      letter-spacing: -1px;
-    }
-    .header-section p {
-      font-size: 1.1rem;
-      color: var(--text-muted);
-    }
+    /* ── Alert ── */
+    .alert{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:.5rem;padding:1rem 1.25rem;margin-bottom:1.25rem;display:none}
+    .alert.show{display:block;animation:fadeIn .3s}
+    .alert h4{color:#fca5a5;font-size:.95rem;margin-bottom:.2rem}
+    .alert p{color:#fecaca;font-size:.88rem}
 
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 1rem;
-      padding: 2rem;
-      margin-bottom: 1.5rem;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      animation: fadeInUp 0.6s ease-out backwards;
-    }
+    /* ── Skeleton ── */
+    .skel-wrap{display:none;margin-top:2.5rem}
+    .skel-wrap.show{display:block}
+    .skel{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:.5rem;margin-bottom:.75rem}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    .skel-msg{text-align:center;color:var(--text-muted);margin-bottom:1.5rem;font-size:.92rem}
 
-    .card-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--text-main);
-      margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 0.75rem;
-    }
+    /* ── Results ── */
+    #results{display:none;margin-top:2.5rem;animation:fadeUp .5s ease}
+    .tabs{display:flex;gap:.4rem;border-bottom:1px solid var(--border);padding-bottom:.4rem;margin-bottom:1.25rem}
+    .tab{padding:.65rem 1.25rem;background:0;border:none;color:var(--text-muted);font-size:.9rem;font-weight:600;cursor:pointer;position:relative;transition:.2s;font-family:var(--font)}
+    .tab:hover{color:var(--text)}
+    .tab.on{color:var(--primary)}
+    .tab.on::after{content:'';position:absolute;bottom:-.45rem;left:0;width:100%;height:2px;background:var(--primary);border-radius:2px}
+    .vpanel{display:none}
+    .vpanel.on{display:block;animation:fadeIn .35s}
+    .subj-row{background:rgba(0,0,0,.3);padding:.85rem 1.1rem;border-radius:.5rem;border:1px solid var(--border);margin-bottom:.85rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}
+    .subj-text{font-size:1rem;font-weight:600}
+    .badge{background:rgba(139,92,246,.12);color:#c4b5fd;padding:.2rem .65rem;border-radius:999px;font-size:.72rem;font-weight:700;border:1px solid rgba(139,92,246,.25)}
+    .ebody{background:rgba(0,0,0,.3);padding:1.25rem;border-radius:.5rem;border:1px solid var(--border);white-space:pre-wrap;font-size:.95rem;line-height:1.7;margin-bottom:1.25rem}
+    .acts{display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap}
+    .abtn{padding:.6rem 1.2rem;border-radius:.5rem;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:.2s;font-family:var(--font)}
+    .abtn:hover{background:rgba(255,255,255,.08)}
+    .abtn.cp{background:var(--primary);color:#fff;border:none}
+    .abtn.cp:hover{filter:brightness(1.15)}
 
-    .nexus-box {
-      background: linear-gradient(145deg, rgba(139, 92, 246, 0.15), rgba(56, 189, 248, 0.05));
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .nexus-box:hover {
-      box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
-    }
-    .nexus-text h3 {
-      font-size: 1.05rem;
-      color: #e2e8f0;
-      margin-bottom: 0.25rem;
-    }
-    .nexus-text p {
-      font-size: 0.85rem;
-      color: #94a3b8;
-    }
-    .nexus-btn {
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 0.75rem 1.25rem;
-      border-radius: 0.5rem;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: background 0.2s, transform 0.2s;
-    }
-    .nexus-btn:hover {
-      background: var(--primary-hover);
-      transform: translateY(-2px);
-    }
+    /* ── Scores ── */
+    .score-grid{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:1.25rem}
+    .si label{display:flex;justify-content:space-between;margin-bottom:.3rem;font-size:.78rem}
+    .st{height:5px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}
+    .sf{height:100%;background:linear-gradient(90deg,#8b5cf6,#38bdf8);width:0%;transition:width .8s cubic-bezier(.4,0,.2,1)}
+    .tip-box{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.22);padding:1rem;border-radius:.5rem;margin-bottom:1.5rem}
+    .tip-box h4{color:#6ee7b7;font-size:.85rem;margin-bottom:.35rem}
+    .tip-box p{color:#a7f3d0;font-size:.88rem}
 
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-    }
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    .form-group.full { grid-column: span 2; }
-    
-    label {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-    label span { color: var(--danger); }
-    
-    input, textarea, select {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid var(--border);
-      border-radius: 0.5rem;
-      padding: 0.75rem 1rem;
-      color: var(--text-main);
-      font-family: inherit;
-      font-size: 0.95rem;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    input:focus, textarea:focus, select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
-    }
-    textarea { min-height: 100px; resize: vertical; }
+    /* ── Follow-up ── */
+    #fuCard{display:none;margin-top:1.5rem;background:rgba(56,189,248,.04);border-color:rgba(56,189,248,.22)}
 
-    .char-counter {
-      text-align: right;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
+    /* ── Modal ── */
+    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;pointer-events:none;transition:.2s}
+    .modal-bg.show{opacity:1;visibility:visible;pointer-events:auto}
+    .modal{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);width:92%;max-width:480px;padding:1.75rem;box-shadow:0 20px 40px rgba(0,0,0,.4)}
+    .modal h2{font-size:1.15rem;margin-bottom:1.25rem}
+    .rlist{max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:.4rem}
+    .ritem{padding:.85rem;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:.5rem;cursor:pointer;transition:.2s;text-align:left;color:var(--text)}
+    .ritem:hover{border-color:var(--primary);background:rgba(139,92,246,.08)}
+    .ritem h4{font-size:.9rem;margin-bottom:.15rem}
+    .ritem p{font-size:.78rem;color:var(--text-muted)}
+    .mcl{margin-top:1.25rem;width:100%;padding:.65rem;background:0;border:1px solid var(--border);color:var(--text-muted);border-radius:.5rem;cursor:pointer;font-family:var(--font)}
+    .mcl:hover{background:rgba(255,255,255,.04)}
 
-    .pill-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-    .pill {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      padding: 0.6rem 1.2rem;
-      border-radius: 999px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      user-select: none;
-      color: inherit;
-      font-family: inherit;
-    }
-    .pill:hover { border-color: rgba(255, 255, 255, 0.3); }
-    .pill.active {
-      background: rgba(139, 92, 246, 0.2);
-      border-color: var(--primary);
-      color: #c4b5fd;
-    }
+    /* ── Toast ── */
+    .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--primary);color:#fff;padding:.85rem 1.25rem;border-radius:.5rem;box-shadow:0 8px 20px rgba(0,0,0,.3);transform:translateY(16px);opacity:0;transition:.3s;z-index:2000;pointer-events:none;font-size:.9rem}
+    .toast.show{transform:translateY(0);opacity:1}
 
-    .generate-wrap { margin-top: 2rem; text-align: center; }
-    .btn-generate {
-      background: linear-gradient(135deg, #8b5cf6, #38bdf8);
-      color: white;
-      border: none;
-      padding: 1rem 3rem;
-      border-radius: 999px;
-      font-size: 1.1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 10px 20px -10px rgba(139, 92, 246, 0.6);
-    }
-    .btn-generate:hover:not(:disabled) {
-      transform: translateY(-3px);
-      box-shadow: 0 15px 25px -10px rgba(139, 92, 246, 0.8);
-    }
-    .btn-generate:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
+    @keyframes fadeDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes spin{to{transform:rotate(360deg)}}
 
-    .alert {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      border-radius: 0.5rem;
-      padding: 1rem 1.5rem;
-      margin-bottom: 1.5rem;
-      display: none;
-      animation: fadeIn 0.3s ease;
-    }
-    .alert.show { display: block; }
-    .alert h4 { color: #fca5a5; margin-bottom: 0.25rem; font-size: 1rem; }
-    .alert p { color: #fecaca; font-size: 0.9rem; }
-
-    .skeleton-container { display: none; margin-top: 3rem; }
-    .skeleton-container.show { display: block; }
-    .skeleton {
-      background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
-      border-radius: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-    #resultsSection { display: none; margin-top: 3rem; animation: fadeInUp 0.6s ease; }
-    
-    .tabs {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 0.5rem;
-    }
-    .tab {
-      padding: 0.75rem 1.5rem;
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      position: relative;
-      transition: color 0.2s;
-    }
-    .tab:hover { color: var(--text-main); }
-    .tab.active { color: var(--primary); }
-    .tab.active::after {
-      content: '';
-      position: absolute;
-      bottom: -0.6rem;
-      left: 0;
-      width: 100%;
-      height: 2px;
-      background: var(--primary);
-      border-radius: 2px;
-    }
-
-    .variant-panel { display: none; }
-    .variant-panel.active { display: block; animation: fadeIn 0.4s ease; }
-
-    .email-subject {
-      background: rgba(0,0,0,0.3);
-      padding: 1rem 1.25rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--border);
-      margin-bottom: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .subject-text { font-size: 1.05rem; font-weight: 600; }
-    .framework-badge {
-      background: rgba(139, 92, 246, 0.15);
-      color: #c4b5fd;
-      padding: 0.25rem 0.75rem;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      border: 1px solid rgba(139, 92, 246, 0.3);
-    }
-
-    .email-body {
-      background: rgba(0,0,0,0.3);
-      padding: 1.5rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--border);
-      white-space: pre-wrap;
-      font-size: 1rem;
-      line-height: 1.7;
-      margin-bottom: 1.5rem;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-    }
-
-    .action-row {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 2rem;
-      flex-wrap: wrap;
-    }
-    .action-btn {
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text-main);
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: all 0.2s;
-      font-family: inherit;
-    }
-    .action-btn:hover { background: rgba(255, 255, 255, 0.1); }
-    .action-btn:active { transform: scale(0.98); }
-    .action-btn.copy { background: var(--primary); color: white; border: none; }
-    .action-btn.copy:hover { background: var(--primary-hover); }
-
-    .score-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .score-item label {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.4rem;
-      font-size: 0.8rem;
-    }
-    .score-track {
-      height: 6px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 999px;
-      overflow: hidden;
-    }
-    .score-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #8b5cf6, #38bdf8);
-      width: 0%;
-      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .tips-box {
-      background: rgba(16, 185, 129, 0.1);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      padding: 1.25rem;
-      border-radius: 0.5rem;
-      margin-bottom: 2rem;
-    }
-    .tips-box h4 { color: #6ee7b7; margin-bottom: 0.5rem; font-size: 0.9rem; }
-    .tips-box p { color: #a7f3d0; font-size: 0.9rem; }
-
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(5px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-    }
-    .modal-backdrop.show {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-      animation: fadeIn 0.2s ease;
-    }
-    .modal {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 1rem;
-      width: 90%;
-      max-width: 500px;
-      padding: 2rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    }
-    .modal h2 { font-size: 1.25rem; margin-bottom: 1.5rem; }
-    .resume-list {
-      max-height: 300px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    .resume-item {
-      padding: 1rem;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border);
-      border-radius: 0.5rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-align: left;
-      color: var(--text-main);
-    }
-    .resume-item:hover {
-      border-color: var(--primary);
-      background: rgba(139, 92, 246, 0.1);
-    }
-    .resume-item h4 { font-size: 0.95rem; margin-bottom: 0.2rem; }
-    .resume-item p { font-size: 0.8rem; color: var(--text-muted); }
-    .modal-close {
-      margin-top: 1.5rem;
-      width: 100%;
-      padding: 0.75rem;
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      border-radius: 0.5rem;
-      cursor: pointer;
-    }
-    .modal-close:hover { background: rgba(255,255,255,0.05); }
-
-    .toast {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      background: var(--card-bg);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--primary);
-      color: #fff;
-      padding: 1rem 1.5rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
-      transform: translateY(20px);
-      opacity: 0;
-      transition: all 0.3s;
-      z-index: 2000;
-      pointer-events: none;
-    }
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-    @media (max-width: 640px) {
-      .form-grid { grid-template-columns: 1fr; }
-      .form-group.full { grid-column: auto; }
-      .score-grid { grid-template-columns: 1fr; }
-      .action-row { gap: 0.5rem; }
-      .action-btn { padding: 0.6rem 1rem; font-size: 0.85rem; }
-    }
+    @media(max-width:640px){.grid2{grid-template-columns:1fr}.fg.full{grid-column:auto}.score-grid{grid-template-columns:1fr}.topnav{flex-direction:column;gap:.75rem}.nav-links{justify-content:center}}
   </style>
 </head>
 <body>
-
-  <div class="bg-glow"></div>
-  <div class="bg-glow-2"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
 
   <nav class="topnav">
     <a class="logo" href="dashboard.html">Career<span>Craft</span> AI</a>
     <div class="nav-links">
       <a href="resume.html" class="nav-btn">📝 Resume</a>
       <a href="cover-letter.html" class="nav-btn">📨 Cover Letter</a>
+      <a href="interview-coach.html" class="nav-btn">🎤 Interview</a>
       <a href="dashboard.html" class="nav-btn primary">← Dashboard</a>
     </div>
   </nav>
 
   <div class="container">
-    <div class="header-section">
-      <h1>Cold Email 2.0</h1>
-      <p>Powered by Elite Sales Frameworks (PAS, AIDA) to guarantee replies.</p>
+    <div class="hero">
+      <h1>Cold Email <em>Writer</em></h1>
+      <p>Elite sales frameworks (PAS · AIDA) that guarantee replies.</p>
     </div>
 
-    <div class="alert" id="errorAlert">
-      <h4>⚠️ Vercel Configuration Error</h4>
-      <p id="errorAlertMsg">Something went wrong.</p>
+    <div class="alert" id="errAlert">
+      <h4>⚠️ Error</h4>
+      <p id="errMsg">Something went wrong.</p>
     </div>
 
-    <div class="nexus-box">
-      <div class="nexus-text">
-        <h3>✨ The Nexus: Import your Context</h3>
-        <p>Skip the typing. Instantly load your background from your saved resumes.</p>
+    <!-- Nexus -->
+    <div class="nexus">
+      <div>
+        <h3>✨ The Nexus — Import Context</h3>
+        <p>Skip typing. Load your background from a saved resume or PDF.</p>
       </div>
-      <button type="button" class="nexus-btn" id="openNexusBtn">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
-        Select Resume
-      </button>
+      <div class="nexus-actions">
+        <button type="button" class="nbtn outline" id="btnUploadPdf">⬆ Upload PDF</button>
+        <input type="file" id="fileIn" accept=".pdf,.docx,application/pdf" style="display:none">
+        <button type="button" class="nbtn" id="btnSelectSaved">＋ Select Saved</button>
+      </div>
+      <div id="pdfStatus"></div>
     </div>
 
-    <form id="emailForm">
-      <div class="card" style="animation-delay: 0.1s;">
-        <div class="card-title">🎯 Step 1: Who are you emailing?</div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Target Company <span>*</span></label>
-            <input type="text" id="company" placeholder="e.g. Stripe, OpenAI" required />
-          </div>
-          <div class="form-group">
-            <label>Recipient's Title <span>*</span></label>
-            <input type="text" id="recipientTitle" placeholder="e.g. VP of Engineering" required />
-          </div>
-          <div class="form-group full">
-            <label>Recipient's Name <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
-            <input type="text" id="recipientName" placeholder="e.g. Sarah" />
-          </div>
+    <!-- Form -->
+    <form id="emailForm" novalidate>
+      <div class="card" style="animation-delay:.05s">
+        <div class="card-head">🎯 Step 1 — Target</div>
+        <div class="grid2">
+          <div class="fg"><label>Company <span class="req">*</span></label><input id="company" required placeholder="e.g. Stripe, OpenAI"></div>
+          <div class="fg"><label>Recipient Title <span class="req">*</span></label><input id="recipientTitle" required placeholder="e.g. VP of Engineering"></div>
+          <div class="fg full"><label>Recipient Name <span style="color:var(--text-muted);font-weight:400">(optional)</span></label><input id="recipientName" placeholder="e.g. Sarah"></div>
         </div>
       </div>
 
-      <div class="card" style="animation-delay: 0.2s;">
-        <div class="card-title">👤 Step 2: Your Context</div>
-        <div class="form-grid">
-          <div class="form-group full">
-            <label>Your Name <span>*</span></label>
-            <input type="text" id="senderName" placeholder="e.g. John Doe" required />
-          </div>
-          <div class="form-group full">
-            <label>Your Background / Skills <span>*</span></label>
-            <textarea id="background" placeholder="Auto-fill this using the Nexus button above, or type it here..." required></textarea>
-            <div class="char-counter" id="bgCounter">0 / 400</div>
-          </div>
-          <div class="form-group">
-            <label>Industry <span>*</span></label>
-            <select id="industry" required>
-              <option value="">— Select —</option>
-              <option>Tech & Software</option>
-              <option>Finance & Crypto</option>
-              <option>Marketing</option>
-              <option>Healthcare</option>
-              <option>Other</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Purpose of Email <span>*</span></label>
-            <select id="purpose" required>
-              <option value="">— Select —</option>
-              <option>Job Inquiry</option>
-              <option>Freelance Pitch</option>
-              <option>Networking</option>
-              <option>Partnership</option>
-            </select>
-          </div>
-          <div class="form-group full">
-            <label>Your Unique Value Hook <span>*</span></label>
-            <textarea id="valueProposition" placeholder="What impressive thing have you done?" style="min-height: 80px;" required></textarea>
-          </div>
+      <div class="card" style="animation-delay:.1s">
+        <div class="card-head">👤 Step 2 — Your Context</div>
+        <div class="grid2">
+          <div class="fg full"><label>Your Name <span class="req">*</span></label><input id="senderName" required placeholder="e.g. John Doe"></div>
+          <div class="fg full"><label>Background / Skills <span class="req">*</span></label><textarea id="background" required placeholder="Auto-fill via Nexus above, or type here…"></textarea><div class="char-ct" id="bgCt">0 / 400</div></div>
+          <div class="fg"><label>Industry <span class="req">*</span></label><select id="industry" required><option value="">— Select —</option><option>Tech & Software</option><option>Finance & Crypto</option><option>Marketing</option><option>Healthcare</option><option>Other</option></select></div>
+          <div class="fg"><label>Purpose <span class="req">*</span></label><select id="purpose" required><option value="">— Select —</option><option>Job Inquiry</option><option>Freelance Pitch</option><option>Networking</option><option>Partnership</option></select></div>
+          <div class="fg full"><label>Unique Value Hook <span class="req">*</span></label><textarea id="valueProp" required placeholder="What impressive thing have you done? e.g. 'Scaled a Node backend to 5M req/day'" style="min-height:72px"></textarea></div>
         </div>
       </div>
 
-      <div class="card" style="animation-delay: 0.3s;">
-        <div class="card-title">⚙️ Step 3: AI Configuration</div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Tone</label>
-            <div class="pill-group" id="tonePills">
-              <button type="button" class="pill active">Professional</button>
-              <button type="button" class="pill">Conversational</button>
-              <button type="button" class="pill">Bold & Direct</button>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Target Length</label>
-            <div class="pill-group" id="lengthPills">
-              <button type="button" class="pill active">Short (Under 100 words)</button>
-              <button type="button" class="pill">Ultra-Short (Under 50 words)</button>
-            </div>
-          </div>
+      <div class="card" style="animation-delay:.15s">
+        <div class="card-head">⚙️ Step 3 — AI Config</div>
+        <div class="grid2">
+          <div class="fg"><label>Tone</label><div class="pills" id="tonePills"><button type="button" class="pill on">Professional</button><button type="button" class="pill">Conversational</button><button type="button" class="pill">Bold & Direct</button></div></div>
+          <div class="fg"><label>Length</label><div class="pills" id="lenPills"><button type="button" class="pill on">Short (&lt;100 words)</button><button type="button" class="pill">Ultra-Short (&lt;50 words)</button></div></div>
         </div>
       </div>
 
-      <div class="generate-wrap">
-        <button type="submit" class="btn-generate" id="generateBtn">🚀 Generate Elite Emails</button>
-      </div>
+      <div class="gen-wrap"><button type="submit" class="btn-gen" id="genBtn">🚀 Generate Elite Emails</button></div>
     </form>
 
-    <div class="skeleton-container" id="loadingSkeletons">
-      <div style="text-align:center; color:var(--text-muted); margin-bottom:2rem;">Analyzing frameworks...</div>
-      <div class="card"><div class="skeleton" style="height:30px; width:40%;"></div><div class="skeleton" style="height:100px; width:100%;"></div></div>
+    <!-- Skeleton -->
+    <div class="skel-wrap" id="skelWrap">
+      <div class="skel-msg"><svg style="animation:spin 1s linear infinite;width:20px;height:20px;display:inline-block;vertical-align:middle;margin-right:.4rem" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-dasharray="32" stroke-linecap="round"/></svg>Analysing frameworks & writing copy…</div>
+      <div class="card"><div class="skel" style="height:28px;width:35%"></div><div class="skel" style="height:90px;width:100%"></div></div>
+      <div class="card" style="opacity:.6"><div class="skel" style="height:28px;width:28%"></div><div class="skel" style="height:90px;width:100%"></div></div>
     </div>
 
-    <div id="resultsSection">
-      <h2 style="font-size:1.5rem; margin-bottom:1.5rem; text-align:center;">📬 Your Elite Variants</h2>
-      <div class="tabs" id="variantTabs"></div>
-      <div id="panelsContainer"></div>
-      <div class="card" id="followUpCard" style="margin-top:2rem; background: rgba(56, 189, 248, 0.05); border-color: rgba(56, 189, 248, 0.3);">
-        <div class="card-title">🔄 3-Day Follow Up Sequence</div>
-        <div class="email-body" id="followUpBody"></div>
-        <button type="button" class="action-btn copy" id="copyFollowupBtn">📋 Copy Follow-up</button>
-      </div>
+    <!-- Results -->
+    <div id="results">
+      <h2 style="font-size:1.35rem;text-align:center;margin-bottom:1.25rem">📬 Your Elite Variants</h2>
+      <div class="tabs" id="vtabs"></div>
+      <div id="panels"></div>
+      <div class="card" id="fuCard"><div class="card-head">🔄 3-Day Follow-Up</div><div class="ebody" id="fuBody"></div><button type="button" class="abtn cp" id="cpFu">📋 Copy Follow-up</button></div>
     </div>
   </div>
 
-  <div class="modal-backdrop" id="nexusModal">
+  <!-- Modal -->
+  <div class="modal-bg" id="nexusModal">
     <div class="modal">
       <h2>✨ Select a Saved Resume</h2>
-      <div id="resumeList" class="resume-list">
-        <p style="color:var(--text-muted);text-align:center;">Loading resumes...</p>
-      </div>
-      <button type="button" class="modal-close" id="closeNexusBtn">Cancel</button>
+      <div id="rlist" class="rlist"><p style="color:var(--text-muted);text-align:center">Loading…</p></div>
+      <button type="button" class="mcl" id="closeModal">Cancel</button>
     </div>
   </div>
 
   <div class="toast" id="toast">Message</div>
 
-  <script>
-    const SUPABASE_URL  = 'https://eduogxolvpqdtvtdiqav.supabase.co';
-    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qc[...]';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
-    let currentUser = null;
-    let savedResumes = [];
-    let currentData = null;
-
-    (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) currentUser = session.user;
-    })();
-
-    function showToast(msg, isError = false) {
-      const toast = document.getElementById('toast');
-      if (!toast) return;
-      toast.textContent = msg;
-      toast.style.borderColor = isError ? 'var(--danger)' : 'var(--primary)';
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 3000);
+  <script id="app-logic">
+// UI Logic (copied from original implementation)
+// ── Supabase Init ────────────────────────────────────────────────────────
+const SUPABASE_URL  = 'https://eduogxolvpqdtvtdiqav.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
+const supabaseClient = window.supabase && typeof window.supabase.createClient === 'function'
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
+  : null;
+const nexusUnavailable = !supabaseClient;
+if (!supabaseClient) {
+  console.warn('Supabase client unavailable; Nexus import is disabled. Please refresh the page to retry.');
+}
+let currentUser = null;
+let savedResumes = [];
+let currentData = null;
+(async () => {
+  if (!supabaseClient) return;
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+      currentUser = session.user;
+    } else {
+      const localId = localStorage.getItem('userId');
+      if (localId) currentUser = { id: localId };
     }
-
-    document.querySelectorAll('.pill-group').forEach(group => {
-      group.addEventListener('click', e => {
-        const clickedPill = e.target.closest('.pill');
-        if (!clickedPill || !group.contains(clickedPill)) return;
-        e.stopPropagation();
-        e.preventDefault();
-        group.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-        clickedPill.classList.add('active');
-      });
+  } catch (e) {
+    console.warn('Auth session error:', e);
+  }
+})();
+// ── UI Helpers ────────────────────────────────────────────────────────
+function showToast(msg, isError = false) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.style.borderColor = isError ? 'var(--danger)' : 'var(--primary)';
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+if (nexusUnavailable) {
+  showToast('Nexus import is unavailable right now. You can still fill details manually.', true);
+}
+function setActivePill(group, clickedPill) {
+  if (!group || !clickedPill) return;
+  group.querySelectorAll('.pill').forEach(p => p.classList.remove('on'));
+  clickedPill.classList.add('on');
+}
+document.querySelectorAll('.pills').forEach(group => {
+  group.addEventListener('click', e => {
+    const clicked = e.target.closest('.pill');
+    if (!clicked) return;
+    setActivePill(group, clicked);
+  });
+});
+// Nexus Modal
+async function openNexusModal() {
+  if (!supabaseClient) return showToast('Nexus is currently unavailable. Please refresh the page.', true);
+  if (!currentUser) return showToast('Please log in first to access saved resumes.', true);
+  document.getElementById('nexusModal').classList.add('show');
+  const { data, error } = await supabaseClient.from('resumes').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  const list = document.getElementById('rlist');
+  if (error || !data || data.length === 0) {
+    list.innerHTML = '<p style="color:var(--text-muted);text-align:center;">No saved resumes found.</p>';
+    return;
+  }
+  savedResumes = data;
+  list.innerHTML = '';
+  data.forEach((r, idx) => {
+    const div = document.createElement('div');
+    div.className = 'ritem';
+    div.dataset.idx = idx;
+    div.innerHTML = `<h4>${r.full_name || 'Untitled'}</h4><p>${r.title || ''}</p>`;
+    list.appendChild(div);
+  });
+}
+function closeNexusModal() { document.getElementById('nexusModal').classList.remove('show'); }
+document.getElementById('btnSelectSaved').addEventListener('click', e => { e.stopPropagation(); openNexusModal(); });
+document.getElementById('closeModal').addEventListener('click', e => { e.stopPropagation(); closeNexusModal(); });
+document.getElementById('nexusModal').addEventListener('click', e => { if (e.target === document.getElementById('nexusModal')) closeNexusModal(); });
+document.querySelector('.modal').addEventListener('click', e => e.stopPropagation());
+// Click resume from list
+document.getElementById('rlist').addEventListener('click', e => {
+  const item = e.target.closest('.ritem');
+  if (!item) return;
+  const idx = Number(item.dataset.idx);
+  if (isNaN(idx) || !savedResumes[idx]) return;
+  const r = savedResumes[idx];
+  if (r.full_name) document.getElementById('senderName').value = r.full_name;
+  let bg = '';
+  if (r.summary) bg += r.summary + ' ';
+  if (r.experience && r.experience.length) bg += `Previously ${r.experience[0].title} at ${r.experience[0].company}. `;
+  if (r.skills && r.skills.length) bg += `Core skills: ${r.skills.slice(0,6).join(', ')}.`;
+  const bgInput = document.getElementById('background');
+  bgInput.value = bg.trim().substring(0,400);
+  document.getElementById('bgCt').textContent = `${bgInput.value.length} / 400`;
+  // Live character count for manual edits
+  document.getElementById('background').addEventListener('input', e => {
+    const len = e.target.value.length;
+    document.getElementById('bgCt').textContent = `${len} / 400`;
+  });
+  closeNexusModal();
+  showToast('✅ Context imported!');
+});
+// PDF upload handling
+async function handlePDFUpload(input) {
+  const file = (input.files && (input.files[0] || input.files.item(0))) || null;
+  if (!file) return;
+  const status = document.getElementById('pdfStatus');
+  status.style.display = 'block';
+  status.textContent = `⏳ Parsing ${file.name}...`;
+  const form = new FormData();
+  form.append('resume', file);
+  try {
+    const res = await fetch('/api/upload-resume', { method: 'POST', body: form });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
+    if (data.resumeText) {
+      const bg = document.getElementById('background');
+      bg.value = data.resumeText.substring(0,400).trim();
+      document.getElementById('bgCt').textContent = `${bg.value.length} / 400`;
+      status.textContent = `✅ Imported ${file.name}`;
+      showToast('✅ PDF imported!');
+    } else {
+      throw new Error('No text extracted');
+    }
+  } catch (err) {
+    console.error(err);
+    status.textContent = `❌ Upload failed: ${err.message}`;
+    status.style.color = '#fca5a5';
+  }
+  input.value = '';
+}
+// Bind upload button
+document.getElementById('btnUploadPdf').addEventListener('click', () => {
+  document.getElementById('fileIn').click();
+});
+document.getElementById('fileIn').addEventListener('change', function(){ handlePDFUpload(this); });
+// Form submission
+document.getElementById('emailForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  document.getElementById('errAlert').classList.remove('show');
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('skelWrap').classList.add('show');
+  document.getElementById('genBtn').disabled = true;
+  const tone = document.querySelector('#tonePills .on')?.textContent.trim() || 'Professional';
+  const length = document.querySelector('#lenPills .on')?.textContent.trim() || 'Short (<100 words)';
+  const payload = {
+    company: document.getElementById('company').value.trim(),
+    recipientTitle: document.getElementById('recipientTitle').value.trim(),
+    recipientName: document.getElementById('recipientName').value.trim(),
+    senderName: document.getElementById('senderName').value.trim(),
+    background: document.getElementById('background').value.trim(),
+    industry: document.getElementById('industry').value,
+    purpose: document.getElementById('purpose').value,
+    valueProposition: document.getElementById('valueProp').value.trim(),
+    tone,
+    length
+  };
+  try {
+    const res = await fetch('/api/cold-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
-
-    document.getElementById('background').addEventListener('input', e => {
-      document.getElementById('bgCounter').textContent = `${e.target.value.length} / 400`;
-    });
-
-    async function openNexusModal() {
-      if (!currentUser) return showToast('Please log in first.', true);
-      document.getElementById('nexusModal').classList.add('show');
-      
-      const { data, error } = await supabase.from('resumes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
-      const list = document.getElementById('resumeList');
-      
-      if (error || !data || data.length === 0) {
-        list.innerHTML = '<p style="color:var(--text-muted);text-align:center;">No saved resumes found.</p>';
-        return;
-      }
-      
-      savedResumes = data;
-      list.innerHTML = '';
-      data.forEach((r, index) => {
-        const div = document.createElement('div');
-        div.className = 'resume-item';
-        div.dataset.resumeIndex = index;
-        div.innerHTML = `<h4>${r.full_name || 'Untitled'}</h4><p>${r.title || 'No job title'}</p>`;
-        div.addEventListener('click', () => applyNexusData(r));
-        list.appendChild(div);
-      });
-    }
-
-    function closeNexusModal() {
-      document.getElementById('nexusModal').classList.remove('show');
-    }
-
-    document.getElementById('nexusModal').addEventListener('click', e => {
-      if (e.target.id === 'nexusModal') closeNexusModal();
-    });
-
-    document.getElementById('openNexusBtn').addEventListener('click', openNexusModal);
-    document.getElementById('closeNexusBtn').addEventListener('click', closeNexusModal);
-
-    function applyNexusData(r) {
-      if (r.full_name) document.getElementById('senderName').value = r.full_name;
-      
-      let bg = '';
-      if (r.summary) bg += r.summary + ' ';
-      if (r.experience && r.experience.length > 0) bg += `Previously ${r.experience[0].title} at ${r.experience[0].company}. `;
-      if (r.skills && r.skills.length > 0) bg += `Core skills: ${r.skills.slice(0, 6).join(', ')}.`;
-      
-      const bgInput = document.getElementById('background');
-      bgInput.value = bg.substring(0, 400).trim();
-      document.getElementById('bgCounter').textContent = `${bgInput.value.length} / 400`;
-      
-      closeNexusModal();
-      showToast('✨ Context imported!');
-    }
-
-    document.getElementById('emailForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      
-      document.getElementById('errorAlert').classList.remove('show');
-      document.getElementById('resultsSection').style.display = 'none';
-      document.getElementById('loadingSkeletons').classList.add('show');
-      document.getElementById('generateBtn').disabled = true;
-
-      const activeTone = document.querySelector('#tonePills .active') || document.querySelector('#tonePills .pill');
-      const activeLength = document.querySelector('#lengthPills .active') || document.querySelector('#lengthPills .pill');
-
-      const payload = {
-        company: document.getElementById('company').value.trim(),
-        recipientTitle: document.getElementById('recipientTitle').value.trim(),
-        recipientName: document.getElementById('recipientName').value.trim(),
-        senderName: document.getElementById('senderName').value.trim(),
-        background: document.getElementById('background').value.trim(),
-        industry: document.getElementById('industry').value,
-        purpose: document.getElementById('purpose').value,
-        valueProposition: document.getElementById('valueProposition').value.trim(),
-        tone: activeTone ? activeTone.textContent.trim() : 'Professional',
-        length: activeLength ? activeLength.textContent.trim() : 'Short (Under 100 words)'
-      };
-
-      try {
-        const res = await fetch('/api/cold-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Unknown error');
-
-        currentData = data;
-        buildEmailResults(data);
-        
-      } catch (err) {
-        console.error(err);
-        document.getElementById('errorAlertMsg').textContent = err.message;
-        document.getElementById('errorAlert').classList.add('show');
-      } finally {
-        document.getElementById('loadingSkeletons').classList.remove('show');
-        document.getElementById('generateBtn').disabled = false;
-      }
-    });
-
-    // ===== BRAND NEW EMAIL RENDERING FROM SCRATCH =====
-    function buildEmailResults(data) {
-      document.getElementById('resultsSection').style.display = 'block';
-      document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
-      
-      const tabsContainer = document.getElementById('variantTabs');
-      const panelsContainer = document.getElementById('panelsContainer');
-      
-      tabsContainer.innerHTML = '';
-      panelsContainer.innerHTML = '';
-      
-      if (data.followUp) {
-        document.getElementById('followUpBody').textContent = data.followUp;
-        document.getElementById('followUpCard').style.display = 'block';
-      }
-
-      if (!data.variants || data.variants.length === 0) {
-        panelsContainer.innerHTML = '<p style="color: var(--text-muted);">No variants generated.</p>';
-        return;
-      }
-
-      data.variants.forEach((variant, index) => {
-        // BUILD TAB
-        const tab = document.createElement('button');
-        tab.type = 'button';
-        tab.className = 'tab' + (index === 0 ? ' active' : '');
-        tab.textContent = ['Variant A (PAS)', 'Variant B (AIDA)', 'Variant C (Ultra-Short)'][index] || `Variant ${index + 1}`;
-        tab.addEventListener('click', () => switchEmailTab(index));
-        tabsContainer.appendChild(tab);
-
-        // BUILD PANEL
-        const panel = document.createElement('div');
-        panel.className = 'variant-panel' + (index === 0 ? ' active' : '');
-        panel.id = `email-panel-${index}`;
-
-        // SUBJECT BOX
-        const subjectBox = document.createElement('div');
-        subjectBox.className = 'email-subject';
-        const subjectText = document.createElement('span');
-        subjectText.className = 'subject-text';
-        subjectText.textContent = `Subject: ${variant.subject || '(No subject)'}`;
-        const badge = document.createElement('span');
-        badge.className = 'framework-badge';
-        badge.textContent = variant.approach || 'Framework';
-        subjectBox.appendChild(subjectText);
-        subjectBox.appendChild(badge);
-        panel.appendChild(subjectBox);
-
-        // EMAIL BODY
-        const bodyDiv = document.createElement('div');
-        bodyDiv.className = 'email-body';
-        bodyDiv.id = `email-body-${index}`;
-        bodyDiv.textContent = variant.body || '(No body)';
-        panel.appendChild(bodyDiv);
-
-        // ACTION BUTTONS - FRESH NEW CODE
-        const buttonRow = document.createElement('div');
-        buttonRow.className = 'action-row';
-
-        // COPY BUTTON
-        const copyBtn = document.createElement('button');
-        copyBtn.type = 'button';
-        copyBtn.className = 'action-btn copy';
-        copyBtn.textContent = '📋 Copy Email';
-        copyBtn.onclick = function() {
-          copyEmailBody(bodyDiv.textContent);
-        };
-        buttonRow.appendChild(copyBtn);
-
-        // GMAIL BUTTON
-        const gmailBtn = document.createElement('button');
-        gmailBtn.type = 'button';
-        gmailBtn.className = 'action-btn';
-        gmailBtn.textContent = '📤 Open in Gmail';
-        gmailBtn.onclick = function() {
-          openEmailInGmail(variant.subject, variant.body);
-        };
-        buttonRow.appendChild(gmailBtn);
-
-        panel.appendChild(buttonRow);
-
-        // METRICS
-        const metricsCard = document.createElement('div');
-        metricsCard.className = 'card';
-        metricsCard.style.padding = '1.5rem';
-        metricsCard.style.background = 'rgba(0,0,0,0.2)';
-
-        const metricsTitle = document.createElement('h4');
-        metricsTitle.style.marginBottom = '1rem';
-        metricsTitle.style.fontSize = '0.95rem';
-        metricsTitle.textContent = 'AI Evaluation Metrics';
-        metricsCard.appendChild(metricsTitle);
-
-        const scoreGrid = document.createElement('div');
-        scoreGrid.className = 'score-grid';
-        const scores = data.scores || { personalisation: 80, clarity: 80, cta: 80, length: 80 };
-        scoreGrid.innerHTML = 
-          createScoreBars('Personalisation', scores.personalisation) +
-          createScoreBars('Clarity & Concision', scores.clarity) +
-          createScoreBars('CTA Friction (Lower is better)', 100 - scores.cta) +
-          createScoreBars('Readability', scores.length);
-        metricsCard.appendChild(scoreGrid);
-
-        const tipsDiv = document.createElement('div');
-        tipsDiv.className = 'tips-box';
-        const tipsTitle = document.createElement('h4');
-        tipsTitle.textContent = '💡 Why this framework works:';
-        const tipsPara = document.createElement('p');
-        tipsPara.textContent = (data.tips && data.tips[index]) ? data.tips[index] : 'Framework works via psychological triggers.';
-        tipsDiv.appendChild(tipsTitle);
-        tipsDiv.appendChild(tipsPara);
-        metricsCard.appendChild(tipsDiv);
-
-        panel.appendChild(metricsCard);
-        panelsContainer.appendChild(panel);
-      });
-
-      // Animate score bars
-      setTimeout(() => {
-        document.querySelectorAll('.score-fill').forEach(bar => {
-          const val = bar.dataset.val;
-          if (val) bar.style.width = val + '%';
-        });
-      }, 100);
-    }
-
-    function createScoreBars(label, value) {
-      const val = Math.max(0, Math.min(100, parseInt(value) || 80));
-      return `<div class="score-item"><label><span>${label}</span> <span>${val}%</span></label><div class="score-track"><div class="score-fill" data-val="${val}"></div></div></div>`;
-    }
-
-    function switchEmailTab(index) {
-      document.querySelectorAll('.tab').forEach((tab, i) => {
-        tab.classList.toggle('active', i === index);
-      });
-      document.querySelectorAll('.variant-panel').forEach((panel, i) => {
-        panel.classList.toggle('active', i === index);
-      });
-    }
-
-    // ===== BUTTON HANDLERS - COMPLETELY FRESH =====
-    function copyEmailBody(text) {
-      if (!text || text.trim().length === 0) {
-        showToast('❌ Nothing to copy!', true);
-        return;
-      }
-
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text.trim()).then(() => {
-          showToast('✅ Copied!');
-        }).catch(() => {
-          fallbackCopyEmail(text.trim());
-        });
-      } else {
-        fallbackCopyEmail(text.trim());
-      }
-    }
-
-    function fallbackCopyEmail(text) {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.style.position = 'absolute';
-      textarea.style.left = '-9999px';
-      textarea.style.top = '-9999px';
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        document.execCommand('copy');
-        showToast('✅ Copied!');
-      } catch (err) {
-        showToast('❌ Copy failed!', true);
-      }
-      document.body.removeChild(textarea);
-    }
-
-    function openEmailInGmail(subject, body) {
-      if (!subject || !body) {
-        showToast('❌ Email content missing!', true);
-        return;
-      }
-
-      const gmailURL = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      window.open(gmailURL, '_blank');
-      showToast('✅ Opening Gmail...');
-    }
-
-    // Copy followup
-    document.getElementById('copyFollowupBtn').addEventListener('click', function() {
-      const followupText = document.getElementById('followUpBody').textContent;
-      copyEmailBody(followupText);
-    });
-  </script>
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Server error');
+    currentData = data;
+    renderResults(data);
+  } catch (err) {
+    console.error(err);
+    const alert = document.getElementById('errAlert');
+    document.getElementById('errMsg').textContent = err.message;
+    alert.classList.add('show');
+    alert.scrollIntoView({ behavior: 'smooth' });
+  } finally {
+    document.getElementById('skelWrap').classList.remove('show');
+    document.getElementById('genBtn').disabled = false;
+  }
+});
+// Rendering logic
+function renderResults(data) {
+  document.getElementById('results').style.display = 'block';
+  const panels = document.getElementById('panels');
+  const tabs = document.getElementById('vtabs');
+  panels.innerHTML = '';
+  tabs.innerHTML = '';
+  data.variants.forEach((v, i) => {
+    const active = i === 0 ? 'on' : '';
+    tabs.insertAdjacentHTML('beforeend', `<button class="tab ${active}" data-index="${i}">${v.approach}</button>`);
+    panels.insertAdjacentHTML('beforeend', `<div class="vpanel ${active}" id="panel-${i}">
+      <div class="subj-row"><span class="subj-text">Subject: ${v.subject}</span><span class="badge">${v.approach}</span></div>
+      <div class="ebody" id="body-${i}">${v.body}</div>
+      <div class="acts">
+        <button class="abtn cp" data-copy="body-${i}">📋 Copy</button>
+        <button class="abtn" data-gmail-sub="${encodeURIComponent(v.subject)}" data-gmail-body="${encodeURIComponent(v.body)}">📤 Gmail</button>
+      </div>
+      <div class="card" style="padding:1.5rem;background:rgba(0,0,0,.2);">
+        <h4>AI Evaluation</h4>
+        <div class="score-grid">
+          ${renderScore('Personalisation', data.scores.personalisation)}
+          ${renderScore('Clarity', data.scores.clarity)}
+          ${renderScore('CTA', 100 - data.scores.cta)}
+          ${renderScore('Length', data.scores.length)}
+        </div>
+        <div class="tip-box"><h4>Why this works</h4><p>${data.tips[i] || ''}</p></div>
+      </div>
+    </div>`);
+  });
+  // Follow‑up
+  if (data.followUp) {
+    document.getElementById('fuBody').textContent = data.followUp;
+    document.getElementById('fuCard').style.display = 'block';
+  } else {
+    document.getElementById('fuCard').style.display = 'none';
+  }
+  // Tab switching
+  document.getElementById('vtabs').addEventListener('click', e => {
+    const btn = e.target.closest('.tab');
+    if (!btn) return;
+    const idx = Number(btn.dataset.index);
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', Number(t.dataset.index) === idx));
+    document.querySelectorAll('.vpanel').forEach(p => p.classList.toggle('on', Number(p.id.split('-')[1]) === idx));
+  });
+}
+function renderScore(label, val) {
+  const v = Math.max(0, Math.min(100, val));
+  return `<div class="si"><label><span>${label}</span> <span>${v}%</span></label><div class="st"><div class="sf" style="width:${v}%"></div></div></div>`;
+}
+// Copy & Gmail actions
+document.addEventListener('click', e => {
+  const copyBtn = e.target.closest('[data-copy]');
+  const gmailBtn = e.target.closest('[data-gmail-sub]');
+  if (copyBtn) {
+    const id = copyBtn.dataset.copy;
+    const txt = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(txt);
+    showToast('✅ Copied!');
+  }
+  if (gmailBtn) {
+    const sub = gmailBtn.dataset.gmailSub;
+    const body = gmailBtn.dataset.gmailBody;
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${sub}&body=${body}`, '_blank');
+  }
+});
+</script>
 </body>
 </html>
