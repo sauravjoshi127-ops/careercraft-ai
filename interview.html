@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interview Coach - CareerCraft AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --bg:#050816;
+      --bg-soft:#0b1220;
+      --panel:rgba(10,16,30,.92);
+      --panel-2:rgba(12,20,36,.96);
+      --border:rgba(148,163,184,.16);
+      --text:#e7eefc;
+      --muted:#94a3b8;
+      --primary:#5eead4;
+      --primary-2:#60a5fa;
+      --accent:#f59e0b;
+      --success:#34d399;
+      --danger:#fb7185;
+      --radius:8px;
+      --font:'Inter',system-ui,sans-serif;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{
+      font-family:var(--font);
+      color:var(--text);
+      background:
+        linear-gradient(180deg, rgba(5,8,22,.88), rgba(5,8,22,.95)),
+        linear-gradient(135deg, rgba(94,234,212,.05), rgba(96,165,250,.05));
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+    body::before{
+      content:'';
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background-image:
+        linear-gradient(rgba(148,163,184,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148,163,184,.05) 1px, transparent 1px);
+      background-size: 36px 36px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,.75), rgba(0,0,0,.15) 70%, transparent);
+      opacity:.45;
+      z-index:-1;
+    }
+
+    .topnav{
+      position:sticky;
+      top:0;
+      z-index:20;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:1rem;
+      padding:1rem 1.5rem;
+      background:rgba(5,8,22,.82);
+      backdrop-filter:blur(18px);
+      border-bottom:1px solid var(--border);
+    }
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:.15rem;
+      text-decoration:none;
+      color:var(--text);
+      min-width:0;
+    }
+    .brand strong{
+      font-size:1rem;
+      letter-spacing:-.02em;
+      line-height:1.1;
+    }
+    .brand span{
+      color:var(--muted);
+      font-size:.8rem;
+    }
+    .nav-links{
+      display:flex;
+      align-items:center;
+      gap:.5rem;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .nav-link,.nav-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:38px;
+      padding:.5rem .9rem;
+      border-radius:.5rem;
+      border:1px solid transparent;
+      text-decoration:none;
+      color:var(--muted);
+      background:transparent;
+      font:inherit;
+      cursor:pointer;
+      transition:transform .15s ease,border-color .15s ease,background .15s ease,color .15s ease;
+      white-space:nowrap;
+    }
+    .nav-link:hover,.nav-btn:hover{
+      transform:translateY(-1px);
+      border-color:rgba(94,234,212,.25);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+    }
+    .nav-btn.primary{
+      background:linear-gradient(135deg, rgba(94,234,212,.16), rgba(96,165,250,.16));
+      border-color:rgba(94,234,212,.28);
+      color:#d9fffb;
+    }
+
+    .shell{
+      max-width:1240px;
+      margin:0 auto;
+      padding:1.5rem 1.25rem 4rem;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns:minmax(0,1.4fr) minmax(280px,.9fr);
+      gap:1rem;
+      margin-bottom:1rem;
+    }
+    .hero-copy,.hero-aside,.panel{
+      background:linear-gradient(180deg, rgba(10,16,30,.96), rgba(12,18,34,.96));
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:0 18px 50px rgba(0,0,0,.22);
+    }
+    .hero-copy{
+      padding:1.4rem 1.4rem 1.5rem;
+    }
+    .eyebrow{
+      display:inline-flex;
+      align-items:center;
+      gap:.4rem;
+      font-size:.76rem;
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#b7f7ee;
+      margin-bottom:.8rem;
+    }
+    .hero-copy h1{
+      font-size:clamp(2rem, 4vw, 3.35rem);
+      line-height:1.02;
+      letter-spacing:-.05em;
+      margin-bottom:.75rem;
+      max-width:15ch;
+    }
+    .hero-copy h1 span{
+      background:linear-gradient(135deg,var(--primary),var(--primary-2));
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+    .hero-copy p{
+      max-width:62ch;
+      color:var(--muted);
+      font-size:1rem;
+      line-height:1.7;
+      margin-bottom:1rem;
+    }
+    .hero-actions{
+      display:flex;
+      gap:.75rem;
+      flex-wrap:wrap;
+      margin-bottom:1rem;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:42px;
+      padding:.65rem 1rem;
+      border:1px solid var(--border);
+      border-radius:.5rem;
+      background:rgba(255,255,255,.03);
+      color:var(--text);
+      font:inherit;
+      font-weight:600;
+      cursor:pointer;
+      transition:transform .15s ease,background .15s ease,border-color .15s ease,opacity .15s ease;
+      white-space:nowrap;
+    }
+    .btn:hover:not(:disabled){
+      transform:translateY(-1px);
+      background:rgba(255,255,255,.06);
+      border-color:rgba(94,234,212,.3);
+    }
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .btn-primary{
+      background:linear-gradient(135deg, rgba(94,234,212,.92), rgba(96,165,250,.92));
+      border-color:transparent;
+      color:#04111a;
+    }
+    .btn-primary:hover:not(:disabled){
+      border-color:transparent;
+      background:linear-gradient(135deg, rgba(94,234,212,1), rgba(96,165,250,1));
+    }
+
+    .hero-aside{
+      padding:1.2rem;
+      display:grid;
+      gap:.8rem;
+      align-content:start;
+    }
+    .metric-grid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:.75rem;
+    }
+    .metric{
+      border:1px solid rgba(148,163,184,.12);
+      border-radius:.5rem;
+      background:rgba(255,255,255,.03);
+      padding:.9rem;
+      min-height:88px;
+    }
+    .metric strong{
+      display:block;
+      font-size:1.45rem;
+      letter-spacing:-.04em;
+      margin-bottom:.2rem;
+      color:#dffdf8;
+    }
+    .metric span{
+      display:block;
+      font-size:.82rem;
+      color:var(--muted);
+      line-height:1.45;
+    }
+    .mini-note{
+      border:1px solid rgba(245,158,11,.18);
+      background:rgba(245,158,11,.06);
+      border-radius:.5rem;
+      padding:.9rem;
+      color:#f8e6bc;
+      font-size:.88rem;
+      line-height:1.6;
+    }
+
+    .layout{
+      display:grid;
+      grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+      gap:1rem;
+      align-items:start;
+    }
+    .panel{
+      padding:1.1rem;
+    }
+    .panel h2{
+      font-size:1rem;
+      letter-spacing:-.02em;
+      margin-bottom:.25rem;
+    }
+    .panel .sub{
+      color:var(--muted);
+      font-size:.88rem;
+      line-height:1.6;
+      margin-bottom:1rem;
+    }
+    .form-grid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:.8rem;
+    }
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:.35rem;
+    }
+    .field.full{grid-column:1 / -1}
+    .field label{
+      color:#c7d2e5;
+      font-size:.82rem;
+      font-weight:600;
+    }
+    .field input,.field textarea,.field select{
+      width:100%;
+      border:1px solid rgba(148,163,184,.16);
+      border-radius:.45rem;
+      background:rgba(4,8,18,.72);
+      color:var(--text);
+      padding:.75rem .85rem;
+      font:inherit;
+      font-size:.95rem;
+      outline:none;
+      transition:border-color .15s ease,box-shadow .15s ease,background .15s ease;
+    }
+    .field input:focus,.field textarea:focus,.field select:focus{
+      border-color:rgba(94,234,212,.5);
+      box-shadow:0 0 0 3px rgba(94,234,212,.08);
+      background:rgba(4,8,18,.88);
+    }
+    .field textarea{
+      min-height:110px;
+      resize:vertical;
+      line-height:1.6;
+    }
+    .hint{
+      color:var(--muted);
+      font-size:.78rem;
+      line-height:1.45;
+    }
+    .section-actions{
+      display:flex;
+      gap:.65rem;
+      flex-wrap:wrap;
+      margin-top:1rem;
+    }
+    .status{
+      min-height:22px;
+      margin-top:.8rem;
+      font-size:.88rem;
+      color:var(--muted);
+    }
+    .status.error{color:#fda4af}
+    .status.success{color:#86efac}
+    .status.loading{color:#fcd34d}
+
+    .question-list{
+      display:grid;
+      gap:.65rem;
+      margin-top:.9rem;
+    }
+    .question-item{
+      border:1px solid rgba(148,163,184,.16);
+      border-radius:.45rem;
+      padding:.85rem .9rem;
+      background:rgba(255,255,255,.03);
+      cursor:pointer;
+      transition:transform .15s ease,border-color .15s ease,background .15s ease;
+      text-align:left;
+      color:var(--text);
+    }
+    .question-item:hover{
+      transform:translateY(-1px);
+      border-color:rgba(94,234,212,.28);
+      background:rgba(255,255,255,.05);
+    }
+    .question-item.active{
+      border-color:rgba(94,234,212,.42);
+      background:linear-gradient(135deg, rgba(94,234,212,.08), rgba(96,165,250,.06));
+    }
+    .question-meta{
+      display:flex;
+      gap:.5rem;
+      flex-wrap:wrap;
+      margin-bottom:.35rem;
+    }
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      padding:.2rem .48rem;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.18);
+      background:rgba(255,255,255,.03);
+      font-size:.72rem;
+      color:#d1d9e8;
+      font-weight:600;
+    }
+    .question-text{
+      font-size:.95rem;
+      line-height:1.55;
+      color:#eef4ff;
+    }
+
+    .active-question{
+      border:1px solid rgba(148,163,184,.16);
+      border-radius:.45rem;
+      background:rgba(255,255,255,.03);
+      padding:1rem;
+      margin-top:.9rem;
+    }
+    .active-question h3{
+      font-size:1rem;
+      margin-bottom:.6rem;
+      line-height:1.45;
+    }
+    .active-question p{
+      color:var(--muted);
+      font-size:.9rem;
+      line-height:1.6;
+      margin-bottom:.45rem;
+    }
+    .active-question ul{
+      margin-left:1rem;
+      color:#d6e2f5;
+      line-height:1.6;
+      font-size:.88rem;
+    }
+    .answer-box textarea{
+      min-height:170px;
+    }
+
+    .result-grid{
+      display:grid;
+      gap:.8rem;
+      margin-top:1rem;
+    }
+    .result-card{
+      border:1px solid rgba(148,163,184,.16);
+      border-radius:.45rem;
+      background:rgba(255,255,255,.03);
+      padding:.9rem;
+    }
+    .result-card h3{
+      font-size:.9rem;
+      margin-bottom:.5rem;
+      color:#dffdf8;
+    }
+    .score-row{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:1rem;
+      margin-bottom:.8rem;
+      flex-wrap:wrap;
+    }
+    .score-number{
+      font-size:2.2rem;
+      font-weight:900;
+      letter-spacing:-.06em;
+      color:var(--primary);
+      line-height:1;
+    }
+    .score-desc{
+      color:var(--muted);
+      font-size:.86rem;
+      line-height:1.5;
+      max-width:34ch;
+    }
+    .bar{
+      width:100%;
+      height:10px;
+      border-radius:999px;
+      background:rgba(148,163,184,.14);
+      overflow:hidden;
+      margin-bottom:.75rem;
+    }
+    .bar-fill{
+      height:100%;
+      width:0%;
+      border-radius:inherit;
+      background:linear-gradient(90deg, var(--primary), var(--primary-2));
+      transition:width .35s ease;
+    }
+    .list{
+      display:grid;
+      gap:.45rem;
+    }
+    .list-item{
+      color:#d9e5f6;
+      line-height:1.55;
+      font-size:.9rem;
+      padding-left:.9rem;
+      position:relative;
+    }
+    .list-item::before{
+      content:'';
+      position:absolute;
+      left:0;
+      top:.62em;
+      width:.35rem;
+      height:.35rem;
+      border-radius:50%;
+      background:var(--accent);
+    }
+    .better-answer{
+      white-space:pre-wrap;
+      line-height:1.7;
+      color:#edf3ff;
+      font-size:.92rem;
+    }
+
+    .history{
+      margin-top:1rem;
+      display:grid;
+      gap:.65rem;
+    }
+    .history-item{
+      border:1px solid rgba(148,163,184,.14);
+      border-radius:.45rem;
+      background:rgba(255,255,255,.03);
+      padding:.85rem .9rem;
+    }
+    .history-item strong{
+      display:block;
+      margin-bottom:.2rem;
+      font-size:.9rem;
+    }
+    .history-item span{
+      color:var(--muted);
+      font-size:.82rem;
+      line-height:.5;
+    }
+
+    .footer-actions{
+      display:flex;
+      gap:.75rem;
+      flex-wrap:wrap;
+      margin-top:1rem;
+    }
+
+    .is-hidden{display:none !important;}
+
+    @media (max-width: 980px){
+      .hero,.layout{grid-template-columns:1fr}
+      .hero-copy h1{max-width:none}
+    }
+    @media (max-width: 720px){
+      .topnav{padding:1rem}
+      .shell{padding:1rem .9rem 3rem}
+      .form-grid{grid-template-columns:1fr}
+      .metric-grid{grid-template-columns:1fr 1fr}
+      .hero-copy,.hero-aside,.panel{padding:1rem}
+      .score-number{font-size:1.9rem}
+    }
+    @media (max-width: 480px){
+      .metric-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <nav class="topnav">
+    <a class="brand" href="index.html">
+      <strong>CareerCraft AI</strong>
+      <span>Interview Coach</span>
+    </a>
+    <div class="nav-links">
+      <a class="nav-link" href="dashboard.html">Dashboard</a>
+      <a class="nav-link" href="resume.html">Resume</a>
+      <a class="nav-link" href="cover-letter.html">Cover Letter</a>
+      <a class="nav-link" href="cold-email.html">Cold Email</a>
+      <button class="nav-btn primary" id="loadDemoBtn" type="button">Load Demo</button>
+    </div>
+  </nav>
+
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">Interview practice and feedback</div>
+        <h1>Coach your answers before the real interview.</h1>
+        <p>
+          Generate role-specific interview questions, practice one answer at a time, and get concrete feedback on clarity,
+          specificity, and structure. The whole flow is designed to help you sound calm, prepared, and real.
+        </p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" id="generateBtn" type="button">Generate Questions</button>
+          <button class="btn" id="evaluateBtn" type="button">Evaluate Answer</button>
+          <button class="btn" id="nextBtn" type="button">Next Question</button>
+        </div>
+        <div id="pageStatus" class="status" aria-live="polite">Fill the form below and generate your first set of questions.</div>
+      </div>
+
+      <aside class="hero-aside">
+        <div class="metric-grid">
+          <div class="metric">
+            <strong id="metricQuestions">5</strong>
+            <span>Focused questions tailored to the role</span>
+          </div>
+          <div class="metric">
+            <strong id="metricScore">--</strong>
+            <span>Answer score and actionable coaching</span>
+          </div>
+          <div class="metric">
+            <strong id="metricHistory">0</strong>
+            <span>Sessions saved locally in this browser</span>
+          </div>
+          <div class="metric">
+            <strong id="metricMode">Live</strong>
+            <span>One question selected at a time</span>
+          </div>
+        </div>
+        <div class="mini-note">
+          This first release stays local by design. No account data is saved on the server, so you can practice freely while we
+          build the next layer.
+        </div>
+      </aside>
+    </section>
+
+    <section class="layout">
+      <div class="panel">
+        <h2>Interview setup</h2>
+        <p class="sub">Enter the role and context you want to practice against. The more specific the inputs, the better the questions.</p>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="jobTitle">Job title</label>
+            <input id="jobTitle" type="text" placeholder="Frontend Engineer" />
+          </div>
+          <div class="field">
+            <label for="companyName">Company</label>
+            <input id="companyName" type="text" placeholder="Acme Labs" />
+          </div>
+          <div class="field">
+            <label for="experienceLevel">Experience level</label>
+            <select id="experienceLevel">
+              <option value="Student / Entry">Student / Entry</option>
+              <option value="Junior">Junior</option>
+              <option value="Mid" selected>Mid</option>
+              <option value="Senior">Senior</option>
+              <option value="Lead / Manager">Lead / Manager</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="interviewType">Interview type</label>
+            <select id="interviewType">
+              <option value="Behavioral">Behavioral</option>
+              <option value="Technical" selected>Technical</option>
+              <option value="Mixed">Mixed</option>
+              <option value="Leadership">Leadership</option>
+              <option value="System Design">System Design</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="jobDescription">Job description</label>
+            <textarea id="jobDescription" placeholder="Paste the job posting or a condensed version of it."></textarea>
+          </div>
+          <div class="field full">
+            <label for="resumeText">Resume context (optional)</label>
+            <textarea id="resumeText" placeholder="Paste a short resume summary or the key experience you want to practice with."></textarea>
+          </div>
+          <div class="field full">
+            <label for="focusAreas">Focus areas (optional)</label>
+            <input id="focusAreas" type="text" placeholder="React, API design, teamwork, metrics, leadership" />
+            <div class="hint">Use this to steer the question set toward topics you want to rehearse harder.</div>
+          </div>
+        </div>
+
+        <div class="section-actions">
+          <button class="btn btn-primary" id="generateBtnPanel" type="button">Generate Questions</button>
+          <button class="btn" id="saveDraftBtn" type="button">Save Draft</button>
+          <button class="btn" id="clearBtn" type="button">Clear Session</button>
+        </div>
+        <div id="setupStatus" class="status" aria-live="polite"></div>
+
+        <div class="question-list" id="questionList" aria-live="polite">
+          <div class="history-item">
+            <strong>No questions yet</strong>
+            <span>Generate a set of questions to start practicing.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Practice and feedback</h2>
+        <p class="sub">Select a question, draft your answer, then let the coach pressure-test it and give you sharper wording.</p>
+
+        <div class="active-question" id="activeQuestion">
+          <h3>Generate questions to begin.</h3>
+          <p>Your active question will appear here.</p>
+        </div>
+
+        <div class="field full answer-box" style="margin-top:.9rem;">
+          <label for="answerText">Your answer</label>
+          <textarea id="answerText" placeholder="Answer out loud first, then type the version you want coached."></textarea>
+        </div>
+
+        <div class="section-actions">
+          <button class="btn btn-primary" id="evaluateBtnPanel" type="button">Evaluate Answer</button>
+          <button class="btn" id="copyBetterBtn" type="button">Copy Better Answer</button>
+        </div>
+
+        <div class="result-grid" id="resultGrid">
+          <div class="result-card">
+            <h3>Score</h3>
+            <div class="score-row">
+              <div class="score-number" id="scoreValue">--</div>
+              <div class="score-desc" id="scoreSummary">Your answer score and summary will appear here.</div>
+            </div>
+            <div class="bar" aria-hidden="true"><div class="bar-fill" id="scoreFill"></div></div>
+            <div class="hint" id="scoreHint">Focus on concrete examples, measurable outcomes, and a cleaner structure.</div>
+          </div>
+
+          <div class="result-card">
+            <h3>Strengths</h3>
+            <div class="list" id="strengthsList">
+              <div class="list-item">No feedback yet</div>
+            </div>
+          </div>
+
+          <div class="result-card">
+            <h3>Improvements</h3>
+            <div class="list" id="improvementsList">
+              <div class="list-item">No feedback yet</div>
+            </div>
+          </div>
+
+          <div class="result-card">
+            <h3>Better answer</h3>
+            <div class="better-answer" id="betterAnswer">Generate feedback to see a stronger version of your answer.</div>
+          </div>
+
+          <div class="result-card">
+            <h3>Follow-up question</h3>
+            <div class="better-answer" id="followUpQuestion">The coach will ask a deeper follow-up after your first pass.</div>
+          </div>
+        </div>
+
+        <div class="footer-actions">
+          <button class="btn" id="saveSessionBtn" type="button">Save Session</button>
+          <button class="btn" id="loadHistoryBtn" type="button">Refresh History</button>
+        </div>
+
+        <h2 style="margin-top:1.1rem;">Recent sessions</h2>
+        <p class="sub">Stored locally in this browser so you can come back to what you practiced.</p>
+        <div class="history" id="historyList"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      questions: [],
+      selectedId: '',
+      lastEvaluation: null,
+      lastGeneration: null
+    };
+
+    const els = {
+      jobTitle: document.getElementById('jobTitle'),
+      companyName: document.getElementById('companyName'),
+      experienceLevel: document.getElementById('experienceLevel'),
+      interviewType: document.getElementById('interviewType'),
+      jobDescription: document.getElementById('jobDescription'),
+      resumeText: document.getElementById('resumeText'),
+      focusAreas: document.getElementById('focusAreas'),
+      answerText: document.getElementById('answerText'),
+      questionList: document.getElementById('questionList'),
+      activeQuestion: document.getElementById('activeQuestion'),
+      pageStatus: document.getElementById('pageStatus'),
+      setupStatus: document.getElementById('setupStatus'),
+      scoreValue: document.getElementById('scoreValue'),
+      scoreSummary: document.getElementById('scoreSummary'),
+      scoreFill: document.getElementById('scoreFill'),
+      scoreHint: document.getElementById('scoreHint'),
+      strengthsList: document.getElementById('strengthsList'),
+      improvementsList: document.getElementById('improvementsList'),
+      betterAnswer: document.getElementById('betterAnswer'),
+      followUpQuestion: document.getElementById('followUpQuestion'),
+      historyList: document.getElementById('historyList'),
+      metricQuestions: document.getElementById('metricQuestions'),
+      metricScore: document.getElementById('metricScore'),
+      metricHistory: document.getElementById('metricHistory'),
+      metricMode: document.getElementById('metricMode')
+    };
+
+    const storageKey = 'careercraft-interview-history';
+    const draftKey = 'careercraft-interview-draft';
+
+    function setStatus(target, message, type = '') {
+      target.textContent = message;
+      target.className = `status ${type}`.trim();
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.appendChild(document.createTextNode(String(text || '')));
+      return div.innerHTML;
+    }
+
+    function loadHistory() {
+      try {
+        const raw = localStorage.getItem(storageKey);
+        return raw ? JSON.parse(raw) : [];
+      } catch (_err) {
+        return [];
+      }
+    }
+
+    function saveHistory(items) {
+      localStorage.setItem(storageKey, JSON.stringify(items.slice(0, 8)));
+    }
+
+    function loadDraft() {
+      try {
+        const raw = localStorage.getItem(draftKey);
+        return raw ? JSON.parse(raw) : null;
+      } catch (_err) {
+        return null;
+      }
+    }
+
+    function saveDraft() {
+      const draft = readContext();
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+      setStatus(els.setupStatus, 'Draft saved locally in this browser.', 'success');
+    }
+
+    function readContext() {
+      return {
+        jobTitle: els.jobTitle.value.trim(),
+        companyName: els.companyName.value.trim(),
+        experienceLevel: els.experienceLevel.value.trim(),
+        interviewType: els.interviewType.value.trim(),
+        jobDescription: els.jobDescription.value.trim(),
+        resumeText: els.resumeText.value.trim(),
+        focusAreas: els.focusAreas.value.trim()
+      };
+    }
+
+    function renderQuestionList() {
+      if (!state.questions.length) {
+        els.questionList.innerHTML = `
+          <div class="history-item">
+            <strong>No questions yet</strong>
+            <span>Generate a set of questions to start practicing.</span>
+          </div>`;
+        return;
+      }
+
+      els.questionList.innerHTML = state.questions.map(q => `
+        <button type="button" class="question-item ${q.id === state.selectedId ? 'active' : ''}" data-id="${escapeHtml(q.id)}">
+          <div class="question-meta">
+            <span class="chip">${escapeHtml(q.category || 'general')}</span>
+            <span class="chip">${escapeHtml(q.difficulty || 'medium')}</span>
+          </div>
+          <div class="question-text">${escapeHtml(q.question)}</div>
+        </button>
+      `).join('');
+    }
+
+    function renderActiveQuestion() {
+      const q = state.questions.find(item => item.id === state.selectedId);
+      if (!q) {
+        els.activeQuestion.innerHTML = `
+          <h3>Generate questions to begin.</h3>
+          <p>Your active question will appear here.</p>`;
+        els.metricMode.textContent = 'Live';
+        return;
+      }
+
+      els.activeQuestion.innerHTML = `
+        <div class="question-meta">
+          <span class="chip">${escapeHtml(q.category || 'general')}</span>
+          <span class="chip">${escapeHtml(q.difficulty || 'medium')}</span>
+        </div>
+        <h3>${escapeHtml(q.question)}</h3>
+        <p>${escapeHtml(q.why_it_matters || 'This question is important because it tests core interview readiness.')}</p>
+        <p>Sample points to hit:</p>
+        <ul>${(q.sample_points || []).map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ul>`;
+      els.metricMode.textContent = q.category || 'Live';
+    }
+
+    function renderHistory() {
+      const history = loadHistory();
+      els.metricHistory.textContent = String(history.length);
+
+      if (!history.length) {
+        els.historyList.innerHTML = `
+          <div class="history-item">
+            <strong>No saved sessions</strong>
+            <span>Save a practice run to keep a local trail of your progress.</span>
+          </div>`;
+        return;
+      }
+
+      els.historyList.innerHTML = history.map(item => `
+        <div class="history-item">
+          <strong>${escapeHtml(item.title || 'Interview Session')}</strong>
+          <span>${escapeHtml(item.company || 'Unknown company')} | Score: ${item.score ?? '--'} | ${new Date(item.createdAt).toLocaleString()}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderEvaluation(data) {
+      state.lastEvaluation = data;
+      const score = Number(data.score) || 0;
+      els.metricScore.textContent = String(score);
+      els.scoreValue.textContent = String(score);
+      els.scoreSummary.textContent = data.summary || 'Feedback loaded.';
+      els.scoreFill.style.width = `${Math.max(0, Math.min(100, score))}%`;
+      els.scoreHint.textContent = score >= 85
+        ? 'Great answer. Now make it even tighter and more specific.'
+        : score >= 70
+          ? 'Good foundation. Add sharper proof, cleaner structure, and a stronger finish.'
+          : 'Build around a direct answer, one concrete example, and a result.';
+
+      els.strengthsList.innerHTML = (data.strengths || []).length
+        ? data.strengths.map(item => `<div class="list-item">${escapeHtml(item)}</div>`).join('')
+        : '<div class="list-item">No strengths returned</div>';
+      els.improvementsList.innerHTML = (data.improvements || []).length
+        ? data.improvements.map(item => `<div class="list-item">${escapeHtml(item)}</div>`).join('')
+        : '<div class="list-item">No improvements returned</div>';
+      els.betterAnswer.textContent = data.better_answer || 'No revised answer returned.';
+      els.followUpQuestion.textContent = data.follow_up_question || 'No follow-up question returned.';
+    }
+
+    function resetFeedbackView() {
+      state.lastEvaluation = null;
+      els.answerText.value = '';
+      els.scoreValue.textContent = '--';
+      els.scoreSummary.textContent = 'Your answer score and summary will appear here.';
+      els.scoreFill.style.width = '0%';
+      els.scoreHint.textContent = 'Focus on concrete examples, measurable outcomes, and a cleaner structure.';
+      els.strengthsList.innerHTML = '<div class="list-item">No feedback yet</div>';
+      els.improvementsList.innerHTML = '<div class="list-item">No feedback yet</div>';
+      els.betterAnswer.textContent = 'Generate feedback to see a stronger version of your answer.';
+      els.followUpQuestion.textContent = 'The coach will ask a deeper follow-up after your first pass.';
+      els.metricScore.textContent = '--';
+    }
+
+    async function generateQuestions() {
+      const context = readContext();
+      if (!context.jobTitle || !context.companyName || !context.jobDescription) {
+        setStatus(els.setupStatus, 'Please fill in job title, company, and job description.', 'error');
+        return;
+      }
+
+      setStatus(els.pageStatus, 'Generating question set...', 'loading');
+      setStatus(els.setupStatus, 'Working on your question set...', 'loading');
+      toggleControls(true);
+
+      try {
+        const response = await fetch('/api/interview-coach', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'generate_questions',
+            ...context
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to generate questions.');
+
+        state.questions = Array.isArray(data.questions) ? data.questions : [];
+        state.selectedId = state.questions[0]?.id || '';
+        state.lastGeneration = data;
+        resetFeedbackView();
+        renderQuestionList();
+        renderActiveQuestion();
+        els.metricQuestions.textContent = String(state.questions.length || 5);
+        setStatus(els.pageStatus, data.interview_summary || 'Question set ready.', 'success');
+        setStatus(els.setupStatus, 'Question set generated.', 'success');
+      } catch (error) {
+        setStatus(els.pageStatus, error.message, 'error');
+        setStatus(els.setupStatus, error.message, 'error');
+      } finally {
+        toggleControls(false);
+      }
+    }
+
+    async function evaluateAnswer() {
+      const context = readContext();
+      const question = state.questions.find(item => item.id === state.selectedId);
+
+      if (!question) {
+        setStatus(els.setupStatus, 'Generate questions before evaluating an answer.', 'error');
+        return;
+      }
+
+      if (!els.answerText.value.trim()) {
+        setStatus(els.setupStatus, 'Type an answer before requesting feedback.', 'error');
+        return;
+      }
+
+      setStatus(els.pageStatus, 'Evaluating answer...', 'loading');
+      setStatus(els.setupStatus, 'Scoring your answer...', 'loading');
+      toggleControls(true);
+
+      try {
+        const response = await fetch('/api/interview-coach', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'evaluate_answer',
+            question: question.question,
+            answer: els.answerText.value.trim(),
+            ...context
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to evaluate answer.');
+
+        renderEvaluation(data);
+        setStatus(els.pageStatus, 'Answer feedback is ready.', 'success');
+        setStatus(els.setupStatus, 'Answer evaluated.', 'success');
+        saveSession(true);
+      } catch (error) {
+        setStatus(els.pageStatus, error.message, 'error');
+        setStatus(els.setupStatus, error.message, 'error');
+      } finally {
+        toggleControls(false);
+      }
+    }
+
+    function toggleControls(disabled) {
+      ['generateBtn', 'generateBtnPanel', 'evaluateBtn', 'evaluateBtnPanel', 'nextBtn', 'saveDraftBtn', 'clearBtn', 'saveSessionBtn', 'loadHistoryBtn', 'copyBetterBtn']
+        .forEach(id => {
+          const node = document.getElementById(id);
+          if (node) node.disabled = disabled && !['nextBtn', 'saveDraftBtn', 'clearBtn', 'loadHistoryBtn', 'copyBetterBtn'].includes(id);
+        });
+    }
+
+    function selectQuestion(id) {
+      state.selectedId = id;
+      renderQuestionList();
+      renderActiveQuestion();
+    }
+
+    function nextQuestion() {
+      if (!state.questions.length) return;
+      const currentIndex = state.questions.findIndex(item => item.id === state.selectedId);
+      const nextIndex = currentIndex < 0 || currentIndex === state.questions.length - 1 ? 0 : currentIndex + 1;
+      selectQuestion(state.questions[nextIndex].id);
+      resetFeedbackView();
+      els.answerText.focus();
+      setStatus(els.setupStatus, 'Moved to the next question.', 'success');
+    }
+
+    function clearSession() {
+      if (!confirm('Clear the current form, question set, and answer text?')) return;
+      state.questions = [];
+      state.selectedId = '';
+      state.lastEvaluation = null;
+      state.lastGeneration = null;
+      els.jobTitle.value = '';
+      els.companyName.value = '';
+      els.jobDescription.value = '';
+      els.resumeText.value = '';
+      els.focusAreas.value = '';
+      els.answerText.value = '';
+      els.scoreValue.textContent = '--';
+      els.scoreSummary.textContent = 'Your answer score and summary will appear here.';
+      els.scoreFill.style.width = '0%';
+      els.scoreHint.textContent = 'Focus on concrete examples, measurable outcomes, and a cleaner structure.';
+      els.strengthsList.innerHTML = '<div class="list-item">No feedback yet</div>';
+      els.improvementsList.innerHTML = '<div class="list-item">No feedback yet</div>';
+      els.betterAnswer.textContent = 'Generate feedback to see a stronger version of your answer.';
+      els.followUpQuestion.textContent = 'The coach will ask a deeper follow-up after your first pass.';
+      setStatus(els.pageStatus, 'Session cleared.', 'success');
+      setStatus(els.setupStatus, 'Session cleared.', 'success');
+      renderQuestionList();
+      renderActiveQuestion();
+    }
+
+    function loadDemo() {
+      els.jobTitle.value = 'Frontend Engineer';
+      els.companyName.value = 'Northstar Labs';
+      els.experienceLevel.value = 'Mid';
+      els.interviewType.value = 'Technical';
+      els.jobDescription.value = 'Build customer-facing product features, improve React performance, collaborate with design and backend teams, and own polished UI delivery.';
+      els.resumeText.value = 'Built reusable UI components, shipped product experiments, and worked closely with product and design on a fast-moving team.';
+      els.focusAreas.value = 'React, performance, collaboration, product thinking, debugging';
+      setStatus(els.setupStatus, 'Demo data loaded. Generate a question set when ready.', 'success');
+    }
+
+    function saveSession(silent = false) {
+      const history = loadHistory();
+      const item = {
+        title: state.lastGeneration?.interview_title || `${els.jobTitle.value.trim() || 'Interview'} Session`,
+        company: els.companyName.value.trim() || 'Unknown company',
+        score: state.lastEvaluation?.score ?? null,
+        createdAt: new Date().toISOString()
+      };
+      saveHistory([item, ...history]);
+      renderHistory();
+      if (!silent) {
+        setStatus(els.setupStatus, 'Session saved locally.', 'success');
+      }
+    }
+
+    async function copyBetterAnswer() {
+      const text = state.lastEvaluation?.better_answer || '';
+      if (!text) {
+        setStatus(els.setupStatus, 'Generate feedback first so there is something to copy.', 'error');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatus(els.setupStatus, 'Better answer copied to clipboard.', 'success');
+      } catch (_err) {
+        setStatus(els.setupStatus, 'Clipboard access was blocked by the browser.', 'error');
+      }
+    }
+
+    function restoreDraft() {
+      const draft = loadDraft();
+      if (!draft) return;
+      els.jobTitle.value = draft.jobTitle || '';
+      els.companyName.value = draft.companyName || '';
+      els.experienceLevel.value = draft.experienceLevel || 'Mid';
+      els.interviewType.value = draft.interviewType || 'Technical';
+      els.jobDescription.value = draft.jobDescription || '';
+      els.resumeText.value = draft.resumeText || '';
+      els.focusAreas.value = draft.focusAreas || '';
+    }
+
+    function bindEvents() {
+      document.getElementById('generateBtn').addEventListener('click', generateQuestions);
+      document.getElementById('generateBtnPanel').addEventListener('click', generateQuestions);
+      document.getElementById('evaluateBtn').addEventListener('click', evaluateAnswer);
+      document.getElementById('evaluateBtnPanel').addEventListener('click', evaluateAnswer);
+      document.getElementById('nextBtn').addEventListener('click', nextQuestion);
+      document.getElementById('saveDraftBtn').addEventListener('click', saveDraft);
+      document.getElementById('clearBtn').addEventListener('click', clearSession);
+      document.getElementById('saveSessionBtn').addEventListener('click', saveSession);
+      document.getElementById('loadHistoryBtn').addEventListener('click', renderHistory);
+      document.getElementById('loadDemoBtn').addEventListener('click', loadDemo);
+      document.getElementById('copyBetterBtn').addEventListener('click', copyBetterAnswer);
+
+      els.questionList.addEventListener('click', event => {
+        const button = event.target.closest('[data-id]');
+        if (!button) return;
+        selectQuestion(button.dataset.id);
+      });
+
+      [els.jobTitle, els.companyName, els.experienceLevel, els.interviewType, els.jobDescription, els.resumeText, els.focusAreas]
+        .forEach(node => node.addEventListener('input', () => {
+          localStorage.setItem(draftKey, JSON.stringify(readContext()));
+        }));
+    }
+
+    function init() {
+      bindEvents();
+      restoreDraft();
+      renderHistory();
+      renderQuestionList();
+      renderActiveQuestion();
+      els.metricHistory.textContent = String(loadHistory().length);
+      if (state.lastEvaluation?.score) {
+        els.metricScore.textContent = String(state.lastEvaluation.score);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
