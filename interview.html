@@ -548,11 +548,11 @@
         <div class="eyebrow">Interview practice and feedback</div>
         <h1>Coach your answers before the real interview.</h1>
         <p>
-          Generate role-specific interview questions, practice one answer at a time, and get concrete feedback on clarity,
-          specificity, and structure. The whole flow is designed to help you sound calm, prepared, and real.
+          Build a simple practice set from your resume and job details, then rehearse by typing or speaking.
+          The coach keeps the flow light, practical, and easy to use.
         </p>
         <div class="hero-actions">
-          <button class="btn btn-primary" id="generateBtn" type="button">Generate Questions</button>
+          <button class="btn btn-primary" id="generateBtn" type="button">Build Practice Set</button>
           <button class="btn" id="evaluateBtn" type="button">Evaluate Answer</button>
           <button class="btn" id="nextBtn" type="button">Next Question</button>
         </div>
@@ -575,12 +575,11 @@
           </div>
           <div class="metric">
             <strong id="metricMode">Live</strong>
-            <span>One question selected at a time</span>
+            <span>Resume-aware practice mode</span>
           </div>
         </div>
         <div class="mini-note">
-          This first release stays local by design. No account data is saved on the server, so you can practice freely while we
-          build the next layer.
+          This version stays simple. Your resume and job details shape the practice set, and voice practice works in the browser.
         </div>
       </aside>
     </section>
@@ -619,6 +618,15 @@
               <option value="System Design">System Design</option>
             </select>
           </div>
+          <div class="field">
+            <label for="practiceMode">Practice mode</label>
+            <select id="practiceMode">
+              <option value="Quick">Quick practice</option>
+              <option value="Resume-based" selected>Resume-based</option>
+              <option value="Voice">Voice practice</option>
+              <option value="Mixed">Mixed</option>
+            </select>
+          </div>
           <div class="field full">
             <label for="jobDescription">Job description</label>
             <textarea id="jobDescription" placeholder="Paste the job posting or a condensed version of it."></textarea>
@@ -635,7 +643,7 @@
         </div>
 
         <div class="section-actions">
-          <button class="btn btn-primary" id="generateBtnPanel" type="button">Generate Questions</button>
+          <button class="btn btn-primary" id="generateBtnPanel" type="button">Build Practice Set</button>
           <button class="btn" id="saveDraftBtn" type="button">Save Draft</button>
           <button class="btn" id="clearBtn" type="button">Clear Session</button>
         </div>
@@ -665,6 +673,8 @@
 
         <div class="section-actions">
           <button class="btn btn-primary" id="evaluateBtnPanel" type="button">Evaluate Answer</button>
+          <button class="btn" id="speakQuestionBtn" type="button">Speak Question</button>
+          <button class="btn" id="voiceAnswerBtn" type="button">Voice Answer</button>
           <button class="btn" id="copyBetterBtn" type="button">Copy Better Answer</button>
         </div>
 
@@ -729,6 +739,7 @@
       companyName: document.getElementById('companyName'),
       experienceLevel: document.getElementById('experienceLevel'),
       interviewType: document.getElementById('interviewType'),
+      practiceMode: document.getElementById('practiceMode'),
       jobDescription: document.getElementById('jobDescription'),
       resumeText: document.getElementById('resumeText'),
       focusAreas: document.getElementById('focusAreas'),
@@ -749,7 +760,9 @@
       metricQuestions: document.getElementById('metricQuestions'),
       metricScore: document.getElementById('metricScore'),
       metricHistory: document.getElementById('metricHistory'),
-      metricMode: document.getElementById('metricMode')
+      metricMode: document.getElementById('metricMode'),
+      speakQuestionBtn: document.getElementById('speakQuestionBtn'),
+      voiceAnswerBtn: document.getElementById('voiceAnswerBtn')
     };
 
     const storageKey = 'careercraft-interview-history';
@@ -800,6 +813,7 @@
         companyName: els.companyName.value.trim(),
         experienceLevel: els.experienceLevel.value.trim(),
         interviewType: els.interviewType.value.trim(),
+        practiceMode: els.practiceMode.value.trim(),
         jobDescription: els.jobDescription.value.trim(),
         resumeText: els.resumeText.value.trim(),
         focusAreas: els.focusAreas.value.trim()
@@ -833,7 +847,7 @@
         els.activeQuestion.innerHTML = `
           <h3>Generate questions to begin.</h3>
           <p>Your active question will appear here.</p>`;
-        els.metricMode.textContent = 'Live';
+        els.metricMode.textContent = els.practiceMode.value || 'Live';
         return;
       }
 
@@ -846,7 +860,7 @@
         <p>${escapeHtml(q.why_it_matters || 'This question is important because it tests core interview readiness.')}</p>
         <p>Sample points to hit:</p>
         <ul>${(q.sample_points || []).map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ul>`;
-      els.metricMode.textContent = q.category || 'Live';
+      els.metricMode.textContent = els.practiceMode.value || q.category || 'Live';
     }
 
     function renderHistory() {
@@ -905,17 +919,18 @@
       els.betterAnswer.textContent = 'Generate feedback to see a stronger version of your answer.';
       els.followUpQuestion.textContent = 'The coach will ask a deeper follow-up after your first pass.';
       els.metricScore.textContent = '--';
+      setStatus(els.setupStatus, 'Practice set ready when you are.', '');
     }
 
     async function generateQuestions() {
       const context = readContext();
-      if (!context.jobTitle || !context.companyName || !context.jobDescription) {
-        setStatus(els.setupStatus, 'Please fill in job title, company, and job description.', 'error');
+      if (!context.jobTitle || !context.companyName) {
+        setStatus(els.setupStatus, 'Please fill in job title and company.', 'error');
         return;
       }
 
-      setStatus(els.pageStatus, 'Generating question set...', 'loading');
-      setStatus(els.setupStatus, 'Working on your question set...', 'loading');
+      setStatus(els.pageStatus, 'Building your practice set...', 'loading');
+      setStatus(els.setupStatus, 'Creating questions from your resume and job details...', 'loading');
       toggleControls(true);
 
       try {
@@ -938,8 +953,11 @@
         renderQuestionList();
         renderActiveQuestion();
         els.metricQuestions.textContent = String(state.questions.length || 5);
-        setStatus(els.pageStatus, data.interview_summary || 'Question set ready.', 'success');
-        setStatus(els.setupStatus, 'Question set generated.', 'success');
+        const prep = Array.isArray(data.prep_notes) && data.prep_notes.length
+          ? `Prep: ${data.prep_notes[0]}`
+          : 'Practice set ready.';
+        setStatus(els.pageStatus, data.interview_summary || prep, 'success');
+        setStatus(els.setupStatus, prep, 'success');
       } catch (error) {
         setStatus(els.pageStatus, error.message, 'error');
         setStatus(els.setupStatus, error.message, 'error');
@@ -1017,6 +1035,67 @@
       setStatus(els.setupStatus, 'Moved to the next question.', 'success');
     }
 
+    function speakCurrentQuestion() {
+      const q = state.questions.find(item => item.id === state.selectedId);
+      if (!q || !window.speechSynthesis) {
+        setStatus(els.setupStatus, 'Speech is not available in this browser.', 'error');
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(q.question);
+      utterance.rate = 0.95;
+      utterance.pitch = 1;
+      window.speechSynthesis.speak(utterance);
+      setStatus(els.setupStatus, 'Question spoken aloud.', 'success');
+    }
+
+    let voiceRecognition = null;
+
+    function startVoiceAnswer() {
+      const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!Recognition) {
+        setStatus(els.setupStatus, 'Voice input is not supported in this browser.', 'error');
+        return;
+      }
+
+      if (voiceRecognition) {
+        voiceRecognition.stop();
+        voiceRecognition = null;
+        setStatus(els.setupStatus, 'Voice capture stopped.', 'success');
+        return;
+      }
+
+      voiceRecognition = new Recognition();
+      voiceRecognition.lang = 'en-US';
+      voiceRecognition.interimResults = true;
+      voiceRecognition.continuous = false;
+
+      let finalTranscript = '';
+      voiceRecognition.onresult = event => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript + ' ';
+          }
+        }
+        els.answerText.value = (finalTranscript + transcript).trim();
+      };
+
+      voiceRecognition.onerror = () => {
+        setStatus(els.setupStatus, 'Voice capture could not start.', 'error');
+        voiceRecognition = null;
+      };
+
+      voiceRecognition.onend = () => {
+        voiceRecognition = null;
+        setStatus(els.setupStatus, 'Voice answer captured.', 'success');
+      };
+
+      voiceRecognition.start();
+      setStatus(els.setupStatus, 'Listening for your answer...', 'loading');
+    }
+
     function clearSession() {
       if (!confirm('Clear the current form, question set, and answer text?')) return;
       state.questions = [];
@@ -1025,6 +1104,7 @@
       state.lastGeneration = null;
       els.jobTitle.value = '';
       els.companyName.value = '';
+      els.practiceMode.value = 'Resume-based';
       els.jobDescription.value = '';
       els.resumeText.value = '';
       els.focusAreas.value = '';
@@ -1048,6 +1128,7 @@
       els.companyName.value = 'Northstar Labs';
       els.experienceLevel.value = 'Mid';
       els.interviewType.value = 'Technical';
+      els.practiceMode.value = 'Resume-based';
       els.jobDescription.value = 'Build customer-facing product features, improve React performance, collaborate with design and backend teams, and own polished UI delivery.';
       els.resumeText.value = 'Built reusable UI components, shipped product experiments, and worked closely with product and design on a fast-moving team.';
       els.focusAreas.value = 'React, performance, collaboration, product thinking, debugging';
@@ -1090,6 +1171,7 @@
       els.companyName.value = draft.companyName || '';
       els.experienceLevel.value = draft.experienceLevel || 'Mid';
       els.interviewType.value = draft.interviewType || 'Technical';
+      els.practiceMode.value = draft.practiceMode || 'Resume-based';
       els.jobDescription.value = draft.jobDescription || '';
       els.resumeText.value = draft.resumeText || '';
       els.focusAreas.value = draft.focusAreas || '';
@@ -1101,6 +1183,8 @@
       document.getElementById('evaluateBtn').addEventListener('click', evaluateAnswer);
       document.getElementById('evaluateBtnPanel').addEventListener('click', evaluateAnswer);
       document.getElementById('nextBtn').addEventListener('click', nextQuestion);
+      document.getElementById('speakQuestionBtn').addEventListener('click', speakCurrentQuestion);
+      document.getElementById('voiceAnswerBtn').addEventListener('click', startVoiceAnswer);
       document.getElementById('saveDraftBtn').addEventListener('click', saveDraft);
       document.getElementById('clearBtn').addEventListener('click', clearSession);
       document.getElementById('saveSessionBtn').addEventListener('click', saveSession);
@@ -1114,7 +1198,7 @@
         selectQuestion(button.dataset.id);
       });
 
-      [els.jobTitle, els.companyName, els.experienceLevel, els.interviewType, els.jobDescription, els.resumeText, els.focusAreas]
+      [els.jobTitle, els.companyName, els.experienceLevel, els.interviewType, els.practiceMode, els.jobDescription, els.resumeText, els.focusAreas]
         .forEach(node => node.addEventListener('input', () => {
           localStorage.setItem(draftKey, JSON.stringify(readContext()));
         }));
