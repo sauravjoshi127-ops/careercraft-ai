@@ -27,4 +27,12 @@ describe('local API route wiring', () => {
     assert.match(res.type, /json/);
     assert.equal(res.body.error, 'User ID is required');
   });
+
+  it('serves /interview locally', async () => {
+    const res = await request(app).get('/interview');
+
+    assert.equal(res.status, 200);
+    assert.match(res.type, /html/);
+    assert.match(res.text, /Interview Coach/i);
+  });
 });

@@ -1,6 +1,6 @@
 # careercraft-ai
 
-AI-powered cover letter generator built with Google Gemini.
+AI-powered career toolkit with resume, cover letter, cold email, and interview coaching built with Google Gemini.
 
 ## Quick Setup (3 steps)
 

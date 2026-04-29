@@ -96,6 +96,71 @@ function parseGeminiResponse(text) {
   return data;
 }
 
+function stripHtml(text) {
+  return String(text || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function truncate(text, maxLen) {
+  const value = stripHtml(text);
+  if (value.length <= maxLen) return value;
+  return `${value.slice(0, Math.max(0, maxLen - 1)).trimEnd()}…`;
+}
+
+function buildFallbackColdEmail(data, reason) {
+  const company = data.company || 'your company';
+  const recipientName = data.recipientName || '';
+  const greeting = recipientName ? `Hi ${recipientName},` : 'Hi there,';
+  const background = truncate(data.background || 'I work on practical, revenue-focused execution.', 140);
+  const purpose = data.purpose || 'reaching out';
+  const hook = truncate(data.valueProposition || 'I can help create sharper outreach that gets responses.', 110);
+  const industry = data.industry || 'your space';
+  const sender = data.senderName || 'I';
+
+  const variants = [
+    {
+      subject: 'quick idea',
+      body: `${greeting}\n\nI’m ${sender}.\n\nI’ve been thinking about ${company} and how teams in ${industry} keep outreach moving without sounding generic. ${background}\n\nOne angle that stood out: ${hook}\n\nIf it’s relevant, I’d love to share a few ideas for ${purpose.toLowerCase()}.\n\nWorth a quick chat?`,
+      approach: 'PAS Framework'
+    },
+    {
+      subject: 'thought for you',
+      body: `${greeting}\n\nI came across ${company} and wanted to reach out because the work feels especially relevant to what I do.\n\n${background}\n\nWhat I can bring here is simple: clearer messaging, stronger follow-up, and a tighter path from interest to response.\n\nIf useful, I can send a short example tailored to your team.\n\nOpen to that?`,
+      approach: 'AIDA Framework'
+    },
+    {
+      subject: 'quick note',
+      body: `${greeting}\n\n${hook}\n\nIf this is useful for ${company}, I’d be glad to send one tight example.\n\nOpen to it?`,
+      approach: 'Ultra-Short Curiosity'
+    }
+  ];
+
+  const combinedText = variants.map(v => `${v.subject} ${v.body}`).join(' ').toLowerCase();
+  const spamWords = SPAM_WORDS.filter(word => combinedText.includes(word.toLowerCase()));
+
+  return {
+    variants,
+    scores: {
+      personalisation: recipientName ? 84 : 78,
+      clarity: 88,
+      cta: 82,
+      length: 90
+    },
+    tips: [
+      `Variant 1 opens with ${company} and ties the outreach to ${industry}.`,
+      'Variant 2 emphasizes value, clarity, and a low-friction next step.',
+      'Variant 3 stays short and curiosity-led so it feels easy to reply to.'
+    ],
+    followUp: `${recipientName ? `Hi ${recipientName},` : 'Hi there,'}\n\nJust circling back with one more idea: I can send a tighter version tailored to ${company} if that would be useful.\n\nNo rush either way.`,
+    bestTimeToSend: 'Tuesday-Thursday, 8-10am',
+    spamWords,
+    fallbackUsed: true,
+    fallbackReason: reason
+  };
+}
+
 async function callGeminiWithRetry(apiKey, body, maxRetries = 3) {
   const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -144,7 +209,6 @@ module.exports = async function handler(req, res) {
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY is not set.' });
 
   // ── Usage limiting ───────────────────────────────────────────────────────────
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -215,6 +279,14 @@ module.exports = async function handler(req, res) {
   // ── Generate emails ──────────────────────────────────────────────────────────
   const prompt = buildEmailPrompt({ company, recipientTitle, recipientName, senderName, background, purpose, valueProposition, industry, tone, length });
 
+  if (!apiKey) {
+    const fallback = buildFallbackColdEmail(
+      { company, recipientTitle, recipientName, senderName, background, purpose, valueProposition, industry, tone, length },
+      'GEMINI_API_KEY is not set.'
+    );
+    return res.status(200).json(fallback);
+  }
+
   try {
     let r;
     try {
@@ -223,19 +295,31 @@ module.exports = async function handler(req, res) {
         generationConfig: { temperature: 0.8, maxOutputTokens: 2000 }
       });
     } catch (retryErr) {
-      return res.status(429).json({ error: retryErr.message });
+      const fallback = buildFallbackColdEmail(
+        { company, recipientTitle, recipientName, senderName, background, purpose, valueProposition, industry, tone, length },
+        retryErr.message
+      );
+      return res.status(200).json(fallback);
     }
 
     if (!r.ok) {
       const errText = await r.text();
       console.error('[cold-email] Gemini HTTP error:', r.status, errText);
-      return res.status(502).json({ error: `AI service error: ${r.status}. Please try again.` });
+      const fallback = buildFallbackColdEmail(
+        { company, recipientTitle, recipientName, senderName, background, purpose, valueProposition, industry, tone, length },
+        `AI service error: ${r.status}`
+      );
+      return res.status(200).json(fallback);
     }
 
     const result = await r.json();
     if (!result?.candidates?.[0]?.content?.parts?.[0]) {
       console.error('[cold-email] Unexpected Gemini response:', JSON.stringify(result).substring(0, 300));
-      return res.status(502).json({ error: 'Unexpected response from AI service. Please try again.' });
+      const fallback = buildFallbackColdEmail(
+        { company, recipientTitle, recipientName, senderName, background, purpose, valueProposition, industry, tone, length },
+        'Unexpected response from AI service.'
+      );
+      return res.status(200).json(fallback);
     }
 
     const rawText = result.candidates[0].content.parts[0].text || '';
@@ -245,6 +329,10 @@ module.exports = async function handler(req, res) {
     return res.status(200).json(data);
   } catch (err) {
     console.error('[cold-email] Generation error:', err);
-    return res.status(500).json({ error: 'Failed to generate cold emails. Please try again.' });
+    const fallback = buildFallbackColdEmail(
+      { company, recipientTitle, recipientName, senderName, background, purpose, valueProposition, industry, tone, length },
+      err.message || 'Failed to generate cold emails.'
+    );
+    return res.status(200).json(fallback);
   }
 };
