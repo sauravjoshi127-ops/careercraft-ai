@@ -240,7 +240,7 @@ module.exports = async function handler(req, res) {
 
     const rawText = result.candidates[0].content.parts[0].text || '';
     const data = parseGeminiResponse(rawText);
-    data.isPro = true; // Unlocked for development/testing
+    data.isPro = isPro;
 
     return res.status(200).json(data);
   } catch (err) {
