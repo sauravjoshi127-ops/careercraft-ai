@@ -172,6 +172,9 @@
       flex-wrap:wrap;
       margin-bottom:1rem;
     }
+    .hero-actions.compact{
+      margin-bottom:.25rem;
+    }
     .btn{
       display:inline-flex;
       align-items:center;
@@ -307,6 +310,41 @@
       color:var(--muted);
       font-size:.78rem;
       line-height:1.45;
+    }
+    .upload-row{
+      display:flex;
+      align-items:center;
+      gap:.65rem;
+      flex-wrap:wrap;
+      margin-top:.2rem;
+    }
+    .upload-row .hint{
+      flex:1 1 220px;
+    }
+    .upload-row input[type="file"]{
+      position:absolute;
+      left:-9999px;
+      width:1px;
+      height:1px;
+      opacity:0;
+    }
+    .more-options{
+      margin-top:1rem;
+      border:1px solid rgba(148,163,184,.12);
+      border-radius:.5rem;
+      background:rgba(255,255,255,.02);
+      overflow:hidden;
+    }
+    .more-options summary{
+      list-style:none;
+      cursor:pointer;
+      padding:.85rem 1rem;
+      color:#cbd5e1;
+      font-weight:600;
+    }
+    .more-options summary::-webkit-details-marker{display:none}
+    .more-options .more-body{
+      padding:0 1rem 1rem;
     }
     .section-actions{
       display:flex;
@@ -538,7 +576,6 @@
       <a class="nav-link" href="resume.html">Resume</a>
       <a class="nav-link" href="cover-letter.html">Cover Letter</a>
       <a class="nav-link" href="cold-email.html">Cold Email</a>
-      <button class="nav-btn primary" id="loadDemoBtn" type="button">Load Demo</button>
     </div>
   </nav>
 
@@ -546,15 +583,12 @@
     <section class="hero">
       <div class="hero-copy">
         <div class="eyebrow">Interview practice and feedback</div>
-        <h1>Coach your answers before the real interview.</h1>
+        <h1>Practice interviews without the clutter.</h1>
         <p>
-          Build a simple practice set from your resume and job details, then rehearse by typing or speaking.
-          The coach keeps the flow light, practical, and easy to use.
+          Upload your resume or paste a short summary, add the job details, and get a simple practice set that feels built for a normal person, not a power user.
         </p>
-        <div class="hero-actions">
+        <div class="hero-actions compact">
           <button class="btn btn-primary" id="generateBtn" type="button">Build Practice Set</button>
-          <button class="btn" id="evaluateBtn" type="button">Evaluate Answer</button>
-          <button class="btn" id="nextBtn" type="button">Next Question</button>
         </div>
         <div id="pageStatus" class="status" aria-live="polite">Fill the form below and generate your first set of questions.</div>
       </div>
@@ -574,12 +608,12 @@
             <span>Sessions saved locally in this browser</span>
           </div>
           <div class="metric">
-            <strong id="metricMode">Live</strong>
-            <span>Resume-aware practice mode</span>
+            <strong id="metricMode">Simple</strong>
+            <span>Resume-driven practice mode</span>
           </div>
         </div>
         <div class="mini-note">
-          This version stays simple. Your resume and job details shape the practice set, and voice practice works in the browser.
+          Start with one job, one resume, and one practice set. Voice help is there if you want it, but it never gets in the way.
         </div>
       </aside>
     </section>
@@ -618,22 +652,18 @@
               <option value="System Design">System Design</option>
             </select>
           </div>
-          <div class="field">
-            <label for="practiceMode">Practice mode</label>
-            <select id="practiceMode">
-              <option value="Quick">Quick practice</option>
-              <option value="Resume-based" selected>Resume-based</option>
-              <option value="Voice">Voice practice</option>
-              <option value="Mixed">Mixed</option>
-            </select>
-          </div>
           <div class="field full">
             <label for="jobDescription">Job description</label>
             <textarea id="jobDescription" placeholder="Paste the job posting or a condensed version of it."></textarea>
           </div>
           <div class="field full">
-            <label for="resumeText">Resume context (optional)</label>
-            <textarea id="resumeText" placeholder="Paste a short resume summary or the key experience you want to practice with."></textarea>
+            <label for="resumeText">Resume summary or upload a resume</label>
+            <textarea id="resumeText" placeholder="Paste a short summary, or upload your PDF/DOCX resume below."></textarea>
+            <div class="upload-row">
+              <input id="resumeFile" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+              <button class="btn" id="uploadResumeBtn" type="button">Upload Resume</button>
+              <span class="hint" id="resumeUploadHint">Use a PDF or DOCX. We’ll pull the text in for you.</span>
+            </div>
           </div>
           <div class="field full">
             <label for="focusAreas">Focus areas (optional)</label>
@@ -644,10 +674,32 @@
 
         <div class="section-actions">
           <button class="btn btn-primary" id="generateBtnPanel" type="button">Build Practice Set</button>
-          <button class="btn" id="saveDraftBtn" type="button">Save Draft</button>
-          <button class="btn" id="clearBtn" type="button">Clear Session</button>
         </div>
         <div id="setupStatus" class="status" aria-live="polite"></div>
+
+        <details class="more-options">
+          <summary>More options</summary>
+          <div class="more-body">
+            <div class="field" style="margin-top:.75rem;">
+              <label for="practiceMode">Practice mode</label>
+              <select id="practiceMode">
+                <option value="Quick">Quick practice</option>
+                <option value="Resume-based" selected>Resume-based</option>
+                <option value="Voice">Voice practice</option>
+                <option value="Mixed">Mixed</option>
+              </select>
+            </div>
+            <div class="section-actions">
+              <button class="btn" id="evaluateBtn" type="button">Evaluate Answer</button>
+              <button class="btn" id="nextBtn" type="button">Next Question</button>
+              <button class="btn" id="speakQuestionBtn" type="button">Speak Question</button>
+              <button class="btn" id="voiceAnswerBtn" type="button">Voice Answer</button>
+              <button class="btn" id="saveDraftBtn" type="button">Save Draft</button>
+              <button class="btn" id="clearBtn" type="button">Clear Session</button>
+              <button class="btn" id="loadDemoBtn" type="button">Load Demo</button>
+            </div>
+          </div>
+        </details>
 
         <div class="question-list" id="questionList" aria-live="polite">
           <div class="history-item">
@@ -663,7 +715,7 @@
 
         <div class="active-question" id="activeQuestion">
           <h3>Generate questions to begin.</h3>
-          <p>Your active question will appear here.</p>
+          <p>Your active question will appear here once you build a set.</p>
         </div>
 
         <div class="field full answer-box" style="margin-top:.9rem;">
@@ -673,8 +725,6 @@
 
         <div class="section-actions">
           <button class="btn btn-primary" id="evaluateBtnPanel" type="button">Evaluate Answer</button>
-          <button class="btn" id="speakQuestionBtn" type="button">Speak Question</button>
-          <button class="btn" id="voiceAnswerBtn" type="button">Voice Answer</button>
           <button class="btn" id="copyBetterBtn" type="button">Copy Better Answer</button>
         </div>
 
@@ -742,6 +792,8 @@
       practiceMode: document.getElementById('practiceMode'),
       jobDescription: document.getElementById('jobDescription'),
       resumeText: document.getElementById('resumeText'),
+      resumeFile: document.getElementById('resumeFile'),
+      resumeUploadHint: document.getElementById('resumeUploadHint'),
       focusAreas: document.getElementById('focusAreas'),
       answerText: document.getElementById('answerText'),
       questionList: document.getElementById('questionList'),
@@ -762,7 +814,8 @@
       metricHistory: document.getElementById('metricHistory'),
       metricMode: document.getElementById('metricMode'),
       speakQuestionBtn: document.getElementById('speakQuestionBtn'),
-      voiceAnswerBtn: document.getElementById('voiceAnswerBtn')
+      voiceAnswerBtn: document.getElementById('voiceAnswerBtn'),
+      uploadResumeBtn: document.getElementById('uploadResumeBtn')
     };
 
     const storageKey = 'careercraft-interview-history';
@@ -1011,6 +1064,36 @@
       }
     }
 
+    async function uploadResume() {
+      const file = els.resumeFile.files?.[0];
+      if (!file) {
+        setStatus(els.setupStatus, 'Choose a PDF or DOCX resume first.', 'error');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('resume', file);
+      els.resumeUploadHint.textContent = 'Reading your resume...';
+      setStatus(els.setupStatus, 'Uploading resume...', 'loading');
+
+      try {
+        const response = await fetch('/api/upload-resume', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to upload resume.');
+
+        els.resumeText.value = data.resumeText || '';
+        els.resumeUploadHint.textContent = `Loaded ${file.name}.`;
+        setStatus(els.setupStatus, 'Resume loaded. You can now build your practice set.', 'success');
+      } catch (error) {
+        els.resumeUploadHint.textContent = 'Use a PDF or DOCX. We’ll pull the text in for you.';
+        setStatus(els.setupStatus, error.message, 'error');
+      }
+    }
+
     function toggleControls(disabled) {
       ['generateBtn', 'generateBtnPanel', 'evaluateBtn', 'evaluateBtnPanel', 'nextBtn', 'saveDraftBtn', 'clearBtn', 'saveSessionBtn', 'loadHistoryBtn', 'copyBetterBtn']
         .forEach(id => {
@@ -1107,6 +1190,8 @@
       els.practiceMode.value = 'Resume-based';
       els.jobDescription.value = '';
       els.resumeText.value = '';
+      els.resumeFile.value = '';
+      els.resumeUploadHint.textContent = 'Use a PDF or DOCX. We’ll pull the text in for you.';
       els.focusAreas.value = '';
       els.answerText.value = '';
       els.scoreValue.textContent = '--';
@@ -1131,6 +1216,8 @@
       els.practiceMode.value = 'Resume-based';
       els.jobDescription.value = 'Build customer-facing product features, improve React performance, collaborate with design and backend teams, and own polished UI delivery.';
       els.resumeText.value = 'Built reusable UI components, shipped product experiments, and worked closely with product and design on a fast-moving team.';
+      els.resumeFile.value = '';
+      els.resumeUploadHint.textContent = 'Demo loaded. You can also upload a resume if you prefer.';
       els.focusAreas.value = 'React, performance, collaboration, product thinking, debugging';
       setStatus(els.setupStatus, 'Demo data loaded. Generate a question set when ready.', 'success');
     }
@@ -1174,6 +1261,7 @@
       els.practiceMode.value = draft.practiceMode || 'Resume-based';
       els.jobDescription.value = draft.jobDescription || '';
       els.resumeText.value = draft.resumeText || '';
+      els.resumeUploadHint.textContent = draft.resumeText ? 'Resume summary restored from your draft.' : 'Use a PDF or DOCX. We’ll pull the text in for you.';
       els.focusAreas.value = draft.focusAreas || '';
     }
 
@@ -1185,6 +1273,7 @@
       document.getElementById('nextBtn').addEventListener('click', nextQuestion);
       document.getElementById('speakQuestionBtn').addEventListener('click', speakCurrentQuestion);
       document.getElementById('voiceAnswerBtn').addEventListener('click', startVoiceAnswer);
+      document.getElementById('uploadResumeBtn').addEventListener('click', uploadResume);
       document.getElementById('saveDraftBtn').addEventListener('click', saveDraft);
       document.getElementById('clearBtn').addEventListener('click', clearSession);
       document.getElementById('saveSessionBtn').addEventListener('click', saveSession);
@@ -1202,6 +1291,11 @@
         .forEach(node => node.addEventListener('input', () => {
           localStorage.setItem(draftKey, JSON.stringify(readContext()));
         }));
+
+      els.resumeFile.addEventListener('change', () => {
+        const file = els.resumeFile.files?.[0];
+        els.resumeUploadHint.textContent = file ? `Ready to upload ${file.name}.` : 'Use a PDF or DOCX. We’ll pull the text in for you.';
+      });
     }
 
     function init() {
