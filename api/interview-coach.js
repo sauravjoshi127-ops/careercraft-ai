@@ -1,314 +1,193 @@
 'use strict';
 
-function stripCodeFences(text) {
-  return String(text || '')
-    .replace(/```json\s*/gi, '')
-    .replace(/```\s*/g, '')
-    .trim();
+const STOP_WORDS = new Set([
+  'the', 'and', 'for', 'with', 'that', 'this', 'from', 'your', 'you', 'are', 'was', 'were',
+  'have', 'has', 'had', 'will', 'shall', 'would', 'could', 'should', 'into', 'about', 'what',
+  'when', 'where', 'why', 'how', 'role', 'job', 'company', 'work', 'experience', 'resume',
+  'team', 'teams', 'their', 'they', 'them', 'our', 'ours', 'yourself', 'etc', 'using', 'used',
+  'past', 'current', 'while', 'been', 'being', 'than', 'then', 'there', 'here', 'also', 'can'
+]);
+
+const ACTION_VERBS = [
+  'built', 'led', 'owned', 'shipped', 'launched', 'improved', 'reduced', 'increased',
+  'designed', 'created', 'managed', 'resolved', 'scaled', 'delivered', 'organized',
+  'implemented', 'optimized', 'collaborated', 'debugged'
+];
+
+function normalizeText(value) {
+  return String(value || '').trim();
 }
 
-function extractJsonObject(text) {
-  const cleaned = stripCodeFences(text);
-  const match = cleaned.match(/\{[\s\S]*\}/);
-  return match ? match[0] : cleaned;
-}
-
-function clampScore(value, fallback = 70) {
-  const num = Number(value);
-  if (Number.isFinite(num)) {
-    return Math.max(0, Math.min(100, Math.round(num)));
+function normalizeList(value) {
+  if (Array.isArray(value)) {
+    return value.map(item => normalizeText(item)).filter(Boolean);
   }
-  return fallback;
+  return normalizeText(value)
+    .split(/[,;\n]/)
+    .map(item => item.trim())
+    .filter(Boolean);
 }
 
-function asString(value, fallback = '') {
-  if (typeof value === 'string') {
-    return value.trim();
+function tokenize(text) {
+  return normalizeText(text)
+    .toLowerCase()
+    .split(/[^a-z0-9+#.]+/i)
+    .map(word => word.trim())
+    .filter(word => word.length > 1 && !STOP_WORDS.has(word));
+}
+
+function uniqueWords(text, limit = 12) {
+  const seen = new Set();
+  const out = [];
+  for (const word of tokenize(text)) {
+    if (seen.has(word)) continue;
+    seen.add(word);
+    out.push(word);
+    if (out.length >= limit) break;
   }
-  return fallback;
+  return out;
 }
 
-function asArray(value) {
-  return Array.isArray(value) ? value.filter(Boolean).map(item => String(item).trim()) : [];
+function splitSentences(text) {
+  return normalizeText(text)
+    .split(/(?<=[.!?])\s+/)
+    .map(sentence => sentence.trim())
+    .filter(Boolean);
 }
 
-function normalizeQuestion(item, index) {
-  return {
-    id: asString(item?.id, `q${index + 1}`),
-    question: asString(item?.question, ''),
-    category: asString(item?.category, 'general'),
-    difficulty: asString(item?.difficulty, 'medium'),
-    why_it_matters: asString(item?.why_it_matters || item?.whyItMatters, ''),
-    sample_points: asArray(item?.sample_points || item?.samplePoints).slice(0, 4)
-  };
+function pickKeywords(...sources) {
+  const counts = new Map();
+  for (const source of sources) {
+    for (const word of tokenize(source)) {
+      counts.set(word, (counts.get(word) || 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([word]) => word)
+    .slice(0, 8);
 }
 
-function normalizeGeneratePayload(data, context) {
-  const questions = Array.isArray(data?.questions)
-    ? data.questions.map((item, index) => normalizeQuestion(item, index)).filter(q => q.question)
-    : [];
-
-  const fallbackQuestions = buildFallbackQuestions(context);
-
-  return {
-    interview_title: asString(data?.interview_title || data?.title, `${context.jobTitle} Interview Coach`),
-    interview_summary: asString(
-      data?.interview_summary || data?.summary,
-      `Practice ${context.interviewType} interview questions for ${context.jobTitle} at ${context.companyName}.`
-    ),
-    questions: questions.length ? questions.slice(0, 5) : fallbackQuestions
-  };
-}
-
-function normalizeEvaluationPayload(data, context) {
-  const strengths = asArray(data?.strengths);
-  const improvements = asArray(data?.improvements);
-
-  return {
-    score: clampScore(data?.score, scoreFromAnswer(context.answer)),
-    summary: asString(
-      data?.summary,
-      'The answer is solid, but it needs more specificity, structure, and proof of impact.'
-    ),
-    strengths: (strengths.length ? strengths : ['Clear communication', 'Relevant experience', 'Good intent']).slice(0, 5),
-    improvements: (improvements.length ? improvements : ['Add one metric', 'Tighten the opening', 'Finish with impact']).slice(0, 5),
-    better_answer: asString(data?.better_answer || data?.betterAnswer, buildFallbackBetterAnswer(context)),
-    follow_up_question: asString(
-      data?.follow_up_question || data?.followUpQuestion,
-      'Can you give one concrete example that shows the result you created?'
-    )
-  };
-}
-
-function buildFallbackQuestions(context) {
-  const role = context.jobTitle || 'the role';
+function buildQuestions(context) {
+  const role = context.jobTitle || 'this role';
   const company = context.companyName || 'the company';
-  const type = context.interviewType || 'general';
+  const interviewType = context.interviewType || 'Mixed';
+  const experienceLevel = context.experienceLevel || 'Mid';
+  const focus = normalizeList(context.focusAreas);
+  const resumeKeywords = uniqueWords(context.resumeText, 8);
+  const jobKeywords = uniqueWords(context.jobDescription, 10);
+  const combinedKeywords = pickKeywords(context.resumeText, context.jobDescription, context.focusAreas);
+  const samplePoints = [...new Set([...focus, ...resumeKeywords, ...jobKeywords].filter(Boolean))].slice(0, 4);
+
+  const jobHint = combinedKeywords[0] || role.toLowerCase();
+  const companyHint = company.toLowerCase();
 
   return [
     {
       id: 'q1',
-      question: `Walk me through your background and what makes you a fit for ${role} at ${company}.`,
-      category: 'introduce-yourself',
+      category: 'intro',
       difficulty: 'easy',
-      why_it_matters: 'Tests how clearly you can connect your story to the role.',
-      sample_points: ['Current focus', 'Relevant experience', 'Why this role now']
+      question: `Walk me through your background and why you want ${role} at ${company}.`,
+      why_it_matters: 'This helps you practice a clean opening that ties your story to the role.',
+      sample_points: samplePoints.length ? samplePoints : ['Current role', 'Relevant experience', 'Why this company']
     },
     {
       id: 'q2',
-      question: `Tell me about a project where you had to solve a difficult ${type} problem.`,
-      category: 'problem-solving',
-      difficulty: 'medium',
-      why_it_matters: 'Shows how you think through ambiguity and execution.',
-      sample_points: ['Challenge', 'Approach', 'Outcome']
+      category: interviewType.toLowerCase(),
+      difficulty: experienceLevel.toLowerCase().includes('senior') || interviewType === 'System Design' ? 'hard' : 'medium',
+      question: `Tell me about a project where you worked on ${jobHint} and had to deliver a real outcome.`,
+      why_it_matters: 'This checks whether you can talk about work results instead of just tasks.',
+      sample_points: samplePoints.length ? samplePoints : ['Problem', 'Action', 'Result']
     },
     {
       id: 'q3',
-      question: `Describe a time you had to work with a teammate or stakeholder who disagreed with you.`,
-      category: 'behavioral',
+      category: 'resume',
       difficulty: 'medium',
-      why_it_matters: 'Evaluates collaboration, communication, and conflict handling.',
-      sample_points: ['Context', 'How you responded', 'What changed']
+      question: resumeKeywords.length
+        ? `On your resume, you mention ${resumeKeywords.slice(0, 2).join(' and ')}. How would you explain that experience in an interview?`
+        : `Describe one of your strongest projects and explain it in a way ${company} would care about.`,
+      why_it_matters: 'This makes the practice feel personal and anchored to your actual background.',
+      sample_points: resumeKeywords.length ? resumeKeywords.slice(0, 4) : ['What you did', 'How you did it', 'What changed']
     },
     {
       id: 'q4',
-      question: `What would you prioritize in your first 30 days in this ${role} position?`,
-      category: 'strategy',
+      category: 'behavioral',
       difficulty: 'medium',
-      why_it_matters: 'Checks judgment and onboarding thinking.',
-      sample_points: ['Learn the system', 'Identify quick wins', 'Build trust']
+      question: `Tell me about a time you had to work with people who wanted something different from you.`,
+      why_it_matters: 'Interviewers want to know how you handle teamwork and conflict.',
+      sample_points: ['Context', 'Your response', 'How you kept things moving']
     },
     {
       id: 'q5',
-      question: `Why do you want to work at ${company}, and what would you contribute that is hard to replace?`,
-      category: 'motivation',
+      category: 'prep',
       difficulty: 'easy',
-      why_it_matters: 'Measures company fit and self-awareness.',
-      sample_points: ['Mission fit', 'Unique strengths', 'Specific contribution']
+      question: `If you got this job, what would you focus on in your first 30 days at ${company}?`,
+      why_it_matters: 'This helps you prepare a thoughtful, grounded closing answer.',
+      sample_points: ['Learn the product', 'Build trust', 'Find quick wins']
     }
   ];
 }
 
-function buildFallbackBetterAnswer(context) {
-  const answer = String(context.answer || '').trim();
-  if (!answer) {
-    return 'Start with the point, add one concrete example, then finish with the result.';
-  }
+function scoreAnswer(context) {
+  const answer = normalizeText(context.answer);
+  const jobText = `${context.jobDescription || ''} ${context.focusAreas || ''}`;
+  const resumeText = context.resumeText || '';
+  const jobKeywords = uniqueWords(jobText, 12);
+  const resumeKeywords = uniqueWords(resumeText, 12);
+  const answerWords = tokenize(answer);
+  const answerWordSet = new Set(answerWords);
 
-  const trimmed = answer.length > 1200 ? `${answer.slice(0, 1200).trim()}...` : answer;
-  return [
-    'Here is a stronger version:',
+  let score = 28;
+  if (answerWords.length >= 40) score += 15;
+  if (answerWords.length >= 80) score += 10;
+  if (/[0-9]/.test(answer)) score += 8;
+  if (ACTION_VERBS.some(verb => answer.toLowerCase().includes(verb))) score += 12;
+  if (/(because|so that|therefore|result|impact|example|for example)/i.test(answer)) score += 10;
+
+  const matchedJob = jobKeywords.filter(word => answerWordSet.has(word));
+  const matchedResume = resumeKeywords.filter(word => answerWordSet.has(word));
+  score += Math.min(20, matchedJob.length * 4);
+  score += Math.min(12, matchedResume.length * 3);
+  score = Math.max(0, Math.min(100, score));
+
+  const strengths = [];
+  const improvements = [];
+
+  if (answerWords.length >= 40) strengths.push('You gave enough detail to explain the answer clearly.');
+  if (matchedResume.length) strengths.push(`You connected the answer to your resume with ${matchedResume.slice(0, 2).join(', ')}.`);
+  if (matchedJob.length) strengths.push(`You referenced role-relevant topics like ${matchedJob.slice(0, 2).join(', ')}.`);
+  if (ACTION_VERBS.some(verb => answer.toLowerCase().includes(verb))) strengths.push('You used active language that sounds more confident.');
+  if (!strengths.length) strengths.push('You answered directly, which is a good base to build on.');
+
+  if (answerWords.length < 40) improvements.push('Add one specific example so the answer feels grounded.');
+  if (!/[0-9]/.test(answer)) improvements.push('Add a metric, number, or concrete result if you can.');
+  if (!ACTION_VERBS.some(verb => answer.toLowerCase().includes(verb))) improvements.push('Use stronger action verbs to show ownership.');
+  if (!matchedJob.length) improvements.push('Tie the answer back to the job description more explicitly.');
+  if (!matchedResume.length) improvements.push('Use at least one example from your resume or past work.');
+  if (!/(because|so that|therefore|result|impact|example)/i.test(answer)) improvements.push('Add a simple cause-and-result sentence.');
+  if (!improvements.length) improvements.push('Add one more sentence that shows the result of your work.');
+
+  const opening = resumeKeywords[0] || jobKeywords[0] || 'that work';
+  const betterAnswer = [
+    `Start with a direct answer about ${opening}.`,
+    'Then give one example from your resume or experience.',
+    'Finish with the result, impact, or what you learned.',
     '',
-    trimmed,
-    '',
-    'Add one measurable result, one concrete action you took, and one sentence tying it back to the role.'
+    answer || 'Your answer goes here.'
   ].join('\n');
-}
 
-function scoreFromAnswer(answer) {
-  const text = String(answer || '').trim();
-  if (!text) return 30;
-  const words = text.split(/\s+/).filter(Boolean).length;
-  let score = 45;
-  if (words > 60) score += 10;
-  if (words > 120) score += 10;
-  if (/[0-9]/.test(text)) score += 10;
-  if (/(led|built|improved|reduced|increased|shipped|launched|owned)/i.test(text)) score += 10;
-  if (/(because|so that|result|impact|therefore|example)/i.test(text)) score += 5;
-  return Math.max(0, Math.min(100, score));
-}
-
-function parseJsonResponse(text, fallback) {
-  const raw = extractJsonObject(text);
-  try {
-    return JSON.parse(raw);
-  } catch (_err) {
-    return fallback;
-  }
-}
-
-function buildGeneratePrompt(context) {
-  return `You are a rigorous interview coach.
-
-Create exactly 5 interview questions tailored to this candidate and role.
-
-Return only valid JSON with this shape:
-{
-  "interview_title": "string",
-  "interview_summary": "string",
-  "questions": [
-    {
-      "id": "q1",
-      "question": "string",
-      "category": "behavioral | technical | product | leadership | motivation | collaboration | systems | general",
-      "difficulty": "easy | medium | hard",
-      "why_it_matters": "string",
-      "sample_points": ["string", "string", "string"]
-    }
-  ]
-}
-
-Rules:
-- Ask realistic questions a strong interviewer would ask.
-- Mix behavioral and role-specific questions.
-- Keep the wording concise and practical.
-- Make the questions useful for ${context.interviewType || 'a'} interviews.
-
-Candidate context:
-Job title: ${context.jobTitle}
-Company: ${context.companyName}
-Experience level: ${context.experienceLevel}
-Interview type: ${context.interviewType}
-Job description: ${context.jobDescription}
-Resume context: ${context.resumeText || 'Not provided'}
-Focus areas: ${context.focusAreas || 'Not provided'}`;
-}
-
-function buildEvaluationPrompt(context) {
-  return `You are a sharp, encouraging interview coach.
-
-Evaluate the candidate's answer to the interview question below.
-
-Return only valid JSON with this shape:
-{
-  "score": 0,
-  "summary": "string",
-  "strengths": ["string", "string", "string"],
-  "improvements": ["string", "string", "string"],
-  "better_answer": "string",
-  "follow_up_question": "string"
-}
-
-Scoring guidance:
-- 0-39: weak or off-target
-- 40-69: adequate but incomplete
-- 70-84: strong with room to sharpen
-- 85-100: excellent and specific
-
-Question:
-${context.question}
-
-Candidate answer:
-${context.answer}
-
-Role context:
-Job title: ${context.jobTitle || 'Not provided'}
-Company: ${context.companyName || 'Not provided'}
-Job description: ${context.jobDescription || 'Not provided'}
-Experience level: ${context.experienceLevel || 'Not provided'}
-Interview type: ${context.interviewType || 'Not provided'}`;
-}
-
-async function callGeminiWithRetry(apiKey, body, maxRetries = 3) {
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-
-    if (response.status !== 429) {
-      return response;
-    }
-
-    const retryAfter = parseInt(response.headers.get('Retry-After') || '0', 10);
-    const waitMs = retryAfter > 0 ? retryAfter * 1000 : Math.pow(2, attempt + 1) * 1000;
-    await new Promise(resolve => setTimeout(resolve, waitMs));
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-
-  if (response.status === 429) {
-    const err = new Error('AI service is busy. Please try again in a moment.');
-    err.status = 429;
-    throw err;
-  }
-
-  return response;
-}
-
-async function generateQuestions(apiKey, context) {
-  const response = await callGeminiWithRetry(apiKey, {
-    contents: [{ parts: [{ text: buildGeneratePrompt(context) }] }],
-    generationConfig: { temperature: 0.65, maxOutputTokens: 1800 }
-  });
-
-  if (!response.ok) {
-    const message = await response.text();
-    const err = new Error(`AI service error: ${response.status}. ${message || 'Please try again.'}`);
-    err.status = response.status;
-    throw err;
-  }
-
-  const result = await response.json();
-  const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  const fallback = normalizeGeneratePayload({}, context);
-  return normalizeGeneratePayload(parseJsonResponse(rawText, fallback), context);
-}
-
-async function evaluateAnswer(apiKey, context) {
-  const response = await callGeminiWithRetry(apiKey, {
-    contents: [{ parts: [{ text: buildEvaluationPrompt(context) }] }],
-    generationConfig: { temperature: 0.45, maxOutputTokens: 1200 }
-  });
-
-  if (!response.ok) {
-    const message = await response.text();
-    const err = new Error(`AI service error: ${response.status}. ${message || 'Please try again.'}`);
-    err.status = response.status;
-    throw err;
-  }
-
-  const result = await response.json();
-  const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  const fallback = normalizeEvaluationPayload({}, context);
-  return normalizeEvaluationPayload(parseJsonResponse(rawText, fallback), context);
+  return {
+    score,
+    summary: score >= 80
+      ? 'Strong answer. You are connecting your experience and the role in a clear way.'
+      : score >= 60
+        ? 'Good base, but it would be stronger with more detail and proof.'
+        : 'The answer needs a clearer example and a stronger tie to your resume or the role.',
+    strengths: strengths.slice(0, 4),
+    improvements: improvements.slice(0, 4),
+    better_answer: betterAnswer,
+    follow_up_question: 'Can you give one concrete example or result that proves that point?'
+  };
 }
 
 module.exports = async function handler(req, res) {
@@ -317,39 +196,43 @@ module.exports = async function handler(req, res) {
   }
 
   const body = req.body || {};
-  const action = asString(body.action, '');
+  const action = normalizeText(body.action);
+  const context = {
+    jobTitle: normalizeText(body.jobTitle),
+    companyName: normalizeText(body.companyName),
+    jobDescription: normalizeText(body.jobDescription),
+    experienceLevel: normalizeText(body.experienceLevel || 'Mid'),
+    interviewType: normalizeText(body.interviewType || 'Mixed'),
+    resumeText: normalizeText(body.resumeText),
+    focusAreas: normalizeText(body.focusAreas || body.focusArea),
+    question: normalizeText(body.question),
+    answer: normalizeText(body.answer)
+  };
 
   if (!action) {
     return res.status(400).json({ error: 'Missing required field: action' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'GEMINI_API_KEY is not set.' });
-  }
-
-  const context = {
-    jobTitle: asString(body.jobTitle, ''),
-    companyName: asString(body.companyName, ''),
-    jobDescription: asString(body.jobDescription, ''),
-    experienceLevel: asString(body.experienceLevel, ''),
-    interviewType: asString(body.interviewType, 'General'),
-    resumeText: asString(body.resumeText, ''),
-    focusAreas: asString(body.focusAreas || body.focusArea, ''),
-    question: asString(body.question, ''),
-    answer: asString(body.answer, '')
-  };
-
   try {
     if (action === 'generate_questions') {
-      if (!context.jobTitle || !context.companyName || !context.jobDescription) {
+      if (!context.jobTitle || !context.companyName) {
         return res.status(400).json({
-          error: 'Missing required fields. jobTitle, companyName, and jobDescription are required.'
+          error: 'Missing required fields. jobTitle and companyName are required.'
         });
       }
 
-      const data = await generateQuestions(apiKey, context);
-      return res.status(200).json({ action, ...data });
+      const questions = buildQuestions(context);
+      return res.status(200).json({
+        action,
+        interview_title: `${context.jobTitle} Interview Coach`,
+        interview_summary: `Simple practice set for ${context.jobTitle} at ${context.companyName}. Based on your resume and job details.`,
+        questions,
+        prep_notes: [
+          `Focus on ${questions[0].sample_points.join(', ')}.`,
+          'Use one short story per answer.',
+          'Add a number or result when you can.'
+        ]
+      });
     }
 
     if (action === 'evaluate_answer') {
@@ -357,14 +240,13 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: 'Missing required fields: question and answer' });
       }
 
-      const data = await evaluateAnswer(apiKey, context);
-      return res.status(200).json({ action, ...data });
+      const result = scoreAnswer(context);
+      return res.status(200).json({ action, ...result });
     }
 
     return res.status(400).json({ error: 'Invalid action. Use generate_questions or evaluate_answer.' });
   } catch (err) {
     console.error('[interview-coach] error:', err);
-    const status = typeof err.status === 'number' ? err.status : 500;
-    return res.status(status).json({ error: err.message || 'Failed to process interview coach request.' });
+    return res.status(500).json({ error: 'Failed to process interview coach request.' });
   }
 };
