@@ -122,7 +122,7 @@
 
     .hero{
       display:grid;
-      grid-template-columns:minmax(0,1.4fr) minmax(280px,.9fr);
+      grid-template-columns:1fr;
       gap:1rem;
       margin-bottom:1rem;
     }
@@ -147,11 +147,11 @@
       margin-bottom:.8rem;
     }
     .hero-copy h1{
-      font-size:clamp(2rem, 4vw, 3.35rem);
+      font-size:clamp(1.9rem, 3vw, 2.8rem);
       line-height:1.02;
       letter-spacing:-.05em;
       margin-bottom:.75rem;
-      max-width:15ch;
+      max-width:18ch;
     }
     .hero-copy h1 span{
       background:linear-gradient(135deg,var(--primary),var(--primary-2));
@@ -208,8 +208,8 @@
     }
 
     .hero-aside{
+      display:none;
       padding:1.2rem;
-      display:grid;
       gap:.8rem;
       align-content:start;
     }
@@ -345,6 +345,37 @@
     .more-options summary::-webkit-details-marker{display:none}
     .more-options .more-body{
       padding:0 1rem 1rem;
+    }
+    .simple-note{
+      color:var(--muted);
+      font-size:.82rem;
+      line-height:1.5;
+      margin-top:.6rem;
+    }
+    .steps{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+      gap:.65rem;
+      margin-bottom:1rem;
+    }
+    .step{
+      border:1px solid rgba(148,163,184,.12);
+      border-radius:.5rem;
+      background:rgba(255,255,255,.03);
+      padding:.75rem .85rem;
+      min-height:74px;
+    }
+    .step strong{
+      display:block;
+      color:#e7eefc;
+      font-size:.88rem;
+      margin-bottom:.2rem;
+    }
+    .step span{
+      display:block;
+      color:var(--muted);
+      font-size:.78rem;
+      line-height:1.45;
     }
     .section-actions{
       display:flex;
@@ -555,6 +586,7 @@
     @media (max-width: 720px){
       .topnav{padding:1rem}
       .shell{padding:1rem .9rem 3rem}
+      .steps{grid-template-columns:1fr}
       .form-grid{grid-template-columns:1fr}
       .metric-grid{grid-template-columns:1fr 1fr}
       .hero-copy,.hero-aside,.panel{padding:1rem}
@@ -584,13 +616,11 @@
       <div class="hero-copy">
         <div class="eyebrow">Interview practice and feedback</div>
         <h1>Practice interviews without the clutter.</h1>
-        <p>
-          Upload your resume or paste a short summary, add the job details, and get a simple practice set that feels built for a normal person, not a power user.
-        </p>
+        <p>Upload your resume, add the job, and practice one question at a time. Simple, focused, and resume-aware.</p>
         <div class="hero-actions compact">
           <button class="btn btn-primary" id="generateBtn" type="button">Build Practice Set</button>
         </div>
-        <div id="pageStatus" class="status" aria-live="polite">Fill the form below and generate your first set of questions.</div>
+        <div id="pageStatus" class="status" aria-live="polite">Start with your role, company, and resume.</div>
       </div>
 
       <aside class="hero-aside">
@@ -621,9 +651,33 @@
     <section class="layout">
       <div class="panel">
         <h2>Interview setup</h2>
-        <p class="sub">Enter the role and context you want to practice against. The more specific the inputs, the better the questions.</p>
+        <p class="sub">Only three things are needed: the role, the company, and your resume or summary.</p>
+
+        <div class="steps" aria-label="Interview practice steps">
+          <div class="step">
+            <strong>1. Add resume</strong>
+            <span>Upload or paste the experience you want to use.</span>
+          </div>
+          <div class="step">
+            <strong>2. Add job</strong>
+            <span>Role, company, and job details shape the questions.</span>
+          </div>
+          <div class="step">
+            <strong>3. Practice</strong>
+            <span>Speak or type an answer, then get focused feedback.</span>
+          </div>
+        </div>
 
         <div class="form-grid">
+          <div class="field full">
+            <label for="resumeText">Resume summary or upload a resume</label>
+            <textarea id="resumeText" placeholder="Paste a short resume summary, or choose your PDF/DOCX resume."></textarea>
+            <div class="upload-row">
+              <input id="resumeFile" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+              <label class="btn" for="resumeFile">Choose Resume</label>
+              <span class="hint" id="resumeUploadHint">PDF or DOCX. The text will appear here automatically.</span>
+            </div>
+          </div>
           <div class="field">
             <label for="jobTitle">Job title</label>
             <input id="jobTitle" type="text" placeholder="Frontend Engineer" />
@@ -632,43 +686,9 @@
             <label for="companyName">Company</label>
             <input id="companyName" type="text" placeholder="Acme Labs" />
           </div>
-          <div class="field">
-            <label for="experienceLevel">Experience level</label>
-            <select id="experienceLevel">
-              <option value="Student / Entry">Student / Entry</option>
-              <option value="Junior">Junior</option>
-              <option value="Mid" selected>Mid</option>
-              <option value="Senior">Senior</option>
-              <option value="Lead / Manager">Lead / Manager</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="interviewType">Interview type</label>
-            <select id="interviewType">
-              <option value="Behavioral">Behavioral</option>
-              <option value="Technical" selected>Technical</option>
-              <option value="Mixed">Mixed</option>
-              <option value="Leadership">Leadership</option>
-              <option value="System Design">System Design</option>
-            </select>
-          </div>
           <div class="field full">
             <label for="jobDescription">Job description</label>
             <textarea id="jobDescription" placeholder="Paste the job posting or a condensed version of it."></textarea>
-          </div>
-          <div class="field full">
-            <label for="resumeText">Resume summary or upload a resume</label>
-            <textarea id="resumeText" placeholder="Paste a short summary, or upload your PDF/DOCX resume below."></textarea>
-            <div class="upload-row">
-              <input id="resumeFile" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-              <button class="btn" id="uploadResumeBtn" type="button">Upload Resume</button>
-              <span class="hint" id="resumeUploadHint">Use a PDF or DOCX. We’ll pull the text in for you.</span>
-            </div>
-          </div>
-          <div class="field full">
-            <label for="focusAreas">Focus areas (optional)</label>
-            <input id="focusAreas" type="text" placeholder="React, API design, teamwork, metrics, leadership" />
-            <div class="hint">Use this to steer the question set toward topics you want to rehearse harder.</div>
           </div>
         </div>
 
@@ -680,20 +700,43 @@
         <details class="more-options">
           <summary>More options</summary>
           <div class="more-body">
-            <div class="field" style="margin-top:.75rem;">
-              <label for="practiceMode">Practice mode</label>
-              <select id="practiceMode">
-                <option value="Quick">Quick practice</option>
-                <option value="Resume-based" selected>Resume-based</option>
-                <option value="Voice">Voice practice</option>
-                <option value="Mixed">Mixed</option>
-              </select>
+            <div class="form-grid" style="margin-top:.75rem;">
+              <div class="field">
+                <label for="experienceLevel">Experience level</label>
+                <select id="experienceLevel">
+                  <option value="Student / Entry">Student / Entry</option>
+                  <option value="Junior">Junior</option>
+                  <option value="Mid" selected>Mid</option>
+                  <option value="Senior">Senior</option>
+                  <option value="Lead / Manager">Lead / Manager</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="interviewType">Interview type</label>
+                <select id="interviewType">
+                  <option value="Behavioral">Behavioral</option>
+                  <option value="Technical" selected>Technical</option>
+                  <option value="Mixed">Mixed</option>
+                  <option value="Leadership">Leadership</option>
+                  <option value="System Design">System Design</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="practiceMode">Practice mode</label>
+                <select id="practiceMode">
+                  <option value="Quick">Quick practice</option>
+                  <option value="Resume-based" selected>Resume-based</option>
+                  <option value="Voice">Voice practice</option>
+                  <option value="Mixed">Mixed</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="focusAreas">Focus areas</label>
+                <input id="focusAreas" type="text" placeholder="React, teamwork, metrics" />
+              </div>
             </div>
             <div class="section-actions">
-              <button class="btn" id="evaluateBtn" type="button">Evaluate Answer</button>
-              <button class="btn" id="nextBtn" type="button">Next Question</button>
               <button class="btn" id="speakQuestionBtn" type="button">Speak Question</button>
-              <button class="btn" id="voiceAnswerBtn" type="button">Voice Answer</button>
               <button class="btn" id="saveDraftBtn" type="button">Save Draft</button>
               <button class="btn" id="clearBtn" type="button">Clear Session</button>
               <button class="btn" id="loadDemoBtn" type="button">Load Demo</button>
@@ -710,8 +753,8 @@
       </div>
 
       <div class="panel">
-        <h2>Practice and feedback</h2>
-        <p class="sub">Select a question, draft your answer, then let the coach pressure-test it and give you sharper wording.</p>
+        <h2>Practice</h2>
+        <p class="sub">Answer by typing or speaking. Then get quick feedback.</p>
 
         <div class="active-question" id="activeQuestion">
           <h3>Generate questions to begin.</h3>
@@ -720,15 +763,17 @@
 
         <div class="field full answer-box" style="margin-top:.9rem;">
           <label for="answerText">Your answer</label>
-          <textarea id="answerText" placeholder="Answer out loud first, then type the version you want coached."></textarea>
+          <textarea id="answerText" placeholder="Type here, or use Speak Answer."></textarea>
         </div>
 
         <div class="section-actions">
+          <button class="btn" id="voiceAnswerBtn" type="button">Speak Answer</button>
           <button class="btn btn-primary" id="evaluateBtnPanel" type="button">Evaluate Answer</button>
-          <button class="btn" id="copyBetterBtn" type="button">Copy Better Answer</button>
+          <button class="btn" id="nextBtn" type="button">Next Question</button>
         </div>
+        <div class="simple-note" id="voiceHint">Voice input works in supported browsers and may ask for microphone permission.</div>
 
-        <div class="result-grid" id="resultGrid">
+        <div class="result-grid is-hidden" id="resultGrid">
           <div class="result-card">
             <h3>Score</h3>
             <div class="score-row">
@@ -764,14 +809,17 @@
           </div>
         </div>
 
-        <div class="footer-actions">
-          <button class="btn" id="saveSessionBtn" type="button">Save Session</button>
-          <button class="btn" id="loadHistoryBtn" type="button">Refresh History</button>
-        </div>
-
-        <h2 style="margin-top:1.1rem;">Recent sessions</h2>
-        <p class="sub">Stored locally in this browser so you can come back to what you practiced.</p>
-        <div class="history" id="historyList"></div>
+        <details class="more-options">
+          <summary>Saved sessions</summary>
+          <div class="more-body">
+            <div class="section-actions">
+              <button class="btn" id="copyBetterBtn" type="button">Copy Better Answer</button>
+              <button class="btn" id="saveSessionBtn" type="button">Save Session</button>
+              <button class="btn" id="loadHistoryBtn" type="button">Refresh History</button>
+            </div>
+            <div class="history" id="historyList"></div>
+          </div>
+        </details>
       </div>
     </section>
   </main>
@@ -804,22 +852,28 @@
       scoreSummary: document.getElementById('scoreSummary'),
       scoreFill: document.getElementById('scoreFill'),
       scoreHint: document.getElementById('scoreHint'),
+      resultGrid: document.getElementById('resultGrid'),
       strengthsList: document.getElementById('strengthsList'),
       improvementsList: document.getElementById('improvementsList'),
       betterAnswer: document.getElementById('betterAnswer'),
       followUpQuestion: document.getElementById('followUpQuestion'),
       historyList: document.getElementById('historyList'),
+      voiceHint: document.getElementById('voiceHint'),
       metricQuestions: document.getElementById('metricQuestions'),
       metricScore: document.getElementById('metricScore'),
       metricHistory: document.getElementById('metricHistory'),
       metricMode: document.getElementById('metricMode'),
       speakQuestionBtn: document.getElementById('speakQuestionBtn'),
-      voiceAnswerBtn: document.getElementById('voiceAnswerBtn'),
-      uploadResumeBtn: document.getElementById('uploadResumeBtn')
+      voiceAnswerBtn: document.getElementById('voiceAnswerBtn')
     };
 
     const storageKey = 'careercraft-interview-history';
     const draftKey = 'careercraft-interview-draft';
+    const apiBase = window.location.protocol === 'file:' ? 'http://127.0.0.1:3000' : '';
+
+    function apiUrl(path) {
+      return `${apiBase}${path}`;
+    }
 
     function setStatus(target, message, type = '') {
       target.textContent = message;
@@ -939,6 +993,7 @@
 
     function renderEvaluation(data) {
       state.lastEvaluation = data;
+      els.resultGrid.classList.remove('is-hidden');
       const score = Number(data.score) || 0;
       els.metricScore.textContent = String(score);
       els.scoreValue.textContent = String(score);
@@ -972,6 +1027,7 @@
       els.betterAnswer.textContent = 'Generate feedback to see a stronger version of your answer.';
       els.followUpQuestion.textContent = 'The coach will ask a deeper follow-up after your first pass.';
       els.metricScore.textContent = '--';
+      els.resultGrid.classList.add('is-hidden');
       setStatus(els.setupStatus, 'Practice set ready when you are.', '');
     }
 
@@ -987,7 +1043,7 @@
       toggleControls(true);
 
       try {
-        const response = await fetch('/api/interview-coach', {
+        const response = await fetch(apiUrl('/api/interview-coach'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1038,7 +1094,7 @@
       toggleControls(true);
 
       try {
-        const response = await fetch('/api/interview-coach', {
+        const response = await fetch(apiUrl('/api/interview-coach'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1077,7 +1133,7 @@
       setStatus(els.setupStatus, 'Uploading resume...', 'loading');
 
       try {
-        const response = await fetch('/api/upload-resume', {
+        const response = await fetch(apiUrl('/api/upload-resume'), {
           method: 'POST',
           body: formData
         });
@@ -1089,8 +1145,14 @@
         els.resumeUploadHint.textContent = `Loaded ${file.name}.`;
         setStatus(els.setupStatus, 'Resume loaded. You can now build your practice set.', 'success');
       } catch (error) {
-        els.resumeUploadHint.textContent = 'Use a PDF or DOCX. We’ll pull the text in for you.';
-        setStatus(els.setupStatus, error.message, 'error');
+        els.resumeUploadHint.textContent = apiBase
+          ? 'Resume selected. Open http://127.0.0.1:3000/interview to extract it locally.'
+          : 'PDF or DOCX. The text will appear here automatically.';
+        setStatus(
+          els.setupStatus,
+          apiBase ? 'Resume parsing needs the local app URL, not the file preview URL.' : error.message,
+          'error'
+        );
       }
     }
 
@@ -1166,16 +1228,22 @@
       };
 
       voiceRecognition.onerror = () => {
+        els.voiceAnswerBtn.textContent = 'Speak Answer';
+        els.voiceHint.textContent = 'Voice input was blocked or unavailable. You can still type your answer.';
         setStatus(els.setupStatus, 'Voice capture could not start.', 'error');
         voiceRecognition = null;
       };
 
       voiceRecognition.onend = () => {
         voiceRecognition = null;
+        els.voiceAnswerBtn.textContent = 'Speak Answer';
+        els.voiceHint.textContent = 'Voice answer captured. You can edit the text before evaluation.';
         setStatus(els.setupStatus, 'Voice answer captured.', 'success');
       };
 
       voiceRecognition.start();
+      els.voiceAnswerBtn.textContent = 'Stop Listening';
+      els.voiceHint.textContent = 'Listening. Speak naturally, then press Stop Listening or pause.';
       setStatus(els.setupStatus, 'Listening for your answer...', 'loading');
     }
 
@@ -1191,7 +1259,7 @@
       els.jobDescription.value = '';
       els.resumeText.value = '';
       els.resumeFile.value = '';
-      els.resumeUploadHint.textContent = 'Use a PDF or DOCX. We’ll pull the text in for you.';
+      els.resumeUploadHint.textContent = 'PDF or DOCX. The text will appear here automatically.';
       els.focusAreas.value = '';
       els.answerText.value = '';
       els.scoreValue.textContent = '--';
@@ -1261,19 +1329,17 @@
       els.practiceMode.value = draft.practiceMode || 'Resume-based';
       els.jobDescription.value = draft.jobDescription || '';
       els.resumeText.value = draft.resumeText || '';
-      els.resumeUploadHint.textContent = draft.resumeText ? 'Resume summary restored from your draft.' : 'Use a PDF or DOCX. We’ll pull the text in for you.';
+      els.resumeUploadHint.textContent = draft.resumeText ? 'Resume summary restored from your draft.' : 'PDF or DOCX. The text will appear here automatically.';
       els.focusAreas.value = draft.focusAreas || '';
     }
 
     function bindEvents() {
       document.getElementById('generateBtn').addEventListener('click', generateQuestions);
       document.getElementById('generateBtnPanel').addEventListener('click', generateQuestions);
-      document.getElementById('evaluateBtn').addEventListener('click', evaluateAnswer);
       document.getElementById('evaluateBtnPanel').addEventListener('click', evaluateAnswer);
       document.getElementById('nextBtn').addEventListener('click', nextQuestion);
       document.getElementById('speakQuestionBtn').addEventListener('click', speakCurrentQuestion);
       document.getElementById('voiceAnswerBtn').addEventListener('click', startVoiceAnswer);
-      document.getElementById('uploadResumeBtn').addEventListener('click', uploadResume);
       document.getElementById('saveDraftBtn').addEventListener('click', saveDraft);
       document.getElementById('clearBtn').addEventListener('click', clearSession);
       document.getElementById('saveSessionBtn').addEventListener('click', saveSession);
@@ -1294,7 +1360,8 @@
 
       els.resumeFile.addEventListener('change', () => {
         const file = els.resumeFile.files?.[0];
-        els.resumeUploadHint.textContent = file ? `Ready to upload ${file.name}.` : 'Use a PDF or DOCX. We’ll pull the text in for you.';
+        els.resumeUploadHint.textContent = file ? `Reading ${file.name}...` : 'PDF or DOCX. The text will appear here automatically.';
+        if (file) uploadResume();
       });
     }
 
@@ -1307,6 +1374,9 @@
       els.metricHistory.textContent = String(loadHistory().length);
       if (state.lastEvaluation?.score) {
         els.metricScore.textContent = String(state.lastEvaluation.score);
+      }
+      if (apiBase) {
+        setStatus(els.pageStatus, 'For resume extraction, use http://127.0.0.1:3000/interview instead of the file preview.');
       }
     }
 
