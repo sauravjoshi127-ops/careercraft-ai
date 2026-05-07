@@ -547,6 +547,41 @@
       color:#edf3ff;
       font-size:.92rem;
     }
+    .breakdown{
+      display:grid;
+      gap:.5rem;
+      margin-top:.75rem;
+    }
+    .breakdown-row{
+      display:grid;
+      grid-template-columns:90px 1fr auto;
+      gap:.55rem;
+      align-items:center;
+      color:#d9e5f6;
+      font-size:.82rem;
+    }
+    .mini-bar{
+      height:7px;
+      border-radius:999px;
+      background:rgba(148,163,184,.14);
+      overflow:hidden;
+    }
+    .mini-bar span{
+      display:block;
+      height:100%;
+      border-radius:inherit;
+      background:linear-gradient(90deg,var(--primary),var(--primary-2));
+    }
+    .progress-summary{
+      border:1px solid rgba(94,234,212,.16);
+      background:rgba(94,234,212,.05);
+      border-radius:.45rem;
+      padding:.85rem .9rem;
+      color:#dffdf8;
+      font-size:.88rem;
+      line-height:1.55;
+      margin-top:1rem;
+    }
 
     .history{
       margin-top:1rem;
@@ -567,7 +602,7 @@
     .history-item span{
       color:var(--muted);
       font-size:.82rem;
-      line-height:.5;
+      line-height:1.45;
     }
 
     .footer-actions{
@@ -594,6 +629,7 @@
     }
     @media (max-width: 480px){
       .metric-grid{grid-template-columns:1fr}
+      .breakdown-row{grid-template-columns:1fr}
     }
   </style>
 </head>
@@ -782,6 +818,7 @@
             </div>
             <div class="bar" aria-hidden="true"><div class="bar-fill" id="scoreFill"></div></div>
             <div class="hint" id="scoreHint">Focus on concrete examples, measurable outcomes, and a cleaner structure.</div>
+            <div class="breakdown" id="scoreBreakdownList"></div>
           </div>
 
           <div class="result-card">
@@ -812,6 +849,7 @@
         <details class="more-options">
           <summary>Saved sessions</summary>
           <div class="more-body">
+            <div class="progress-summary" id="progressSummary">No progress tracked yet.</div>
             <div class="section-actions">
               <button class="btn" id="copyBetterBtn" type="button">Copy Better Answer</button>
               <button class="btn" id="saveSessionBtn" type="button">Save Session</button>
@@ -853,11 +891,13 @@
       scoreFill: document.getElementById('scoreFill'),
       scoreHint: document.getElementById('scoreHint'),
       resultGrid: document.getElementById('resultGrid'),
+      scoreBreakdownList: document.getElementById('scoreBreakdownList'),
       strengthsList: document.getElementById('strengthsList'),
       improvementsList: document.getElementById('improvementsList'),
       betterAnswer: document.getElementById('betterAnswer'),
       followUpQuestion: document.getElementById('followUpQuestion'),
       historyList: document.getElementById('historyList'),
+      progressSummary: document.getElementById('progressSummary'),
       voiceHint: document.getElementById('voiceHint'),
       metricQuestions: document.getElementById('metricQuestions'),
       metricScore: document.getElementById('metricScore'),
@@ -896,7 +936,7 @@
     }
 
     function saveHistory(items) {
-      localStorage.setItem(storageKey, JSON.stringify(items.slice(0, 8)));
+      localStorage.setItem(storageKey, JSON.stringify(items.slice(0, 20)));
     }
 
     function loadDraft() {
@@ -942,6 +982,7 @@
           <div class="question-meta">
             <span class="chip">${escapeHtml(q.category || 'general')}</span>
             <span class="chip">${escapeHtml(q.difficulty || 'medium')}</span>
+            ${q.time_limit_seconds ? `<span class="chip">${Math.round(q.time_limit_seconds / 60)} min</span>` : ''}
           </div>
           <div class="question-text">${escapeHtml(q.question)}</div>
         </button>
@@ -962,17 +1003,21 @@
         <div class="question-meta">
           <span class="chip">${escapeHtml(q.category || 'general')}</span>
           <span class="chip">${escapeHtml(q.difficulty || 'medium')}</span>
+          ${q.time_limit_seconds ? `<span class="chip">${Math.round(q.time_limit_seconds / 60)} min answer</span>` : ''}
         </div>
         <h3>${escapeHtml(q.question)}</h3>
         <p>${escapeHtml(q.why_it_matters || 'This question is important because it tests core interview readiness.')}</p>
+        ${q.answer_guide ? `<p>${escapeHtml(q.answer_guide)}</p>` : ''}
         <p>Sample points to hit:</p>
-        <ul>${(q.sample_points || []).map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ul>`;
+        <ul>${(q.sample_points || []).map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ul>
+        ${(q.scoring_criteria || []).length ? `<p>Scored on:</p><ul>${q.scoring_criteria.map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ul>` : ''}`;
       els.metricMode.textContent = els.practiceMode.value || q.category || 'Live';
     }
 
     function renderHistory() {
       const history = loadHistory();
       els.metricHistory.textContent = String(history.length);
+      renderProgressSummary(history);
 
       if (!history.length) {
         els.historyList.innerHTML = `
@@ -986,9 +1031,29 @@
       els.historyList.innerHTML = history.map(item => `
         <div class="history-item">
           <strong>${escapeHtml(item.title || 'Interview Session')}</strong>
-          <span>${escapeHtml(item.company || 'Unknown company')} | Score: ${item.score ?? '--'} | ${new Date(item.createdAt).toLocaleString()}</span>
+          <span>${escapeHtml(item.company || 'Unknown company')} | Score: ${item.score ?? '--'} (${escapeHtml(item.grade || 'Practice')}) | ${new Date(item.createdAt).toLocaleString()}</span>
+          <span>Strength: ${escapeHtml((item.strengths || [])[0] || 'Not tracked yet')}</span>
+          <span>Weakness: ${escapeHtml((item.weaknesses || item.improvements || [])[0] || 'Not tracked yet')}</span>
         </div>
       `).join('');
+    }
+
+    function renderProgressSummary(history = loadHistory()) {
+      if (!els.progressSummary) return;
+      if (!history.length) {
+        els.progressSummary.textContent = 'No progress tracked yet.';
+        return;
+      }
+
+      const scores = history.map(item => Number(item.score)).filter(score => Number.isFinite(score));
+      const latest = scores[0] ?? '--';
+      const best = scores.length ? Math.max(...scores) : '--';
+      const average = scores.length ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : '--';
+      const previous = scores[1];
+      const trend = typeof previous === 'number'
+        ? latest > previous ? `up ${latest - previous}` : latest < previous ? `down ${previous - latest}` : 'steady'
+        : 'first session';
+      els.progressSummary.textContent = `Progress: latest ${latest}, best ${best}, average ${average}, trend ${trend}.`;
     }
 
     function renderEvaluation(data) {
@@ -1004,15 +1069,39 @@
         : score >= 70
           ? 'Good foundation. Add sharper proof, cleaner structure, and a stronger finish.'
           : 'Build around a direct answer, one concrete example, and a result.';
+      renderScoreBreakdown(data.score_breakdown || {}, data.rubric || {});
 
       els.strengthsList.innerHTML = (data.strengths || []).length
         ? data.strengths.map(item => `<div class="list-item">${escapeHtml(item)}</div>`).join('')
         : '<div class="list-item">No strengths returned</div>';
-      els.improvementsList.innerHTML = (data.improvements || []).length
-        ? data.improvements.map(item => `<div class="list-item">${escapeHtml(item)}</div>`).join('')
+      const weaknesses = data.weaknesses || data.improvements || [];
+      els.improvementsList.innerHTML = weaknesses.length
+        ? weaknesses.map(item => `<div class="list-item">${escapeHtml(item)}</div>`).join('')
         : '<div class="list-item">No improvements returned</div>';
       els.betterAnswer.textContent = data.better_answer || 'No revised answer returned.';
       els.followUpQuestion.textContent = data.follow_up_question || 'No follow-up question returned.';
+    }
+
+    function renderScoreBreakdown(breakdown, rubric) {
+      const labels = {
+        clarity: 'Clarity',
+        relevance: 'Relevance',
+        evidence: 'Evidence',
+        structure: 'Structure',
+        impact: 'Impact'
+      };
+      const rows = Object.keys(labels).map(key => {
+        const value = Number(breakdown[key]) || 0;
+        const max = Number(rubric[key]) || 20;
+        const width = Math.max(0, Math.min(100, Math.round((value / max) * 100)));
+        return `
+          <div class="breakdown-row">
+            <span>${labels[key]}</span>
+            <div class="mini-bar" aria-hidden="true"><span style="width:${width}%"></span></div>
+            <span>${value}/${max}</span>
+          </div>`;
+      });
+      els.scoreBreakdownList.innerHTML = rows.join('');
     }
 
     function resetFeedbackView() {
@@ -1022,6 +1111,7 @@
       els.scoreSummary.textContent = 'Your answer score and summary will appear here.';
       els.scoreFill.style.width = '0%';
       els.scoreHint.textContent = 'Focus on concrete examples, measurable outcomes, and a cleaner structure.';
+      els.scoreBreakdownList.innerHTML = '';
       els.strengthsList.innerHTML = '<div class="list-item">No feedback yet</div>';
       els.improvementsList.innerHTML = '<div class="list-item">No feedback yet</div>';
       els.betterAnswer.textContent = 'Generate feedback to see a stronger version of your answer.';
@@ -1215,16 +1305,28 @@
       voiceRecognition.interimResults = true;
       voiceRecognition.continuous = false;
 
+      const baseAnswer = els.answerText.value.trim();
       let finalTranscript = '';
       voiceRecognition.onresult = event => {
-        let transcript = '';
+        let interimTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
+          const transcript = event.results[i][0].transcript.trim();
+          if (!transcript) continue;
           if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript + ' ';
+            const normalizedFinal = finalTranscript.toLowerCase();
+            if (!normalizedFinal.endsWith(transcript.toLowerCase())) {
+              finalTranscript = `${finalTranscript} ${transcript}`.trim();
+            }
+          } else {
+            interimTranscript = `${interimTranscript} ${transcript}`.trim();
           }
         }
-        els.answerText.value = (finalTranscript + transcript).trim();
+        els.answerText.value = [baseAnswer, finalTranscript, interimTranscript]
+          .filter(Boolean)
+          .join(' ')
+          .replace(/\b(\w+)(\s+\1\b)+/gi, '$1')
+          .replace(/\s+/g, ' ')
+          .trim();
       };
 
       voiceRecognition.onerror = () => {
@@ -1292,10 +1394,16 @@
 
     function saveSession(silent = false) {
       const history = loadHistory();
+      const activeQuestion = state.questions.find(item => item.id === state.selectedId);
       const item = {
         title: state.lastGeneration?.interview_title || `${els.jobTitle.value.trim() || 'Interview'} Session`,
         company: els.companyName.value.trim() || 'Unknown company',
+        question: activeQuestion?.question || '',
         score: state.lastEvaluation?.score ?? null,
+        grade: state.lastEvaluation?.grade || null,
+        strengths: state.lastEvaluation?.strengths || [],
+        weaknesses: state.lastEvaluation?.weaknesses || state.lastEvaluation?.improvements || [],
+        scoreBreakdown: state.lastEvaluation?.score_breakdown || null,
         createdAt: new Date().toISOString()
       };
       saveHistory([item, ...history]);

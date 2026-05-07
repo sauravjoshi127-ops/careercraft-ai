@@ -36,6 +36,9 @@ describe('POST /api/interview-coach', () => {
     assert.match(res.body.interview_summary, /resume and job details/i);
     assert.ok(Array.isArray(res.body.prep_notes));
     assert.ok(res.body.questions[2].question.toLowerCase().includes('resume'));
+    assert.ok(res.body.questions.every(question => Array.isArray(question.scoring_criteria)));
+    assert.ok(res.body.questions.every(question => question.time_limit_seconds > 0));
+    assert.match(res.body.questions[1].question, /React|performance|collaboration/i);
   });
 
   it('scores answers using resume and job context', async () => {
@@ -59,6 +62,9 @@ describe('POST /api/interview-coach', () => {
     assert.ok(res.body.score >= 60);
     assert.ok(res.body.strengths.length > 0);
     assert.ok(res.body.improvements.length > 0);
+    assert.ok(res.body.weaknesses.length > 0);
     assert.ok(res.body.better_answer.length > 0);
+    assert.equal(typeof res.body.score_breakdown.clarity, 'number');
+    assert.equal(typeof res.body.rubric.relevance, 'number');
   });
 });
