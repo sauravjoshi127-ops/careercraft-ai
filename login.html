@@ -286,11 +286,41 @@
         const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
 
-        const { createClient } = supabase;
-        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+        const client = window.supabase && typeof window.supabase.createClient === 'function'
+            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+            : null;
+
+        function showMessage(node, message) {
+            node.textContent = message;
+            node.style.display = 'block';
+        }
+
+        function getFriendlyAuthError(error) {
+            const message = String(error?.message || error || '').trim();
+            const lower = message.toLowerCase();
+
+            if (!client) {
+                return 'Sign in service could not load. Please refresh the page or check your internet connection.';
+            }
+
+            if (!navigator.onLine || lower.includes('failed to fetch') || lower.includes('networkerror') || lower.includes('load failed')) {
+                return 'We could not reach the sign in service. Please check your internet connection and try again.';
+            }
+
+            if (lower.includes('invalid login credentials')) {
+                return 'Invalid email or password. Please try again.';
+            }
+
+            if (lower.includes('email not confirmed')) {
+                return 'Please verify your email before signing in.';
+            }
+
+            return message || 'Unable to sign in right now. Please try again.';
+        }
 
         // Redirect if already logged in
         async function checkExistingSession() {
+            if (!client) return;
             const { data: { session } } = await client.auth.getSession();
             if (session) {
                 window.location.href = 'dashboard.html';
@@ -312,8 +342,12 @@
             successMsg.style.display = 'none';
 
             if (!email || !password) {
-                errorMsg.textContent = '❌ Please enter your email and password.';
-                errorMsg.style.display = 'block';
+                showMessage(errorMsg, 'Please enter your email and password.');
+                return;
+            }
+
+            if (!client) {
+                showMessage(errorMsg, getFriendlyAuthError());
                 return;
             }
 
@@ -339,8 +373,7 @@
                 const name = data.user.user_metadata?.full_name || email.split('@')[0];
 
                 // Success! Keep localStorage in sync for fallback
-                successMsg.textContent = '✅ Signed in successfully! Redirecting...';
-                successMsg.style.display = 'block';
+                showMessage(successMsg, 'Signed in successfully. Redirecting...');
 
                 localStorage.setItem('userEmail', email);
                 localStorage.setItem('userName', name);
@@ -353,14 +386,13 @@
 
             } catch (error) {
                 console.error('Login error:', error);
-                let message = error.message;
+                let message = getFriendlyAuthError(error);
                 if (message.includes('Invalid login credentials')) {
                     message = 'Invalid email or password. Please try again.';
                 } else if (message.includes('Email not confirmed')) {
                     message = 'Please verify your email before signing in.';
                 }
-                errorMsg.textContent = `❌ ${message}`;
-                errorMsg.style.display = 'block';
+                showMessage(errorMsg, message);
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Sign In';
             }
