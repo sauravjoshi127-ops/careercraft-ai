@@ -6,28 +6,22 @@
   <title>Cold Email Writer — CareerCraft AI</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    :root{--bg:#0a0a0f;--surface:rgba(18,18,28,.85);--border:rgba(255,255,255,.08);--primary:#8b5cf6;--primary-glow:rgba(139,92,246,.35);--accent:#38bdf8;--text:#f1f5f9;--text-muted:#64748b;--danger:#ef4444;--success:#10b981;--radius:1rem;--font:'Inter',system-ui,sans-serif}
+    <link rel="stylesheet" href="styles/premium.css">
+    <style>
+    :root{--bg:#050505;--surface:rgba(20,20,24,.6);--border:rgba(255,255,255,.08);--primary:#7c3aed;--primary-glow:rgba(124,58,237,.35);--accent:#a855f7;--text:#ffffff;--text-muted:#a1a1aa;--danger:#ef4444;--success:#10b981;--radius:1rem;--font:'Inter',system-ui,sans-serif}
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;overflow-x:hidden}
     .orb{position:fixed;border-radius:50%;filter:blur(100px);pointer-events:none;z-index:-1}
-    .orb-1{width:55vw;height:55vw;top:-18%;left:-12%;background:radial-gradient(circle,rgba(139,92,246,.12),transparent 65%)}
-    .orb-2{width:45vw;height:45vw;bottom:-15%;right:-10%;background:radial-gradient(circle,rgba(56,189,248,.08),transparent 65%)}
+    .orb-1{width:400px;height:400px;top:-100px;left:-100px;background:rgba(124,58,237,.2)}
+    .orb-2{width:500px;height:500px;bottom:20%;right:-200px;background:rgba(168,85,247,.15)}
 
-    /* ── Nav ── */
-    .topnav{display:flex;justify-content:space-between;align-items:center;padding:1rem 2rem;background:rgba(10,10,15,.75);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
-    .logo{font-size:1.2rem;font-weight:800;letter-spacing:-.5px;text-decoration:none;color:var(--text)}
-    .logo span{background:linear-gradient(135deg,#8b5cf6,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .nav-links{display:flex;gap:.75rem;flex-wrap:wrap}
-    .nav-btn{padding:.45rem .9rem;border-radius:.5rem;font-size:.82rem;font-weight:500;text-decoration:none;color:var(--text-muted);border:1px solid transparent;transition:.2s;cursor:pointer;background:transparent}
-    .nav-btn:hover{color:var(--text);background:rgba(255,255,255,.04)}
-    .nav-btn.primary{background:rgba(139,92,246,.08);color:#c4b5fd;border:1px solid rgba(139,92,246,.25)}
+    /* ── Nav (Now using premium.css, keeping overrides minimal) ── */
 
     /* ── Layout ── */
     .container{max-width:880px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
     .hero{text-align:center;margin-bottom:2.5rem;animation:fadeDown .5s ease-out}
-    .hero h1{font-size:2.4rem;font-weight:800;letter-spacing:-1px;margin-bottom:.35rem}
-    .hero h1 em{font-style:normal;background:linear-gradient(135deg,#8b5cf6,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .hero h1{font-family:'Outfit',sans-serif;font-size:2.4rem;font-weight:800;letter-spacing:-1px;margin-bottom:.35rem}
+    .hero h1 em{font-style:normal;background:linear-gradient(135deg,#7c3aed,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
     .hero p{font-size:1.05rem;color:var(--text-muted)}
 
     /* ── Cards ── */
@@ -137,18 +131,25 @@
   </style>
 </head>
 <body>
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
+  <div class="glow-circle glow-1"></div>
+  <div class="glow-circle glow-2"></div>
 
-  <nav class="topnav">
-    <a class="logo" href="dashboard.html">Career<span>Craft</span> AI</a>
-    <div class="nav-links">
+  <div class="topnav">
+    <a href="dashboard.html" class="logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 17L12 22L22 17" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 12L12 17L22 12" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        CareerCraft AI
+    </a>
+    <div class="nav-links" style="display:flex;gap:1rem;">
       <a href="resume.html" class="nav-btn">📝 Resume</a>
       <a href="cover-letter.html" class="nav-btn">📨 Cover Letter</a>
       <a href="interview.html" class="nav-btn">🎤 Interview</a>
-      <a href="dashboard.html" class="nav-btn primary">← Dashboard</a>
+      <a href="dashboard.html" class="btn-primary" style="padding:0.4rem 0.8rem; font-size:0.85rem;">← Dashboard</a>
     </div>
-  </nav>
+  </div>
 
   <div class="container">
     <div class="hero">
