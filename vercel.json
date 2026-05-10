@@ -12,6 +12,7 @@
     { "source": "/resume-share", "destination": "/resume-share.html" },
     { "source": "/cover-letter", "destination": "/cover-letter.html" },
     { "source": "/cold-email", "destination": "/cold-email.html" },
+    { "source": "/interview", "destination": "/interview.html" },
     { "source": "/settings", "destination": "/settings.html" },
     { "source": "/reset-password", "destination": "/reset-password.html" }
   ]

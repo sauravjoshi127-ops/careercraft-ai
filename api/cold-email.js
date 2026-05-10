@@ -2,276 +2,337 @@
 // Receives: company, recipientTitle, recipientName, senderName, background,
 //           purpose, valueProposition, industry, tone, length
 // Returns:  { variants, scores, tips, followUp, bestTimeToSend, spamWords }
+// Usage-limits free users to 3 emails per day via the usage_tracking table.
 
-'use strict';
+const { createClient } = require('@supabase/supabase-js');
 
-const SPAM_WORDS = [
-  'free', 'guaranteed', 'urgent', 'winner', 'cash', 'prize',
-  'click here', 'act now', 'limited time', 'no obligation',
-  'risk-free', 'discount', 'earn money', 'congratulations',
-];
+const SPAM_WORDS = ['free', 'guaranteed', 'urgent', 'winner', 'cash', 'prize', 'click here',
+  'act now', 'limited time', 'no obligation', 'risk-free', 'discount', 'earn money'];
 
-// ── Prompt Builder ────────────────────────────────────────────────────────────
-function buildPrompt(d) {
-  return `You are an elite B2B sales copywriter. Your specialty is cold email that actually gets replies.
-Write 3 distinct cold email variants based on the context below.
+function buildEmailPrompt(data) {
+  return `You are an elite B2B sales copywriter specializing in high-converting cold outreach. Write 3 distinct cold email variants based on the following context.
 
-=== CONTEXT ===
-Target Company:   ${d.company}
-Recipient Title:  ${d.recipientTitle}
-Recipient Name:   ${d.recipientName || 'Not provided – use "Hi there"'}
-Sender Name:      ${d.senderName}
-Sender Background: ${d.background}
-Email Purpose:    ${d.purpose}
-Value Hook:       ${d.valueProposition}
-Industry:         ${d.industry}
-Tone Required:    ${d.tone}
-Length Limit:     ${d.length}
+Company: ${data.company}
+Recipient title: ${data.recipientTitle}
+Recipient name: ${data.recipientName || 'not provided, use Hi there'}
+Sender: ${data.senderName}, ${data.background}
+Purpose: ${data.purpose}
+Key value / hook: ${data.valueProposition}
+Industry: ${data.industry}
+Tone required: ${data.tone}
+Length limit: ${data.length}
 
-=== RULES ===
-1. NEVER open with "I hope this finds you well" or any filler. Start with immediate relevance.
-2. NEVER use spam trigger words: free, guaranteed, urgent, winner, cash, prize, click here.
-3. Subject lines must be lowercase, 2–5 words, and sound like an internal email (no exclamation marks).
-4. CTA must be ultra-low-friction: "Worth a quick chat?", "Open to connecting?", "Mind if I show you how?" etc.
-5. Short sentences. Frequent line breaks. Mobile-first formatting.
-6. Each email must feel like it was written specifically for this company, not copy-pasted.
+RULES:
+- Eliminate "I hope this finds you well" or any generic fluff. Start immediately with relevance.
+- Never use spam words: free, guaranteed, urgent, winner, cash, prize, click here.
+- Subject lines MUST be lowercase, short (2-4 words), and sound like an internal email.
+- The Call to Action (CTA) must be extremely low-friction (e.g. "Worth a chat?", "Open to learning more?", "Mind if I send over a 2-min video?").
+- Ensure the email is formatted with short sentences and frequent line breaks for mobile readability.
 
-=== FRAMEWORKS ===
-Variant A – PAS: Identify a real Problem ${d.company} likely faces, gently Agitate it, then position ${d.senderName}'s background as the Solution.
-Variant B – AIDA: Open with a sharp Attention hook (a personalized observation or bold stat), build Interest/Desire with the value hook, close with low-friction Action.
-Variant C – "No-Pressure" Ultra-Short: STRICTLY under 50 words. Josh Braun style. Pure curiosity, zero pressure, single question CTA. No selling at all.
+FRAMEWORKS:
+- Variant A (PAS Framework): Identify a likely Problem they face, Agitate it slightly, and present your background as the Solution.
+- Variant B (AIDA Framework): Grab Attention with a highly personalized observation, build Interest/Desire with the value hook, and push for Action.
+- Variant C ("No-Pressure" Ultra-Short): Strictly under 50 words. Josh Braun style. Remove all pressure. Generate pure curiosity.
 
-=== FOLLOW-UP ===
-Write a 3-day bump email that adds genuine NEW value (a relevant insight, a question, a mini case study) — not just "following up on my last email".
+FOLLOW-UP:
+- Generate a "3-day bump" follow-up email that adds *new* value (e.g. an insight, a resource, or a question) rather than just saying "just checking in".
 
-Return ONLY valid JSON, no markdown, no prose:
+Return ONLY valid JSON in this exact format (no markdown fences, no extra text):
 {
   "variants": [
-    { "subject": "...", "body": "...", "approach": "PAS Framework" },
-    { "subject": "...", "body": "...", "approach": "AIDA Framework" },
-    { "subject": "...", "body": "...", "approach": "Ultra-Short Curiosity" }
+    {"subject": "...", "body": "...", "approach": "PAS Framework"},
+    {"subject": "...", "body": "...", "approach": "AIDA Framework"},
+    {"subject": "...", "body": "...", "approach": "Ultra-Short Curiosity"}
   ],
-  "scores": { "personalisation": 85, "clarity": 90, "cta": 80, "readability": 88 },
-  "tips": [
-    "Why Variant A works...",
-    "Why Variant B works...",
-    "Why Variant C works..."
-  ],
-  "followUp": "Full follow-up email text here...",
-  "bestTimeToSend": "Tuesday–Thursday, 8–10 am recipient's local time",
+  "scores": {"personalisation": 80, "clarity": 85, "cta": 75, "length": 90},
+  "tips": ["Why A works", "Why B works", "Why C works"],
+  "followUp": "Full follow-up email text...",
+  "bestTimeToSend": "Tuesday-Thursday, 8-10am",
   "spamWords": []
 }`;
 }
 
-// ── JSON Normaliser ────────────────────────────────────────────────────────────
-function parseAIResponse(raw) {
-  // Strip markdown code fences if the model wrapped the JSON
-  let text = raw
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```$/i, '')
-    .trim();
+function parseGeminiResponse(text) {
+  text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) text = jsonMatch[0];
+  if (text.startsWith('{') && !text.endsWith('}')) text += '}';
 
-  // Grab the outermost {...} block
-  const match = text.match(/\{[\s\S]*\}/);
-  if (match) text = match[0];
-
-  let data = {};
+  let data;
   try {
     data = JSON.parse(text);
   } catch (e) {
-    console.error('[cold-email] JSON parse failed:', e.message);
-    console.error('[cold-email] Raw snippet:', text.slice(0, 400));
+    console.error('[cold-email] JSON parse error:', e.message, '\nSnippet:', text.substring(0, 300));
+    data = {};
   }
 
-  // Normalise variants
-  const defaultVariants = [
-    { subject: 'quick question', body: 'Hi there,\n\nI noticed your team at [Company] and wanted to reach out briefly.\n\nWould it be worth a quick chat?\n\n[Sender]', approach: 'PAS Framework' },
-    { subject: 'saw this and thought of you', body: 'Hi there,\n\nI came across your work and was genuinely impressed.\n\nI think there could be a natural fit here — open to a 15-min call?\n\n[Sender]', approach: 'AIDA Framework' },
-    { subject: 'one thing', body: 'Hi,\n\nNoticed a pattern at companies like yours. Mind if I share what we found?', approach: 'Ultra-Short Curiosity' },
-  ];
-
+  // Normalise
   if (!Array.isArray(data.variants) || data.variants.length === 0) {
-    data.variants = defaultVariants;
+    data.variants = [
+      { subject: 'Quick question', body: 'Hi there,\n\nI wanted to reach out…', approach: 'Direct' },
+      { subject: 'Impressed by your work', body: 'Hi there,\n\nI came across your company…', approach: 'Compliment' },
+      { subject: 'One quick thing', body: 'Hi,\n\nWould it make sense to connect?', approach: 'Ultra-short' }
+    ];
   }
-  data.variants = data.variants.slice(0, 3).map((v, i) => ({
-    subject: String(v.subject || defaultVariants[i].subject),
-    body:    String(v.body    || defaultVariants[i].body),
-    approach: String(v.approach || defaultVariants[i].approach),
+  data.variants = data.variants.slice(0, 3).map(v => ({
+    subject: String(v.subject || ''),
+    body: String(v.body || ''),
+    approach: String(v.approach || '')
   }));
 
-  // Normalise scores
-  const defaultScores = { personalisation: 78, clarity: 82, cta: 76, readability: 80 };
-  data.scores = (data.scores && typeof data.scores === 'object') ? data.scores : {};
-  ['personalisation', 'clarity', 'cta', 'readability'].forEach(k => {
-    data.scores[k] = (typeof data.scores[k] === 'number')
-      ? Math.max(0, Math.min(100, data.scores[k]))
-      : defaultScores[k];
+  data.scores = data.scores && typeof data.scores === 'object' ? data.scores : {};
+  ['personalisation', 'clarity', 'cta', 'length'].forEach(k => {
+    data.scores[k] = typeof data.scores[k] === 'number' ? data.scores[k] : 70;
   });
 
   data.tips = Array.isArray(data.tips) ? data.tips.slice(0, 3) : [];
   data.followUp = typeof data.followUp === 'string' ? data.followUp : '';
-  data.bestTimeToSend = typeof data.bestTimeToSend === 'string'
-    ? data.bestTimeToSend
-    : 'Tuesday–Thursday, 8–10 am';
+  data.bestTimeToSend = typeof data.bestTimeToSend === 'string' ? data.bestTimeToSend : 'Tuesday-Thursday, 8-10am';
 
-  // Detect spam words in generated text
-  const allText = data.variants
-    .map(v => `${v.subject} ${v.body}`)
-    .join(' ')
-    .toLowerCase();
+  // Detect spam words in all variant bodies
+  const allText = data.variants.map(v => (v.subject + ' ' + v.body).toLowerCase()).join(' ');
   data.spamWords = SPAM_WORDS.filter(w => allText.includes(w.toLowerCase()));
 
   return data;
 }
 
-// ── Gemini Call with Retry ────────────────────────────────────────────────────
-async function callGemini(apiKey, prompt, retries = 3) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-  const body = JSON.stringify({
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.85, maxOutputTokens: 2500 },
-  });
+function stripHtml(text) {
+  return String(text || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    const res = await fetch(url, {
+function truncate(text, maxLen) {
+  const value = stripHtml(text);
+  if (value.length <= maxLen) return value;
+  return `${value.slice(0, Math.max(0, maxLen - 1)).trimEnd()}…`;
+}
+
+function buildFallbackColdEmail(data, reason) {
+  const company = data.company || 'your company';
+  const recipientName = data.recipientName || '';
+  const greeting = recipientName ? `Hi ${recipientName},` : 'Hi there,';
+  const background = truncate(data.background || 'I work on practical, revenue-focused execution.', 140);
+  const purpose = data.purpose || 'reaching out';
+  const hook = truncate(data.valueProposition || 'I can help create sharper outreach that gets responses.', 110);
+  const industry = data.industry || 'your space';
+  const sender = data.senderName || 'I';
+
+  const variants = [
+    {
+      subject: 'quick idea',
+      body: `${greeting}\n\nI’m ${sender}.\n\nI’ve been thinking about ${company} and how teams in ${industry} keep outreach moving without sounding generic. ${background}\n\nOne angle that stood out: ${hook}\n\nIf it’s relevant, I’d love to share a few ideas for ${purpose.toLowerCase()}.\n\nWorth a quick chat?`,
+      approach: 'PAS Framework'
+    },
+    {
+      subject: 'thought for you',
+      body: `${greeting}\n\nI came across ${company} and wanted to reach out because the work feels especially relevant to what I do.\n\n${background}\n\nWhat I can bring here is simple: clearer messaging, stronger follow-up, and a tighter path from interest to response.\n\nIf useful, I can send a short example tailored to your team.\n\nOpen to that?`,
+      approach: 'AIDA Framework'
+    },
+    {
+      subject: 'quick note',
+      body: `${greeting}\n\n${hook}\n\nIf this is useful for ${company}, I’d be glad to send one tight example.\n\nOpen to it?`,
+      approach: 'Ultra-Short Curiosity'
+    }
+  ];
+
+  const combinedText = variants.map(v => `${v.subject} ${v.body}`).join(' ').toLowerCase();
+  const spamWords = SPAM_WORDS.filter(word => combinedText.includes(word.toLowerCase()));
+
+  return {
+    variants,
+    scores: {
+      personalisation: recipientName ? 84 : 78,
+      clarity: 88,
+      cta: 82,
+      length: 90
+    },
+    tips: [
+      `Variant 1 opens with ${company} and ties the outreach to ${industry}.`,
+      'Variant 2 emphasizes value, clarity, and a low-friction next step.',
+      'Variant 3 stays short and curiosity-led so it feels easy to reply to.'
+    ],
+    followUp: `${recipientName ? `Hi ${recipientName},` : 'Hi there,'}\n\nJust circling back with one more idea: I can send a tighter version tailored to ${company} if that would be useful.\n\nNo rush either way.`,
+    bestTimeToSend: 'Tuesday-Thursday, 8-10am',
+    spamWords,
+    fallbackUsed: true,
+    fallbackReason: reason
+  };
+}
+
+async function callGeminiWithRetry(apiKey, body, maxRetries = 3) {
+  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const r = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body,
+      body: JSON.stringify(body)
     });
-
-    if (res.status === 429) {
-      if (attempt === retries) throw Object.assign(new Error('AI service is busy. Please try again in a moment.'), { status: 429 });
-      const wait = Math.pow(2, attempt + 1) * 1000;
-      console.warn(`[cold-email] Rate limited, waiting ${wait}ms (attempt ${attempt + 1})`);
-      await new Promise(r => setTimeout(r, wait));
-      continue;
-    }
-
-    return res;
+    if (r.status !== 429) return r;
+    const retryAfter = parseInt(r.headers.get('Retry-After') || '0', 10);
+    const waitMs = retryAfter > 0 ? retryAfter * 1000 : Math.pow(2, attempt + 1) * 1000;
+    console.warn(`[cold-email] Gemini rate limited. Waiting ${waitMs}ms (attempt ${attempt + 1}/${maxRetries}).`);
+    await new Promise(resolve => setTimeout(resolve, waitMs));
   }
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (r.status === 429) {
+    const err = new Error('AI service is busy. Please try again in a moment.');
+    err.status = 429;
+    throw err;
+  }
+  return r;
 }
 
-// ── Supabase Usage Limiter ────────────────────────────────────────────────────
-async function checkAndIncrementUsage(req) {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseKey) return { ok: true, isPro: false };
-
-  try {
-    const { createClient } = require('@supabase/supabase-js');
-    const authHeader = req.headers['authorization'] || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-    if (!token) return { ok: true, isPro: false };
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error || !user) return { ok: true, isPro: false };
-
-    const isPro = !!(
-      user.user_metadata?.plan === 'pro' ||
-      user.user_metadata?.isPro === true ||
-      user.app_metadata?.plan === 'pro'
-    );
-    if (isPro) return { ok: true, isPro: true };
-
-    const today = new Date().toISOString().split('T')[0];
-    const { data: usage } = await supabase
-      .from('usage_tracking')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('tool', 'cold_email')
-      .maybeSingle();
-
-    if (!usage) {
-      await supabase.from('usage_tracking').insert({ user_id: user.id, tool: 'cold_email', count: 1, reset_date: today });
-      return { ok: true, isPro: false };
-    }
-
-    if (usage.reset_date < today) {
-      await supabase.from('usage_tracking').update({ count: 1, reset_date: today }).eq('user_id', user.id).eq('tool', 'cold_email');
-      return { ok: true, isPro: false };
-    }
-
-    if (usage.count >= 3) {
-      return { ok: false, isPro: false, message: "You've used all 3 free emails today. Upgrade to Pro for unlimited access." };
-    }
-
-    await supabase.from('usage_tracking').update({ count: usage.count + 1 }).eq('user_id', user.id).eq('tool', 'cold_email');
-    return { ok: true, isPro: false };
-
-  } catch (err) {
-    console.warn('[cold-email] Usage check non-fatal error:', err.message);
-    return { ok: true, isPro: false }; // Fail open — don't block the user
-  }
-}
-
-// ── Main Handler ──────────────────────────────────────────────────────────────
 module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const b = req.body || {};
-  const fields = {
-    company:          String(b.company          || '').trim(),
-    recipientTitle:   String(b.recipientTitle   || '').trim(),
-    recipientName:    String(b.recipientName    || '').trim(),
-    senderName:       String(b.senderName       || '').trim(),
-    background:       String(b.background       || '').trim(),
-    purpose:          String(b.purpose          || '').trim(),
-    valueProposition: String(b.valueProposition || '').trim(),
-    industry:         String(b.industry         || '').trim(),
-    tone:             String(b.tone             || 'Professional').trim(),
-    length:           String(b.length           || 'Short (Under 100 words)').trim(),
-  };
+  const body = req.body || {};
+  const company          = String(body.company || '').trim();
+  const recipientTitle   = String(body.recipientTitle || '').trim();
+  const recipientName    = String(body.recipientName || '').trim();
+  const senderName       = String(body.senderName || '').trim();
+  const background       = String(body.background || '').trim();
+  const purpose          = String(body.purpose || '').trim();
+  const valueProposition = String(body.valueProposition || '').trim();
+  const industry         = String(body.industry || '').trim();
+  const tone             = String(body.tone || 'Professional').trim();
+  const length           = String(body.length || 'Medium').trim();
 
-  const required = ['company', 'recipientTitle', 'senderName', 'background', 'purpose', 'valueProposition', 'industry'];
-  const missing = required.filter(k => !fields[k]);
-  if (missing.length) {
-    return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
+  // Basic validation
+  if (!company || !recipientTitle || !senderName || !background || !purpose || !valueProposition || !industry) {
+    return res.status(400).json({ error: 'Missing required fields.' });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
+
+  // ── Usage limiting ───────────────────────────────────────────────────────────
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+
+  let userId = null;
+  let isPro = false;
+
+  if (supabaseUrl && supabaseKey) {
+    try {
+      const authHeader = req.headers['authorization'] || '';
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+      if (token) {
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
+        if (!authErr && user) {
+          userId = user.id;
+          isPro = user.user_metadata?.plan === 'pro' ||
+                  user.user_metadata?.isPro === true ||
+                  user.app_metadata?.plan === 'pro';
+        }
+      }
+
+      if (userId && !isPro) {
+        const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+        const today = new Date().toISOString().split('T')[0];
+
+        const { data: usage } = await supabaseAdmin
+          .from('usage_tracking')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('tool', 'cold_email')
+          .single();
+
+        if (usage) {
+          // Reset if it's a new day
+          if (usage.reset_date < today) {
+            await supabaseAdmin
+              .from('usage_tracking')
+              .update({ count: 1, reset_date: today })
+              .eq('user_id', userId)
+              .eq('tool', 'cold_email');
+          } else if (usage.count >= 3) {
+            return res.status(403).json({
+              error: "You've used all 3 free emails today. Upgrade to Pro for unlimited access.",
+              usageLimitReached: true
+            });
+          } else {
+            await supabaseAdmin
+              .from('usage_tracking')
+              .update({ count: usage.count + 1 })
+              .eq('user_id', userId)
+              .eq('tool', 'cold_email');
+          }
+        } else {
+          await supabaseAdmin
+            .from('usage_tracking')
+            .insert({ user_id: userId, tool: 'cold_email', count: 1, reset_date: today });
+        }
+      }
+    } catch (usageErr) {
+      // Non-fatal: log and continue rather than block the user
+      console.warn('[cold-email] Usage tracking error (non-fatal):', usageErr.message);
+    }
+  }
+
+  // ── Generate emails ──────────────────────────────────────────────────────────
+  const prompt = buildEmailPrompt({ company, recipientTitle, recipientName, senderName, background, purpose, valueProposition, industry, tone, length });
+
   if (!apiKey) {
-    return res.status(500).json({ error: 'Server misconfiguration: GEMINI_API_KEY is not set.' });
+    const fallback = buildFallbackColdEmail(
+      { company, recipientTitle, recipientName, senderName, background, purpose, valueProposition, industry, tone, length },
+      'GEMINI_API_KEY is not set.'
+    );
+    return res.status(200).json(fallback);
   }
 
-  // Usage limiting (non-fatal if Supabase unavailable)
-  const usage = await checkAndIncrementUsage(req);
-  if (!usage.ok) {
-    return res.status(403).json({ error: usage.message, usageLimitReached: true });
-  }
-
-  const prompt = buildPrompt(fields);
-
-  let geminiRes;
   try {
-    geminiRes = await callGemini(apiKey, prompt);
+    let r;
+    try {
+      r = await callGeminiWithRetry(apiKey, {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.8, maxOutputTokens: 2000 }
+      });
+    } catch (retryErr) {
+      const fallback = buildFallbackColdEmail(
+        { company, recipientTitle, recipientName, senderName, background, purpose, valueProposition, industry, tone, length },
+        retryErr.message
+      );
+      return res.status(200).json(fallback);
+    }
+
+    if (!r.ok) {
+      const errText = await r.text();
+      console.error('[cold-email] Gemini HTTP error:', r.status, errText);
+      const fallback = buildFallbackColdEmail(
+        { company, recipientTitle, recipientName, senderName, background, purpose, valueProposition, industry, tone, length },
+        `AI service error: ${r.status}`
+      );
+      return res.status(200).json(fallback);
+    }
+
+    const result = await r.json();
+    if (!result?.candidates?.[0]?.content?.parts?.[0]) {
+      console.error('[cold-email] Unexpected Gemini response:', JSON.stringify(result).substring(0, 300));
+      const fallback = buildFallbackColdEmail(
+        { company, recipientTitle, recipientName, senderName, background, purpose, valueProposition, industry, tone, length },
+        'Unexpected response from AI service.'
+      );
+      return res.status(200).json(fallback);
+    }
+
+    const rawText = result.candidates[0].content.parts[0].text || '';
+    const data = parseGeminiResponse(rawText);
+    data.isPro = isPro;
+
+    return res.status(200).json(data);
   } catch (err) {
-    console.error('[cold-email] Gemini call error:', err.message);
-    return res.status(err.status || 500).json({ error: err.message });
+    console.error('[cold-email] Generation error:', err);
+    const fallback = buildFallbackColdEmail(
+      { company, recipientTitle, recipientName, senderName, background, purpose, valueProposition, industry, tone, length },
+      err.message || 'Failed to generate cold emails.'
+    );
+    return res.status(200).json(fallback);
   }
-
-  if (!geminiRes.ok) {
-    const errText = await geminiRes.text().catch(() => '');
-    console.error('[cold-email] Gemini HTTP error:', geminiRes.status, errText.slice(0, 300));
-    return res.status(502).json({ error: `AI service returned error ${geminiRes.status}. Please try again.` });
-  }
-
-  let result;
-  try {
-    result = await geminiRes.json();
-  } catch (e) {
-    console.error('[cold-email] Failed to parse Gemini JSON response:', e.message);
-    return res.status(502).json({ error: 'Unexpected response from AI service.' });
-  }
-
-  const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!rawText) {
-    console.error('[cold-email] Empty AI response:', JSON.stringify(result).slice(0, 300));
-    return res.status(502).json({ error: 'AI service returned an empty response. Please try again.' });
-  }
-
-  const data = parseAIResponse(rawText);
-  return res.status(200).json(data);
 };
