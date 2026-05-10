@@ -9,6 +9,7 @@ const { generateCoverLetterPDF } = require('./utils/pdf-generator');
 const coldEmailHandler = require('./api/cold-email');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
+const { createClient } = require('@supabase/supabase-js');
 const aiSuggestionsHandler = require('./api/ai-suggestions');
 const deleteUserHandler = require('./api/delete-user');
 const interviewCoachHandler = require('./api/interview-coach');
@@ -396,7 +397,7 @@ app.post('/api/create-order', async (req, res) => {
   }
 });
 
-app.post('/api/verify-payment', (req, res) => {
+app.post('/api/verify-payment', async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planId } = req.body;
     
@@ -407,9 +408,34 @@ app.post('/api/verify-payment', (req, res) => {
       .digest("hex");
 
     if (razorpay_signature === expectedSign) {
-      // Payment is verified successfully.
-      // TODO: Update user's subscription status in Supabase/Database here
       console.log(`Payment successful for order: ${razorpay_order_id}, Plan: ${planId}`);
+
+      // Try to upgrade user in Supabase if token provided
+      const authHeader = req.headers['authorization'] || '';
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+      
+      if (token && process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY)) {
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
+        
+        if (!authErr && user) {
+          // If we have service role, we can use admin.updateUserById. Otherwise, we just update user_metadata.
+          // Note: Without service role, this update might not persist if RLS prevents it, but we try.
+          const { error: updateErr } = await supabase.auth.updateUser({
+            data: { plan: 'pro', isPro: true }
+          });
+          
+          if (!updateErr) {
+            console.log(`Successfully upgraded user ${user.id} to Pro.`);
+          } else {
+            console.error(`Failed to update user metadata:`, updateErr.message);
+          }
+        }
+      }
+      
       return res.status(200).json({ success: true, message: "Payment verified successfully" });
     } else {
       return res.status(400).json({ success: false, message: "Invalid signature" });

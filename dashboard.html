@@ -5,369 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - CareerCraft AI</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0e27;
-            color: #f1f5f9;
-            min-height: 100vh;
-        }
-
-        /* Top Navigation */
-        .topnav {
-            background: rgba(10, 14, 39, 0.95);
-            border-bottom: 1px solid rgba(124, 58, 237, 0.2);
-            padding: 1.5rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            font-size: 1.3rem;
-            font-weight: 700;
-        }
-
-        .user-menu {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #7c3aed, #a855f7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 1.1rem;
-            cursor: pointer;
-        }
-
-        .nav-btn {
-            background: transparent;
-            color: #cbd5e1;
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            padding: 0.6rem 1.2rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.9rem;
-            text-decoration: none;
-        }
-
-        .nav-btn:hover {
-            border-color: #7c3aed;
-            color: #7c3aed;
-        }
-
-        /* Main Container */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        .welcome {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 2rem;
-            background: rgba(20, 24, 41, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.1);
-            border-radius: 1rem;
-            padding: 2rem;
-        }
-
-        .welcome h1 {
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .welcome p {
-            color: #cbd5e1;
-            margin-bottom: 1rem;
-        }
-
-        .welcome-email {
-            font-size: 0.85rem;
-            color: #94a3b8;
-        }
-
-        .upgrade-btn {
-            background: linear-gradient(135deg, #7c3aed, #a855f7);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            white-space: nowrap;
-        }
-
-        .upgrade-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 32px rgba(124, 58, 237, 0.3);
-        }
-
-        /* Tools Grid */
-        .tools-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .tool-card {
-            background: rgba(20, 24, 41, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.1);
-            border-radius: 1rem;
-            padding: 2rem;
-            transition: all 0.3s;
-        }
-
-        .tool-card:hover {
-            border-color: rgba(124, 58, 237, 0.5);
-            background: rgba(20, 24, 41, 0.8);
-            transform: translateY(-4px);
-        }
-
-        .tool-icon {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .tool-card h3 {
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .tool-card p {
-            color: #cbd5e1;
-            font-size: 0.9rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .tool-card a {
-            display: block;
-            width: 100%;
-            padding: 0.75rem;
-            background: rgba(124, 58, 237, 0.1);
-            border: 1px solid rgba(124, 58, 237, 0.3);
-            color: #7c3aed;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
-            text-decoration: none;
-        }
-
-        .tool-card a:hover {
-            background: rgba(124, 58, 237, 0.2);
-        }
-
-        /* Resumes Section */
-        .section {
-            background: rgba(20, 24, 41, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.1);
-            border-radius: 1rem;
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .section-header h2 {
-            font-size: 1.3rem;
-        }
-
-        .btn-new {
-            background: linear-gradient(135deg, #7c3aed, #a855f7);
-            color: white;
-            border: none;
-            padding: 0.6rem 1.2rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-
-        .btn-new:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
-        }
-
-        .resume-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            border: 1px solid rgba(148, 163, 184, 0.1);
-            border-radius: 0.75rem;
-            margin-bottom: 0.75rem;
-            transition: all 0.3s;
-        }
-
-        .resume-item:hover {
-            border-color: rgba(124, 58, 237, 0.3);
-            background: rgba(124, 58, 237, 0.05);
-        }
-
-        .resume-info h4 {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .resume-meta {
-            font-size: 0.8rem;
-            color: #94a3b8;
-        }
-
-        .resume-stats {
-            display: flex;
-            gap: 1rem;
-            font-size: 0.8rem;
-            color: #94a3b8;
-        }
-
-        .resume-actions {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-        }
-
-        .btn-action {
-            background: transparent;
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            color: #cbd5e1;
-            padding: 0.4rem 0.8rem;
-            border-radius: 0.4rem;
-            font-size: 0.8rem;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-
-        .btn-action:hover {
-            border-color: #7c3aed;
-            color: #7c3aed;
-        }
-
-        .btn-action.delete {
-            border-color: rgba(239, 68, 68, 0.3);
-            color: #ef4444;
-        }
-
-        .btn-action.delete:hover {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: #ef4444;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 2rem;
-            color: #94a3b8;
-        }
-
-        .empty-state .empty-icon {
-            font-size: 2.5rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .empty-state p {
-            margin-bottom: 1rem;
-        }
-
-        .loading-state {
-            text-align: center;
-            padding: 2rem;
-            color: #94a3b8;
-        }
-
-        /* Toast notification */
-        .toast {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            z-index: 1000;
-            display: none;
-            animation: slideIn 0.3s ease;
-        }
-
-        .toast.success {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .toast.error {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        @media (max-width: 768px) {
-            .topnav {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .welcome {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .tools-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .container {
-                padding: 1rem;
-            }
-
-            .resume-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.75rem;
-            }
-
-            .resume-stats {
-                flex-wrap: wrap;
-            }
-        }
-    </style>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <link rel="stylesheet" href="styles/premium.css">
 </head>
 <body>
+    <div class="glow-circle glow-1"></div>
+    <div class="glow-circle glow-2"></div>
+
     <!-- Top Navigation -->
     <div class="topnav">
-        <div class="logo">🚀 CareerCraft AI</div>
+        <a href="index.html" class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 17L12 22L22 17" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 12L12 17L22 12" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            CareerCraft AI
+        </a>
         <div class="user-menu">
             <div class="user-avatar" id="avatarInitial" title="Account">A</div>
             <a href="settings.html" class="nav-btn">⚙️ Settings</a>
@@ -378,54 +32,54 @@
     <!-- Main Container -->
     <div class="container">
         <!-- Welcome Section -->
-        <div class="welcome">
+        <div class="glass-card welcome mb-2" style="display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <h1 id="welcomeName">Welcome back! 👋</h1>
-                <p id="welcomeEmail" class="welcome-email"></p>
-                <p>What do you want to work on today?</p>
+                <p id="welcomeEmail" style="color: var(--text-secondary);"></p>
+                <p class="mt-1">What do you want to work on today?</p>
             </div>
-            <button class="upgrade-btn">Upgrade to Pro ₹299/mo</button>
+            <button class="btn-accent" id="btn-upgrade-pro">Upgrade to Pro ₹299/mo</button>
         </div>
 
         <!-- My Resumes -->
-        <div class="section">
-            <div class="section-header">
+        <div class="glass-card mb-2">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                 <h2>📄 My Resumes</h2>
-                <a href="resume.html" class="btn-new">+ New Resume</a>
+                <a href="resume.html" class="btn-accent">+ New Resume</a>
             </div>
             <div id="resumeList">
-                <div class="loading-state">⏳ Loading your resumes...</div>
+                <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">⏳ Loading your resumes...</div>
             </div>
         </div>
 
         <!-- Tools Grid -->
-        <div class="tools-grid">
-            <div class="tool-card">
-                <div class="tool-icon">📝</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2rem;">
+            <div class="glass-card">
+                <div style="font-size: 2rem; margin-bottom: 1rem;">📝</div>
                 <h3>Resume Builder</h3>
-                <p>Create a professional ATS-ready resume in minutes.</p>
-                <a href="resume.html">Start Now</a>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Create a professional ATS-ready resume in minutes.</p>
+                <a href="resume.html" class="btn-primary" style="display: block; text-align: center;">Start Now</a>
             </div>
 
-            <div class="tool-card">
-                <div class="tool-icon">📨</div>
+            <div class="glass-card">
+                <div style="font-size: 2rem; margin-bottom: 1rem;">📨</div>
                 <h3>Cover Letter AI</h3>
-                <p>Generate tailored cover letters for any job posting.</p>
-                <a href="cover-letter.html">Start Now</a>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Generate tailored cover letters for any job posting.</p>
+                <a href="cover-letter.html" class="btn-primary" style="display: block; text-align: center;">Start Now</a>
             </div>
 
-            <div class="tool-card">
-                <div class="tool-icon">✉️</div>
+            <div class="glass-card">
+                <div style="font-size: 2rem; margin-bottom: 1rem;">✉️</div>
                 <h3>Cold Email Writer</h3>
-                <p>Write outreach emails that actually get replies.</p>
-                <a href="cold-email.html">Start Now</a>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Write outreach emails that actually get replies.</p>
+                <a href="cold-email.html" class="btn-primary" style="display: block; text-align: center;">Start Now</a>
             </div>
 
-            <div class="tool-card">
-                <div class="tool-icon">🎤</div>
+            <div class="glass-card">
+                <div style="font-size: 2rem; margin-bottom: 1rem;">🎤</div>
                 <h3>Interview Coach</h3>
-                <p>Practice live interview questions and get instant feedback.</p>
-                <a href="interview.html">Start Now</a>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Practice live interview questions and get instant feedback.</p>
+                <a href="interview.html" class="btn-primary" style="display: block; text-align: center;">Start Now</a>
             </div>
         </div>
     </div>
@@ -446,7 +100,6 @@
             toast.textContent = message;
             toast.className = `toast ${type}`;
             toast.style.display = 'block';
-            toast.scrollIntoView({ behavior: 'smooth', block: 'end' });
             setTimeout(() => { toast.style.display = 'none'; }, 3000);
         }
 
@@ -610,6 +263,81 @@
         }
 
         window.addEventListener('load', initPage);
+
+        // --- Razorpay Integration Logic ---
+        document.getElementById('btn-upgrade-pro').onclick = async function(e){
+            e.preventDefault();
+            const { data: { session } } = await client.auth.getSession();
+            if (!session) {
+                showToast('Please log in again to upgrade.', 'error');
+                return;
+            }
+            
+            try {
+                // 1. Create Order
+                const response = await fetch('/api/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: 299, planId: 'pro_monthly' })
+                });
+                
+                const orderData = await response.json();
+                if (!response.ok) throw new Error(orderData.error || 'Failed to create order');
+
+                // 2. Open Razorpay
+                const options = {
+                    key: orderData.key_id,
+                    amount: orderData.amount,
+                    currency: "INR",
+                    name: "CareerCraft AI",
+                    description: "Upgrade to Pro",
+                    order_id: orderData.id,
+                    handler: async function (paymentResponse){
+                        try {
+                            const verifyRes = await fetch('/api/verify-payment', {
+                                method: 'POST',
+                                headers: { 
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${session.access_token}`
+                                },
+                                body: JSON.stringify({
+                                    razorpay_order_id: paymentResponse.razorpay_order_id,
+                                    razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                                    razorpay_signature: paymentResponse.razorpay_signature,
+                                    planId: 'pro_monthly'
+                                })
+                            });
+                            const result = await verifyRes.json();
+                            if (verifyRes.ok && result.success) {
+                                showToast('Successfully upgraded to Pro!', 'success');
+                                document.getElementById('btn-upgrade-pro').style.display = 'none';
+                                // Optional: refresh user session
+                                await client.auth.refreshSession();
+                            } else {
+                                showToast('Payment verification failed.', 'error');
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            showToast('Verification error.', 'error');
+                        }
+                    },
+                    prefill: {
+                        email: session.user.email
+                    },
+                    theme: { color: "#7c3aed" }
+                };
+                
+                const rzp1 = new Razorpay(options);
+                rzp1.on('payment.failed', function (res){
+                    showToast("Payment Failed: " + res.error.description, 'error');
+                });
+                rzp1.open();
+                
+            } catch (err) {
+                console.error("Checkout error:", err);
+                showToast("Failed to initiate checkout.", 'error');
+            }
+        };
     </script>
 </body>
 </html>
