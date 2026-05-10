@@ -14,7 +14,7 @@
 
     <!-- Top Navigation -->
     <div class="topnav">
-        <a href="index.html" class="logo">
+        <a href="dashboard.html" class="logo">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 <path d="M2 17L12 22L22 17" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -32,13 +32,13 @@
     <!-- Main Container -->
     <div class="container">
         <!-- Welcome Section -->
-        <div class="glass-card welcome mb-2" style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h1 id="welcomeName">Welcome back! 👋</h1>
-                <p id="welcomeEmail" style="color: var(--text-secondary);"></p>
-                <p class="mt-1">What do you want to work on today?</p>
+        <div class="hero text-center" style="margin-top: 3rem; margin-bottom: 4rem;">
+            <h1 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem;"><span style="background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Welcome back,</span> <span id="welcomeNameSpan">User</span> 👋</h1>
+            <p id="welcomeEmail" style="font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 2rem;"></p>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <a href="#tools" class="btn-primary">Explore Tools</a>
+                <a href="#pricing" class="btn-accent">View Pro Plans</a>
             </div>
-            <button class="btn-accent" id="btn-upgrade-pro">Upgrade to Pro ₹299/mo</button>
         </div>
 
         <!-- My Resumes -->
@@ -53,35 +53,70 @@
         </div>
 
         <!-- Tools Grid -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2rem;">
-            <div class="glass-card">
-                <div style="font-size: 2rem; margin-bottom: 1rem;">📝</div>
+        <div id="tools" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2rem; margin-bottom: 4rem;">
+            <div class="feature-card">
+                <div class="feature-icon" style="font-size: 2rem; margin-bottom: 1rem; display: inline-block; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color);">📝</div>
                 <h3>Resume Builder</h3>
                 <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Create a professional ATS-ready resume in minutes.</p>
                 <a href="resume.html" class="btn-primary" style="display: block; text-align: center;">Start Now</a>
             </div>
 
-            <div class="glass-card">
-                <div style="font-size: 2rem; margin-bottom: 1rem;">📨</div>
+            <div class="feature-card">
+                <div class="feature-icon" style="font-size: 2rem; margin-bottom: 1rem; display: inline-block; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color);">📨</div>
                 <h3>Cover Letter AI</h3>
                 <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Generate tailored cover letters for any job posting.</p>
                 <a href="cover-letter.html" class="btn-primary" style="display: block; text-align: center;">Start Now</a>
             </div>
 
-            <div class="glass-card">
-                <div style="font-size: 2rem; margin-bottom: 1rem;">✉️</div>
+            <div class="feature-card">
+                <div class="feature-icon" style="font-size: 2rem; margin-bottom: 1rem; display: inline-block; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color);">✉️</div>
                 <h3>Cold Email Writer</h3>
                 <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Write outreach emails that actually get replies.</p>
                 <a href="cold-email.html" class="btn-primary" style="display: block; text-align: center;">Start Now</a>
             </div>
 
-            <div class="glass-card">
-                <div style="font-size: 2rem; margin-bottom: 1rem;">🎤</div>
+            <div class="feature-card">
+                <div class="feature-icon" style="font-size: 2rem; margin-bottom: 1rem; display: inline-block; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color);">🎤</div>
                 <h3>Interview Coach</h3>
                 <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Practice live interview questions and get instant feedback.</p>
                 <a href="interview.html" class="btn-primary" style="display: block; text-align: center;">Start Now</a>
             </div>
         </div>
+
+        <!-- Pricing Section -->
+        <section class="pricing" id="pricing">
+            <div class="text-center">
+                <h2 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem;">Simple, transparent pricing</h2>
+                <p style="color: var(--text-secondary);">Upgrade to Pro to unlock advanced AI generation.</p>
+            </div>
+            
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="plan-name">Basic</div>
+                    <div class="plan-price">Free<span>/forever</span></div>
+                    <p class="plan-desc">Perfect for getting started with standard templates.</p>
+                    <ul class="plan-features">
+                        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>Standard resume templates</li>
+                        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>Basic cover letters</li>
+                        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>Standard interview questions</li>
+                    </ul>
+                    <button class="btn-primary" style="opacity: 0.5; cursor: not-allowed;">Current Plan</button>
+                </div>
+
+                <div class="pricing-card premium">
+                    <div class="plan-name">Pro</div>
+                    <div class="plan-price">₹299<span>/month</span></div>
+                    <p class="plan-desc">Unlock advanced AI and premium frameworks.</p>
+                    <ul class="plan-features">
+                        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>Unlimited AI Generation</li>
+                        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>Premium ATS-Optimized Templates</li>
+                        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>PAS & AIDA Sales Frameworks</li>
+                        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>Advanced Interview Analytics</li>
+                    </ul>
+                    <button class="btn-accent" id="btn-upgrade-pro">Upgrade to Pro</button>
+                </div>
+            </div>
+        </section>
     </div>
 
     <div id="toast" class="toast"></div>
@@ -255,7 +290,8 @@
 
                 currentUserId = userId;
                 document.getElementById('avatarInitial').textContent = (userName || 'A').charAt(0).toUpperCase();
-                document.getElementById('welcomeName').textContent = `Welcome back, ${userName || 'User'}! 👋`;
+                const nameEl = document.getElementById('welcomeNameSpan');
+                if(nameEl) nameEl.textContent = userName || 'User';
                 document.getElementById('welcomeEmail').textContent = userEmail || '';
             }
 
