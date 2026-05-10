@@ -7,6 +7,8 @@ const mammoth = require('mammoth');
 const { calculateAtsScore, calculateRelevanceScore } = require('./utils/scoring');
 const { generateCoverLetterPDF } = require('./utils/pdf-generator');
 const coldEmailHandler = require('./api/cold-email');
+const crypto = require('crypto');
+const Razorpay = require('razorpay');
 const aiSuggestionsHandler = require('./api/ai-suggestions');
 const deleteUserHandler = require('./api/delete-user');
 const interviewCoachHandler = require('./api/interview-coach');
@@ -356,6 +358,65 @@ app.post('/api/generate-pdf', async (req, res) => {
   } catch (err) {
     console.error('PDF generation error:', err);
     return res.status(500).json({ error: 'Failed to generate PDF. Please try again.' });
+  }
+});
+
+// ─── Payment Gateway (Razorpay) ─────────────────────────────────────────────
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_YOUR_TEST_KEY',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'YOUR_TEST_SECRET'
+});
+
+app.post('/api/create-order', async (req, res) => {
+  try {
+    const { amount, planId } = req.body;
+    
+    if (!amount || !planId) {
+      return res.status(400).json({ error: 'Amount and planId are required' });
+    }
+
+    const options = {
+      amount: amount * 100, // amount in the smallest currency unit (paise for INR)
+      currency: "INR",
+      receipt: `receipt_order_${Date.now()}`
+    };
+
+    const order = await razorpay.orders.create(options);
+    
+    res.status(200).json({
+      id: order.id,
+      currency: order.currency,
+      amount: order.amount,
+      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_YOUR_TEST_KEY'
+    });
+  } catch (error) {
+    console.error("Razorpay create order error:", error);
+    res.status(500).json({ error: 'Failed to create payment order' });
+  }
+});
+
+app.post('/api/verify-payment', (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planId } = req.body;
+    
+    const sign = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSign = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || 'YOUR_TEST_SECRET')
+      .update(sign.toString())
+      .digest("hex");
+
+    if (razorpay_signature === expectedSign) {
+      // Payment is verified successfully.
+      // TODO: Update user's subscription status in Supabase/Database here
+      console.log(`Payment successful for order: ${razorpay_order_id}, Plan: ${planId}`);
+      return res.status(200).json({ success: true, message: "Payment verified successfully" });
+    } else {
+      return res.status(400).json({ success: false, message: "Invalid signature" });
+    }
+  } catch (error) {
+    console.error("Razorpay verification error:", error);
+    res.status(500).json({ success: false, message: "Server error during verification" });
   }
 });
 

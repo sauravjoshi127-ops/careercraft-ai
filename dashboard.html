@@ -446,6 +446,7 @@
             toast.textContent = message;
             toast.className = `toast ${type}`;
             toast.style.display = 'block';
+            toast.scrollIntoView({ behavior: 'smooth', block: 'end' });
             setTimeout(() => { toast.style.display = 'none'; }, 3000);
         }
 
