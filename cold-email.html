@@ -145,7 +145,7 @@
     <div class="nav-links">
       <a href="resume.html" class="nav-btn">📝 Resume</a>
       <a href="cover-letter.html" class="nav-btn">📨 Cover Letter</a>
-      <a href="interview-coach.html" class="nav-btn">🎤 Interview</a>
+      <a href="interview.html" class="nav-btn">🎤 Interview</a>
       <a href="dashboard.html" class="nav-btn primary">← Dashboard</a>
     </div>
   </nav>
@@ -401,6 +401,9 @@ document.getElementById('emailForm').addEventListener('submit', async e => {
     if (!res.ok) throw new Error(data.error || 'Server error');
     currentData = data;
     renderResults(data);
+    if (data.fallbackUsed) {
+      showToast('AI is unavailable right now, so fallback drafts were generated.', false);
+    }
   } catch (err) {
     console.error(err);
     const alert = document.getElementById('errAlert');

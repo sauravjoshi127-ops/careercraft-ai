@@ -9,6 +9,9 @@ const { generateCoverLetterPDF } = require('./utils/pdf-generator');
 const coldEmailHandler = require('./api/cold-email');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
+const aiSuggestionsHandler = require('./api/ai-suggestions');
+const deleteUserHandler = require('./api/delete-user');
+const interviewCoachHandler = require('./api/interview-coach');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -324,6 +327,9 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
 // ─── Cold Email ──────────────────────────────────────────────────────────────
 
 app.post('/api/cold-email', async (req, res) => coldEmailHandler(req, res));
+app.post('/api/ai-suggestions', async (req, res) => aiSuggestionsHandler(req, res));
+app.post('/api/delete-user', async (req, res) => deleteUserHandler(req, res));
+app.post('/api/interview-coach', async (req, res) => interviewCoachHandler(req, res));
 
 // ─── PDF Generation ──────────────────────────────────────────────────────────
 
