@@ -240,8 +240,9 @@ nav, .topnav {
     -webkit-backdrop-filter: blur(40px) saturate(180%);
     box-shadow: var(--shadow-premium);
     position: relative;
-    overflow: hidden;
-    transition: var(--transition-smooth);
+    /* overflow: visible — do NOT set hidden; it clips child selects, buttons, and dropdowns */
+    transition: border-color 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-card::before {
@@ -249,12 +250,13 @@ nav, .topnav {
     position: absolute;
     top: 0; left: 0; right: 0; height: 1px;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    pointer-events: none;
 }
 
 .glass-card:hover {
     border-color: var(--border-hover);
-    transform: translateY(-4px);
     box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 210, 255, 0.1);
+    /* No translateY — form glass-cards should NOT move on hover */
 }
 
 /* Spotlight Effect */
@@ -314,7 +316,7 @@ nav, .topnav {
     padding: 3rem 2rem;
     transition: var(--transition-smooth);
     position: relative;
-    overflow: hidden;
+    /* overflow: visible — do not clip child interactive elements */
     display: flex;
     flex-direction: column;
     height: 100%;
