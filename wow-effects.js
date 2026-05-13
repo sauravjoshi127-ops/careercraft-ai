@@ -1,5 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Spotlight Hover Effect for Premium Cards
+function initWow() {
     const cards = document.querySelectorAll('.glass-card, .template-preview, .pricing-card, .feature-card, .ats-edu-panel');
     
     document.addEventListener('mousemove', (e) => {
@@ -13,18 +12,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 2. Cinematic Staggered Cascading Reveal
     const animatables = document.querySelectorAll('.glass-card, .pricing-card, .feature-card, .ats-edu-panel, .header-section h1');
     
-    // Only animate if they aren't already visible to avoid glitching
     animatables.forEach((el, index) => {
-        // Prepare element for animation
         el.style.opacity = '0';
         el.style.transform = 'translateY(20px)';
         el.style.transition = 'opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)';
         
-        // Trigger animation with staggered delay
-        // Cap the delay to avoid making the user wait too long on pages with many elements
         const delay = Math.min(index * 75, 800); 
         
         setTimeout(() => {
@@ -32,4 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
             el.style.transform = 'translateY(0)';
         }, 50 + delay);
     });
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initWow);
+} else {
+    initWow();
+}

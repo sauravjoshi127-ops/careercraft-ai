@@ -150,20 +150,39 @@
       <h2 style="margin-top:0">Create Cover Letter</h2>
 
       <!-- ATS & Relevance Score Education Panel -->
-      <div class="ats-edu-panel">
-        <h3>📊 What are <span>ATS Score</span> &amp; <span>Relevance Score?</span></h3>
-        <p>Every application you submit faces two filters — an algorithm and a human. These two scores predict how well your cover letter will pass both:</p>
-        <div class="score-def">
-          <div class="score-def-item">
-            <div class="sdi-title">🤖 ATS Score</div>
-            <div class="sdi-desc">Most companies use ATS software to <strong style="color:var(--text-primary)">automatically scan and filter</strong> applications before any human reads them. The ATS looks for <em>keywords and phrases</em> from the job description. <strong style="color:var(--text-primary)">Aim for 70 or higher.</strong></div>
+      <div class="glass-card" style="margin-bottom: 2rem; padding: 2.5rem; position: relative; overflow: hidden; border: 1px solid rgba(124, 58, 237, 0.3);">
+        <div style="position: absolute; top: -50px; left: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(124, 58, 237, 0.15) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
+        
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+          <span style="background: rgba(124, 58, 237, 0.2); padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;">📊</span>
+          What are ATS Score &amp; Relevance Score?
+        </h3>
+        
+        <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">Every application you submit faces two filters — an algorithm and a human. These two scores predict how well your cover letter will pass both:</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+          <!-- ATS Card -->
+          <div style="background: linear-gradient(145deg, rgba(124, 58, 237, 0.1), rgba(10, 10, 15, 0.4)); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 1rem; padding: 1.5rem; transition: transform 0.3s ease, border-color 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='rgba(124, 58, 237, 0.5)';" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(124, 58, 237, 0.2)';">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+              <span style="font-size: 1.5rem;">🤖</span>
+              <h4 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; color: #c4b5fd; margin: 0;">ATS Score</h4>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; margin: 0;">Most companies use ATS software to <strong style="color: #fff;">automatically scan and filter</strong> applications before any human reads them. The ATS looks for <em>keywords and phrases</em> from the job description. <br><br><strong style="color: #a855f7;">Aim for 70 or higher.</strong></p>
           </div>
-          <div class="score-def-item">
-            <div class="sdi-title">🎯 Relevance Score</div>
-            <div class="sdi-desc">Once past the ATS, a real person reads your letter. The Relevance Score measures how closely your <strong style="color:var(--text-primary)">skills, experience, and personality</strong> match the job. High relevance = interview invitation. <strong style="color:var(--text-primary)">Aim for 75 or higher.</strong></div>
+
+          <!-- Relevance Card -->
+          <div style="background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(10, 10, 15, 0.4)); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 1rem; padding: 1.5rem; transition: transform 0.3s ease, border-color 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.borderColor='rgba(16, 185, 129, 0.5)';" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(16, 185, 129, 0.2)';">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+              <span style="font-size: 1.5rem;">🎯</span>
+              <h4 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; color: #6ee7b7; margin: 0;">Relevance Score</h4>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; margin: 0;">Once past the ATS, a real person reads your letter. The Relevance Score measures how closely your <strong style="color: #fff;">skills, experience, and personality</strong> match the job. High relevance = interview invitation. <br><br><strong style="color: #10b981;">Aim for 75 or higher.</strong></p>
           </div>
         </div>
-        <p class="edu-tip">💡 <strong style="color:var(--text-primary)">How to improve both scores:</strong> Fill in the <em>Score Optimizer</em> section below. The more context you provide, the more the AI can tailor your letter — dramatically boosting both scores.</p>
+        
+        <div style="background: rgba(255, 255, 255, 0.03); border-left: 4px solid #a855f7; padding: 1rem 1.5rem; border-radius: 0 0.5rem 0.5rem 0;">
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">💡 <strong style="color: #fff;">How to improve both scores:</strong> Fill in the <em>Score Optimizer</em> section below. The more context you provide, the more the AI can tailor your letter — dramatically boosting both scores.</p>
+        </div>
       </div>
 
       <div class="form-row">
