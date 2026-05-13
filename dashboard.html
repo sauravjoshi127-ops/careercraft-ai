@@ -18,7 +18,7 @@
     <!-- Top Navigation -->
     <div class="topnav">
         <a href="dashboard.html" class="logo">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -26,20 +26,22 @@
             <span class="premium-gradient-text">CareerCraft AI</span>
         </a>
         <div class="user-menu">
-            <a href="settings.html" class="btn-accent" style="padding: 0.5rem 1rem; font-size: 0.8rem;">⚙️ Settings</a>
-            <div class="user-avatar" id="avatarInitial" style="width: 32px; height: 32px; background: var(--accent-cyan); color: #000;">A</div>
-            <button class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="logout()">Sign Out</button>
+            <div class="user-avatar" id="avatarInitial" title="Account">A</div>
+            <a href="settings.html" class="nav-btn">⚙️ Settings</a>
+            <button class="nav-btn" onclick="logout()">Sign Out</button>
         </div>
     </div>
 
     <!-- Main Container -->
     <div class="container">
-        <!-- Hero Section -->
-        <div class="hero">
-            <h1 class="premium-gradient-text">Master your<br>next interview.</h1>
-            <p>The elite AI workspace for modern job seekers. Prepare with intelligence, precision, and confidence.</p>
+        <!-- Welcome Section -->
+        <div class="hero text-center" style="margin-top: 3rem; margin-bottom: 4rem;">
+            <h1 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem;">
+                <span class="premium-gradient-text">Welcome back,</span> <span id="welcomeNameSpan">User</span> 👋
+            </h1>
+            <p id="welcomeEmail" style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 2rem;"></p>
             <div style="display: flex; gap: 1rem; justify-content: center;">
-                <a href="#tools" class="btn-primary">Get Started</a>
+                <a href="#tools" class="btn-primary">Explore Tools</a>
                 <a href="#pricing" class="btn-accent">View Pro Plans</a>
             </div>
         </div>
@@ -125,7 +127,6 @@
                 </div>
             </div>
         </section>
-    </div>
     </div>
 
     <div id="toast" class="toast"></div>
