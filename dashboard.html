@@ -18,108 +18,114 @@
     <!-- Top Navigation -->
     <div class="topnav">
         <a href="dashboard.html" class="logo">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            CareerCraft AI
+            <span class="premium-gradient-text">CareerCraft AI</span>
         </a>
         <div class="user-menu">
-            <div class="user-avatar" id="avatarInitial" title="Account">A</div>
-            <a href="settings.html" class="nav-btn">⚙️ Settings</a>
-            <button class="nav-btn" onclick="logout()">Sign Out</button>
+            <a href="settings.html" class="btn-accent" style="padding: 0.5rem 1rem; font-size: 0.8rem;">⚙️ Settings</a>
+            <div class="user-avatar" id="avatarInitial" style="width: 32px; height: 32px; background: var(--accent-cyan); color: #000;">A</div>
+            <button class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="logout()">Sign Out</button>
         </div>
     </div>
 
     <!-- Main Container -->
     <div class="container">
-        <!-- Welcome Section -->
-        <div class="hero text-center" style="margin-top: 3rem; margin-bottom: 4rem;">
-            <h1 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem;"><span style="background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Welcome back,</span> <span id="welcomeNameSpan">User</span> 👋</h1>
-            <p id="welcomeEmail" style="font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 2rem;"></p>
+        <!-- Hero Section -->
+        <div class="hero">
+            <h1 class="premium-gradient-text">Master your<br>next interview.</h1>
+            <p>The elite AI workspace for modern job seekers. Prepare with intelligence, precision, and confidence.</p>
             <div style="display: flex; gap: 1rem; justify-content: center;">
-                <a href="#tools" class="btn-primary">Explore Tools</a>
+                <a href="#tools" class="btn-primary">Get Started</a>
                 <a href="#pricing" class="btn-accent">View Pro Plans</a>
             </div>
         </div>
 
-        <!-- My Resumes -->
-        <div class="glass-card mb-2">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2>📄 My Resumes</h2>
-                <a href="resume.html" class="btn-accent">+ New Resume</a>
+        <!-- My Resumes Section -->
+        <div class="glass-card mb-2" style="margin-bottom: 4rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="color: var(--accent-cyan);">📄</span> My Resumes
+                </h2>
+                <a href="resume.html" class="btn-accent" style="border-radius: 12px; font-size: 0.85rem;">+ Create New</a>
             </div>
             <div id="resumeList">
-                <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">⏳ Loading your resumes...</div>
+                <div style="text-align: center; color: var(--text-tertiary); padding: 3rem; border: 1px dashed var(--border-color); border-radius: 1.5rem;">
+                    <div class="spinner" style="margin-bottom: 1rem;"></div>
+                    <p>Accessing secure resume vault...</p>
+                </div>
             </div>
         </div>
 
         <!-- Tools Grid -->
-        <div id="tools" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2rem; margin-bottom: 4rem;">
+        <div id="tools" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 6rem;">
             <div class="feature-card">
-                <div class="feature-icon" style="font-size: 2rem; margin-bottom: 1rem; display: inline-block; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color);">📝</div>
-                <h3>Resume Builder</h3>
-                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Create a professional ATS-ready resume in minutes.</p>
-                <a href="resume.html" class="btn-primary" style="display: block; text-align: center;">Start Now</a>
+                <div class="feature-icon">📝</div>
+                <h3 style="margin-bottom: 0.75rem;">Resume Builder</h3>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 2rem; flex-grow: 1;">Craft a high-impact, ATS-optimized resume using our intelligent structural engine.</p>
+                <a href="resume.html" class="btn-primary">Launch Tool</a>
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon" style="font-size: 2rem; margin-bottom: 1rem; display: inline-block; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color);">📨</div>
-                <h3>Cover Letter AI</h3>
-                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Generate tailored cover letters for any job posting.</p>
-                <a href="cover-letter.html" class="btn-primary" style="display: block; text-align: center;">Start Now</a>
+                <div class="feature-icon">📨</div>
+                <h3 style="margin-bottom: 0.75rem;">Cover Letter AI</h3>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 2rem; flex-grow: 1;">Generate hyper-tailored cover letters that speak directly to the job's core requirements.</p>
+                <a href="cover-letter.html" class="btn-primary">Launch Tool</a>
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon" style="font-size: 2rem; margin-bottom: 1rem; display: inline-block; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color);">✉️</div>
-                <h3>Cold Email Writer</h3>
-                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Write outreach emails that actually get replies.</p>
-                <a href="cold-email.html" class="btn-primary" style="display: block; text-align: center;">Start Now</a>
+                <div class="feature-icon">✉️</div>
+                <h3 style="margin-bottom: 0.75rem;">Cold Email Writer</h3>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 2rem; flex-grow: 1;">Architect professional outreach emails designed to break through the noise and get replies.</p>
+                <a href="cold-email.html" class="btn-primary">Launch Tool</a>
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon" style="font-size: 2rem; margin-bottom: 1rem; display: inline-block; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color);">🎤</div>
-                <h3>Interview Coach</h3>
-                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Practice live interview questions and get instant feedback.</p>
-                <a href="interview.html" class="btn-primary" style="display: block; text-align: center;">Start Now</a>
+                <div class="feature-icon">🎤</div>
+                <h3 style="margin-bottom: 0.75rem;">Interview Coach</h3>
+                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 2rem; flex-grow: 1;">Practice in an immersive AI environment with real-time feedback on your performance.</p>
+                <a href="interview.html" class="btn-primary">Launch Tool</a>
             </div>
         </div>
 
         <!-- Pricing Section -->
-        <section class="pricing" id="pricing">
-            <div class="text-center">
-                <h2 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem;">Simple, transparent pricing</h2>
-                <p style="color: var(--text-secondary);">Upgrade to Pro to unlock advanced AI generation.</p>
+        <section class="pricing" id="pricing" style="padding-bottom: 4rem;">
+            <div style="text-align: center; margin-bottom: 4rem;">
+                <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">Simple, powerful pricing</h2>
+                <p style="color: var(--text-secondary); font-size: 1.1rem;">Choose the plan that fits your career ambitions.</p>
             </div>
             
-            <div class="pricing-grid">
-                <div class="pricing-card">
-                    <div class="plan-name">Basic</div>
-                    <div class="plan-price">Free<span>/forever</span></div>
-                    <p class="plan-desc">Perfect for getting started with standard templates.</p>
-                    <ul class="plan-features">
-                        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>Standard resume templates</li>
-                        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>Basic cover letters</li>
-                        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>Standard interview questions</li>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; max-width: 900px; margin: 0 auto;">
+                <div class="pricing-card glass-card">
+                    <div style="color: var(--text-tertiary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem; margin-bottom: 1rem;">Basic</div>
+                    <div style="font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem;">Free</div>
+                    <p style="color: var(--text-secondary); margin-bottom: 2.5rem; font-size: 0.9rem;">Core features to get you started on your journey.</p>
+                    <ul style="list-style: none; padding: 0; margin-bottom: 3rem; flex-grow: 1;">
+                        <li style="display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);"><span style="color: var(--accent-cyan);">✓</span> 3 Resume Templates</li>
+                        <li style="display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);"><span style="color: var(--accent-cyan);">✓</span> 5 AI Generations / mo</li>
+                        <li style="display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);"><span style="color: var(--accent-cyan);">✓</span> Standard Support</li>
                     </ul>
-                    <button class="btn-primary" style="opacity: 0.5; cursor: not-allowed;">Current Plan</button>
+                    <button class="btn-accent" disabled style="opacity: 0.5;">Current Plan</button>
                 </div>
 
-                <div class="pricing-card premium">
-                    <div class="plan-name">Pro</div>
-                    <div class="plan-price">₹299<span>/month</span></div>
-                    <p class="plan-desc">Unlock advanced AI and premium frameworks.</p>
-                    <ul class="plan-features">
-                        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>Unlimited AI Generation</li>
-                        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>Premium ATS-Optimized Templates</li>
-                        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>PAS & AIDA Sales Frameworks</li>
-                        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>Advanced Interview Analytics</li>
+                <div class="pricing-card glass-card premium">
+                    <div style="color: var(--accent-cyan); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem; margin-bottom: 1rem;">Professional</div>
+                    <div style="font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem;">₹299<span style="font-size: 1rem; font-weight: 500; color: var(--text-tertiary);">/mo</span></div>
+                    <p style="color: var(--text-secondary); margin-bottom: 2.5rem; font-size: 0.9rem;">Unlock the full power of AI for your career growth.</p>
+                    <ul style="list-style: none; padding: 0; margin-bottom: 3rem; flex-grow: 1;">
+                        <li style="display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem;"><span style="color: var(--accent-cyan);">✦</span> Unlimited AI Generation</li>
+                        <li style="display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem;"><span style="color: var(--accent-cyan);">✦</span> All Premium Templates</li>
+                        <li style="display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem;"><span style="color: var(--accent-cyan);">✦</span> PAS & AIDA Frameworks</li>
+                        <li style="display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem;"><span style="color: var(--accent-cyan);">✦</span> Advanced Analytics</li>
                     </ul>
-                    <button class="btn-accent" id="btn-upgrade-pro">Upgrade to Pro</button>
+                    <button class="btn-primary" id="btn-upgrade-pro">Upgrade Now</button>
                 </div>
             </div>
         </section>
+    </div>
     </div>
 
     <div id="toast" class="toast"></div>
