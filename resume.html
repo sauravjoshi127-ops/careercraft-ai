@@ -1581,7 +1581,8 @@ async function downloadPDF(resumeId) {
             
             ${certifications ? `<div class="section"><h2>Certifications</h2><p style="font-size:12px;color:#475569;line-height:1.7;margin:0;">${certifications}</p></div>` : ''}
         </div>
-    </body>
+    <script src="ambient3d.js"></script>
+</body>
     </html>`;
 }
 
@@ -1650,7 +1651,8 @@ function generateClassicTemplate(data, exp, edu, sk) {
             
             ${certifications ? `<div class="section"><h2>Certifications</h2><p style="font-size:12px;color:#333;line-height:1.7;margin:0;">${certifications}</p></div>` : ''}
         </div>
-    </body>
+    <script src="ambient3d.js"></script>
+</body>
     </html>`;
 }
 
@@ -1720,7 +1722,8 @@ function generateCreativeTemplate(data, exp, edu, sk) {
                 ${certifications ? `<div><h2>Certifications</h2><p style="font-size:12px;color:#475569;line-height:1.7;margin:0;">${certifications}</p></div>` : ''}
             </div>
         </div>
-    </body>
+    <script src="ambient3d.js"></script>
+</body>
     </html>`;
 }
 
@@ -1862,5 +1865,7 @@ function generateCreativeTemplate(data, exp, edu, sk) {
         // ── Bootstrap ─────────────────────────────────────────────────────────────
         window.addEventListener('load', initPage);
     </script>
+<script src="ambient3d.js"></script>
 </body>
 </html>
+
