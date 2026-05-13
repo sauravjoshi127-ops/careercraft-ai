@@ -1,13 +1,14 @@
-<!DOCTYPE html>
+box.textContent = currentAISuggestion || '(No suggestion returned)';
+        resetAIButton();<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resume Builder - CareerCraft AI</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    
+    
+    
     <link rel="stylesheet" href="styles/premium.css">
     <style>
 /* ── Resume Builder page styles ── */
@@ -334,12 +335,46 @@
         let currentTemplate = 'modern';
         let accentColor = '#00d2ff';
 
-        // ── Live Preview ─────────────────────────────────────────────
+        // ── Live Preview Rendering Engine ──
+        // ── Rendering Components ──────────────────────────────────────────────
+        const Renderer = {
+            experience(exp, color) {
+                if (!exp || exp.length === 0) return '';
+                return exp.map(e => {
+                    if (!e.title && !e.company) return '';
+                    return `
+                        <div class="preview-entry">
+                            <div class="preview-exp-title" style="color:${color}">${esc(e.title)}</div>
+                            <div class="preview-exp-meta">${esc(e.company)}${e.start ? ' · ' + esc(e.start) : ''}${e.end ? ' – ' + esc(e.end) : ''}</div>
+                            ${e.description ? `<div class="preview-text">${esc(e.description)}</div>` : ''}
+                        </div>`;
+                }).join('');
+            },
+
+            education(edu) {
+                if (!edu || edu.length === 0) return '';
+                return edu.map(e => {
+                    if (!e.degree && !e.school) return '';
+                    return `
+                        <div class="preview-entry">
+                            <div class="preview-exp-title">${esc(e.degree)}</div>
+                            <div class="preview-exp-meta">${esc(e.school)}${e.year ? ' · ' + esc(e.year) : ''}</div>
+                        </div>`;
+                }).join('');
+            },
+
+            skills(sk) {
+                if (!sk || sk.length === 0) return '';
+                return `<div class="preview-skills">${sk.map(s => `<span class="preview-skill">${esc(s)}</span>`).join('')}</div>`;
+            }
+        };
+
+        
         function switchTemplate(name, btn) {
             currentTemplate = name;
             document.getElementById('templateName').value = name;
             document.querySelectorAll('.template-tab').forEach(t => t.classList.remove('active'));
-            btn.classList.add('active');
+            if (btn) btn.classList.add('active');
             updatePreview();
         }
         function setAccentColor(el) {
@@ -349,59 +384,55 @@
             updatePreview();
         }
         function applyCustomization() { updatePreview(); }
-        function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+        function selectTemplate(name) { 
+            const tabs = document.querySelectorAll('.template-tab');
+            tabs.forEach(t => {
+                if (t.textContent.toLowerCase().includes(name.toLowerCase())) {
+                    switchTemplate(name, t);
+                }
+            });
+        }
+
         function updatePreview() {
-            const name = document.getElementById('fullName')?.value || '';
-            const email = document.getElementById('email')?.value || '';
-            const phone = document.getElementById('phone')?.value || '';
-            const loc = document.getElementById('location')?.value || '';
-            const summary = document.getElementById('summary')?.value || '';
-            const certs = document.getElementById('certifications')?.value || '';
+            const data = collectFormData();
             const font = document.getElementById('custFont')?.value || 'Inter';
             const spacing = document.getElementById('custSpacing')?.value || 'normal';
-            const lineH = spacing==='compact'?'1.4':spacing==='relaxed'?'1.9':'1.65';
-            if (!name && !email) {
-                document.getElementById('previewBody').innerHTML = '<div class="preview-placeholder"><p>Start filling in your details to see live preview.</p></div>';
+            const lineH = spacing === 'compact' ? '1.4' : spacing === 'relaxed' ? '1.9' : '1.65';
+            
+            const previewEl = document.getElementById('previewBody');
+            if (!previewEl) return;
+
+            if (!data.full_name && !data.email) {
+                previewEl.innerHTML = `
+                    <div class="preview-placeholder">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <p>Start filling in your details<br>and see your resume update live.</p>
+                    </div>`;
                 return;
             }
-            let expHtml = '';
-            document.querySelectorAll('#experienceContainer .entry-card').forEach(card => {
-                const id = card.id.replace('exp-','');
-                const title = document.getElementById('expTitle-'+id)?.value||'';
-                const company = document.getElementById('expCompany-'+id)?.value||'';
-                const start = document.getElementById('expStart-'+id)?.value||'';
-                const end = document.getElementById('expEnd-'+id)?.value||'';
-                const desc = document.getElementById('expDesc-'+id)?.value||'';
-                if (title||company) expHtml += '<div style="margin-bottom:0.5rem;"><div class="preview-exp-title" style="color:'+accentColor+'">'+esc(title)+'</div><div class="preview-exp-meta">'+esc(company)+(start?' · '+esc(start):'')+(end?' – '+esc(end):'')+'</div>'+(desc?'<div class="preview-text">'+esc(desc)+'</div>':'')+'</div>';
-            });
-            let eduHtml = '';
-            document.querySelectorAll('#educationContainer .entry-card').forEach(card => {
-                const id = card.id.replace('edu-','');
-                const deg = document.getElementById('eduDegree-'+id)?.value||'';
-                const sch = document.getElementById('eduSchool-'+id)?.value||'';
-                const yr = document.getElementById('eduYear-'+id)?.value||'';
-                if (deg||sch) eduHtml += '<div style="margin-bottom:0.4rem;"><div class="preview-exp-title">'+esc(deg)+'</div><div class="preview-exp-meta">'+esc(sch)+(yr?' · '+esc(yr):'')+'</div></div>';
-            });
-            const skillsHtml = skills.length?'<div class="preview-skills">'+skills.map(s=>'<span class="preview-skill">'+esc(s)+'</span>').join('')+'</div>':'';
-            const contact = [email,phone,loc].filter(Boolean).join(' · ');
-            const cc = currentTemplate==='creative'?accentColor:'';
-            const tpl = 'tpl-'+currentTemplate;
-            document.getElementById('previewBody').innerHTML =
-                '<div id="livePreviewContent" class="'+tpl+'" style="font-family:''+font+'',sans-serif;line-height:'+lineH+'">'+
-                '<h1 style="margin-bottom:0.15rem;">'+esc(name)+'</h1>'+
-                (contact?'<div class="preview-contact">'+esc(contact)+'</div>':'')+
-                '<div class="preview-divider"></div>'+
-                (summary?'<div class="preview-section-title" style="color:'+cc+'">SUMMARY</div><div class="preview-text">'+esc(summary)+'</div>':'')+
-                (expHtml?'<div class="preview-section-title" style="color:'+cc+'">EXPERIENCE</div>'+expHtml:'')+
-                (eduHtml?'<div class="preview-section-title" style="color:'+cc+'">EDUCATION</div>'+eduHtml:'')+
-                (skillsHtml?'<div class="preview-section-title" style="color:'+cc+'">SKILLS</div>'+skillsHtml:'')+
-                (certs?'<div class="preview-section-title" style="color:'+cc+'">CERTIFICATIONS</div><div class="preview-text">'+esc(certs)+'</div>':'')+
-                '</div>';
-        }
-        function selectTemplate(name) { const t=document.querySelector('.template-tab[onclick*="''+name+''"]'); if(t) switchTemplate(name,t); }
-        function showTemplateScreen() {}
 
-        // ── Auth Check ────────────────────────────────────────────────────────────
+            const expHtml = Renderer.experience(data.experience, accentColor);
+            const eduHtml = Renderer.education(data.education);
+            const skillsHtml = Renderer.skills(skills);
+            const contact = [data.email, data.phone, data.location].filter(Boolean).join(' · ');
+            const cc = currentTemplate === 'creative' ? accentColor : '';
+            const tpl = 'tpl-' + currentTemplate;
+
+            previewEl.innerHTML = `
+                <div id="livePreviewContent" class="${tpl}" style="font-family:'${font}', sans-serif; line-height:${lineH}">
+                    <h1 style="margin-bottom:0.15rem;">${esc(data.full_name)}</h1>
+                    ${contact ? `<div class="preview-contact">${esc(contact)}</div>` : ''}
+                    <div class="preview-divider"></div>
+                    ${data.professional_summary ? `<div class="preview-section-title" style="color:${cc}">SUMMARY</div><div class="preview-text">${esc(data.professional_summary)}</div>` : ''}
+                    ${expHtml ? `<div class="preview-section-title" style="color:${cc}">EXPERIENCE</div>${expHtml}` : ''}
+                    ${eduHtml ? `<div class="preview-section-title" style="color:${cc}">EDUCATION</div>${eduHtml}` : ''}
+                    ${skillsHtml ? `<div class="preview-section-title" style="color:${cc}">SKILLS</div>${skillsHtml}` : ''}
+                    ${data.certifications ? `<div class="preview-section-title" style="color:${cc}">CERTIFICATIONS</div><div class="preview-text">${esc(data.certifications)}</div>` : ''}
+                </div>`;
+        }
+// ── Auth Check ────────────────────────────────────────────────────────────
         async function initPage() {
             const { data: { session } } = await client.auth.getSession();
             if (session && session.user) {
@@ -645,42 +676,41 @@
 
         // ── Collect Form Data ─────────────────────────────────────────────────────
         function collectFormData() {
-            // Experiences
-            const experience = [];
+            const exp = [];
             document.querySelectorAll('#experienceContainer .entry-card').forEach(card => {
                 const id = card.id.replace('exp-', '');
-                experience.push({
-                    title: document.getElementById(`expTitle-${id}`)?.value.trim() || '',
-                    company: document.getElementById(`expCompany-${id}`)?.value.trim() || '',
-                    start: document.getElementById(`expStart-${id}`)?.value.trim() || '',
-                    end: document.getElementById(`expEnd-${id}`)?.value.trim() || '',
-                    description: document.getElementById(`expDesc-${id}`)?.value.trim() || '',
+                exp.push({
+                    title: document.getElementById(`expTitle-${id}`)?.value || '',
+                    company: document.getElementById(`expCompany-${id}`)?.value || '',
+                    location: document.getElementById(`expLocation-${id}`)?.value || '',
+                    start: document.getElementById(`expStart-${id}`)?.value || '',
+                    end: document.getElementById(`expEnd-${id}`)?.value || '',
+                    description: document.getElementById(`expDesc-${id}`)?.value || ''
                 });
             });
 
-            // Education
-            const education = [];
+            const edu = [];
             document.querySelectorAll('#educationContainer .entry-card').forEach(card => {
                 const id = card.id.replace('edu-', '');
-                education.push({
-                    degree: document.getElementById(`eduDegree-${id}`)?.value.trim() || '',
-                    school: document.getElementById(`eduSchool-${id}`)?.value.trim() || '',
-                    year: document.getElementById(`eduYear-${id}`)?.value.trim() || '',
-                    grade: document.getElementById(`eduGrade-${id}`)?.value.trim() || '',
+                edu.push({
+                    school: document.getElementById(`eduSchool-${id}`)?.value || '',
+                    degree: document.getElementById(`eduDegree-${id}`)?.value || '',
+                    year: document.getElementById(`eduYear-${id}`)?.value || '',
+                    grade: document.getElementById(`eduGrade-${id}`)?.value || ''
                 });
             });
 
             return {
-                full_name: document.getElementById('fullName').value.trim(),
-                email: document.getElementById('email').value.trim(),
-                phone: document.getElementById('phone').value.trim(),
-                location: document.getElementById('location').value.trim(),
-                professional_summary: document.getElementById('summary').value.trim(),
-                experience,
-                education,
-                skills: [...skills],
-                certifications: document.getElementById('certifications').value.trim(),
-                template_name: document.getElementById('templateName').value,
+                full_name: document.getElementById('fullName')?.value || '',
+                email: document.getElementById('email')?.value || '',
+                phone: document.getElementById('phone')?.value || '',
+                location: document.getElementById('location')?.value || '',
+                professional_summary: document.getElementById('summary')?.value || '',
+                skills: skills,
+                certifications: document.getElementById('certifications')?.value || '',
+                template: document.getElementById('templateName')?.value || 'modern',
+                experience: exp,
+                education: edu
             };
         }
 
@@ -1136,9 +1166,10 @@ async function downloadPDF(resumeId) {
             
             ${certifications ? `<div class="section"><h2>Certifications</h2><p style="font-size:12px;color:#475569;line-height:1.7;margin:0;">${certifications}</p></div>` : ''}
         </div>
-    <script src="ambient3d.js"></script>
-<script src="wow-effects.js"></script>
-</body></html>`;
+    
+
+<script src="ambient3d.js"></script>
+<script src="wow-effects.js"></script></body></html>\`;
 }
 
 function generateClassicTemplate(data, exp, edu, sk) {
@@ -1206,9 +1237,8 @@ function generateClassicTemplate(data, exp, edu, sk) {
             
             ${certifications ? `<div class="section"><h2>Certifications</h2><p style="font-size:12px;color:#333;line-height:1.7;margin:0;">${certifications}</p></div>` : ''}
         </div>
-    <script src="ambient3d.js"></script>
-<script src="wow-effects.js"></script>
-</body></html>`;
+    
+</body></html>\`;
 }
 
 function generateCreativeTemplate(data, exp, edu, sk) {
@@ -1277,9 +1307,8 @@ function generateCreativeTemplate(data, exp, edu, sk) {
                 ${certifications ? `<div><h2>Certifications</h2><p style="font-size:12px;color:#475569;line-height:1.7;margin:0;">${certifications}</p></div>` : ''}
             </div>
         </div>
-    <script src="ambient3d.js"></script>
-<script src="wow-effects.js"></script>
-</body></html>`;
+    
+</body></html>\`;
 }
 
         // ── Resume Sharing ────────────────────────────────────────────────────────
@@ -1345,13 +1374,25 @@ function generateCreativeTemplate(data, exp, edu, sk) {
         }
 
         // ── AI Suggestions ────────────────────────────────────────────────────────
-      async function getAISuggestions(section) {
+      function resetAIButton() {
+    document.querySelectorAll('.btn-ai').forEach(b => {
+        b.disabled = false;
+        b.innerHTML = '💡 AI Suggest';
+    });
+}
+
+async function getAISuggestions(section) {
     currentAISection = section;
     currentAISuggestion = '';
 
     const box = document.getElementById('aiSuggestionsBox');
     const acceptBtn = document.getElementById('aiAcceptBtn');
     box.textContent = '⏳ Getting AI suggestions…';
+    const aiBtn = document.querySelector("button[onclick*='getAISuggestions(\"' + section + '\")']");
+    if (aiBtn) {
+        aiBtn.disabled = true;
+        aiBtn.innerHTML = '⏳ Processing...';
+    }
     acceptBtn.style.display = 'none';
     document.getElementById('aiModal').classList.add('active');
 
@@ -1395,6 +1436,7 @@ function generateCreativeTemplate(data, exp, edu, sk) {
     } catch (err) {
         console.error('❌ AI Suggestions Error:', err);
         box.textContent = '❌ Error: ' + err.message;
+        resetAIButton();
     }
 }
 
@@ -1409,7 +1451,9 @@ function generateCreativeTemplate(data, exp, edu, sk) {
                 showAlert('success', `✅ Added ${newSkills.length} suggested skill(s).`);
             }
             closeAIModal();
-        }
+            updatePreview();
+    document.getElementById('aiModal').classList.remove('active');
+}
 
         function closeAIModal() {
             document.getElementById('aiModal').classList.remove('active');
@@ -1420,8 +1464,7 @@ function generateCreativeTemplate(data, exp, edu, sk) {
         // ── Bootstrap ─────────────────────────────────────────────────────────────
         window.addEventListener('load', initPage);
     </script>
-<script src="ambient3d.js"></script>
-<script src="wow-effects.js"></script>
+
 </body></html>
 
 
