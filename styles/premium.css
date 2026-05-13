@@ -373,6 +373,22 @@ label {
     color: #d4d4d8;
 }
 
+.plan-features li svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    fill: none;
+    stroke: #10b981;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.pricing-card.premium .plan-features li svg {
+    stroke: #a855f7;
+    filter: drop-shadow(0 0 5px rgba(168,85,247,0.4));
+}
+
 .pricing-card .btn-primary,
 .pricing-card .btn-accent {
     width: 100%;
