@@ -5,121 +5,107 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Cover Letter AI - CareerCraft</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="styles/premium.css">
-    <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-    .field-group{margin-bottom:1rem;}
-    .field-group{margin-bottom:1rem;}
-    .alert{display:none;padding:.75rem 1rem;border-radius:.5rem;margin-bottom:1rem;font-size:.9rem;}
-    .alert-error{background:#fee2e2;color:#991b1b;}
-    .alert-success{background:#dcfce7;color:#166534;}
+  <link rel="stylesheet" href="styles/premium.css">
+  <style>
+    /* ── Cover Letter page overrides ── */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    @media(max-width:640px){ .form-row { grid-template-columns: 1fr; } }
 
-    /* Resume upload area */
-    .upload-area{border:2px dashed rgba(124,58,237,.4);border-radius:.75rem;padding:1.5rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;}
-    .upload-area:hover,.upload-area.drag-over{border-color:#ffffff;background:rgba(124,58,237,.08);}
-    .upload-area input[type=file]{display:none;}
-    .upload-icon{font-size:2rem;margin-bottom:.5rem;}
-    .upload-text{color:#94a3b8;font-size:.9rem;}
-    .upload-hint{color:#64748b;font-size:.8rem;margin-top:.25rem;}
-    .resume-status{display:flex;align-items:center;gap:.6rem;padding:.6rem 1rem;border-radius:.5rem;font-size:.85rem;margin-top:.75rem;}
-    .resume-status.success{background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.3);color:#ffffff;}
-    .resume-status.error{background:rgba(220,38,38,.12);border:1px solid rgba(220,38,38,.3);color:#fca5a5;}
-    .resume-status.loading{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);color:#ffffff;}
-    .resume-progress{height:3px;background:rgba(124,58,237,.2);border-radius:9999px;margin-top:.5rem;overflow:hidden;display:none;}
-    .resume-progress-bar{height:100%;background:linear-gradient(90deg,#7c3aed,#ffffff);width:0;transition:width .3s;}
+    .field-group { margin-bottom: 1.25rem; }
 
-    /* Toggle / switch */
-    .toggle-row{display:flex;align-items:center;gap:.75rem;margin:.5rem 0;}
-    .toggle-label{font-size:.9rem;color:#cbd5e1;}
-    .toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
-    .toggle input{opacity:0;width:0;height:0;}
-    .toggle-slider{position:absolute;inset:0;background:rgba(148,163,184,.25);border-radius:9999px;cursor:pointer;transition:background .2s;}
-    .toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;}
-    .toggle input:checked + .toggle-slider{background:#7c3aed;}
-    .toggle input:checked + .toggle-slider::before{transform:translateX(20px);}
+    /* Alerts */
+    .alert { display:none; padding:0.875rem 1.125rem; border-radius:0.75rem; margin-bottom:1.25rem; font-size:0.88rem; font-weight:500; }
+    .alert-error   { background:rgba(239,68,68,0.1);  border:1px solid rgba(239,68,68,0.3);  color:#fca5a5; }
+    .alert-success { background:rgba(34,197,94,0.1);  border:1px solid rgba(34,197,94,0.3);  color:#86efac; }
 
-    /* Letter preview */
-    .output-box{background:rgba(10,14,39,.8);border:1px solid rgba(148,163,184,.2);padding:1.25rem;border-radius:.5rem;white-space:pre-wrap;line-height:1.75;font-size:.95rem;min-height:120px;}
-    .letter-section-badge{display:inline-block;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.3);color:#ffffff;border-radius:.3rem;padding:.1rem .5rem;font-size:.75rem;font-weight:600;margin-right:.5rem;}
-    .tools{display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap;}
-    .score-box{display:flex;gap:1rem;margin-top:1rem;flex-wrap:wrap;}
-    .score{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.4);padding:.75rem 1.25rem;border-radius:.5rem;min-width:160px;}
-    .score-number{font-size:1.6rem;font-weight:700;color:#ffffff;}
-    .score-label{font-size:.8rem;color:#94a3b8;margin-top:.15rem;}
-    .keywords-section{margin-top:1rem;}
-    .keywords-section h4{font-size:.85rem;color:#94a3b8;margin:0 0 .4rem 0;text-transform:uppercase;letter-spacing:.05em;}
-    .tag{display:inline-block;padding:.25rem .6rem;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);border-radius:9999px;margin:.2rem;font-size:.8rem;}
-    .tag-matched{background:rgba(5,150,105,.2);border-color:rgba(5,150,105,.5);color:#ffffff;}
-    .tag-missing{background:rgba(220,38,38,.12);border-color:rgba(220,38,38,.3);color:#fca5a5;}
-    .history-card{border:1px solid rgba(148,163,184,.15);border-radius:.75rem;padding:1rem;margin-bottom:.75rem;}
-    .section-title{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:.75rem;font-weight:600;}
-    .candidate-name-hint{font-size:.8rem;color:#64748b;margin-top:.25rem;}
-    @media(max-width:600px){.form-row{grid-template-columns:1fr;}.score-box{flex-direction:column;}.score-def{grid-template-columns:1fr !important;}}
+    /* Upload area */
+    .upload-area { border:2px dashed rgba(255,255,255,0.12); border-radius:0.875rem; padding:1.5rem; text-align:center; cursor:pointer; transition:border-color 0.2s, background 0.2s; }
+    .upload-area:hover, .upload-area.drag-over { border-color:var(--cyan); background:rgba(0,210,255,0.04); }
+    .upload-area input[type=file] { display:none; }
+    .upload-icon  { font-size:1.75rem; margin-bottom:0.5rem; }
+    .upload-text  { color:var(--text-2); font-size:0.88rem; }
+    .upload-hint  { color:var(--text-3); font-size:0.78rem; margin-top:0.25rem; }
+    .resume-status { display:flex; align-items:center; gap:0.6rem; padding:0.65rem 1rem; border-radius:0.625rem; font-size:0.85rem; margin-top:0.75rem; }
+    .resume-status.success { background:rgba(34,197,94,0.1);  border:1px solid rgba(34,197,94,0.25);  color:#86efac; }
+    .resume-status.error   { background:rgba(239,68,68,0.1);  border:1px solid rgba(239,68,68,0.25);  color:#fca5a5; }
+    .resume-status.loading { background:rgba(0,210,255,0.08); border:1px solid rgba(0,210,255,0.2);   color:var(--text-1); }
+    .resume-progress { height:3px; background:rgba(255,255,255,0.08); border-radius:999px; margin-top:0.5rem; overflow:hidden; display:none; }
+    .resume-progress-bar { height:100%; background:var(--cyan); width:0; transition:width 0.3s; }
+
+    /* Toggle switch */
+    .toggle-row    { display:flex; align-items:center; gap:0.75rem; margin:0.75rem 0; }
+    .toggle-label  { font-size:0.88rem; color:var(--text-2); }
+    .toggle        { position:relative; width:44px; height:24px; flex-shrink:0; }
+    .toggle input  { opacity:0; width:0; height:0; }
+    .toggle-slider { position:absolute; inset:0; background:rgba(255,255,255,0.12); border-radius:999px; cursor:pointer; transition:background 0.2s; }
+    .toggle-slider::before { content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; background:#fff; border-radius:50%; transition:transform 0.2s; }
+    .toggle input:checked + .toggle-slider { background:var(--cyan); }
+    .toggle input:checked + .toggle-slider::before { transform:translateX(20px); }
+
+    /* Output / letter box */
+    .output-box { background:var(--bg-soft); border:1px solid var(--border-md); padding:1.5rem; border-radius:0.875rem; white-space:pre-wrap; line-height:1.8; font-size:0.92rem; min-height:140px; color:var(--text-1); }
+
+    /* Tools row */
+    .tools { display:flex; gap:0.75rem; margin-top:1.25rem; flex-wrap:wrap; }
+
+    /* Score boxes */
+    .score-box { display:flex; gap:1rem; margin-top:1.25rem; flex-wrap:wrap; }
+    .score { background:var(--bg-soft); border:1px solid var(--border-md); padding:1rem 1.25rem; border-radius:0.875rem; min-width:160px; }
+    .score-number { font-size:1.75rem; font-weight:800; font-family:'Outfit',sans-serif; color:var(--text-1); }
+    .score-label  { font-size:0.78rem; color:var(--text-3); margin-top:0.2rem; text-transform:uppercase; letter-spacing:0.04em; }
+    .score-tip    { font-size:0.78rem; color:var(--text-2); margin-top:0.4rem; line-height:1.5; }
+    .score-number.score-high { color:var(--success); }
+    .score-number.score-mid  { color:var(--warning); }
+    .score-number.score-low  { color:var(--danger); }
+
+    /* Keywords */
+    .keywords-section { margin-top:1.25rem; }
+    .keywords-section h4 { font-size:0.72rem; color:var(--text-3); margin:0 0 0.5rem 0; text-transform:uppercase; letter-spacing:0.06em; font-weight:700; }
+    .tag { display:inline-block; padding:0.2rem 0.65rem; background:rgba(255,255,255,0.05); border:1px solid var(--border-md); border-radius:999px; margin:0.2rem; font-size:0.78rem; color:var(--text-2); }
+    .tag-matched { background:rgba(34,197,94,0.1);  border-color:rgba(34,197,94,0.3);  color:#86efac; }
+    .tag-missing  { background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.25); color:#fca5a5; }
+
+    /* History */
+    .history-card { background:var(--bg-soft); border:1px solid var(--border); border-radius:0.875rem; padding:1rem 1.125rem; margin-bottom:0.75rem; }
+
+    /* Candidate name hint */
+    .candidate-name-hint { font-size:0.78rem; color:var(--text-3); margin-top:0.3rem; }
+
+    /* Score optimizer accordion */
+    .optimizer-toggle { display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none; padding:0.875rem 1.125rem; background:rgba(255,255,255,0.04); border:1px solid var(--border-md); border-radius:0.75rem; color:var(--text-1); font-weight:600; font-size:0.88rem; transition:background 0.2s; }
+    .optimizer-toggle:hover { background:rgba(255,255,255,0.07); }
+    .optimizer-arrow { transition:transform 0.25s; display:inline-block; }
+    .optimizer-arrow.open { transform:rotate(180deg); }
+    .optimizer-content { display:none; padding:1.25rem 0 0 0; }
+    .optimizer-content.open { display:block; }
+    .opt-hint { font-size:0.75rem; color:var(--text-3); margin-top:0.25rem; }
+
+    /* ATS panel */
+    .ats-edu-panel { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:1.75rem; margin-bottom:1.5rem; }
+    .ats-edu-panel h3 { font-size:1.2rem; font-weight:700; font-family:'Outfit',sans-serif; margin-bottom:1rem; }
+    .score-def { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    @media(max-width:600px){ .score-def { grid-template-columns:1fr; } }
+    .score-def-item { background:var(--bg-input); border:1px solid var(--border); border-radius:0.75rem; padding:1.125rem; transition:border-color 0.2s; }
+    .score-def-item:hover { border-color:var(--border-hover); }
+    .score-def-item .sdi-title { font-weight:700; color:var(--text-1); margin-bottom:0.4rem; font-size:0.92rem; display:flex; align-items:center; gap:0.35rem; }
+    .score-def-item .sdi-desc  { font-size:0.83rem; color:var(--text-2); line-height:1.6; }
+    .edu-tip { font-size:0.83rem; color:var(--text-2); margin-top:1.125rem; background:rgba(0,210,255,0.06); border:1px solid rgba(0,210,255,0.15); padding:0.75rem 1rem; border-radius:0.5rem; }
+
+    /* Letter section badge */
+    .letter-section-badge { display:inline-block; background:rgba(0,210,255,0.1); border:1px solid rgba(0,210,255,0.25); color:var(--cyan); border-radius:0.3rem; padding:0.1rem 0.5rem; font-size:0.72rem; font-weight:700; margin-right:0.5rem; }
+
+    @media(max-width:600px){ .score-box{flex-direction:column;} }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
 
     /* ATS/Relevance Education Panel */
     .ats-edu-panel{
         background: var(--surface-glass);
         border: 1px solid var(--border-color);
-        border-radius: 1rem;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        backdrop-filter: blur(10px);
-        position: relative;
-        overflow: hidden;
-    }
-    .ats-edu-panel::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: radial-gradient(circle at top left, rgba(124,58,237,0.08), transparent 60%);
-        pointer-events: none;
-    }
-    .ats-edu-panel h3{margin:0 0 .75rem 0; font-size:1.2rem; font-weight:700; font-family:'Outfit',sans-serif;}
-    .ats-edu-panel h3 span {
-        background: var(--gradient-primary);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-    .ats-edu-panel > p{margin:0 0 1.25rem 0;font-size:.9rem;color:var(--text-secondary);line-height:1.6;}
-    .score-def{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-    
-    .score-def-item{
-        background: rgba(0,0,0,0.3);
-        border: 1px solid rgba(255,255,255,0.05);
-        border-radius: 0.75rem;
-        padding: 1.25rem;
-        transition: all 0.3s ease;
-    }
-    .score-def-item:hover {
-        border-color: rgba(124,58,237,0.3);
-        background: rgba(124,58,237,0.05);
-        transform: translateY(-2px);
-    }
-    .score-def-item .sdi-title{font-weight:700;color:var(--text-primary);margin-bottom:.5rem;font-size:.95rem;display:flex;align-items:center;gap:0.4rem;}
-    .score-def-item .sdi-desc{font-size:.85rem;color:var(--text-secondary);line-height:1.6;}
-    .edu-tip{font-size:.85rem;color:var(--text-secondary);margin:1.25rem 0 0 0; background: rgba(124,58,237,0.1); border: 1px solid rgba(124,58,237,0.2); padding: 0.75rem 1rem; border-radius: 0.5rem;}
-
-    /* Score Optimizer Accordion */
-    .optimizer-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;padding:.65rem .9rem;background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);border-radius:.5rem;color:#ffffff;font-weight:600;font-size:.9rem;transition:background .2s;}
-    .optimizer-toggle:hover{background:rgba(124,58,237,.2);}
-    .optimizer-arrow{transition:transform .25s;display:inline-block;}
-    .optimizer-arrow.open{transform:rotate(180deg);}
-    .optimizer-content{display:none;padding:.8rem 0 0 0;}
-    .optimizer-content.open{display:block;}
-    .opt-hint{font-size:.75rem;color:#64748b;margin-top:.2rem;}
-
-    /* Enhanced score display */
-    .score-number.score-high{color:#34d399;}
-    .score-number.score-mid{color:#fbbf24;}
-    .score-number.score-low{color:#f87171;}
-    .score-tip{font-size:.75rem;color:#64748b;margin-top:.3rem;line-height:1.4;}
-  </style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
 
@@ -146,11 +132,11 @@
     <div id="alertSuccess" class="alert alert-success"></div>
 
     <!-- ── Form Card ──────────────────────────────────────────────────── -->
-    <div class="glass-card mb-2">
-      <h2 style="margin-top:0">Create Cover Letter</h2>
-
-
-
+    <div class="glass-card mb-4">
+      <div class="page-header" style="margin-bottom:2rem;">
+        <h1 style="font-size:1.75rem;">Create Cover Letter</h1>
+        <p>Generate a tailored, ATS-optimized cover letter powered by AI.</p>
+      </div>
 
       <div class="form-row">
         <div class="field-group">
@@ -171,20 +157,20 @@
 
       <div class="field-group">
         <label for="jobDescription">Job Description</label>
-        <textarea id="jobDescription" placeholder="Paste job posting here..."></textarea>
+        <textarea id="jobDescription" placeholder="Paste the full job posting here..." style="min-height:160px;"></textarea>
       </div>
 
       <div class="field-group">
         <label for="highlights">Your Key Highlights</label>
-        <textarea id="highlights" placeholder="2–4 bullets about your skills/achievements (AI will enhance if needed)"></textarea>
+        <textarea id="highlights" placeholder="2–4 bullets about your skills/achievements (AI will enhance if needed)" style="min-height:100px;"></textarea>
       </div>
 
       <!-- ── Resume Upload ─────────────────────────────────────────── -->
       <div class="field-group">
         <label>Provide Resume (optional — Select Saved or Upload File)</label>
         
-        <div style="margin-bottom:1rem">
-          <select id="savedResumeSelect" onchange="handleSavedResumeSelect(this)" style="background:rgba(124,58,237,.1);border-color:rgba(124,58,237,.3);font-weight:600;color:#ffffff;">
+        <div class="field-group" style="margin-bottom:0.75rem;">
+          <select id="savedResumeSelect" onchange="handleSavedResumeSelect(this)">
             <option value="">✨ — Select from your Saved Resumes —</option>
           </select>
         </div>
