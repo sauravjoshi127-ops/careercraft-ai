@@ -16,8 +16,8 @@ function initWow() {
     
     animatables.forEach((el, index) => {
         el.style.opacity = '0';
-        el.style.transform = 'translateY(20px)';
-        el.style.transition = 'opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)';
         
         const delay = Math.min(index * 75, 800); 
         
