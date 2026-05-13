@@ -706,9 +706,10 @@
     <div class="glass-card">
         <form id="resumeForm" onsubmit="handleSave(event)" novalidate>
 
-            <!-- STEP 1: Template Selection -->
-            <div class="form-section-heading">🎨 Step 1: Choose Your Template</div>
-            <div class="template-selector" id="templateSelector">
+            <!-- Template Selection Screen -->
+            <div id="templateSelectionScreen">
+                <div class="form-section-heading" style="margin-top:0;">🎨 Select a Professional Template</div>
+                <div class="template-selector" id="templateSelector">
                 <!-- Modern Template -->
                 <div class="template-preview modern" onclick="selectTemplate('modern')">
                     <div class="template-preview-header">📐 <span>Modern</span></div>
@@ -759,11 +760,17 @@
                     </div>
                 </div>
             </div>
+            </div> <!-- End templateSelectionScreen -->
 
+            <!-- Information Builder Screen -->
+            <div id="resumeFormScreen" style="display: none; opacity: 0; transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);">
             <input type="hidden" id="templateName" value="modern">
 
             <!-- Personal Info -->
-            <div class="form-section-heading">👤 Step 2: Personal Information</div>
+            <div class="form-section-heading" style="display: flex; align-items: center; justify-content: space-between; margin-top: 0;">
+                <span>👤 Step 1: Personal Information</span>
+                <button type="button" class="btn-secondary" onclick="showTemplateScreen()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.05);">← Change Template</button>
+            </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Full Name *</label>
@@ -785,24 +792,24 @@
                         </div>
                     </div>
 
-                  <div class="form-section-heading">📋 Step 3: Professional Summary <button type="button" class="btn-ai" onclick="getAISuggestions('summary')">💡 AI Suggest</button></div>
+                  <div class="form-section-heading">📋 Step 2: Professional Summary <button type="button" class="btn-ai" onclick="getAISuggestions('summary')">💡 AI Suggest</button></div>
 <div class="form-group">
     <label>Summary</label>
     <textarea id="summary" placeholder="A brief overview of your background, skills, and career goals..." rows="4"></textarea>
 </div>
 
 <!-- Work Experience -->
-<div class="form-section-heading">💼 Step 4: Work Experience</div>
+<div class="form-section-heading">💼 Step 3: Work Experience</div>
 <div id="experienceContainer"></div>
 <button type="button" class="btn-add-entry" onclick="addExperience()">+ Add Work Experience</button>
 
 <!-- Education -->
-<div class="form-section-heading">🎓 Step 5: Education</div>
+<div class="form-section-heading">🎓 Step 4: Education</div>
 <div id="educationContainer"></div>
 <button type="button" class="btn-add-entry" onclick="addEducation()">+ Add Education</button>
 
 <!-- Skills -->
-<div class="form-section-heading">🛠️ Step 6: Skills <button type="button" class="btn-ai" onclick="getAISuggestions('skills')">💡 AI Suggest</button></div>
+<div class="form-section-heading">🎯 Step 5: Skills <button type="button" class="btn-ai" onclick="getAISuggestions('skills')">💡 AI Suggest</button></div>
 <div class="form-group">
     <label>Add Skills (press Enter or comma to add)</label>
     <div class="skills-container" id="skillsContainer" onclick="document.getElementById('skillInput').focus()">
@@ -811,7 +818,7 @@
 </div>
 
 <!-- Certifications -->
-<div class="form-section-heading">🏅 Step 7: Certifications</div>
+<div class="form-section-heading">🏅 Step 6: Certifications</div>
 <div class="form-group">
     <label>Certifications</label>
     <textarea id="certifications" placeholder="e.g. AWS Certified Solutions Architect (2023), PMP Certification (2022)..." rows="3"></textarea>
@@ -823,6 +830,7 @@
                             💾 Save Resume
                         </button>
                     </div>
+                </div> <!-- End resumeFormScreen -->
                 </form>
             </div>
         </div>
@@ -1288,22 +1296,57 @@
             // Scroll to form
             document.getElementById('resumeForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-        function selectTemplate(templateName) {
-    // Update hidden input
-    document.getElementById('templateName').value = templateName;
-    
-    // Update UI
-    document.querySelectorAll('.template-preview').forEach(preview => {
-        preview.classList.remove('selected');
-    });
-    
-    // Find and highlight selected template
-    const templateClass = templateName === 'modern' ? 'modern' : 
-                         templateName === 'classic' ? 'template-classic' : 'creative';
-    document.querySelector(`.template-preview.${templateClass}`).classList.add('selected');
-    
-    console.log('✅ Template selected:', templateName);
-}
+                function selectTemplate(templateName) {
+            // Update hidden input
+            document.getElementById('templateName').value = templateName;
+            
+            // Update UI
+            document.querySelectorAll('.template-preview').forEach(preview => {
+                preview.classList.remove('selected');
+            });
+            
+            // Find and highlight selected template
+            const templateClass = templateName === 'modern' ? 'modern' : 
+                                 templateName === 'classic' ? 'template-classic' : 'creative';
+            document.querySelector('.template-preview.' + templateClass).classList.add('selected');
+            
+            console.log('? Template selected:', templateName);
+
+            // Transition to Form Screen
+            const templateScreen = document.getElementById('templateSelectionScreen');
+            const formScreen = document.getElementById('resumeFormScreen');
+            
+            if (templateScreen && formScreen) {
+                templateScreen.style.transition = 'opacity 0.3s ease';
+                templateScreen.style.opacity = '0';
+                
+                setTimeout(() => {
+                    templateScreen.style.display = 'none';
+                    formScreen.style.display = 'block';
+                    // Trigger reflow
+                    void formScreen.offsetWidth;
+                    formScreen.style.opacity = '1';
+                    formScreen.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 300);
+            }
+        }
+
+        function showTemplateScreen() {
+            const templateScreen = document.getElementById('templateSelectionScreen');
+            const formScreen = document.getElementById('resumeFormScreen');
+            
+            if (templateScreen && formScreen) {
+                formScreen.style.opacity = '0';
+                setTimeout(() => {
+                    formScreen.style.display = 'none';
+                    templateScreen.style.display = 'block';
+                    // Trigger reflow
+                    void templateScreen.offsetWidth;
+                    templateScreen.style.opacity = '1';
+                    templateScreen.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 300);
+            }
+        }
 
         function cancelEdit() {
             editingResumeId = null;
@@ -1874,6 +1917,8 @@ function generateCreativeTemplate(data, exp, edu, sk) {
 <script src="wow-effects.js"></script>
 </body>
 </html>
+
+
 
 
 
