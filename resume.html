@@ -1,17 +1,16 @@
-box.textContent = currentAISuggestion || '(No suggestion returned)';
-        resetAIButton();<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resume Builder - CareerCraft AI</title>
-    
-    
-    
-    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="styles/premium.css">
     <style>
-/* ── Resume Builder page styles ── */
+/* ΓöÇΓöÇ Resume Builder page styles ΓöÇΓöÇ */
 .resume-workspace { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; }
 @media(max-width:960px){ .resume-workspace { grid-template-columns:1fr; } }
 .form-panel { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-xl); padding:2rem; box-shadow:var(--shadow-card); }
@@ -120,10 +119,10 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
             CareerCraft AI
         </a>
         <div class="nav-links" style="display:flex;gap:1rem;">
-            <a href="cover-letter.html" class="nav-btn">📨 Cover Letter</a>
-            <a href="cold-email.html" class="nav-btn">✉️ Cold Email</a>
-            <a href="interview.html" class="nav-btn">🎤 Interview Coach</a>
-            <a href="dashboard.html" class="btn-primary">← Dashboard</a>
+            <a href="cover-letter.html" class="nav-btn">≡ƒô¿ Cover Letter</a>
+            <a href="cold-email.html" class="nav-btn">Γ£ë∩╕Å Cold Email</a>
+            <a href="interview.html" class="nav-btn">≡ƒÄñ Interview Coach</a>
+            <a href="dashboard.html" class="btn-primary">ΓåÉ Dashboard</a>
         </div>
     </div>
 
@@ -137,11 +136,11 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
         <!-- My Saved Resumes -->
         <div class="page-section">
             <div class="section-header">
-                <h2 class="section-title">📂 My Saved Resumes</h2>
+                <h2 class="section-title">≡ƒôé My Saved Resumes</h2>
             </div>
             <div id="resumeList">
                 <div class="empty-state">
-                    <div class="empty-icon">📄</div>
+                    <div class="empty-icon">≡ƒôä</div>
                     <p>Loading your resumes...</p>
                 </div>
             </div>
@@ -150,8 +149,8 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
         <!-- Build / Edit Resume Form -->
 <div class="page-section">
   <div class="section-header">
-    <h2 class="section-title" id="formTitle">✏️ Build New Resume</h2>
-    <button class="btn-accent" id="cancelEditBtn" onclick="cancelEdit()" style="display:none;">✕ Cancel Edit</button>
+    <h2 class="section-title" id="formTitle">Γ£Å∩╕Å Build New Resume</h2>
+    <button class="btn-accent" id="cancelEditBtn" onclick="cancelEdit()" style="display:none;">Γ£ò Cancel Edit</button>
   </div>
 
   <!-- Split layout: form left, preview right -->
@@ -163,7 +162,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
         <input type="hidden" id="templateName" value="modern">
 
         <!-- Personal Info -->
-        <div class="form-section-heading" style="margin-top:0;">👤 Personal Information</div>
+        <div class="form-section-heading" style="margin-top:0;">≡ƒæñ Personal Information</div>
         <div class="form-row">
           <div class="form-group">
             <label>Full Name *</label>
@@ -186,24 +185,24 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
         </div>
 
         <!-- Summary -->
-        <div class="form-section-heading">📋 Professional Summary <button type="button" class="btn-ai" onclick="getAISuggestions('summary', this)">💡 AI Suggest</button></div>
+        <div class="form-section-heading">≡ƒôï Professional Summary <button type="button" class="btn-ai" onclick="getAISuggestions('summary')">≡ƒÆí AI Suggest</button></div>
         <div class="form-group">
           <label>Summary</label>
           <textarea id="summary" placeholder="A brief overview of your background, skills, and career goals..." rows="4" oninput="updatePreview()"></textarea>
         </div>
 
         <!-- Experience -->
-        <div class="form-section-heading">💼 Work Experience</div>
+        <div class="form-section-heading">≡ƒÆ╝ Work Experience</div>
         <div id="experienceContainer"></div>
         <button type="button" class="btn-add-entry" onclick="addExperience()">+ Add Work Experience</button>
 
         <!-- Education -->
-        <div class="form-section-heading">🎓 Education</div>
+        <div class="form-section-heading">≡ƒÄô Education</div>
         <div id="educationContainer"></div>
         <button type="button" class="btn-add-entry" onclick="addEducation()">+ Add Education</button>
 
         <!-- Skills -->
-        <div class="form-section-heading">🎯 Skills <button type="button" class="btn-ai" onclick="getAISuggestions('skills', this)">💡 AI Suggest</button></div>
+        <div class="form-section-heading">≡ƒÄ» Skills <button type="button" class="btn-ai" onclick="getAISuggestions('skills')">≡ƒÆí AI Suggest</button></div>
         <div class="form-group">
           <label>Add Skills (press Enter or comma to add)</label>
           <div class="skills-container" id="skillsContainer" onclick="document.getElementById('skillInput').focus()">
@@ -212,7 +211,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
         </div>
 
         <!-- Certifications -->
-        <div class="form-section-heading">🏅 Certifications</div>
+        <div class="form-section-heading">≡ƒÅà Certifications</div>
         <div class="form-group">
           <label>Certifications</label>
           <textarea id="certifications" placeholder="e.g. AWS Certified Solutions Architect (2023), PMP Certification (2022)..." rows="3" oninput="updatePreview()"></textarea>
@@ -220,7 +219,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
 
         <!-- Save Bar -->
         <div class="save-bar">
-          <button type="submit" class="btn-primary" id="saveBtn">💾 Save Resume</button>
+          <button type="submit" class="btn-primary" id="saveBtn">≡ƒÆ╛ Save Resume</button>
         </div>
       </form>
     </div>
@@ -278,7 +277,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
 <!-- Delete Confirmation Modal -->
     <div class="modal-overlay" id="deleteModal">
         <div class="modal">
-            <h3>🗑️ Delete Resume</h3>
+            <h3>≡ƒùæ∩╕Å Delete Resume</h3>
             <p>Are you sure you want to delete this resume? This action cannot be undone.</p>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
@@ -290,7 +289,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
     <!-- Share Modal -->
     <div class="modal-overlay" id="shareModal">
         <div class="modal">
-            <h3>🔗 Share Resume</h3>
+            <h3>≡ƒöù Share Resume</h3>
             <p>Anyone with this link can view your resume. Copy and send it!</p>
             <div class="share-link-box">
                 <input type="text" id="shareLinkInput" readonly>
@@ -305,24 +304,24 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
     <!-- AI Suggestions Modal -->
     <div class="modal-overlay" id="aiModal">
         <div class="modal modal-large">
-            <h3>🤖 AI Suggestions</h3>
+            <h3>≡ƒñû AI Suggestions</h3>
             <p>Here are AI-powered suggestions to improve your resume section:</p>
-            <div class="ai-suggestions-box" id="aiSuggestionsBox">Getting suggestions…</div>
+            <div class="ai-suggestions-box" id="aiSuggestionsBox">Getting suggestionsΓÇª</div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeAIModal()">Close</button>
-                <button class="btn btn-primary" id="aiAcceptBtn" onclick="acceptAISuggestion()" style="display:none;">✅ Accept</button>
+                <button class="btn btn-primary" id="aiAcceptBtn" onclick="acceptAISuggestion()" style="display:none;">Γ£à Accept</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ── Supabase Setup ────────────────────────────────────────────────────────
+        // ΓöÇΓöÇ Supabase Setup ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
         const { createClient } = supabase;
         const client = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // ── State ─────────────────────────────────────────────────────────────────
+        // ΓöÇΓöÇ State ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         let currentUserId = null;
         let editingResumeId = null;
         let deleteTargetId = null;
@@ -335,83 +334,12 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
         let currentTemplate = 'modern';
         let accentColor = '#00d2ff';
 
-        // ── Live Preview Rendering Engine ──
-        // ── Rendering Components ──────────────────────────────────────────────
-        // ── Live Preview Rendering Engine ──
-        const Renderer = {
-            experience(exp, color, isPDF = false) {
-                if (!exp || exp.length === 0) return '';
-                return exp.map(e => {
-                    if (!e.title && !e.company) return '';
-                    const title = escapeHtml(e.title || 'Position');
-                    const company = escapeHtml(e.company || 'Company');
-                    const period = `${escapeHtml(e.start || '')}${e.end ? ' – ' + escapeHtml(e.end) : ''}`;
-                    const desc = escapeHtml(e.description || '').replace(/\n/g, '<br>');
-
-                    if (isPDF) {
-                        return `
-                            <div style="margin-bottom:14px;">
-                                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
-                                    <strong style="font-size:13px;color:#1a1a2e;">${title}</strong>
-                                    <span style="font-size:11px;color:#64748b;white-space:nowrap;margin-left:8px;">${period}</span>
-                                </div>
-                                <div style="font-size:12px;color:#222222;margin-bottom:4px;">${company}</div>
-                                <div style="font-size:12px;color:#475569;line-height:1.65;">${desc}</div>
-                            </div>`;
-                    }
-                    return `
-                        <div class="preview-entry">
-                            <div class="preview-exp-title" style="color:${color}">${title}</div>
-                            <div class="preview-exp-meta">${company}${period ? ' · ' + period : ''}</div>
-                            ${desc ? `<div class="preview-text">${desc}</div>` : ''}
-                        </div>`;
-                }).join('');
-            },
-
-            education(edu, isPDF = false) {
-                if (!edu || edu.length === 0) return '';
-                return edu.map(e => {
-                    if (!e.degree && !e.school) return '';
-                    const degree = escapeHtml(e.degree || 'Degree');
-                    const school = escapeHtml(e.school || 'School');
-                    const year = escapeHtml(e.year || '');
-                    const grade = e.grade ? ' · ' + escapeHtml(e.grade) : '';
-
-                    if (isPDF) {
-                        return `
-                            <div style="margin-bottom:12px;">
-                                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
-                                    <strong style="font-size:13px;color:#1a1a2e;">${degree}</strong>
-                                    <span style="font-size:11px;color:#64748b;margin-left:8px;">${year}</span>
-                                </div>
-                                <div style="font-size:12px;color:#222222;">${school}${grade}</div>
-                            </div>`;
-                    }
-                    return `
-                        <div class="preview-entry">
-                            <div class="preview-exp-title">${degree}</div>
-                            <div class="preview-exp-meta">${school}${year ? ' · ' + year : ''}</div>
-                        </div>`;
-                }).join('');
-            },
-
-            skills(sk, isPDF = false) {
-                if (!sk || sk.length === 0) return '';
-                if (isPDF) {
-                    return sk.filter(s => s).map(s => 
-                        `<span style="display:inline-block;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.3);color:#222222;padding:4px 10px;border-radius:20px;font-size:11px;margin:3px;white-space:nowrap;">${escapeHtml(s)}</span>`
-                    ).join('');
-                }
-                return `<div class="preview-skills">${sk.map(s => `<span class="preview-skill">${escapeHtml(s)}</span>`).join('')}</div>`;
-            }
-        };
-
-        
+        // ΓöÇΓöÇ Live Preview ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         function switchTemplate(name, btn) {
             currentTemplate = name;
             document.getElementById('templateName').value = name;
             document.querySelectorAll('.template-tab').forEach(t => t.classList.remove('active'));
-            if (btn) btn.classList.add('active');
+            btn.classList.add('active');
             updatePreview();
         }
         function setAccentColor(el) {
@@ -421,55 +349,59 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
             updatePreview();
         }
         function applyCustomization() { updatePreview(); }
-        function selectTemplate(name) { 
-            const tabs = document.querySelectorAll('.template-tab');
-            tabs.forEach(t => {
-                if (t.textContent.toLowerCase().includes(name.toLowerCase())) {
-                    switchTemplate(name, t);
-                }
-            });
-        }
-
+        function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
         function updatePreview() {
-            const data = collectFormData();
+            const name = document.getElementById('fullName')?.value || '';
+            const email = document.getElementById('email')?.value || '';
+            const phone = document.getElementById('phone')?.value || '';
+            const loc = document.getElementById('location')?.value || '';
+            const summary = document.getElementById('summary')?.value || '';
+            const certs = document.getElementById('certifications')?.value || '';
             const font = document.getElementById('custFont')?.value || 'Inter';
             const spacing = document.getElementById('custSpacing')?.value || 'normal';
-            const lineH = spacing === 'compact' ? '1.4' : spacing === 'relaxed' ? '1.9' : '1.65';
-            
-            const previewEl = document.getElementById('previewBody');
-            if (!previewEl) return;
-
-            if (!data.full_name && !data.email) {
-                previewEl.innerHTML = `
-                    <div class="preview-placeholder">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        <p>Start filling in your details<br>and see your resume update live.</p>
-                    </div>`;
+            const lineH = spacing==='compact'?'1.4':spacing==='relaxed'?'1.9':'1.65';
+            if (!name && !email) {
+                document.getElementById('previewBody').innerHTML = '<div class="preview-placeholder"><p>Start filling in your details to see live preview.</p></div>';
                 return;
             }
-
-            const expHtml = Renderer.experience(data.experience, accentColor);
-            const eduHtml = Renderer.education(data.education);
-            const skillsHtml = Renderer.skills(skills);
-            const contact = [data.email, data.phone, data.location].filter(Boolean).join(' · ');
-            const cc = currentTemplate === 'creative' ? accentColor : '';
-            const tpl = 'tpl-' + currentTemplate;
-
-            previewEl.innerHTML = `
-                <div id="livePreviewContent" class="${tpl}" style="font-family:'${font}', sans-serif; line-height:${lineH}">
-                    <h1 style="margin-bottom:0.15rem;">${escapeHtml(data.full_name)}</h1>
-                    ${contact ? `<div class="preview-contact">${escapeHtml(contact)}</div>` : ''}
-                    <div class="preview-divider"></div>
-                    ${data.professional_summary ? `<div class="preview-section-title" style="color:${cc}">SUMMARY</div><div class="preview-text">${escapeHtml(data.professional_summary)}</div>` : ''}
-                    ${expHtml ? `<div class="preview-section-title" style="color:${cc}">EXPERIENCE</div>${expHtml}` : ''}
-                    ${eduHtml ? `<div class="preview-section-title" style="color:${cc}">EDUCATION</div>${eduHtml}` : ''}
-                    ${skillsHtml ? `<div class="preview-section-title" style="color:${cc}">SKILLS</div>${skillsHtml}` : ''}
-                    ${data.certifications ? `<div class="preview-section-title" style="color:${cc}">CERTIFICATIONS</div><div class="preview-text">${escapeHtml(data.certifications)}</div>` : ''}
-                </div>`;
+            let expHtml = '';
+            document.querySelectorAll('#experienceContainer .entry-card').forEach(card => {
+                const id = card.id.replace('exp-','');
+                const title = document.getElementById('expTitle-'+id)?.value||'';
+                const company = document.getElementById('expCompany-'+id)?.value||'';
+                const start = document.getElementById('expStart-'+id)?.value||'';
+                const end = document.getElementById('expEnd-'+id)?.value||'';
+                const desc = document.getElementById('expDesc-'+id)?.value||'';
+                if (title||company) expHtml += '<div style="margin-bottom:0.5rem;"><div class="preview-exp-title" style="color:'+accentColor+'">'+esc(title)+'</div><div class="preview-exp-meta">'+esc(company)+(start?' · '+esc(start):'')+(end?' – '+esc(end):'')+  '</div>'+(desc?'<div class="preview-text">'+esc(desc)+'</div>':'')+  '</div>';
+            });
+            let eduHtml = '';
+            document.querySelectorAll('#educationContainer .entry-card').forEach(card => {
+                const id = card.id.replace('edu-','');
+                const deg = document.getElementById('eduDegree-'+id)?.value||'';
+                const sch = document.getElementById('eduSchool-'+id)?.value||'';
+                const yr = document.getElementById('eduYear-'+id)?.value||'';
+                if (deg||sch) eduHtml += '<div style="margin-bottom:0.4rem;"><div class="preview-exp-title">'+esc(deg)+'</div><div class="preview-exp-meta">'+esc(sch)+(yr?' · '+esc(yr):'')+  '</div></div>';
+            });
+            const skillsHtml = skills.length?'<div class="preview-skills">'+skills.map(s=>'<span class="preview-skill">'+esc(s)+'</span>').join('')+'</div>':'';
+            const contact = [email,phone,loc].filter(Boolean).join(' · ');
+            const cc = currentTemplate==='creative'?accentColor:'';
+            const tpl = 'tpl-'+currentTemplate;
+            document.getElementById('previewBody').innerHTML =
+                '<div id="livePreviewContent" class="'+tpl+'" style="font-family:'+font+',sans-serif;line-height:'+lineH+'">' +
+                '<h1 style="margin-bottom:0.15rem;">'+esc(name)+'</h1>'+
+                (contact?'<div class="preview-contact">'+esc(contact)+'</div>':'')+
+                '<div class="preview-divider"></div>'+
+                (summary?'<div class="preview-section-title" style="color:'+cc+'">SUMMARY</div><div class="preview-text">'+esc(summary)+'</div>':'')+
+                (expHtml?'<div class="preview-section-title" style="color:'+cc+'">EXPERIENCE</div>'+expHtml:'')+
+                (eduHtml?'<div class="preview-section-title" style="color:'+cc+'">EDUCATION</div>'+eduHtml:'')+
+                (skillsHtml?'<div class="preview-section-title" style="color:'+cc+'">SKILLS</div>'+skillsHtml:'')+
+                (certs?'<div class="preview-section-title" style="color:'+cc+'">CERTIFICATIONS</div><div class="preview-text">'+esc(certs)+'</div>':'')+
+                '</div>';
         }
-// ── Auth Check ────────────────────────────────────────────────────────────
+        function selectTemplate(name) { const t=document.querySelector('.template-tab[onclick*="''+name+''"]'); if(t) switchTemplate(name,t); }
+        function showTemplateScreen() {}
+
+        // ΓöÇΓöÇ Auth Check ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         async function initPage() {
             const { data: { session } } = await client.auth.getSession();
             if (session && session.user) {
@@ -489,10 +421,10 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
             await loadResumes();
         }
 
-        // ── Load Saved Resumes ────────────────────────────────────────────────────
+        // ΓöÇΓöÇ Load Saved Resumes ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         async function loadResumes() {
             const listEl = document.getElementById('resumeList');
-            listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>Loading resumes...</p></div>';
+            listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">ΓÅ│</div><p>Loading resumes...</p></div>';
 
             const { data, error } = await client
                 .from('resumes')
@@ -501,14 +433,14 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
                 .order('created_at', { ascending: false });
 
             if (error) {
-                listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Could not load resumes. Please refresh the page.</p></div>';
+                listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">ΓÜá∩╕Å</div><p>Could not load resumes. Please refresh the page.</p></div>';
                 return;
             }
 
             if (!data || data.length === 0) {
                 listEl.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-icon">📄</div>
+                        <div class="empty-icon">≡ƒôä</div>
                         <p>No saved resumes yet. Fill in the form below and hit <strong>Save Resume</strong>!</p>
                     </div>`;
                 return;
@@ -565,35 +497,35 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
 
             const templateName = r.template_name || 'modern';
             const shareInfo = shareViewMap[r.id];
-            const viewBadge = shareInfo ? `<span class="view-badge">👁 ${shareInfo.viewCount}</span>` : '';
+            const viewBadge = shareInfo ? `<span class="view-badge">≡ƒæü ${shareInfo.viewCount}</span>` : '';
 
             return `
                 <div class="resume-card" id="card-${r.id}">
                     <div class="card-badges">
-                        <span class="template-badge">📐 ${escapeHtml(templateName)}</span>${viewBadge}
+                        <span class="template-badge">≡ƒôÉ ${escapeHtml(templateName)}</span>${viewBadge}
                     </div>
                     <div class="resume-card-title">${escapeHtml(r.full_name || 'Untitled Resume')}</div>
                     <div class="resume-card-meta">
                         ${escapeHtml(r.email || '')}
-                        ${r.location ? ' · ' + escapeHtml(r.location) : ''}
+                        ${r.location ? ' ┬╖ ' + escapeHtml(r.location) : ''}
                         <br>
-                        ${exp.length} experience${exp.length !== 1 ? 's' : ''} · ${edu.length} education ${edu.length === 1 ? 'entry' : 'entries'}
+                        ${exp.length} experience${exp.length !== 1 ? 's' : ''} ┬╖ ${edu.length} education ${edu.length === 1 ? 'entry' : 'entries'}
                         <br>
-                        Saved ${date}${updatedDate && updatedDate !== date ? ' · Updated ' + updatedDate : ''}
+                        Saved ${date}${updatedDate && updatedDate !== date ? ' ┬╖ Updated ' + updatedDate : ''}
                     </div>
                     <div class="resume-card-tags">
                         ${skillTags}${extraSkills}
                     </div>
                     <div class="card-actions-row">
-                        <button class="btn btn-secondary" onclick="editResume('${r.id}')">✏️ Edit</button>
-                        <button class="btn btn-secondary" onclick="downloadPDF('${r.id}')">📥 PDF</button>
-                        <button class="btn btn-secondary" onclick="shareResume('${r.id}')">🔗 Share</button>
-                        <button class="btn btn-danger" onclick="openDeleteModal('${r.id}')">🗑️</button>
+                        <button class="btn btn-secondary" onclick="editResume('${r.id}')">Γ£Å∩╕Å Edit</button>
+                        <button class="btn btn-secondary" onclick="downloadPDF('${r.id}')">≡ƒôÑ PDF</button>
+                        <button class="btn btn-secondary" onclick="shareResume('${r.id}')">≡ƒöù Share</button>
+                        <button class="btn btn-danger" onclick="openDeleteModal('${r.id}')">≡ƒùæ∩╕Å</button>
                     </div>
                 </div>`;
         }
 
-        // ── Dynamic Experience ────────────────────────────────────────────────────
+        // ΓöÇΓöÇ Dynamic Experience ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         function addExperience(data) {
             expCount++;
             const idx = expCount;
@@ -602,7 +534,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
             div.className = 'entry-card';
             div.id = `exp-${idx}`;
             div.innerHTML = `
-                <button type="button" class="remove-btn" onclick="removeEntry('exp-${idx}')">✕ Remove</button>
+                <button type="button" class="remove-btn" onclick="removeEntry('exp-${idx}')">Γ£ò Remove</button>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Job Title</label>
@@ -630,7 +562,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
             container.appendChild(div);
         }
 
-        // ── Dynamic Education ─────────────────────────────────────────────────────
+        // ΓöÇΓöÇ Dynamic Education ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         function addEducation(data) {
             eduCount++;
             const idx = eduCount;
@@ -639,7 +571,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
             div.className = 'entry-card';
             div.id = `edu-${idx}`;
             div.innerHTML = `
-                <button type="button" class="remove-btn" onclick="removeEntry('edu-${idx}')">✕ Remove</button>
+                <button type="button" class="remove-btn" onclick="removeEntry('edu-${idx}')">Γ£ò Remove</button>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Degree / Qualification</label>
@@ -653,7 +585,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
                 <div class="form-row">
                     <div class="form-group">
                         <label>Year</label>
-                        <input type="text" id="eduYear-${idx}" placeholder="e.g. 2018 – 2022" value="${escapeHtml(data?.year || '')}">
+                        <input type="text" id="eduYear-${idx}" placeholder="e.g. 2018 ΓÇô 2022" value="${escapeHtml(data?.year || '')}">
                     </div>
                     <div class="form-group">
                         <label>Grade / GPA (optional)</label>
@@ -668,7 +600,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
             if (el) el.remove();
         }
 
-        // ── Skills ────────────────────────────────────────────────────────────────
+        // ΓöÇΓöÇ Skills ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         document.getElementById('skillInput').addEventListener('keydown', function (e) {
             if (e.key === 'Enter' || e.key === ',') {
                 e.preventDefault();
@@ -711,47 +643,48 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
             container.appendChild(input);
         }
 
-        // ── Collect Form Data ─────────────────────────────────────────────────────
+        // ΓöÇΓöÇ Collect Form Data ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         function collectFormData() {
-            const exp = [];
+            // Experiences
+            const experience = [];
             document.querySelectorAll('#experienceContainer .entry-card').forEach(card => {
                 const id = card.id.replace('exp-', '');
-                exp.push({
-                    title: document.getElementById(`expTitle-${id}`)?.value || '',
-                    company: document.getElementById(`expCompany-${id}`)?.value || '',
-                    location: document.getElementById(`expLocation-${id}`)?.value || '',
-                    start: document.getElementById(`expStart-${id}`)?.value || '',
-                    end: document.getElementById(`expEnd-${id}`)?.value || '',
-                    description: document.getElementById(`expDesc-${id}`)?.value || ''
+                experience.push({
+                    title: document.getElementById(`expTitle-${id}`)?.value.trim() || '',
+                    company: document.getElementById(`expCompany-${id}`)?.value.trim() || '',
+                    start: document.getElementById(`expStart-${id}`)?.value.trim() || '',
+                    end: document.getElementById(`expEnd-${id}`)?.value.trim() || '',
+                    description: document.getElementById(`expDesc-${id}`)?.value.trim() || '',
                 });
             });
 
-            const edu = [];
+            // Education
+            const education = [];
             document.querySelectorAll('#educationContainer .entry-card').forEach(card => {
                 const id = card.id.replace('edu-', '');
-                edu.push({
-                    school: document.getElementById(`eduSchool-${id}`)?.value || '',
-                    degree: document.getElementById(`eduDegree-${id}`)?.value || '',
-                    year: document.getElementById(`eduYear-${id}`)?.value || '',
-                    grade: document.getElementById(`eduGrade-${id}`)?.value || ''
+                education.push({
+                    degree: document.getElementById(`eduDegree-${id}`)?.value.trim() || '',
+                    school: document.getElementById(`eduSchool-${id}`)?.value.trim() || '',
+                    year: document.getElementById(`eduYear-${id}`)?.value.trim() || '',
+                    grade: document.getElementById(`eduGrade-${id}`)?.value.trim() || '',
                 });
             });
 
             return {
-                full_name: document.getElementById('fullName')?.value || '',
-                email: document.getElementById('email')?.value || '',
-                phone: document.getElementById('phone')?.value || '',
-                location: document.getElementById('location')?.value || '',
-                professional_summary: document.getElementById('summary')?.value || '',
-                skills: skills,
-                certifications: document.getElementById('certifications')?.value || '',
-                template: document.getElementById('templateName')?.value || 'modern',
-                experience: exp,
-                education: edu
+                full_name: document.getElementById('fullName').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                location: document.getElementById('location').value.trim(),
+                professional_summary: document.getElementById('summary').value.trim(),
+                experience,
+                education,
+                skills: [...skills],
+                certifications: document.getElementById('certifications').value.trim(),
+                template_name: document.getElementById('templateName').value,
             };
         }
 
-        // ── Validation ────────────────────────────────────────────────────────────
+        // ΓöÇΓöÇ Validation ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         function validateForm(data) {
             const errors = [];
             document.getElementById('fullName').classList.remove('invalid');
@@ -771,7 +704,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
             return errors;
         }
 
-        // ── Save Resume ───────────────────────────────────────────────────────────
+        // ΓöÇΓöÇ Save Resume ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         async function handleSave(event) {
             event.preventDefault();
             hideAlerts();
@@ -780,7 +713,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
             const errors = validateForm(data);
 
             if (errors.length > 0) {
-                showAlert('error', '⚠️ ' + errors.join(' '));
+                showAlert('error', 'ΓÜá∩╕Å ' + errors.join(' '));
                 return;
             }
 
@@ -798,7 +731,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
                         .eq('user_id', currentUserId);
 
                     if (error) throw error;
-                    showAlert('success', '✅ Resume updated successfully!');
+                    showAlert('success', 'Γ£à Resume updated successfully!');
                     cancelEdit();
                 } else {
                     // Insert new
@@ -807,7 +740,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
                         .insert([{ ...data, user_id: currentUserId }]);
 
                     if (error) throw error;
-                    showAlert('success', '✅ Resume saved successfully!');
+                    showAlert('success', 'Γ£à Resume saved successfully!');
                     resetForm();
                 }
 
@@ -815,14 +748,14 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } catch (err) {
                 console.error('Save error:', err);
-                showAlert('error', '❌ Failed to save resume: ' + err.message);
+                showAlert('error', 'Γ¥î Failed to save resume: ' + err.message);
             } finally {
                 saveBtn.disabled = false;
-                saveBtn.innerHTML = editingResumeId ? '💾 Update Resume' : '💾 Save Resume';
+                saveBtn.innerHTML = editingResumeId ? '≡ƒÆ╛ Update Resume' : '≡ƒÆ╛ Save Resume';
             }
         }
 
-        // ── Edit Resume ───────────────────────────────────────────────────────────
+        // ΓöÇΓöÇ Edit Resume ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         async function editResume(id) {
             hideAlerts();
             const { data, error } = await client
@@ -833,14 +766,14 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
                 .single();
 
             if (error || !data) {
-                showAlert('error', '❌ Could not load resume for editing.');
+                showAlert('error', 'Γ¥î Could not load resume for editing.');
                 return;
             }
 
             editingResumeId = id;
-            document.getElementById('formTitle').textContent = '✏️ Edit Resume';
+            document.getElementById('formTitle').textContent = 'Γ£Å∩╕Å Edit Resume';
             document.getElementById('cancelEditBtn').style.display = 'inline-flex';
-            document.getElementById('saveBtn').innerHTML = '💾 Update Resume';
+            document.getElementById('saveBtn').innerHTML = '≡ƒÆ╛ Update Resume';
 
             // Populate personal info
             document.getElementById('fullName').value = data.full_name || '';
@@ -924,13 +857,13 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
 
         function cancelEdit() {
             editingResumeId = null;
-            document.getElementById('formTitle').textContent = '✏️ Build New Resume';
+            document.getElementById('formTitle').textContent = 'Γ£Å∩╕Å Build New Resume';
             document.getElementById('cancelEditBtn').style.display = 'none';
-            document.getElementById('saveBtn').innerHTML = '💾 Save Resume';
+            document.getElementById('saveBtn').innerHTML = '≡ƒÆ╛ Save Resume';
             resetForm();
         }
 
-        // ── Delete Resume ─────────────────────────────────────────────────────────
+        // ΓöÇΓöÇ Delete Resume ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         function openDeleteModal(id) {
             deleteTargetId = id;
             document.getElementById('deleteModal').classList.add('active');
@@ -959,14 +892,14 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
             btn.textContent = 'Delete';
 
             if (error) {
-                showAlert('error', '❌ Failed to delete resume: ' + error.message);
+                showAlert('error', 'Γ¥î Failed to delete resume: ' + error.message);
             } else {
-                showAlert('success', '✅ Resume deleted successfully.');
+                showAlert('success', 'Γ£à Resume deleted successfully.');
                 await loadResumes();
             }
         }
 
-        // ── Helpers ───────────────────────────────────────────────────────────────
+        // ΓöÇΓöÇ Helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         function resetForm() {
             document.getElementById('resumeForm').reset();
             document.getElementById('experienceContainer').innerHTML = '';
@@ -1020,7 +953,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
             if (e.target === this) closeAIModal();
         });
 
-        // ── PDF Export ────────────────────────────────────────────────────────────
+        // ΓöÇΓöÇ PDF Export ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 async function downloadPDF(resumeId) {
     try {
         const { data, error } = await client
@@ -1030,17 +963,17 @@ async function downloadPDF(resumeId) {
             .single();
 
         if (error || !data) {
-            showAlert('error', '❌ Could not fetch resume data for PDF.');
+            showAlert('error', 'Γ¥î Could not fetch resume data for PDF.');
             return;
         }
 
-        console.log('📥 Resume Data:', data);
+        console.log('≡ƒôÑ Resume Data:', data);
 
         // Generate HTML
         const template = data.template_name || 'modern';
         const html = generateResumeHTML(data, template);
         
-        console.log('📄 Generated HTML:', html.substring(0, 200));
+        console.log('≡ƒôä Generated HTML:', html.substring(0, 200));
 
         // Create container and add to DOM
         const container = document.createElement('div');
@@ -1053,7 +986,7 @@ async function downloadPDF(resumeId) {
         container.style.background = 'white';
         document.body.appendChild(container);
 
-        console.log('✅ Container added to DOM');
+        console.log('Γ£à Container added to DOM');
         
         // Wait for rendering
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1061,7 +994,7 @@ async function downloadPDF(resumeId) {
         // Get the actual content div
         const content = container.querySelector('.container') || container;
         
-        console.log('🎨 Starting html2canvas...');
+        console.log('≡ƒÄ¿ Starting html2canvas...');
 
         // Convert to canvas
         const canvas = await html2canvas(content, {
@@ -1072,7 +1005,7 @@ async function downloadPDF(resumeId) {
             allowTaint: true
         });
 
-        console.log('✅ Canvas created, size:', canvas.width, 'x', canvas.height);
+        console.log('Γ£à Canvas created, size:', canvas.width, 'x', canvas.height);
 
         // Create PDF
         const { jsPDF } = window.jspdf;
@@ -1111,13 +1044,13 @@ async function downloadPDF(resumeId) {
         const filename = (data.full_name || 'resume').replace(/\s+/g, '_') + '_resume.pdf';
         pdf.save(filename);
 
-        console.log('✅ PDF saved as:', filename);
+        console.log('Γ£à PDF saved as:', filename);
 
-        showAlert('success', '✅ Resume PDF downloaded successfully!');
+        showAlert('success', 'Γ£à Resume PDF downloaded successfully!');
 
     } catch (err) {
-        console.error('❌ PDF Error:', err);
-        showAlert('error', '❌ Failed to generate PDF: ' + err.message);
+        console.error('Γ¥î PDF Error:', err);
+        showAlert('error', 'Γ¥î Failed to generate PDF: ' + err.message);
     } finally {
         // Clean up
         if (container && container.parentNode) {
@@ -1143,11 +1076,32 @@ async function downloadPDF(resumeId) {
     const summary = escapeHtml(data.professional_summary || '');
     const certifications = escapeHtml(data.certifications || '');
     
-    const contactParts = [email, phone, location].filter(Boolean).join(' · ');
+    const contactParts = [email, phone, location].filter(Boolean).join(' ┬╖ ');
 
-        const expHTML = Renderer.experience(exp, '#1a1a2e', true);
-    const eduHTML = Renderer.education(edu, true);
-    const skHTML = Renderer.skills(sk, true);
+    const expHTML = exp.filter(e => e.title || e.company).map(e => `
+        <div style="margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
+                <strong style="font-size:13px;color:#1a1a2e;">${escapeHtml(e.title || 'Position')}</strong>
+                <span style="font-size:11px;color:#64748b;white-space:nowrap;margin-left:8px;">${escapeHtml(e.start || '')}${e.end ? ' ΓÇô ' + escapeHtml(e.end) : ''}</span>
+            </div>
+            <div style="font-size:12px;color:#222222;margin-bottom:4px;">${escapeHtml(e.company || 'Company')}</div>
+            <div style="font-size:12px;color:#475569;line-height:1.65;">${escapeHtml(e.description || '').replace(/\n/g, '<br>')}</div>
+        </div>
+    `).join('');
+
+    const eduHTML = edu.filter(e => e.degree || e.school).map(e => `
+        <div style="margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
+                <strong style="font-size:13px;color:#1a1a2e;">${escapeHtml(e.degree || 'Degree')}</strong>
+                <span style="font-size:11px;color:#64748b;margin-left:8px;">${escapeHtml(e.year || '')}</span>
+            </div>
+            <div style="font-size:12px;color:#222222;">${escapeHtml(e.school || 'School')}${e.grade ? ' ┬╖ ' + escapeHtml(e.grade) : ''}</div>
+        </div>
+    `).join('');
+
+    const skHTML = sk.filter(s => s).map(s => 
+        `<span style="display:inline-block;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.3);color:#222222;padding:4px 10px;border-radius:20px;font-size:11px;margin:3px;white-space:nowrap;">${escapeHtml(s)}</span>`
+    ).join('');
 
     const h2Style = 'font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:#222222;margin:0 0 10px;padding-left:8px;border-left:3px solid #222222;font-weight:700;';
 
@@ -1182,10 +1136,8 @@ async function downloadPDF(resumeId) {
             
             ${certifications ? `<div class="section"><h2>Certifications</h2><p style="font-size:12px;color:#475569;line-height:1.7;margin:0;">${certifications}</p></div>` : ''}
         </div>
-    
-
-<script src="ambient3d.js"></script>
-<script src="wow-effects.js"></script></body></html>\`;
+    </div>
+</body></html>`;
 }
 
 function generateClassicTemplate(data, exp, edu, sk) {
@@ -1198,8 +1150,26 @@ function generateClassicTemplate(data, exp, edu, sk) {
     
     const contactParts = [email, phone, location].filter(Boolean).join(' | ');
 
-        const expHTML = Renderer.experience(exp, '#1a1a1a', true);
-    const eduHTML = Renderer.education(edu, true);
+    const expHTML = exp.filter(e => e.title || e.company).map(e => `
+        <div style="margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                <strong style="font-size:13px;">${escapeHtml(e.title || 'Position')}</strong>
+                <span style="font-size:11px;color:#555;">${escapeHtml(e.start || '')}${e.end ? ' ΓÇô ' + escapeHtml(e.end) : ''}</span>
+            </div>
+            <div style="font-size:12px;font-style:italic;color:#555;margin-bottom:4px;">${escapeHtml(e.company || 'Company')}</div>
+            <div style="font-size:12px;color:#333;line-height:1.65;">${escapeHtml(e.description || '').replace(/\n/g, '<br>')}</div>
+        </div>
+    `).join('');
+
+    const eduHTML = edu.filter(e => e.degree || e.school).map(e => `
+        <div style="margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                <strong style="font-size:13px;">${escapeHtml(e.degree || 'Degree')}</strong>
+                <span style="font-size:11px;color:#555;">${escapeHtml(e.year || '')}</span>
+            </div>
+            <div style="font-size:12px;font-style:italic;color:#555;">${escapeHtml(e.school || 'School')}${e.grade ? ' ┬╖ ' + escapeHtml(e.grade) : ''}</div>
+        </div>
+    `).join('');
 
     const skText = sk.filter(s => s).map(escapeHtml).join(', ');
     const h2Style = 'font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#222;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #aaa;font-weight:700;';
@@ -1235,8 +1205,8 @@ function generateClassicTemplate(data, exp, edu, sk) {
             
             ${certifications ? `<div class="section"><h2>Certifications</h2><p style="font-size:12px;color:#333;line-height:1.7;margin:0;">${certifications}</p></div>` : ''}
         </div>
-    
-</body></html>\`;
+    </div>
+</body></html>`;
 }
 
 function generateCreativeTemplate(data, exp, edu, sk) {
@@ -1249,8 +1219,23 @@ function generateCreativeTemplate(data, exp, edu, sk) {
     
     const contactParts = [email, phone, location].filter(Boolean);
 
-    const expHTML = Renderer.experience(exp, '#1a1a2e', true);
-    const eduHTML = Renderer.education(edu, true);
+    const expHTML = exp.filter(e => e.title || e.company).map(e => `
+        <div style="margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
+                <strong style="font-size:13px;color:#1a1a2e;">${escapeHtml(e.title || 'Position')}</strong>
+                <span style="font-size:11px;color:#64748b;">${escapeHtml(e.start || '')}${e.end ? ' – ' + escapeHtml(e.end) : ''}</span>
+            </div>
+            <div style="font-size:12px;color:#555555;margin-bottom:4px;font-weight:600;">${escapeHtml(e.company || 'Company')}</div>
+            <div style="font-size:12px;color:#475569;line-height:1.65;">${escapeHtml(e.description || '').replace(/\n/g, '<br>')}</div>
+        </div>
+    `).join('');
+
+    const eduHTML = edu.filter(e => e.degree || e.school).map(e => `
+        <div style="margin-bottom:12px;">
+            <strong style="font-size:12px;color:#1a1a2e;">${escapeHtml(e.degree || 'Degree')}</strong>
+            <div style="font-size:11px;color:#555555;">${escapeHtml(e.school || 'School')}${e.grade ? ' ∙ ' + escapeHtml(e.grade) : ''} ${e.year ? '(' + escapeHtml(e.year) + ')' : ''}</div>
+        </div>
+    `).join('');
 
     const skSidebar = sk.filter(s => s).map(s => 
         `<div style="background:rgba(255,255,255,0.12);border-radius:4px;padding:4px 8px;font-size:11px;margin-bottom:4px;">${escapeHtml(s)}</div>`
@@ -1290,11 +1275,12 @@ function generateCreativeTemplate(data, exp, edu, sk) {
                 ${certifications ? `<div><h2>Certifications</h2><p style="font-size:12px;color:#475569;line-height:1.7;margin:0;">${certifications}</p></div>` : ''}
             </div>
         </div>
-    
-</body></html>\`;
+    <script src="ambient3d.js"></script>
+<script src="wow-effects.js"></script>
+</body></html>`;
 }
 
-        // ── Resume Sharing ────────────────────────────────────────────────────────
+        // ΓöÇΓöÇ Resume Sharing ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         async function shareResume(resumeId) {
             try {
                 const existing = shareViewMap[resumeId];
@@ -1323,7 +1309,7 @@ function generateCreativeTemplate(data, exp, edu, sk) {
                 document.getElementById('shareModal').classList.add('active');
             } catch (err) {
                 console.error('Share error:', err);
-                showAlert('error', '❌ Failed to create share link: ' + err.message);
+                showAlert('error', 'Γ¥î Failed to create share link: ' + err.message);
             }
         }
 
@@ -1331,7 +1317,7 @@ function generateCreativeTemplate(data, exp, edu, sk) {
             const input = document.getElementById('shareLinkInput');
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(input.value)
-                    .then(() => showAlert('success', '✅ Share link copied to clipboard!'))
+                    .then(() => showAlert('success', 'Γ£à Share link copied to clipboard!'))
                     .catch(() => fallbackCopy(input));
             } else {
                 fallbackCopy(input);
@@ -1343,12 +1329,12 @@ function generateCreativeTemplate(data, exp, edu, sk) {
                 input.select();
                 const ok = document.execCommand('copy');
                 if (ok) {
-                    showAlert('success', '✅ Share link copied!');
+                    showAlert('success', 'Γ£à Share link copied!');
                 } else {
-                    showAlert('error', '⚠️ Could not copy automatically. Please select the link and copy manually.');
+                    showAlert('error', 'ΓÜá∩╕Å Could not copy automatically. Please select the link and copy manually.');
                 }
             } catch (e) {
-                showAlert('error', '⚠️ Automatic copy not supported. Please select the link and copy manually.');
+                showAlert('error', 'ΓÜá∩╕Å Automatic copy not supported. Please select the link and copy manually.');
             }
         }
 
@@ -1356,30 +1342,14 @@ function generateCreativeTemplate(data, exp, edu, sk) {
             document.getElementById('shareModal').classList.remove('active');
         }
 
-        // ── AI Suggestions ────────────────────────────────────────────────────────
-      function resetAIButton(btn) {
-    if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = '💡 AI Suggest';
-    } else {
-        document.querySelectorAll('.btn-ai').forEach(b => {
-            b.disabled = false;
-            b.innerHTML = '💡 AI Suggest';
-        });
-    }
-}
-
-async function getAISuggestions(section, btn) {
+        // ΓöÇΓöÇ AI Suggestions ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+      async function getAISuggestions(section) {
     currentAISection = section;
     currentAISuggestion = '';
 
     const box = document.getElementById('aiSuggestionsBox');
     const acceptBtn = document.getElementById('aiAcceptBtn');
-    box.textContent = '⏳ Getting AI suggestions…';
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="loading-spinner"></span> Processing...';
-    }
+    box.textContent = 'ΓÅ│ Getting AI suggestionsΓÇª';
     acceptBtn.style.display = 'none';
     document.getElementById('aiModal').classList.add('active');
 
@@ -1389,65 +1359,54 @@ async function getAISuggestions(section, btn) {
         content = resumeData.professional_summary;
     } else if (section === 'experience') {
         content = (resumeData.experience || []).map(e =>
-            `${e.title || ''} at ${e.company || ''} (${e.start || ''}${e.end ? ' – ' + e.end : ''}):\n${e.description || ''}`
+            `${e.title || ''} at ${e.company || ''} (${e.start || ''}${e.end ? ' ΓÇô ' + e.end : ''}):\n${e.description || ''}`
         ).join('\n\n');
     } else if (section === 'skills') {
         content = (resumeData.skills || []).join(', ');
     }
 
-        let attempts = 0;
-    const maxAttempts = 2;
+    try {
+        const response = await fetch('/api/ai-suggestions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ section, content, resumeData }),
+        });
 
-    async function attempt() {
-        attempts++;
-        try {
-            console.log(`📤 AI request (Attempt ${attempts}/${maxAttempts}) for:`, section);
-            
-            const response = await fetch('/api/ai-suggestions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ section, content, resumeData }),
-            });
+        if (!response.ok) {
+            const result = await response.json().catch(() => ({}));
+            throw new Error(result.error || `Server error: ${response.status}`);
+        }
 
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || `API Error: ${response.status}`);
+        const result = await response.json();
+        currentAISuggestion = result.suggestions || '';
+        box.textContent = currentAISuggestion || '(No suggestion returned)';
 
-            currentAISuggestion = result.suggestions || '';
-            box.textContent = currentAISuggestion || '(No suggestion returned)';
-
-            if (currentAISuggestion && (section === 'summary' || section === 'skills')) {
-                acceptBtn.style.display = 'inline-flex';
-            }
-            resetAIButton(btn);
-        } catch (err) {
-            console.error(`❌ AI Attempt ${attempts} failed:`, err);
-            if (attempts < maxAttempts) {
-                box.textContent = `⚠️ Attempt ${attempts} failed. Retrying...`;
-                setTimeout(attempt, 1000);
-            } else {
-                box.textContent = '❌ Error: ' + err.message + '\n\nPlease try again later.';
-                resetAIButton(btn);
-            }
+        if (currentAISuggestion && (section === 'summary' || section === 'skills')) {
+            acceptBtn.style.display = 'inline-flex';
+        }
+    } catch (err) {
+        console.error('AI Suggestions Error:', err);
+        // Show user-friendly message when backend isn't connected
+        if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('fetch')) {
+            box.textContent = '⚠️ AI suggestions require a connected backend.\n\nTo enable this feature, deploy to a server with the /api/ai-suggestions endpoint configured.';
+        } else {
+            box.textContent = '❌ Error: ' + err.message;
         }
     }
-
-    attempt();
 }
 
         function acceptAISuggestion() {
             if (!currentAISuggestion) return;
             if (currentAISection === 'summary') {
                 document.getElementById('summary').value = currentAISuggestion;
-                showAlert('success', '✅ Summary updated with AI suggestion.');
+                showAlert('success', 'Γ£à Summary updated with AI suggestion.');
             } else if (currentAISection === 'skills') {
                 const newSkills = currentAISuggestion.split(',').map(s => s.trim()).filter(s => s);
                 newSkills.forEach(s => addSkill(s));
-                showAlert('success', `✅ Added ${newSkills.length} suggested skill(s).`);
+                showAlert('success', `Γ£à Added ${newSkills.length} suggested skill(s).`);
             }
             closeAIModal();
-            updatePreview();
-    document.getElementById('aiModal').classList.remove('active');
-}
+        }
 
         function closeAIModal() {
             document.getElementById('aiModal').classList.remove('active');
@@ -1455,10 +1414,11 @@ async function getAISuggestions(section, btn) {
             currentAISection = '';
         }
 
-        // ── Bootstrap ─────────────────────────────────────────────────────────────
+        // ΓöÇΓöÇ Bootstrap ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         window.addEventListener('load', initPage);
     </script>
-
+<script src="ambient3d.js"></script>
+<script src="wow-effects.js"></script>
 </body></html>
 
 

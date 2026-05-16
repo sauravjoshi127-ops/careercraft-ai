@@ -140,7 +140,30 @@ nav, .topnav {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
+
+.nav-links li {
+  list-style: none;
+  display: flex;
+  align-items: center;
+}
+
+.nav-links li a {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-2);
+  border-radius: var(--r-sm);
+  transition: color var(--t-fast), background var(--t-fast);
+  text-decoration: none;
+}
+
+.nav-links li a:hover { color: var(--text-1); background: rgba(255,255,255,0.06); }
 
 .nav-btn {
   display: inline-flex;
