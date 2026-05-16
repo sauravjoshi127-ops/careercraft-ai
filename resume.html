@@ -186,7 +186,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
         </div>
 
         <!-- Summary -->
-        <div class="form-section-heading">📋 Professional Summary <button type="button" class="btn-ai" onclick="getAISuggestions('summary')">💡 AI Suggest</button></div>
+        <div class="form-section-heading">📋 Professional Summary <button type="button" class="btn-ai" onclick="getAISuggestions('summary', this)">💡 AI Suggest</button></div>
         <div class="form-group">
           <label>Summary</label>
           <textarea id="summary" placeholder="A brief overview of your background, skills, and career goals..." rows="4" oninput="updatePreview()"></textarea>
@@ -203,7 +203,7 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
         <button type="button" class="btn-add-entry" onclick="addEducation()">+ Add Education</button>
 
         <!-- Skills -->
-        <div class="form-section-heading">🎯 Skills <button type="button" class="btn-ai" onclick="getAISuggestions('skills')">💡 AI Suggest</button></div>
+        <div class="form-section-heading">🎯 Skills <button type="button" class="btn-ai" onclick="getAISuggestions('skills', this)">💡 AI Suggest</button></div>
         <div class="form-group">
           <label>Add Skills (press Enter or comma to add)</label>
           <div class="skills-container" id="skillsContainer" onclick="document.getElementById('skillInput').focus()">
@@ -337,35 +337,72 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
 
         // ── Live Preview Rendering Engine ──
         // ── Rendering Components ──────────────────────────────────────────────
+        // ── Live Preview Rendering Engine ──
         const Renderer = {
-            experience(exp, color) {
+            experience(exp, color, isPDF = false) {
                 if (!exp || exp.length === 0) return '';
                 return exp.map(e => {
                     if (!e.title && !e.company) return '';
+                    const title = escapeHtml(e.title || 'Position');
+                    const company = escapeHtml(e.company || 'Company');
+                    const period = `${escapeHtml(e.start || '')}${e.end ? ' – ' + escapeHtml(e.end) : ''}`;
+                    const desc = escapeHtml(e.description || '').replace(/\n/g, '<br>');
+
+                    if (isPDF) {
+                        return `
+                            <div style="margin-bottom:14px;">
+                                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
+                                    <strong style="font-size:13px;color:#1a1a2e;">${title}</strong>
+                                    <span style="font-size:11px;color:#64748b;white-space:nowrap;margin-left:8px;">${period}</span>
+                                </div>
+                                <div style="font-size:12px;color:#222222;margin-bottom:4px;">${company}</div>
+                                <div style="font-size:12px;color:#475569;line-height:1.65;">${desc}</div>
+                            </div>`;
+                    }
                     return `
                         <div class="preview-entry">
-                            <div class="preview-exp-title" style="color:${color}">${esc(e.title)}</div>
-                            <div class="preview-exp-meta">${esc(e.company)}${e.start ? ' · ' + esc(e.start) : ''}${e.end ? ' – ' + esc(e.end) : ''}</div>
-                            ${e.description ? `<div class="preview-text">${esc(e.description)}</div>` : ''}
+                            <div class="preview-exp-title" style="color:${color}">${title}</div>
+                            <div class="preview-exp-meta">${company}${period ? ' · ' + period : ''}</div>
+                            ${desc ? `<div class="preview-text">${desc}</div>` : ''}
                         </div>`;
                 }).join('');
             },
 
-            education(edu) {
+            education(edu, isPDF = false) {
                 if (!edu || edu.length === 0) return '';
                 return edu.map(e => {
                     if (!e.degree && !e.school) return '';
+                    const degree = escapeHtml(e.degree || 'Degree');
+                    const school = escapeHtml(e.school || 'School');
+                    const year = escapeHtml(e.year || '');
+                    const grade = e.grade ? ' · ' + escapeHtml(e.grade) : '';
+
+                    if (isPDF) {
+                        return `
+                            <div style="margin-bottom:12px;">
+                                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
+                                    <strong style="font-size:13px;color:#1a1a2e;">${degree}</strong>
+                                    <span style="font-size:11px;color:#64748b;margin-left:8px;">${year}</span>
+                                </div>
+                                <div style="font-size:12px;color:#222222;">${school}${grade}</div>
+                            </div>`;
+                    }
                     return `
                         <div class="preview-entry">
-                            <div class="preview-exp-title">${esc(e.degree)}</div>
-                            <div class="preview-exp-meta">${esc(e.school)}${e.year ? ' · ' + esc(e.year) : ''}</div>
+                            <div class="preview-exp-title">${degree}</div>
+                            <div class="preview-exp-meta">${school}${year ? ' · ' + year : ''}</div>
                         </div>`;
                 }).join('');
             },
 
-            skills(sk) {
+            skills(sk, isPDF = false) {
                 if (!sk || sk.length === 0) return '';
-                return `<div class="preview-skills">${sk.map(s => `<span class="preview-skill">${esc(s)}</span>`).join('')}</div>`;
+                if (isPDF) {
+                    return sk.filter(s => s).map(s => 
+                        `<span style="display:inline-block;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.3);color:#222222;padding:4px 10px;border-radius:20px;font-size:11px;margin:3px;white-space:nowrap;">${escapeHtml(s)}</span>`
+                    ).join('');
+                }
+                return `<div class="preview-skills">${sk.map(s => `<span class="preview-skill">${escapeHtml(s)}</span>`).join('')}</div>`;
             }
         };
 
@@ -422,14 +459,14 @@ box.textContent = currentAISuggestion || '(No suggestion returned)';
 
             previewEl.innerHTML = `
                 <div id="livePreviewContent" class="${tpl}" style="font-family:'${font}', sans-serif; line-height:${lineH}">
-                    <h1 style="margin-bottom:0.15rem;">${esc(data.full_name)}</h1>
-                    ${contact ? `<div class="preview-contact">${esc(contact)}</div>` : ''}
+                    <h1 style="margin-bottom:0.15rem;">${escapeHtml(data.full_name)}</h1>
+                    ${contact ? `<div class="preview-contact">${escapeHtml(contact)}</div>` : ''}
                     <div class="preview-divider"></div>
-                    ${data.professional_summary ? `<div class="preview-section-title" style="color:${cc}">SUMMARY</div><div class="preview-text">${esc(data.professional_summary)}</div>` : ''}
+                    ${data.professional_summary ? `<div class="preview-section-title" style="color:${cc}">SUMMARY</div><div class="preview-text">${escapeHtml(data.professional_summary)}</div>` : ''}
                     ${expHtml ? `<div class="preview-section-title" style="color:${cc}">EXPERIENCE</div>${expHtml}` : ''}
                     ${eduHtml ? `<div class="preview-section-title" style="color:${cc}">EDUCATION</div>${eduHtml}` : ''}
                     ${skillsHtml ? `<div class="preview-section-title" style="color:${cc}">SKILLS</div>${skillsHtml}` : ''}
-                    ${data.certifications ? `<div class="preview-section-title" style="color:${cc}">CERTIFICATIONS</div><div class="preview-text">${esc(data.certifications)}</div>` : ''}
+                    ${data.certifications ? `<div class="preview-section-title" style="color:${cc}">CERTIFICATIONS</div><div class="preview-text">${escapeHtml(data.certifications)}</div>` : ''}
                 </div>`;
         }
 // ── Auth Check ────────────────────────────────────────────────────────────
@@ -1108,30 +1145,9 @@ async function downloadPDF(resumeId) {
     
     const contactParts = [email, phone, location].filter(Boolean).join(' · ');
 
-    const expHTML = exp.filter(e => e.title || e.company).map(e => `
-        <div style="margin-bottom:14px;">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
-                <strong style="font-size:13px;color:#1a1a2e;">${escapeHtml(e.title || 'Position')}</strong>
-                <span style="font-size:11px;color:#64748b;white-space:nowrap;margin-left:8px;">${escapeHtml(e.start || '')}${e.end ? ' – ' + escapeHtml(e.end) : ''}</span>
-            </div>
-            <div style="font-size:12px;color:#222222;margin-bottom:4px;">${escapeHtml(e.company || 'Company')}</div>
-            <div style="font-size:12px;color:#475569;line-height:1.65;">${escapeHtml(e.description || '').replace(/\n/g, '<br>')}</div>
-        </div>
-    `).join('');
-
-    const eduHTML = edu.filter(e => e.degree || e.school).map(e => `
-        <div style="margin-bottom:12px;">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
-                <strong style="font-size:13px;color:#1a1a2e;">${escapeHtml(e.degree || 'Degree')}</strong>
-                <span style="font-size:11px;color:#64748b;margin-left:8px;">${escapeHtml(e.year || '')}</span>
-            </div>
-            <div style="font-size:12px;color:#222222;">${escapeHtml(e.school || 'School')}${e.grade ? ' · ' + escapeHtml(e.grade) : ''}</div>
-        </div>
-    `).join('');
-
-    const skHTML = sk.filter(s => s).map(s => 
-        `<span style="display:inline-block;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.3);color:#222222;padding:4px 10px;border-radius:20px;font-size:11px;margin:3px;white-space:nowrap;">${escapeHtml(s)}</span>`
-    ).join('');
+        const expHTML = Renderer.experience(exp, '#1a1a2e', true);
+    const eduHTML = Renderer.education(edu, true);
+    const skHTML = Renderer.skills(sk, true);
 
     const h2Style = 'font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:#222222;margin:0 0 10px;padding-left:8px;border-left:3px solid #222222;font-weight:700;';
 
@@ -1182,26 +1198,8 @@ function generateClassicTemplate(data, exp, edu, sk) {
     
     const contactParts = [email, phone, location].filter(Boolean).join(' | ');
 
-    const expHTML = exp.filter(e => e.title || e.company).map(e => `
-        <div style="margin-bottom:14px;">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;">
-                <strong style="font-size:13px;">${escapeHtml(e.title || 'Position')}</strong>
-                <span style="font-size:11px;color:#555;">${escapeHtml(e.start || '')}${e.end ? ' – ' + escapeHtml(e.end) : ''}</span>
-            </div>
-            <div style="font-size:12px;font-style:italic;color:#555;margin-bottom:4px;">${escapeHtml(e.company || 'Company')}</div>
-            <div style="font-size:12px;color:#333;line-height:1.65;">${escapeHtml(e.description || '').replace(/\n/g, '<br>')}</div>
-        </div>
-    `).join('');
-
-    const eduHTML = edu.filter(e => e.degree || e.school).map(e => `
-        <div style="margin-bottom:12px;">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;">
-                <strong style="font-size:13px;">${escapeHtml(e.degree || 'Degree')}</strong>
-                <span style="font-size:11px;color:#555;">${escapeHtml(e.year || '')}</span>
-            </div>
-            <div style="font-size:12px;font-style:italic;color:#555;">${escapeHtml(e.school || 'School')}${e.grade ? ' · ' + escapeHtml(e.grade) : ''}</div>
-        </div>
-    `).join('');
+        const expHTML = Renderer.experience(exp, '#1a1a1a', true);
+    const eduHTML = Renderer.education(edu, true);
 
     const skText = sk.filter(s => s).map(escapeHtml).join(', ');
     const h2Style = 'font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#222;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #aaa;font-weight:700;';
@@ -1251,23 +1249,8 @@ function generateCreativeTemplate(data, exp, edu, sk) {
     
     const contactParts = [email, phone, location].filter(Boolean);
 
-    const expHTML = exp.filter(e => e.title || e.company).map(e => `
-        <div style="margin-bottom:14px;">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
-                <strong style="font-size:13px;color:#1a1a2e;">${escapeHtml(e.title || 'Position')}</strong>
-                <span style="font-size:11px;color:#64748b;">${escapeHtml(e.start || '')}${e.end ? ' – ' + escapeHtml(e.end) : ''}</span>
-            </div>
-            <div style="font-size:12px;color:#555555;margin-bottom:4px;font-weight:600;">${escapeHtml(e.company || 'Company')}</div>
-            <div style="font-size:12px;color:#475569;line-height:1.65;">${escapeHtml(e.description || '').replace(/\n/g, '<br>')}</div>
-        </div>
-    `).join('');
-
-    const eduHTML = edu.filter(e => e.degree || e.school).map(e => `
-        <div style="margin-bottom:12px;">
-            <strong style="font-size:12px;color:#1a1a2e;">${escapeHtml(e.degree || 'Degree')}</strong>
-            <div style="font-size:11px;color:#555555;">${escapeHtml(e.school || 'School')}${e.grade ? ' · ' + escapeHtml(e.grade) : ''} ${e.year ? '(' + escapeHtml(e.year) + ')' : ''}</div>
-        </div>
-    `).join('');
+    const expHTML = Renderer.experience(exp, '#1a1a2e', true);
+    const eduHTML = Renderer.education(edu, true);
 
     const skSidebar = sk.filter(s => s).map(s => 
         `<div style="background:rgba(255,255,255,0.12);border-radius:4px;padding:4px 8px;font-size:11px;margin-bottom:4px;">${escapeHtml(s)}</div>`
@@ -1374,24 +1357,28 @@ function generateCreativeTemplate(data, exp, edu, sk) {
         }
 
         // ── AI Suggestions ────────────────────────────────────────────────────────
-      function resetAIButton() {
-    document.querySelectorAll('.btn-ai').forEach(b => {
-        b.disabled = false;
-        b.innerHTML = '💡 AI Suggest';
-    });
+      function resetAIButton(btn) {
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '💡 AI Suggest';
+    } else {
+        document.querySelectorAll('.btn-ai').forEach(b => {
+            b.disabled = false;
+            b.innerHTML = '💡 AI Suggest';
+        });
+    }
 }
 
-async function getAISuggestions(section) {
+async function getAISuggestions(section, btn) {
     currentAISection = section;
     currentAISuggestion = '';
 
     const box = document.getElementById('aiSuggestionsBox');
     const acceptBtn = document.getElementById('aiAcceptBtn');
     box.textContent = '⏳ Getting AI suggestions…';
-    const aiBtn = document.querySelector("button[onclick*='getAISuggestions(\"' + section + '\")']");
-    if (aiBtn) {
-        aiBtn.disabled = true;
-        aiBtn.innerHTML = '⏳ Processing...';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spinner"></span> Processing...';
     }
     acceptBtn.style.display = 'none';
     document.getElementById('aiModal').classList.add('active');
@@ -1408,36 +1395,43 @@ async function getAISuggestions(section) {
         content = (resumeData.skills || []).join(', ');
     }
 
-    try {
-        console.log('📤 Sending AI request for section:', section);
-        console.log('📝 Content:', content);
-        
-        const response = await fetch('/api/ai-suggestions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ section, content, resumeData }),
-        });
+        let attempts = 0;
+    const maxAttempts = 2;
 
-        console.log('📨 Response status:', response.status);
-        
-        const result = await response.json();
-        console.log('📦 API Result:', result);
+    async function attempt() {
+        attempts++;
+        try {
+            console.log(`📤 AI request (Attempt ${attempts}/${maxAttempts}) for:`, section);
+            
+            const response = await fetch('/api/ai-suggestions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ section, content, resumeData }),
+            });
 
-        if (!response.ok) {
-            throw new Error(result.error || `API Error: ${response.status}`);
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || `API Error: ${response.status}`);
+
+            currentAISuggestion = result.suggestions || '';
+            box.textContent = currentAISuggestion || '(No suggestion returned)';
+
+            if (currentAISuggestion && (section === 'summary' || section === 'skills')) {
+                acceptBtn.style.display = 'inline-flex';
+            }
+            resetAIButton(btn);
+        } catch (err) {
+            console.error(`❌ AI Attempt ${attempts} failed:`, err);
+            if (attempts < maxAttempts) {
+                box.textContent = `⚠️ Attempt ${attempts} failed. Retrying...`;
+                setTimeout(attempt, 1000);
+            } else {
+                box.textContent = '❌ Error: ' + err.message + '\n\nPlease try again later.';
+                resetAIButton(btn);
+            }
         }
-
-        currentAISuggestion = result.suggestions || '';
-        box.textContent = currentAISuggestion || '(No suggestion returned)';
-
-        if (currentAISuggestion && (section === 'summary' || section === 'skills')) {
-            acceptBtn.style.display = 'inline-flex';
-        }
-    } catch (err) {
-        console.error('❌ AI Suggestions Error:', err);
-        box.textContent = '❌ Error: ' + err.message;
-        resetAIButton();
     }
+
+    attempt();
 }
 
         function acceptAISuggestion() {
