@@ -255,12 +255,13 @@
             .topnav { flex-direction: column; gap: 0.75rem; }
         }
     </style>
+    <link rel="stylesheet" href="styles/premium.css">
 </head>
 <body>
     <div class="topnav">
-        <a href="dashboard.html" class="logo">🚀 CareerCraft AI</a>
+        <a href="dashboard.html" class="logo">CareerCraft AI</a>
         <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn">← Dashboard</a>
+            <a href="dashboard.html" class="nav-btn">Dashboard</a>
             <button class="nav-btn" onclick="logout()">Sign Out</button>
         </div>
     </div>
@@ -337,8 +338,9 @@
         const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
 
-        const { createClient } = supabase;
-        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+        const client = window.supabase && typeof window.supabase.createClient === 'function'
+            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+            : null;
 
         let currentUser = null;
 
@@ -368,6 +370,11 @@
 
         async function loadUserInfo() {
             try {
+                if (!client) {
+                    showToast('Account service is unavailable. Please refresh after checking your connection.', 'error');
+                    return;
+                }
+
                 const { data: { session } } = await client.auth.getSession();
 
                 if (!session) {
@@ -403,6 +410,10 @@
             btn.textContent = 'Saving...';
 
             try {
+                if (!client) {
+                    throw new Error('Account service is unavailable. Please refresh after checking your connection.');
+                }
+
                 const { error } = await client.auth.updateUser({
                     data: { full_name: fullName }
                 });
@@ -439,6 +450,10 @@
             btn.textContent = 'Updating...';
 
             try {
+                if (!client) {
+                    throw new Error('Account service is unavailable. Please refresh after checking your connection.');
+                }
+
                 const { error } = await client.auth.updateUser({ password: newPassword });
 
                 if (error) throw new Error(error.message);
@@ -488,7 +503,9 @@
             throw new Error(data.error || 'Failed to delete account');
         }
 
-        await client.auth.signOut();
+        if (client) {
+            await client.auth.signOut();
+        }
         localStorage.clear();
 
         showToast('✅ Account permanently deleted! Redirecting...', 'success');
@@ -504,7 +521,9 @@
 
         async function logout() {
             try {
-                await client.auth.signOut();
+                if (client) {
+                    await client.auth.signOut();
+                }
                 localStorage.removeItem('userEmail');
                 localStorage.removeItem('userName');
                 localStorage.removeItem('userId');

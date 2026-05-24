@@ -129,6 +129,7 @@
             .page-content { padding: 1rem; }
         }
     </style>
+    <link rel="stylesheet" href="styles/premium.css">
 </head>
 <body>
 
@@ -165,8 +166,9 @@
         // ── Supabase Setup ────────────────────────────────────────────────────────
         const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
-        const { createClient } = supabase;
-        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+        const client = window.supabase && typeof window.supabase.createClient === 'function'
+            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+            : null;
 
         let resumeDataGlobal = null;
 
@@ -197,6 +199,11 @@
 
             if (!token) {
                 showError('Invalid Link', 'This share link is missing a token. Please ask the owner for a valid link.');
+                return;
+            }
+
+            if (!client) {
+                showError('Service Unavailable', 'Resume sharing could not load. Please refresh after checking your connection.');
                 return;
             }
 

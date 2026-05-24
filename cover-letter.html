@@ -93,6 +93,7 @@
     .score-number.score-low{color:#f87171;}
     .score-tip{font-size:.75rem;color:#64748b;margin-top:.3rem;line-height:1.4;}
   </style>
+  <link rel="stylesheet" href="styles/premium.css">
 </head>
 <body>
   <div class="topnav">
@@ -321,8 +322,9 @@
 <script>
 const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
-const { createClient } = supabase;
-const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+const client = window.supabase && typeof window.supabase.createClient === 'function'
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
 
 let currentUser = null;
 let lastGenerated = null;
@@ -356,6 +358,12 @@ function formatLetterText(text) {
 }
 
 async function init() {
+  if (!client) {
+    showAlert('error', 'Cover letter service is unavailable. Please refresh after checking your connection.');
+    document.getElementById('historyList').textContent = 'Saved letters are unavailable right now.';
+    return;
+  }
+
   try {
     const { data: { session } } = await client.auth.getSession();
     if (!session) return window.location.href = 'login.html';
@@ -492,7 +500,7 @@ function clearResume() {
 let savedResumesData = {};
 
 async function loadSavedResumesDropdown() {
-  if (!currentUser) return;
+  if (!client || !currentUser) return;
   const select = document.getElementById('savedResumeSelect');
   try {
     const { data, error } = await client.from('resumes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
@@ -674,6 +682,7 @@ async function generateCoverLetter(event, regen = false) {
 
 async function saveCoverLetter() {
   if (!lastGenerated) return showAlert('error', 'Generate first.');
+  if (!client || !currentUser) return showAlert('error', 'Sign in service is unavailable. Please refresh and try again.');
   const { error } = await client.from('cover_letters').insert([{
     user_id: currentUser.id,
     job_title: document.getElementById('jobTitle').value,
@@ -696,6 +705,11 @@ async function saveCoverLetter() {
 }
 
 async function loadHistory() {
+  if (!client || !currentUser) {
+    document.getElementById('historyList').textContent = 'Saved letters are unavailable right now.';
+    return;
+  }
+
   try {
     const { data, error } = await client
       .from('cover_letters')
@@ -718,6 +732,7 @@ async function loadHistory() {
 }
 
 async function previewSaved(id) {
+  if (!client) return showAlert('error', 'Saved letters are unavailable right now.');
   const { data } = await client.from('cover_letters').select('*').eq('id', id).single();
   if (!data) return;
 

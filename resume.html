@@ -126,8 +126,49 @@
         .card {
             background: rgba(20, 24, 41, 0.6);
             border: 1px solid rgba(148, 163, 184, 0.1);
-            border-radius: 1rem;
+            border-radius: 0.5rem;
             padding: 2rem;
+        }
+
+        .resume-flow {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .flow-step {
+            background: rgba(20, 24, 41, 0.52);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            border-radius: 0.5rem;
+            padding: 0.85rem;
+            min-height: 76px;
+        }
+
+        .flow-step span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.55rem;
+            height: 1.55rem;
+            border-radius: 0.35rem;
+            background: rgba(94, 234, 212, 0.1);
+            border: 1px solid rgba(94, 234, 212, 0.22);
+            color: #5eead4;
+            font-size: 0.78rem;
+            font-weight: 800;
+            margin-bottom: 0.45rem;
+        }
+
+        .flow-step strong {
+            display: block;
+            font-size: 0.88rem;
+            color: #f8fafc;
+        }
+
+        .flow-step small {
+            color: #94a3b8;
+            font-size: 0.78rem;
         }
 
         /* Form styles */
@@ -505,6 +546,35 @@
             .resume-cards {
                 grid-template-columns: 1fr;
             }
+
+            .resume-flow {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .card {
+                padding: 1.25rem;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .nav-btns,
+            .modal-actions,
+            .share-link-box,
+            .save-bar {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .resume-flow {
+                grid-template-columns: 1fr;
+            }
+
+            .btn,
+            .btn-add-entry,
+            .btn-ai {
+                justify-content: center;
+                width: 100%;
+            }
         }
 
         /* ── Select element ── */
@@ -547,6 +617,11 @@
         .btn-ai:hover {
             background: linear-gradient(135deg, rgba(124, 58, 237, 0.28), rgba(168, 85, 247, 0.28));
             border-color: rgba(124, 58, 237, 0.55);
+        }
+
+        .btn-ai:disabled {
+            opacity: 0.6;
+            cursor: wait;
         }
 
         /* ── Template & view badges on card ── */
@@ -728,15 +803,16 @@
             line-height: 1.3;
         }
     </style>
+    <link rel="stylesheet" href="styles/premium.css">
 </head>
 <body>
     <!-- Top Navigation -->
     <div class="topnav">
-        <div class="logo">📝 Resume Builder</div>
+        <div class="logo">Resume Builder</div>
         <div class="nav-btns">
-            <a href="cover-letter.html" class="btn btn-secondary" style="padding: 0.5rem 1rem;">📨 Cover Letter</a>
-            <a href="cold-email.html" class="btn btn-secondary" style="padding: 0.5rem 1rem;">✉️ Cold Email</a>
-            <a href="dashboard.html" class="btn btn-primary" style="padding: 0.5rem 1rem;">← Dashboard</a>
+            <a href="cover-letter.html" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Cover Letter</a>
+            <a href="cold-email.html" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Cold Email</a>
+            <a href="dashboard.html" class="btn btn-primary" style="padding: 0.5rem 1rem;">Dashboard</a>
         </div>
     </div>
 
@@ -750,7 +826,7 @@
         <!-- My Saved Resumes -->
         <div class="page-section">
             <div class="section-header">
-                <h2 class="section-title">📂 My Saved Resumes</h2>
+                <h2 class="section-title">My Saved Resumes</h2>
             </div>
             <div id="resumeList">
                 <div class="empty-state">
@@ -763,23 +839,29 @@
         <!-- Build / Edit Resume Form -->
 <div class="page-section">
     <div class="section-header">
-        <h2 class="section-title" id="formTitle">✏️ Build New Resume</h2>
-        <button class="btn btn-secondary" id="cancelEditBtn" onclick="cancelEdit()" style="display:none;">✕ Cancel Edit</button>
+        <h2 class="section-title" id="formTitle">Build New Resume</h2>
+        <button class="btn btn-secondary" id="cancelEditBtn" onclick="cancelEdit()" style="display:none;">Cancel Edit</button>
+    </div>
+    <div class="resume-flow" aria-label="Resume workflow">
+        <div class="flow-step"><span>1</span><strong>Template</strong><small>Pick the format</small></div>
+        <div class="flow-step"><span>2</span><strong>Basics</strong><small>Name, email, summary</small></div>
+        <div class="flow-step"><span>3</span><strong>Details</strong><small>Work, education, skills</small></div>
+        <div class="flow-step"><span>4</span><strong>Save</strong><small>Export or share</small></div>
     </div>
     <div class="card">
         <form id="resumeForm" onsubmit="handleSave(event)" novalidate>
 
             <!-- STEP 1: Template Selection -->
-            <div class="form-section-heading">🎨 Step 1: Choose Your Template</div>
+            <div class="form-section-heading">Step 1 - Choose Template</div>
             <div class="template-selector" id="templateSelector">
                 <!-- Modern Template -->
-                <div class="template-preview modern" onclick="selectTemplate('modern')">
-                    <div class="template-preview-header">📐 Modern</div>
+                <div class="template-preview modern selected" role="button" tabindex="0" aria-pressed="true" data-template="modern" onclick="selectTemplate('modern')">
+                    <div class="template-preview-header">Modern</div>
                     <div class="template-preview-content">
                         <h3>John Doe</h3>
                         <p style="color:#7c3aed;font-weight:600;">john@email.com</p>
                         <div style="margin-top:0.5rem;border-top:1px solid #ccc;padding-top:0.3rem;">
-                            <p style="font-weight:600;margin-bottom:0.2rem;">💼 Experience</p>
+                            <p style="font-weight:600;margin-bottom:0.2rem;">Experience</p>
                             <p>Clean & professional look</p>
                         </div>
                     </div>
@@ -787,8 +869,8 @@
                 </div>
 
                 <!-- Classic Template -->
-                <div class="template-preview template-classic" onclick="selectTemplate('classic')">
-                    <div class="template-preview-header">📋 Classic</div>
+                <div class="template-preview template-classic" role="button" tabindex="0" aria-pressed="false" data-template="classic" onclick="selectTemplate('classic')">
+                    <div class="template-preview-header">Classic</div>
                     <div class="template-preview-content">
                         <h3 style="text-align:center;">JOHN DOE</h3>
                         <p style="text-align:center;margin-bottom:0.3rem;">john@email.com</p>
@@ -801,8 +883,8 @@
                 </div>
 
                 <!-- Creative Template -->
-                <div class="template-preview creative" onclick="selectTemplate('creative')">
-                    <div class="template-preview-header">✨ Creative</div>
+                <div class="template-preview creative" role="button" tabindex="0" aria-pressed="false" data-template="creative" onclick="selectTemplate('creative')">
+                    <div class="template-preview-header">Creative</div>
                     <div class="template-preview-content">
                         <div style="background:linear-gradient(160deg,#6d28d9,#a855f7);color:white;padding:0.3rem;border-radius:0.3rem;margin-bottom:0.3rem;">
                             <h3 style="color:white;margin:0;font-size:0.65rem;">JOHN DOE</h3>
@@ -818,7 +900,7 @@
             <input type="hidden" id="templateName" value="modern">
 
             <!-- Personal Info -->
-            <div class="form-section-heading">👤 Step 2: Personal Information</div>
+            <div class="form-section-heading">Step 2 - Personal Information</div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Full Name *</label>
@@ -840,24 +922,24 @@
                         </div>
                     </div>
 
-                  <div class="form-section-heading">📋 Step 3: Professional Summary <button type="button" class="btn-ai" onclick="getAISuggestions('summary')">💡 AI Suggest</button></div>
+                  <div class="form-section-heading">Step 3 - Professional Summary <button type="button" class="btn-ai" data-ai-section="summary" onclick="getAISuggestions('summary')">Suggest</button></div>
 <div class="form-group">
     <label>Summary</label>
     <textarea id="summary" placeholder="A brief overview of your background, skills, and career goals..." rows="4"></textarea>
 </div>
 
 <!-- Work Experience -->
-<div class="form-section-heading">💼 Step 4: Work Experience</div>
+<div class="form-section-heading">Step 4 - Work Experience</div>
 <div id="experienceContainer"></div>
 <button type="button" class="btn-add-entry" onclick="addExperience()">+ Add Work Experience</button>
 
 <!-- Education -->
-<div class="form-section-heading">🎓 Step 5: Education</div>
+<div class="form-section-heading">Step 5 - Education</div>
 <div id="educationContainer"></div>
 <button type="button" class="btn-add-entry" onclick="addEducation()">+ Add Education</button>
 
 <!-- Skills -->
-<div class="form-section-heading">🛠️ Step 6: Skills <button type="button" class="btn-ai" onclick="getAISuggestions('skills')">💡 AI Suggest</button></div>
+<div class="form-section-heading">Step 6 - Skills <button type="button" class="btn-ai" data-ai-section="skills" onclick="getAISuggestions('skills')">Suggest</button></div>
 <div class="form-group">
     <label>Add Skills (press Enter or comma to add)</label>
     <div class="skills-container" id="skillsContainer" onclick="document.getElementById('skillInput').focus()">
@@ -866,7 +948,7 @@
 </div>
 
 <!-- Certifications -->
-<div class="form-section-heading">🏅 Step 7: Certifications</div>
+<div class="form-section-heading">Step 7 - Certifications</div>
 <div class="form-group">
     <label>Certifications</label>
     <textarea id="certifications" placeholder="e.g. AWS Certified Solutions Architect (2023), PMP Certification (2022)..." rows="3"></textarea>
@@ -875,7 +957,7 @@
                     <!-- Save Bar -->
                     <div class="save-bar">
                         <button type="submit" class="btn btn-primary" id="saveBtn">
-                            💾 Save Resume
+                            Save Resume
                         </button>
                     </div>
                 </form>
@@ -886,7 +968,7 @@
     <!-- Delete Confirmation Modal -->
     <div class="modal-overlay" id="deleteModal">
         <div class="modal">
-            <h3>🗑️ Delete Resume</h3>
+            <h3>Delete Resume</h3>
             <p>Are you sure you want to delete this resume? This action cannot be undone.</p>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
@@ -898,7 +980,7 @@
     <!-- Share Modal -->
     <div class="modal-overlay" id="shareModal">
         <div class="modal">
-            <h3>🔗 Share Resume</h3>
+            <h3>Share Resume</h3>
             <p>Anyone with this link can view your resume. Copy and send it!</p>
             <div class="share-link-box">
                 <input type="text" id="shareLinkInput" readonly>
@@ -913,12 +995,12 @@
     <!-- AI Suggestions Modal -->
     <div class="modal-overlay" id="aiModal">
         <div class="modal modal-large">
-            <h3>🤖 AI Suggestions</h3>
-            <p>Here are AI-powered suggestions to improve your resume section:</p>
+            <h3 id="aiModalTitle">Resume Suggestion</h3>
+            <p id="aiModalCopy">Review the suggestion before applying it.</p>
             <div class="ai-suggestions-box" id="aiSuggestionsBox">Getting suggestions…</div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeAIModal()">Close</button>
-                <button class="btn btn-primary" id="aiAcceptBtn" onclick="acceptAISuggestion()" style="display:none;">✅ Accept</button>
+                <button class="btn btn-primary" id="aiAcceptBtn" onclick="acceptAISuggestion()" style="display:none;">Accept</button>
             </div>
         </div>
     </div>
@@ -927,8 +1009,9 @@
         // ── Supabase Setup ────────────────────────────────────────────────────────
         const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
-        const { createClient } = supabase;
-        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+        const client = window.supabase && typeof window.supabase.createClient === 'function'
+            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+            : null;
 
         // ── State ─────────────────────────────────────────────────────────────────
         let currentUserId = null;
@@ -943,7 +1026,9 @@
 
         // ── Auth Check ────────────────────────────────────────────────────────────
         async function initPage() {
-            const { data: { session } } = await client.auth.getSession();
+            const { data: { session } } = client
+                ? await client.auth.getSession()
+                : { data: { session: null } };
             if (session && session.user) {
                 currentUserId = session.user.id;
             } else {
@@ -959,12 +1044,23 @@
             addExperience();
             addEducation();
             await loadResumes();
+            bindTemplateKeyboard();
+
+            const editId = new URLSearchParams(window.location.search).get('edit');
+            if (editId && client) {
+                await editResume(editId);
+            }
         }
 
         // ── Load Saved Resumes ────────────────────────────────────────────────────
         async function loadResumes() {
             const listEl = document.getElementById('resumeList');
-            listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>Loading resumes...</p></div>';
+            listEl.innerHTML = '<div class="empty-state"><p>Loading resumes...</p></div>';
+
+            if (!client) {
+                listEl.innerHTML = '<div class="empty-state"><p>Resume sync is unavailable. Please refresh after checking your connection.</p></div>';
+                return;
+            }
 
             const { data, error } = await client
                 .from('resumes')
@@ -973,14 +1069,13 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Could not load resumes. Please refresh the page.</p></div>';
+                listEl.innerHTML = '<div class="empty-state"><p>Could not load resumes. Please refresh the page.</p></div>';
                 return;
             }
 
             if (!data || data.length === 0) {
                 listEl.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-icon">📄</div>
                         <p>No saved resumes yet. Fill in the form below and hit <strong>Save Resume</strong>!</p>
                     </div>`;
                 return;
@@ -1037,12 +1132,12 @@
 
             const templateName = r.template_name || 'modern';
             const shareInfo = shareViewMap[r.id];
-            const viewBadge = shareInfo ? `<span class="view-badge">👁 ${shareInfo.viewCount}</span>` : '';
+            const viewBadge = shareInfo ? `<span class="view-badge">${shareInfo.viewCount} views</span>` : '';
 
             return `
                 <div class="resume-card" id="card-${r.id}">
                     <div class="card-badges">
-                        <span class="template-badge">📐 ${escapeHtml(templateName)}</span>${viewBadge}
+                        <span class="template-badge">${escapeHtml(templateName)}</span>${viewBadge}
                     </div>
                     <div class="resume-card-title">${escapeHtml(r.full_name || 'Untitled Resume')}</div>
                     <div class="resume-card-meta">
@@ -1057,10 +1152,10 @@
                         ${skillTags}${extraSkills}
                     </div>
                     <div class="card-actions-row">
-                        <button class="btn btn-secondary" onclick="editResume('${r.id}')">✏️ Edit</button>
-                        <button class="btn btn-secondary" onclick="downloadPDF('${r.id}')">📥 PDF</button>
-                        <button class="btn btn-secondary" onclick="shareResume('${r.id}')">🔗 Share</button>
-                        <button class="btn btn-danger" onclick="openDeleteModal('${r.id}')">🗑️</button>
+                        <button class="btn btn-secondary" onclick="editResume('${r.id}')">Edit</button>
+                        <button class="btn btn-secondary" onclick="downloadPDF('${r.id}')">PDF</button>
+                        <button class="btn btn-secondary" onclick="shareResume('${r.id}')">Share</button>
+                        <button class="btn btn-danger" aria-label="Delete resume" onclick="openDeleteModal('${r.id}')">Delete</button>
                     </div>
                 </div>`;
         }
@@ -1253,7 +1348,12 @@
             const errors = validateForm(data);
 
             if (errors.length > 0) {
-                showAlert('error', '⚠️ ' + errors.join(' '));
+                showAlert('error', errors.join(' '));
+                return;
+            }
+
+            if (!client) {
+                showAlert('error', 'Resume sync is unavailable. Please refresh after checking your connection.');
                 return;
             }
 
@@ -1271,7 +1371,7 @@
                         .eq('user_id', currentUserId);
 
                     if (error) throw error;
-                    showAlert('success', '✅ Resume updated successfully!');
+                    showAlert('success', 'Resume updated successfully.');
                     cancelEdit();
                 } else {
                     // Insert new
@@ -1280,7 +1380,7 @@
                         .insert([{ ...data, user_id: currentUserId }]);
 
                     if (error) throw error;
-                    showAlert('success', '✅ Resume saved successfully!');
+                    showAlert('success', 'Resume saved successfully.');
                     resetForm();
                 }
 
@@ -1288,16 +1388,21 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } catch (err) {
                 console.error('Save error:', err);
-                showAlert('error', '❌ Failed to save resume: ' + err.message);
+                showAlert('error', 'Failed to save resume: ' + err.message);
             } finally {
                 saveBtn.disabled = false;
-                saveBtn.innerHTML = editingResumeId ? '💾 Update Resume' : '💾 Save Resume';
+                saveBtn.innerHTML = editingResumeId ? 'Update Resume' : 'Save Resume';
             }
         }
 
         // ── Edit Resume ───────────────────────────────────────────────────────────
         async function editResume(id) {
             hideAlerts();
+            if (!client) {
+                showAlert('error', 'Resume sync is unavailable. Please refresh after checking your connection.');
+                return;
+            }
+
             const { data, error } = await client
                 .from('resumes')
                 .select('*')
@@ -1306,14 +1411,14 @@
                 .single();
 
             if (error || !data) {
-                showAlert('error', '❌ Could not load resume for editing.');
+                showAlert('error', 'Could not load resume for editing.');
                 return;
             }
 
             editingResumeId = id;
-            document.getElementById('formTitle').textContent = '✏️ Edit Resume';
+            document.getElementById('formTitle').textContent = 'Edit Resume';
             document.getElementById('cancelEditBtn').style.display = 'inline-flex';
-            document.getElementById('saveBtn').innerHTML = '💾 Update Resume';
+            document.getElementById('saveBtn').innerHTML = 'Update Resume';
 
             // Populate personal info
             document.getElementById('fullName').value = data.full_name || '';
@@ -1323,6 +1428,7 @@
             document.getElementById('summary').value = data.professional_summary || '';
             document.getElementById('certifications').value = data.certifications || '';
             document.getElementById('templateName').value = data.template_name || 'modern';
+            selectTemplate(data.template_name || 'modern');
 
             // Populate experience
             document.getElementById('experienceContainer').innerHTML = '';
@@ -1350,21 +1456,36 @@
     // Update UI
     document.querySelectorAll('.template-preview').forEach(preview => {
         preview.classList.remove('selected');
+        preview.setAttribute('aria-pressed', 'false');
     });
     
     // Find and highlight selected template
     const templateClass = templateName === 'modern' ? 'modern' : 
                          templateName === 'classic' ? 'template-classic' : 'creative';
-    document.querySelector(`.template-preview.${templateClass}`).classList.add('selected');
+    const selected = document.querySelector(`.template-preview.${templateClass}`);
+    if (selected) {
+        selected.classList.add('selected');
+        selected.setAttribute('aria-pressed', 'true');
+    }
     
-    console.log('✅ Template selected:', templateName);
+    console.log('Template selected:', templateName);
 }
+
+        function bindTemplateKeyboard() {
+            document.querySelectorAll('.template-preview').forEach(preview => {
+                preview.addEventListener('keydown', event => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    event.preventDefault();
+                    selectTemplate(preview.dataset.template);
+                });
+            });
+        }
 
         function cancelEdit() {
             editingResumeId = null;
-            document.getElementById('formTitle').textContent = '✏️ Build New Resume';
+            document.getElementById('formTitle').textContent = 'Build New Resume';
             document.getElementById('cancelEditBtn').style.display = 'none';
-            document.getElementById('saveBtn').innerHTML = '💾 Save Resume';
+            document.getElementById('saveBtn').innerHTML = 'Save Resume';
             resetForm();
         }
 
@@ -1381,6 +1502,11 @@
 
         async function confirmDelete() {
             if (!deleteTargetId) return;
+            if (!client) {
+                showAlert('error', 'Resume sync is unavailable. Please refresh after checking your connection.');
+                closeDeleteModal();
+                return;
+            }
 
             const btn = document.getElementById('confirmDeleteBtn');
             btn.disabled = true;
@@ -1397,9 +1523,9 @@
             btn.textContent = 'Delete';
 
             if (error) {
-                showAlert('error', '❌ Failed to delete resume: ' + error.message);
+                showAlert('error', 'Failed to delete resume: ' + error.message);
             } else {
-                showAlert('success', '✅ Resume deleted successfully.');
+                showAlert('success', 'Resume deleted successfully.');
                 await loadResumes();
             }
         }
@@ -1415,6 +1541,7 @@
             addEducation();
             skills = [];
             renderSkills();
+            selectTemplate('modern');
             document.getElementById('fullName').classList.remove('invalid');
             document.getElementById('email').classList.remove('invalid');
         }
@@ -1461,6 +1588,11 @@
         // ── PDF Export ────────────────────────────────────────────────────────────
 async function downloadPDF(resumeId) {
     try {
+        if (!client) {
+            showAlert('error', 'Resume sync is unavailable. Please refresh after checking your connection.');
+            return;
+        }
+
         const { data, error } = await client
             .from('resumes')
             .select('*')
@@ -1472,13 +1604,13 @@ async function downloadPDF(resumeId) {
             return;
         }
 
-        console.log('📥 Resume Data:', data);
+        console.log('Resume Data:', data);
 
         // Generate HTML
         const template = data.template_name || 'modern';
         const html = generateResumeHTML(data, template);
         
-        console.log('📄 Generated HTML:', html.substring(0, 200));
+        console.log('Generated HTML:', html.substring(0, 200));
 
         // Create container and add to DOM
         const container = document.createElement('div');
@@ -1491,7 +1623,7 @@ async function downloadPDF(resumeId) {
         container.style.background = 'white';
         document.body.appendChild(container);
 
-        console.log('✅ Container added to DOM');
+        console.log('Container added to DOM');
         
         // Wait for rendering
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1499,7 +1631,7 @@ async function downloadPDF(resumeId) {
         // Get the actual content div
         const content = container.querySelector('.container') || container;
         
-        console.log('🎨 Starting html2canvas...');
+        console.log('Starting html2canvas...');
 
         // Convert to canvas
         const canvas = await html2canvas(content, {
@@ -1510,7 +1642,7 @@ async function downloadPDF(resumeId) {
             allowTaint: true
         });
 
-        console.log('✅ Canvas created, size:', canvas.width, 'x', canvas.height);
+        console.log('Canvas created, size:', canvas.width, 'x', canvas.height);
 
         // Create PDF
         const { jsPDF } = window.jspdf;
@@ -1549,15 +1681,15 @@ async function downloadPDF(resumeId) {
         const filename = (data.full_name || 'resume').replace(/\s+/g, '_') + '_resume.pdf';
         pdf.save(filename);
 
-        console.log('✅ PDF saved as:', filename);
+        console.log('PDF saved as:', filename);
 
         // Clean up
         document.body.removeChild(container);
-        showAlert('success', '✅ Resume PDF downloaded successfully!');
+        showAlert('success', 'Resume PDF downloaded successfully.');
 
     } catch (err) {
-        console.error('❌ PDF Error:', err);
-        showAlert('error', '❌ Failed to generate PDF: ' + err.message);
+        console.error('PDF Error:', err);
+        showAlert('error', 'Failed to generate PDF: ' + err.message);
     }
 }
 
@@ -1784,6 +1916,11 @@ function generateCreativeTemplate(data, exp, edu, sk) {
         // ── Resume Sharing ────────────────────────────────────────────────────────
         async function shareResume(resumeId) {
             try {
+                if (!client) {
+                    showAlert('error', 'Resume sync is unavailable. Please refresh after checking your connection.');
+                    return;
+                }
+
                 const existing = shareViewMap[resumeId];
                 let shareToken;
 
@@ -1810,7 +1947,7 @@ function generateCreativeTemplate(data, exp, edu, sk) {
                 document.getElementById('shareModal').classList.add('active');
             } catch (err) {
                 console.error('Share error:', err);
-                showAlert('error', '❌ Failed to create share link: ' + err.message);
+                showAlert('error', 'Failed to create share link: ' + err.message);
             }
         }
 
@@ -1818,7 +1955,7 @@ function generateCreativeTemplate(data, exp, edu, sk) {
             const input = document.getElementById('shareLinkInput');
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(input.value)
-                    .then(() => showAlert('success', '✅ Share link copied to clipboard!'))
+                    .then(() => showAlert('success', 'Share link copied to clipboard.'))
                     .catch(() => fallbackCopy(input));
             } else {
                 fallbackCopy(input);
@@ -1830,12 +1967,12 @@ function generateCreativeTemplate(data, exp, edu, sk) {
                 input.select();
                 const ok = document.execCommand('copy');
                 if (ok) {
-                    showAlert('success', '✅ Share link copied!');
+                    showAlert('success', 'Share link copied.');
                 } else {
-                    showAlert('error', '⚠️ Could not copy automatically. Please select the link and copy manually.');
+                    showAlert('error', 'Could not copy automatically. Please select the link and copy manually.');
                 }
             } catch (e) {
-                showAlert('error', '⚠️ Automatic copy not supported. Please select the link and copy manually.');
+                showAlert('error', 'Automatic copy is not supported. Please select the link and copy manually.');
             }
         }
 
@@ -1850,62 +1987,89 @@ function generateCreativeTemplate(data, exp, edu, sk) {
 
     const box = document.getElementById('aiSuggestionsBox');
     const acceptBtn = document.getElementById('aiAcceptBtn');
-    box.textContent = '⏳ Getting AI suggestions…';
+    const title = document.getElementById('aiModalTitle');
+    const copy = document.getElementById('aiModalCopy');
+    const trigger = document.querySelector(`[data-ai-section="${section}"]`);
+
+    title.textContent = section === 'skills' ? 'Skill Suggestions' : 'Summary Suggestion';
+    copy.textContent = 'Review this draft before applying it to your resume.';
+    box.textContent = 'Preparing suggestion...';
     acceptBtn.style.display = 'none';
+    if (trigger) trigger.disabled = true;
     document.getElementById('aiModal').classList.add('active');
 
     const resumeData = collectFormData();
-    let content = '';
-    if (section === 'summary') {
-        content = resumeData.professional_summary;
-    } else if (section === 'experience') {
-        content = (resumeData.experience || []).map(e =>
-            `${e.title || ''} at ${e.company || ''} (${e.start || ''}${e.end ? ' – ' + e.end : ''}):\n${e.description || ''}`
-        ).join('\n\n');
-    } else if (section === 'skills') {
-        content = (resumeData.skills || []).join(', ');
-    }
+    const content = getSectionContent(section, resumeData);
 
     try {
-        console.log('📤 Sending AI request for section:', section);
-        console.log('📝 Content:', content);
-        
         const response = await fetch('/api/ai-suggestions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ section, content, resumeData }),
         });
 
-        console.log('📨 Response status:', response.status);
-        
-        const result = await response.json();
-        console.log('📦 API Result:', result);
+        let result = {};
+        try {
+            result = await response.json();
+        } catch (parseError) {
+            result = {};
+        }
 
         if (!response.ok) {
             throw new Error(result.error || `API Error: ${response.status}`);
         }
 
-        currentAISuggestion = result.suggestions || '';
+        currentAISuggestion = String(result.suggestions || '').trim();
         box.textContent = currentAISuggestion || '(No suggestion returned)';
-
+    } catch (err) {
+        console.warn('AI suggestion unavailable, using local draft:', err);
+        currentAISuggestion = buildLocalSuggestion(section, resumeData);
+        copy.textContent = 'AI is unavailable right now, so this draft was built from your current resume fields.';
+        box.textContent = currentAISuggestion;
+    } finally {
         if (currentAISuggestion && (section === 'summary' || section === 'skills')) {
             acceptBtn.style.display = 'inline-flex';
         }
-    } catch (err) {
-        console.error('❌ AI Suggestions Error:', err);
-        box.textContent = '❌ Error: ' + err.message;
+        if (trigger) trigger.disabled = false;
     }
 }
+
+        function getSectionContent(section, resumeData) {
+            if (section === 'summary') return resumeData.professional_summary;
+            if (section === 'skills') return (resumeData.skills || []).join(', ');
+            if (section === 'experience') {
+                return (resumeData.experience || []).map(e =>
+                    `${e.title || ''} at ${e.company || ''} (${e.start || ''}${e.end ? ' - ' + e.end : ''}):\n${e.description || ''}`
+                ).join('\n\n');
+            }
+            return '';
+        }
+
+        function buildLocalSuggestion(section, resumeData) {
+            const role = resumeData.experience?.find(e => e.title)?.title || 'candidate';
+            const company = resumeData.experience?.find(e => e.company)?.company || 'growth-focused teams';
+            const skillList = (resumeData.skills || []).filter(Boolean);
+
+            if (section === 'skills') {
+                const baseSkills = skillList.length ? skillList : ['Communication', 'Problem Solving', 'Team Collaboration'];
+                return Array.from(new Set(baseSkills)).slice(0, 10).join(', ');
+            }
+
+            const location = resumeData.location ? ` based in ${resumeData.location}` : '';
+            const skillsText = skillList.slice(0, 4).join(', ');
+            const skillSentence = skillsText ? ` Skilled in ${skillsText}.` : '';
+            return `Detail-oriented ${role}${location} with hands-on experience at ${company}.${skillSentence} Focused on delivering measurable results, collaborating across teams, and learning quickly in fast-moving environments.`;
+        }
 
         function acceptAISuggestion() {
             if (!currentAISuggestion) return;
             if (currentAISection === 'summary') {
                 document.getElementById('summary').value = currentAISuggestion;
-                showAlert('success', '✅ Summary updated with AI suggestion.');
+                showAlert('success', 'Summary updated.');
             } else if (currentAISection === 'skills') {
                 const newSkills = currentAISuggestion.split(',').map(s => s.trim()).filter(s => s);
                 newSkills.forEach(s => addSkill(s));
-                showAlert('success', `✅ Added ${newSkills.length} suggested skill(s).`);
+                showAlert('success', `Added ${newSkills.length} suggested skill(s).`);
             }
             closeAIModal();
         }

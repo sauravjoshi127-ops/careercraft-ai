@@ -1,0 +1,251 @@
+/* CareerCraft AI - Premium Design System
+   Goals: single dark neutral base, blue-violet accent, minimal noise, consistent hierarchy,
+   subtle ambient mesh background that never blocks interaction.
+*/
+
+:root {
+  --bg-0: #070A12;         /* page background */
+  --bg-1: rgba(18, 24, 38, 0.78); /* card */
+  --bg-2: rgba(9, 12, 20, 0.72);  /* input */
+  --border-1: rgba(148, 163, 184, 0.16);
+  --border-2: rgba(148, 163, 184, 0.24);
+  --text-1: #EAF0FF;
+  --text-2: rgba(234, 240, 255, 0.78);
+  --text-3: rgba(234, 240, 255, 0.58);
+
+  --accent: #6366F1;       /* indigo */
+  --accent-2: #A855F7;     /* violet */
+  --accent-soft: rgba(99, 102, 241, 0.16);
+  --danger: #EF4444;
+  --success: #22C55E;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --shadow-1: 0 10px 30px rgba(0, 0, 0, 0.32);
+  --shadow-2: 0 18px 50px rgba(0, 0, 0, 0.40);
+
+  --space-1: 8px;
+  --space-2: 12px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+}
+
+/* Base */
+html, body {
+  background: var(--bg-0);
+  color: var(--text-1);
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  line-height: 1.5;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
+  position: relative;
+}
+
+/* Ambient animated mesh background (never blocks interactions) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.75;
+  background:
+    radial-gradient(900px 650px at 20% 20%, rgba(99,102,241,0.18), transparent 55%),
+    radial-gradient(850px 600px at 80% 30%, rgba(168,85,247,0.16), transparent 55%),
+    radial-gradient(700px 520px at 55% 90%, rgba(56,189,248,0.10), transparent 60%),
+    radial-gradient(900px 700px at 60% 55%, rgba(99,102,241,0.10), transparent 62%);
+  filter: blur(24px) saturate(1.05);
+  transform: translate3d(0, 0, 0);
+  animation: cc-mesh 18s ease-in-out infinite alternate;
+}
+
+@keyframes cc-mesh {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-14px, -10px, 0) scale(1.03); }
+  100% { transform: translate3d(10px, 12px, 0) scale(1.02); }
+}
+
+/* Ensure app content sits above the mesh */
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Typography */
+h1, h2, h3, h4 {
+  color: var(--text-1);
+  letter-spacing: -0.02em;
+}
+
+p a, .footer-links a {
+  color: rgba(234, 240, 255, 0.72);
+}
+
+.highlight {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+p, li, label {
+  color: var(--text-2);
+}
+
+small, .muted {
+  color: var(--text-3);
+}
+
+/* Containers */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-5);
+}
+
+@media (max-width: 768px) {
+  .container { padding: var(--space-4); }
+}
+
+@media (max-width: 520px) {
+  .container { padding: var(--space-3); }
+}
+
+/* Cards */
+.card,
+.tool-card,
+.testimonial-card,
+.pricing-card,
+.section,
+.welcome,
+.panel,
+.modal,
+.status-card,
+.entry-card,
+.resume-card,
+.resume-item {
+  background: var(--bg-1);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.card:hover,
+.tool-card:hover,
+.testimonial-card:hover,
+.pricing-card:hover,
+.resume-card:hover {
+  border-color: rgba(99, 102, 241, 0.32);
+}
+
+/* Inputs */
+input, textarea, select {
+  background: var(--bg-2);
+  border: 1px solid var(--border-1);
+  color: var(--text-1);
+  border-radius: var(--r-md);
+  outline: none;
+}
+
+input::placeholder, textarea::placeholder {
+  color: rgba(234, 240, 255, 0.36);
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: rgba(99, 102, 241, 0.55);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+}
+
+/* Buttons */
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-signin,
+.btn-signup,
+.btn-light,
+.btn-new,
+.nav-btn,
+.upgrade-btn,
+.btn-action {
+  border-radius: var(--r-md);
+  font-weight: 650;
+  letter-spacing: 0;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.btn-primary,
+.btn-signin,
+.btn-signup,
+.btn-new,
+.upgrade-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #0B1020;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.btn-primary:hover,
+.btn-signin:hover,
+.btn-signup:hover,
+.btn-new:hover,
+.upgrade-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 40px rgba(99, 102, 241, 0.18);
+}
+
+.btn-secondary,
+.nav-btn {
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border-1);
+}
+
+.btn-secondary:hover,
+.nav-btn:hover {
+  border-color: rgba(99, 102, 241, 0.45);
+  color: var(--text-1);
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.10);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  color: #FCA5A5;
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.16);
+}
+
+.btn:disabled,
+.btn-primary:disabled,
+.btn-signin:disabled,
+.btn-signup:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Links */
+a { color: var(--text-2); }
+a:hover { color: var(--text-1); }
+
+/* Top navs */
+nav, .topnav {
+  background: rgba(7, 10, 18, 0.74) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-1) !important;
+}
+
+/* Reduce glow/noise */
+* {
+  text-shadow: none !important;
+}

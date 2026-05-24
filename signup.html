@@ -29,7 +29,7 @@
             left: 0;
             right: 0;
             background: rgba(10, 14, 39, 0.95);
-            border-bottom: 1px solid rgba(124, 58, 237, 0.2);
+            border-bottom: 1px solid rgba(94, 234, 212, 0.2);
             padding: 1.5rem 2rem;
             display: flex;
             justify-content: space-between;
@@ -107,9 +107,9 @@
 
         input:focus {
             outline: none;
-            border-color: rgba(124, 58, 237, 0.5);
-            background: rgba(124, 58, 237, 0.05);
-            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+            border-color: rgba(94, 234, 212, 0.5);
+            background: rgba(94, 234, 212, 0.05);
+            box-shadow: 0 0 0 3px rgba(94, 234, 212, 0.1);
         }
 
         input::placeholder {
@@ -136,15 +136,15 @@
         }
 
         .terms a {
-            color: #7c3aed;
+            color: #5eead4;
             text-decoration: none;
         }
 
         .btn-signup {
             width: 100%;
             padding: 0.95rem;
-            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-            color: white;
+            background: linear-gradient(135deg, #5eead4 0%, #60a5fa 100%);
+            color: #04111a;
             border: none;
             border-radius: 0.5rem;
             font-weight: 600;
@@ -155,7 +155,7 @@
 
         .btn-signup:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 32px rgba(124, 58, 237, 0.3);
+            box-shadow: 0 12px 32px rgba(94, 234, 212, 0.3);
         }
 
         .btn-signup:disabled {
@@ -164,7 +164,7 @@
         }
 
         .divider {
-            display: flex;
+            display: none;
             align-items: center;
             margin: 2rem 0;
             color: #64748b;
@@ -188,7 +188,7 @@
         }
 
         .social-signup {
-            display: flex;
+            display: none;
             gap: 1rem;
             margin-bottom: 2rem;
         }
@@ -206,8 +206,8 @@
         }
 
         .social-btn:hover {
-            border-color: rgba(124, 58, 237, 0.3);
-            background: rgba(124, 58, 237, 0.05);
+            border-color: rgba(94, 234, 212, 0.3);
+            background: rgba(94, 234, 212, 0.05);
         }
 
         .signin-link {
@@ -218,13 +218,13 @@
         }
 
         .signin-link a {
-            color: #7c3aed;
+            color: #5eead4;
             text-decoration: none;
             font-weight: 600;
         }
 
         .signin-link a:hover {
-            color: #a855f7;
+            color: #60a5fa;
         }
 
         .error-msg {
@@ -245,11 +245,12 @@
             display: none;
         }
     </style>
+    <link rel="stylesheet" href="styles/premium.css">
 </head>
 <body>
     <nav>
-        <a href="index.html" class="logo">🚀 CareerCraft</a>
-        <a href="index.html" class="back-btn">← Back to Home</a>
+        <a href="index.html" class="logo">CareerCraft AI</a>
+        <a href="index.html" class="back-btn">Back to Home</a>
     </nav>
 
     <div class="container">
@@ -283,7 +284,7 @@
             <div class="terms">
                 <input type="checkbox" id="terms" required>
                 <label for="terms">
-                    I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                    I agree to the <a href="terms.html">Terms of Service</a> and <a href="privacy.html">Privacy Policy</a>
                 </label>
             </div>
 
@@ -307,8 +308,33 @@
         const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
 
-        const { createClient } = supabase;
-        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+        const client = window.supabase && typeof window.supabase.createClient === 'function'
+            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+            : null;
+
+        function showMessage(node, message) {
+            node.textContent = message;
+            node.style.display = 'block';
+        }
+
+        function getFriendlyAuthError(error) {
+            const message = String(error?.message || error || '').trim();
+            const lower = message.toLowerCase();
+
+            if (!client) {
+                return 'Sign up service could not load. Please refresh the page or check your internet connection.';
+            }
+
+            if (!navigator.onLine || lower.includes('failed to fetch') || lower.includes('networkerror') || lower.includes('load failed')) {
+                return 'We could not reach the sign up service. Please check your internet connection and try again.';
+            }
+
+            if (lower.includes('already registered') || lower.includes('already exists')) {
+                return 'An account already exists for this email. Please sign in instead.';
+            }
+
+            return message || 'Unable to create your account right now. Please try again.';
+        }
 
         async function handleSignup(event) {
             event.preventDefault();
@@ -327,8 +353,12 @@
 
             // Validate passwords match
             if (password !== confirmPassword) {
-                errorMsg.textContent = '❌ Passwords do not match!';
-                errorMsg.style.display = 'block';
+                showMessage(errorMsg, 'Passwords do not match.');
+                return;
+            }
+
+            if (!client) {
+                showMessage(errorMsg, getFriendlyAuthError());
                 return;
             }
 
@@ -381,8 +411,7 @@
                 console.log('Step 4: Success! User saved to database');
 
                 // Success!
-                successMsg.textContent = '✅ Account created successfully! Redirecting to dashboard...';
-                successMsg.style.display = 'block';
+                showMessage(successMsg, 'Account created successfully. Redirecting to dashboard...');
 
                 // Store email in localStorage for dashboard
                 localStorage.setItem('userEmail', email);
@@ -398,8 +427,7 @@
 
             } catch (error) {
                 console.error('Signup error:', error);
-                errorMsg.textContent = `❌ Error: ${error.message}`;
-                errorMsg.style.display = 'block';
+                showMessage(errorMsg, getFriendlyAuthError(error));
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Create Account';
             }

@@ -12,18 +12,31 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --bg: #050816;
+            --panel: rgba(12, 18, 34, 0.94);
+            --panel-soft: rgba(15, 23, 42, 0.82);
+            --border: rgba(148, 163, 184, 0.16);
+            --text: #e7eefc;
+            --muted: #94a3b8;
+            --primary: #5eead4;
+            --primary-2: #60a5fa;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0e27;
-            color: #f1f5f9;
+            background:
+                linear-gradient(180deg, rgba(5, 8, 22, 0.94), rgba(5, 8, 22, 1)),
+                linear-gradient(135deg, rgba(94, 234, 212, 0.05), rgba(96, 165, 250, 0.05));
+            color: var(--text);
             min-height: 100vh;
         }
 
         /* Top Navigation */
         .topnav {
-            background: rgba(10, 14, 39, 0.95);
-            border-bottom: 1px solid rgba(124, 58, 237, 0.2);
-            padding: 1.5rem 2rem;
+            background: rgba(5, 8, 22, 0.88);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -35,6 +48,7 @@
         .logo {
             font-size: 1.3rem;
             font-weight: 700;
+            letter-spacing: -0.02em;
         }
 
         .user-menu {
@@ -46,8 +60,9 @@
         .user-avatar {
             width: 40px;
             height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            border-radius: 0.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-2));
+            color: #04111a;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -59,7 +74,7 @@
         .nav-btn {
             background: transparent;
             color: #cbd5e1;
-            border: 1px solid rgba(148, 163, 184, 0.2);
+            border: 1px solid var(--border);
             padding: 0.6rem 1.2rem;
             border-radius: 0.5rem;
             cursor: pointer;
@@ -69,15 +84,15 @@
         }
 
         .nav-btn:hover {
-            border-color: #7c3aed;
-            color: #7c3aed;
+            border-color: rgba(94, 234, 212, 0.42);
+            color: var(--primary);
         }
 
         /* Main Container */
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 1.5rem;
         }
 
         .welcome {
@@ -85,10 +100,10 @@
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 2rem;
-            background: rgba(20, 24, 41, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.1);
-            border-radius: 1rem;
-            padding: 2rem;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
         }
 
         .welcome h1 {
@@ -97,7 +112,7 @@
         }
 
         .welcome p {
-            color: #cbd5e1;
+            color: var(--muted);
             margin-bottom: 1rem;
         }
 
@@ -107,46 +122,60 @@
         }
 
         .upgrade-btn {
-            background: linear-gradient(135deg, #7c3aed, #a855f7);
-            color: white;
+            background: linear-gradient(135deg, var(--primary), var(--primary-2));
+            color: #04111a;
             border: none;
             padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
+            border-radius: 0.45rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
             white-space: nowrap;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .upgrade-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 32px rgba(124, 58, 237, 0.3);
+            box-shadow: 0 12px 32px rgba(94, 234, 212, 0.14);
         }
 
         /* Tools Grid */
         .tools-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 2rem;
+            gap: 1rem;
             margin-bottom: 2rem;
         }
 
         .tool-card {
-            background: rgba(20, 24, 41, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.1);
-            border-radius: 1rem;
-            padding: 2rem;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1.25rem;
             transition: all 0.3s;
         }
 
         .tool-card:hover {
-            border-color: rgba(124, 58, 237, 0.5);
-            background: rgba(20, 24, 41, 0.8);
-            transform: translateY(-4px);
+            border-color: rgba(94, 234, 212, 0.34);
+            background: var(--panel-soft);
+            transform: translateY(-2px);
         }
 
         .tool-icon {
-            font-size: 2rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 44px;
+            height: 32px;
+            border-radius: 0.4rem;
+            border: 1px solid rgba(94, 234, 212, 0.22);
+            color: var(--primary);
+            background: rgba(94, 234, 212, 0.06);
+            font-size: 0.78rem;
+            font-weight: 800;
             margin-bottom: 1rem;
         }
 
@@ -156,7 +185,7 @@
         }
 
         .tool-card p {
-            color: #cbd5e1;
+            color: var(--muted);
             font-size: 0.9rem;
             margin-bottom: 1.5rem;
         }
@@ -165,10 +194,10 @@
             display: block;
             width: 100%;
             padding: 0.75rem;
-            background: rgba(124, 58, 237, 0.1);
-            border: 1px solid rgba(124, 58, 237, 0.3);
-            color: #7c3aed;
-            border-radius: 0.5rem;
+            background: rgba(94, 234, 212, 0.08);
+            border: 1px solid rgba(94, 234, 212, 0.28);
+            color: #d9fffb;
+            border-radius: 0.45rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
@@ -177,15 +206,15 @@
         }
 
         .tool-card a:hover {
-            background: rgba(124, 58, 237, 0.2);
+            background: rgba(94, 234, 212, 0.14);
         }
 
         /* Resumes Section */
         .section {
-            background: rgba(20, 24, 41, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.1);
-            border-radius: 1rem;
-            padding: 2rem;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
             margin-bottom: 2rem;
         }
 
@@ -201,11 +230,11 @@
         }
 
         .btn-new {
-            background: linear-gradient(135deg, #7c3aed, #a855f7);
-            color: white;
+            background: linear-gradient(135deg, var(--primary), var(--primary-2));
+            color: #04111a;
             border: none;
             padding: 0.6rem 1.2rem;
-            border-radius: 0.5rem;
+            border-radius: 0.45rem;
             font-weight: 600;
             font-size: 0.9rem;
             cursor: pointer;
@@ -363,14 +392,15 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="styles/premium.css">
 </head>
 <body>
     <!-- Top Navigation -->
     <div class="topnav">
-        <div class="logo">🚀 CareerCraft AI</div>
+        <div class="logo">CareerCraft AI</div>
         <div class="user-menu">
             <div class="user-avatar" id="avatarInitial" title="Account">A</div>
-            <a href="settings.html" class="nav-btn">⚙️ Settings</a>
+            <a href="settings.html" class="nav-btn">Settings</a>
             <button class="nav-btn" onclick="logout()">Sign Out</button>
         </div>
     </div>
@@ -380,51 +410,51 @@
         <!-- Welcome Section -->
         <div class="welcome">
             <div>
-                <h1 id="welcomeName">Welcome back! 👋</h1>
+                <h1 id="welcomeName">Welcome back</h1>
                 <p id="welcomeEmail" class="welcome-email"></p>
                 <p>What do you want to work on today?</p>
             </div>
-            <button class="upgrade-btn">Upgrade to Pro ₹299/mo</button>
+            <a class="upgrade-btn" href="index.html#pricing">Upgrade to Pro - Rs 299/mo</a>
         </div>
 
         <!-- My Resumes -->
         <div class="section">
             <div class="section-header">
-                <h2>📄 My Resumes</h2>
+                <h2>My Resumes</h2>
                 <a href="resume.html" class="btn-new">+ New Resume</a>
             </div>
             <div id="resumeList">
-                <div class="loading-state">⏳ Loading your resumes...</div>
+                <div class="loading-state">Loading your resumes...</div>
             </div>
         </div>
 
         <!-- Tools Grid -->
         <div class="tools-grid">
             <div class="tool-card">
-                <div class="tool-icon">📝</div>
+                <div class="tool-icon">CV</div>
                 <h3>Resume Builder</h3>
                 <p>Create a professional ATS-ready resume in minutes.</p>
                 <a href="resume.html">Start Now</a>
             </div>
 
             <div class="tool-card">
-                <div class="tool-icon">📨</div>
+                <div class="tool-icon">CL</div>
                 <h3>Cover Letter AI</h3>
                 <p>Generate tailored cover letters for any job posting.</p>
                 <a href="cover-letter.html">Start Now</a>
             </div>
 
             <div class="tool-card">
-                <div class="tool-icon">✉️</div>
+                <div class="tool-icon">EM</div>
                 <h3>Cold Email Writer</h3>
                 <p>Write outreach emails that actually get replies.</p>
                 <a href="cold-email.html">Start Now</a>
             </div>
 
             <div class="tool-card">
-                <div class="tool-icon">🎤</div>
+                <div class="tool-icon">IN</div>
                 <h3>Interview Coach</h3>
-                <p>Practice live interview questions and get instant feedback.</p>
+                <p>Practice resume-aware interview questions and track progress.</p>
                 <a href="interview.html">Start Now</a>
             </div>
         </div>
@@ -436,8 +466,9 @@
         const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
 
-        const { createClient } = supabase;
-        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+        const client = window.supabase && typeof window.supabase.createClient === 'function'
+            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+            : null;
 
         let currentUserId = null;
 
@@ -458,6 +489,11 @@
 
         async function loadResumes() {
             const listEl = document.getElementById('resumeList');
+
+            if (!client) {
+                listEl.innerHTML = '<div class="empty-state"><p>Resume sync is unavailable. Please refresh after checking your connection.</p></div>';
+                return;
+            }
 
             const { data, error } = await client
                 .from('resumes')
@@ -508,7 +544,7 @@
                                 Created ${createdAt} &bull; Template: ${template}
                             </div>
                             <div class="resume-stats">
-                                ${hasShare ? `<span>🔗 Shared</span>` : '<span>🔒 Private</span>'}
+                                ${hasShare ? `<span>Shared</span>` : '<span>Private</span>'}
                             </div>
                         </div>
                         <div class="resume-actions">
@@ -534,7 +570,7 @@
                 .eq('user_id', currentUserId);
 
             if (error) {
-                showToast('❌ Could not delete resume. Please try again.', 'error');
+                showToast('Could not delete resume. Please try again.', 'error');
                 return;
             }
 
@@ -551,7 +587,7 @@
                     </div>`;
             }
 
-            showToast('✅ Resume deleted successfully.');
+            showToast('Resume deleted successfully.');
         }
 
         function escapeHtml(str) {
@@ -561,7 +597,9 @@
         }
 
         async function logout() {
-            await client.auth.signOut();
+            if (client) {
+                await client.auth.signOut();
+            }
             localStorage.removeItem('userEmail');
             localStorage.removeItem('userName');
             localStorage.removeItem('userId');
@@ -571,7 +609,9 @@
 
         async function initPage() {
             // Use Supabase session for persistence; fall back to localStorage
-            const { data: { session } } = await client.auth.getSession();
+            const { data: { session } } = client
+                ? await client.auth.getSession()
+                : { data: { session: null } };
 
             if (session && session.user) {
                 currentUserId = session.user.id;
@@ -581,7 +621,7 @@
                 const email = session.user.email;
 
                 document.getElementById('avatarInitial').textContent = name.charAt(0).toUpperCase();
-                document.getElementById('welcomeName').textContent = `Welcome back, ${name}! 👋`;
+                document.getElementById('welcomeName').textContent = `Welcome back, ${name}`;
                 document.getElementById('welcomeEmail').textContent = email;
 
                 // Keep localStorage in sync
@@ -601,7 +641,7 @@
 
                 currentUserId = userId;
                 document.getElementById('avatarInitial').textContent = (userName || 'A').charAt(0).toUpperCase();
-                document.getElementById('welcomeName').textContent = `Welcome back, ${userName || 'User'}! 👋`;
+                document.getElementById('welcomeName').textContent = `Welcome back, ${userName || 'User'}`;
                 document.getElementById('welcomeEmail').textContent = userEmail || '';
             }
 
