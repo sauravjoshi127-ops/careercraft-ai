@@ -5,255 +5,154 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - CareerCraft AI</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/premium.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0e27;
-            color: #f1f5f9;
-            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            min-height: 100vh;
             padding: 2rem;
+            overflow: hidden;
         }
-
-        nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(10, 14, 39, 0.95);
-            border-bottom: 1px solid rgba(94, 234, 212, 0.2);
-            padding: 1.5rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            z-index: 100;
-        }
-
-        .logo {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #f1f5f9;
-            text-decoration: none;
-        }
-
-        .back-btn {
-            background: transparent;
-            color: #cbd5e1;
-            border: none;
-            padding: 0.7rem 1.5rem;
-            cursor: pointer;
-            font-size: 0.95rem;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .back-btn:hover {
-            color: #f1f5f9;
-        }
-
-        .container {
+        .auth-wrapper {
             width: 100%;
             max-width: 420px;
-            background: rgba(20, 24, 41, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.1);
-            border-radius: 1rem;
-            padding: 3rem 2rem;
-            backdrop-filter: blur(10px);
-            margin-top: 6rem;
+            margin-top: 2rem;
+            display: none;
+            position: relative;
+            z-index: 10;
         }
-
+        .auth-wrapper.show {
+            display: block;
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
         h1 {
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
+            font-size: 2rem;
             text-align: center;
+            margin-bottom: 0.5rem;
+            font-family: 'Outfit', sans-serif;
             font-weight: 700;
         }
-
         .subtitle {
             text-align: center;
-            color: #cbd5e1;
+            color: var(--text-secondary);
             margin-bottom: 2.5rem;
             font-size: 0.95rem;
         }
-
         .form-group {
             margin-bottom: 1.5rem;
         }
-
-        label {
+        .form-group label {
             display: block;
-            font-weight: 600;
-            margin-bottom: 0.6rem;
-            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 500;
         }
-
-        input {
+        .form-group input {
             width: 100%;
-            padding: 0.85rem 1rem;
-            background: rgba(10, 14, 39, 0.8);
-            border: 1px solid rgba(148, 163, 184, 0.15);
+            padding: 0.8rem 1rem;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
             border-radius: 0.5rem;
-            color: #f1f5f9;
-            font-size: 0.95rem;
-            transition: all 0.3s;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
         }
-
-        input:focus {
+        .form-group input:focus {
             outline: none;
-            border-color: rgba(94, 234, 212, 0.5);
-            background: rgba(94, 234, 212, 0.05);
-            box-shadow: 0 0 0 3px rgba(94, 234, 212, 0.1);
+            border-color: rgba(255,255,255,0.3);
+            box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
         }
-
-        input::placeholder {
-            color: #64748b;
-        }
-
         .terms {
             display: flex;
             align-items: flex-start;
             gap: 0.6rem;
             margin: 2rem 0;
             font-size: 0.85rem;
+            color: var(--text-secondary);
         }
-
         .terms input {
             width: auto;
-            margin-top: 0.35rem;
+            margin-top: 0.2rem;
         }
-
-        .terms label {
-            margin: 0;
-            font-weight: 400;
-            line-height: 1.5;
-        }
-
         .terms a {
-            color: #5eead4;
+            color: #ffffff;
             text-decoration: none;
         }
-
-        .btn-signup {
-            width: 100%;
-            padding: 0.95rem;
-            background: linear-gradient(135deg, #5eead4 0%, #60a5fa 100%);
-            color: #04111a;
-            border: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-signup:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 32px rgba(94, 234, 212, 0.3);
-        }
-
-        .btn-signup:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
         .divider {
-            display: none;
+            display: flex;
             align-items: center;
             margin: 2rem 0;
-            color: #64748b;
+            color: var(--text-secondary);
             font-size: 0.85rem;
         }
-
-        .divider::before,
-        .divider::after {
+        .divider::before, .divider::after {
             content: '';
             flex: 1;
             height: 1px;
-            background: rgba(148, 163, 184, 0.1);
+            background: var(--border-color);
         }
-
-        .divider::before {
-            margin-right: 1rem;
+        .divider::before { margin-right: 1rem; }
+        .divider::after { margin-left: 1rem; }
+        .social-btn {
+            flex: 1;
+            padding: 0.8rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
-
-        .divider::after {
-            margin-left: 1rem;
+        .social-btn:hover {
+            background: rgba(255,255,255,0.1);
         }
-
-        .social-signup {
-            display: none;
+        .social-login {
+            display: flex;
             gap: 1rem;
             margin-bottom: 2rem;
         }
-
-        .social-btn {
-            flex: 1;
-            padding: 0.85rem;
-            background: rgba(10, 14, 39, 0.8);
-            border: 1px solid rgba(148, 163, 184, 0.15);
-            color: #f1f5f9;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-
-        .social-btn:hover {
-            border-color: rgba(94, 234, 212, 0.3);
-            background: rgba(94, 234, 212, 0.05);
-        }
-
-        .signin-link {
+        .auth-link {
             text-align: center;
-            margin-top: 1.5rem;
+            color: var(--text-secondary);
             font-size: 0.95rem;
-            color: #cbd5e1;
+            margin-top: 1rem;
         }
-
-        .signin-link a {
-            color: #5eead4;
+        .auth-link a {
+            color: #ffffff;
             text-decoration: none;
             font-weight: 600;
         }
-
-        .signin-link a:hover {
-            color: #60a5fa;
-        }
-
-        .error-msg {
-            background: #fee2e2;
-            color: #991b1b;
+        .error-msg, .success-msg {
             padding: 1rem;
             border-radius: 0.5rem;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
             display: none;
+            font-size: 0.9rem;
         }
-
-        .success-msg {
-            background: #dcfce7;
-            color: #166534;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            display: none;
-        }
+        .error-msg { background: rgba(220,38,38,0.1); color: #fca5a5; border: 1px solid rgba(220,38,38,0.2); }
+        .success-msg { background: rgba(16,185,129,0.1); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.2); }
     </style>
-    <link rel="stylesheet" href="styles/premium.css">
 </head>
 <body>
-    <nav>
-        <a href="index.html" class="logo">CareerCraft AI</a>
-        <a href="index.html" class="back-btn">Back to Home</a>
+
+
+
+    <nav class="topnav">
+        <a href="index.html" class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            CareerCraft AI
+        </a>
+        <a href="index.html" class="btn-primary" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.5rem 1rem;">← Back to Home</a>
     </nav>
 
-    <div class="container">
+    <div class="auth-wrapper glass-card" id="authWrapper">
         <h1>Create Account</h1>
         <p class="subtitle">Join 500+ students landing their dream jobs.</p>
 
@@ -283,22 +182,22 @@
 
             <div class="terms">
                 <input type="checkbox" id="terms" required>
-                <label for="terms">
-                    I agree to the <a href="terms.html">Terms of Service</a> and <a href="privacy.html">Privacy Policy</a>
+                <label for="terms" style="margin: 0; line-height: 1.4;">
+                    I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
                 </label>
             </div>
 
-            <button type="submit" class="btn-signup" id="submitBtn">Create Account</button>
+            <button type="submit" class="btn-primary" id="submitBtn" style="width: 100%; padding: 0.95rem;">Create Account</button>
         </form>
 
         <div class="divider">Or sign up with</div>
 
-        <div class="social-signup">
+        <div class="social-login">
             <button class="social-btn" type="button">Google</button>
             <button class="social-btn" type="button">GitHub</button>
         </div>
 
-        <p class="signin-link">
+        <p class="auth-link">
             Already have an account? <a href="login.html">Sign in</a>
         </p>
     </div>
@@ -308,33 +207,23 @@
         const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
 
-        const client = window.supabase && typeof window.supabase.createClient === 'function'
-            ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
-            : null;
+        const { createClient } = supabase;
+        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        function showMessage(node, message) {
-            node.textContent = message;
-            node.style.display = 'block';
-        }
-
-        function getFriendlyAuthError(error) {
-            const message = String(error?.message || error || '').trim();
-            const lower = message.toLowerCase();
-
+        // Redirect if already logged in (hidden initially to prevent FOUC glitch)
+        async function checkExistingSession() {
             if (!client) {
-                return 'Sign up service could not load. Please refresh the page or check your internet connection.';
+                document.getElementById('authWrapper').classList.add('show');
+                return;
             }
-
-            if (!navigator.onLine || lower.includes('failed to fetch') || lower.includes('networkerror') || lower.includes('load failed')) {
-                return 'We could not reach the sign up service. Please check your internet connection and try again.';
+            const { data: { session } } = await client.auth.getSession();
+            if (session) {
+                window.location.href = 'dashboard.html';
+            } else {
+                document.getElementById('authWrapper').classList.add('show');
             }
-
-            if (lower.includes('already registered') || lower.includes('already exists')) {
-                return 'An account already exists for this email. Please sign in instead.';
-            }
-
-            return message || 'Unable to create your account right now. Please try again.';
         }
+        checkExistingSession();
 
         async function handleSignup(event) {
             event.preventDefault();
@@ -353,12 +242,8 @@
 
             // Validate passwords match
             if (password !== confirmPassword) {
-                showMessage(errorMsg, 'Passwords do not match.');
-                return;
-            }
-
-            if (!client) {
-                showMessage(errorMsg, getFriendlyAuthError());
+                errorMsg.textContent = '❌ Passwords do not match!';
+                errorMsg.style.display = 'block';
                 return;
             }
 
@@ -411,7 +296,8 @@
                 console.log('Step 4: Success! User saved to database');
 
                 // Success!
-                showMessage(successMsg, 'Account created successfully. Redirecting to dashboard...');
+                successMsg.textContent = '✅ Account created successfully! Redirecting to dashboard...';
+                successMsg.style.display = 'block';
 
                 // Store email in localStorage for dashboard
                 localStorage.setItem('userEmail', email);
@@ -427,7 +313,8 @@
 
             } catch (error) {
                 console.error('Signup error:', error);
-                showMessage(errorMsg, getFriendlyAuthError(error));
+                errorMsg.textContent = `❌ Error: ${error.message}`;
+                errorMsg.style.display = 'block';
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Create Account';
             }
@@ -435,3 +322,7 @@
     </script>
 </body>
 </html>
+
+
+
+
