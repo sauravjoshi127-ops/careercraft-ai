@@ -245,34 +245,46 @@ let currentUser = null;
 let savedResumes = [];
 let currentData = null;
 (async () => {
+  // Failsafe timeout to prevent infinite loader trap
+  setTimeout(() => {
+    const curtain = document.getElementById('auth-guard-curtain');
+    if (curtain) {
+      console.warn('Auth curtain check timed out. Failsafe activated.');
+      curtain.style.opacity = '0';
+      setTimeout(() => curtain.remove(), 400);
+    }
+  }, 3000);
+
   if (!supabaseClient) {
     const curtain = document.getElementById('auth-guard-curtain');
     if (curtain) curtain.remove();
     return;
   }
+
   try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session) {
-      currentUser = session.user;
-    } else {
-      const localId = localStorage.getItem('userId');
-      if (localId) {
-        currentUser = { id: localId };
-      } else {
-        window.location.href = 'login.html';
-        return;
-      }
+    // Strict Supabase session validation
+    const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+
+    if (sessionError || !session || !session.user) {
+      console.warn('Unauthorized access. Redirecting to login.');
+      localStorage.clear();
+      window.location.href = 'login.html';
+      return;
     }
-    
+
+    currentUser = session.user;
+  } catch (e) {
+    console.warn('Auth session error:', e);
+    localStorage.clear();
+    window.location.href = 'login.html';
+    return;
+  } finally {
     // Smoothly remove secure auth curtain
     const curtain = document.getElementById('auth-guard-curtain');
     if (curtain) {
       curtain.style.opacity = '0';
       setTimeout(() => curtain.remove(), 400);
     }
-  } catch (e) {
-    console.warn('Auth session error:', e);
-    window.location.href = 'login.html';
   }
 })();
 // ── UI Helpers ────────────────────────────────────────────────────────

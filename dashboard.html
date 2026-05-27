@@ -279,10 +279,27 @@
         }
 
         async function initPage() {
-            // Use Supabase session for persistence; fall back to localStorage
-            const { data: { session } } = await client.auth.getSession();
+            // Failsafe timeout to prevent infinite loader trap
+            setTimeout(() => {
+                const curtain = document.getElementById('auth-guard-curtain');
+                if (curtain) {
+                    console.warn('Auth curtain check timed out. Failsafe activated.');
+                    curtain.style.opacity = '0';
+                    setTimeout(() => curtain.remove(), 400);
+                }
+            }, 3000);
 
-            if (session && session.user) {
+            try {
+                // Use Supabase session strictly for route security
+                const { data: { session }, error: sessionError } = await client.auth.getSession();
+
+                if (sessionError || !session || !session.user) {
+                    console.warn('Unauthorized access or session error. Redirecting to login.');
+                    localStorage.clear();
+                    window.location.href = 'login.html';
+                    return;
+                }
+
                 currentUserId = session.user.id;
                 const name = session.user.user_metadata?.full_name
                     || localStorage.getItem('userName')
@@ -295,35 +312,24 @@
                 }
                 document.getElementById('welcomeEmail').textContent = email;
 
-                // Keep localStorage in sync
+                // Sync localStorage with active session
                 localStorage.setItem('userEmail', email);
                 localStorage.setItem('userName', name);
                 localStorage.setItem('userId', currentUserId);
-            } else {
-                // Fall back to localStorage
-                const userId = localStorage.getItem('userId');
-                const userName = localStorage.getItem('userName');
-                const userEmail = localStorage.getItem('userEmail');
 
-                if (!userId) {
-                    window.location.href = 'login.html';
-                    return;
+                await loadResumes();
+            } catch (err) {
+                console.error('Initialization error:', err);
+                localStorage.clear();
+                window.location.href = 'login.html';
+                return;
+            } finally {
+                // Ensure curtain is always removed on exit
+                const curtain = document.getElementById('auth-guard-curtain');
+                if (curtain) {
+                    curtain.style.opacity = '0';
+                    setTimeout(() => curtain.remove(), 400);
                 }
-
-                currentUserId = userId;
-                document.getElementById('avatarInitial').textContent = (userName || 'A').charAt(0).toUpperCase();
-                const nameEl = document.getElementById('welcomeNameSpan');
-                if(nameEl) nameEl.textContent = userName || 'User';
-                document.getElementById('welcomeEmail').textContent = userEmail || '';
-            }
-
-            await loadResumes();
-
-            // Smoothly remove secure auth curtain
-            const curtain = document.getElementById('auth-guard-curtain');
-            if (curtain) {
-                curtain.style.opacity = '0';
-                setTimeout(() => curtain.remove(), 400);
             }
         }
 

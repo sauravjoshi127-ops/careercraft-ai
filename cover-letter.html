@@ -406,30 +406,44 @@ function formatLetterText(text) {
 }
 
 async function init() {
-  try {
-    const { data: { session } } = await client.auth.getSession();
-    if (session) {
-      currentUser = session.user;
-    } else {
-      const localId = localStorage.getItem('userId');
-      if (localId) {
-        currentUser = { id: localId };
-      } else {
-        return window.location.href = 'login.html';
-      }
+  // Failsafe timeout to prevent infinite loader trap
+  setTimeout(() => {
+    const curtain = document.getElementById('auth-guard-curtain');
+    if (curtain) {
+      console.warn('Auth curtain check timed out. Failsafe activated.');
+      curtain.style.opacity = '0';
+      setTimeout(() => curtain.remove(), 400);
     }
+  }, 3000);
+
+  try {
+    // Strict Supabase session validation
+    const { data: { session }, error: sessionError } = await client.auth.getSession();
+
+    if (sessionError || !session || !session.user) {
+      console.warn('Unauthorized access. Redirecting to login.');
+      localStorage.clear();
+      window.location.href = 'login.html';
+      return;
+    }
+
+    currentUser = session.user;
     await loadSavedResumesDropdown();
     await loadHistory();
-
+  } catch (err) {
+    console.error('Initialization error:', err);
+    localStorage.clear();
+    window.location.href = 'login.html';
+    return;
+  } finally {
     // Smoothly remove secure auth curtain
     const curtain = document.getElementById('auth-guard-curtain');
     if (curtain) {
       curtain.style.opacity = '0';
       setTimeout(() => curtain.remove(), 400);
     }
-  } catch (err) {
-    showAlert('error', 'Failed to initialize: ' + err.message);
   }
+}
 
   // Drag-and-drop on upload area
   const area = document.getElementById('uploadArea');
