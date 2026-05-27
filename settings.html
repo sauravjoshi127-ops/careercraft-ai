@@ -18,6 +18,19 @@
             <p style="font-size: 0.9rem; font-weight: 600; letter-spacing: 0.1em; color: #a0a0b0;">SECURE GATEWAY VERIFICATION...</p>
         </div>
     </div>
+    <script>
+        // Immediate, zero-dependency synchronous failsafe
+        setTimeout(function() {
+            var curtain = document.getElementById('auth-guard-curtain');
+            if (curtain) {
+                console.warn('Auth curtain check timed out. Failsafe activated.');
+                curtain.style.opacity = '0';
+                setTimeout(function() {
+                    if (curtain.parentNode) curtain.parentNode.removeChild(curtain);
+                }, 400);
+            }
+        }, 1500);
+    </script>
     <style>
         @keyframes auth-spin { to { transform: rotate(360deg); } }
     </style>
@@ -141,11 +154,21 @@
         }
 
         async function loadUserInfo() {
+            // Failsafe timeout to prevent infinite loader trap
+            setTimeout(() => {
+                const curtain = document.getElementById('auth-guard-curtain');
+                if (curtain) {
+                    console.warn('Auth curtain check timed out. Failsafe activated.');
+                    curtain.style.opacity = '0';
+                    setTimeout(() => curtain.remove(), 400);
+                }
+            }, 3000);
+
             try {
                 const { data: { session } } = await client.auth.getSession();
 
                 if (!session) {
-                    window.location.href = 'login.html';
+                    window.location.href = 'login.html?error=true';
                     return;
                 }
 
@@ -157,15 +180,16 @@
                 document.getElementById('createdAt').textContent = formatDate(currentUser.created_at);
                 document.getElementById('lastSignIn').textContent = formatDate(currentUser.last_sign_in_at);
 
+            } catch (error) {
+                console.error('Load user info error:', error);
+                showToast('❌ Failed to load user info', 'error');
+            } finally {
                 // Smoothly remove secure auth curtain
                 const curtain = document.getElementById('auth-guard-curtain');
                 if (curtain) {
                     curtain.style.opacity = '0';
                     setTimeout(() => curtain.remove(), 400);
                 }
-            } catch (error) {
-                console.error('Load user info error:', error);
-                showToast('❌ Failed to load user info', 'error');
             }
         }
 
