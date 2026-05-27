@@ -116,6 +116,7 @@ h1,h2,h3,h4,h5,h6 {
 
 a { color: inherit; text-decoration: none; }
 
+/* Clean premium neutral background (no animated mesh/canvas layers) */
 /* ─── NAVIGATION ──────────────────────────────────────────── */
 nav, .topnav {
   position: sticky;
