@@ -75,8 +75,16 @@
 
 </head>
 <body>
-
-
+    <!-- Secure Auth Curtain -->
+    <div id="auth-guard-curtain" style="position: fixed; inset: 0; z-index: 99999; background: #0b0b0f; display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; color: #fff; transition: opacity 0.4s ease;">
+        <div style="text-align: center;">
+            <div style="width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #7c3aed; border-radius: 50%; animation: auth-spin 1s linear infinite; margin: 0 auto 1.5rem;"></div>
+            <p style="font-size: 0.9rem; font-weight: 600; letter-spacing: 0.1em; color: #a0a0b0;">SECURE GATEWAY VERIFICATION...</p>
+        </div>
+    </div>
+    <style>
+        @keyframes auth-spin { to { transform: rotate(360deg); } }
+    </style>
 
     <!-- Top Navigation -->
     <div class="topnav">
@@ -89,10 +97,10 @@
             CareerCraft AI
         </a>
         <div class="nav-links" style="display:flex;gap:1rem;">
-            <a href="cover-letter.html" class="nav-btn">≡ƒô¿ Cover Letter</a>
-            <a href="cold-email.html" class="nav-btn">Γ£ë∩╕Å Cold Email</a>
-            <a href="interview.html" class="nav-btn">≡ƒÄñ Interview Coach</a>
-            <a href="dashboard.html" class="btn-primary">ΓåÉ Dashboard</a>
+            <a href="cover-letter.html" class="nav-btn">📨 Cover Letter</a>
+            <a href="cold-email.html" class="nav-btn">✉️ Cold Email</a>
+            <a href="interview.html" class="nav-btn">🎤 Interview Coach</a>
+            <a href="dashboard.html" class="btn-primary">← Dashboard</a>
         </div>
     </div>
 
@@ -389,6 +397,13 @@
             addExperience();
             addEducation();
             await loadResumes();
+
+            // Smoothly remove secure auth curtain
+            const curtain = document.getElementById('auth-guard-curtain');
+            if (curtain) {
+                curtain.style.opacity = '0';
+                setTimeout(() => curtain.remove(), 400);
+            }
         }
 
         // ΓöÇΓöÇ Load Saved Resumes ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ

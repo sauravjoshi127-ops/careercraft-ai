@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Interview Coach - CareerCraft AI</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
     <link rel="stylesheet" href="styles/premium.css">
@@ -197,8 +198,16 @@
 </head>
 
 <body>
-
-
+  <!-- Secure Auth Curtain -->
+  <div id="auth-guard-curtain" style="position: fixed; inset: 0; z-index: 99999; background: #0b0b0f; display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; color: #fff; transition: opacity 0.4s ease;">
+      <div style="text-align: center;">
+          <div style="width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #7c3aed; border-radius: 50%; animation: auth-spin 1s linear infinite; margin: 0 auto 1.5rem;"></div>
+          <p style="font-size: 0.9rem; font-weight: 600; letter-spacing: 0.1em; color: #a0a0b0;">SECURE GATEWAY VERIFICATION...</p>
+      </div>
+  </div>
+  <style>
+      @keyframes auth-spin { to { transform: rotate(360deg); } }
+  </style>
 
   <div class="topnav">
     <a href="dashboard.html" class="logo">
@@ -246,6 +255,26 @@
       <div id="pageStatus" class="status" aria-live="polite">Start with your role, company, and resume.</div>
     </div>
 
+    <!-- Stats Banner (Resolves textContent of null errors and adds premium summary context) -->
+    <div class="glass-card" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; padding: 1.25rem 2rem; margin-bottom: 2.5rem; text-align: center;">
+      <div>
+        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-3); font-weight: 700; margin-bottom: 0.25rem;">Total Questions</div>
+        <div id="metricQuestions" style="font-size: 1.75rem; font-weight: 800; color: var(--text-1); font-family: 'Outfit', sans-serif;">5</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-3); font-weight: 700; margin-bottom: 0.25rem;">Latest Score</div>
+        <div id="metricScore" style="font-size: 1.75rem; font-weight: 800; color: var(--text-1); font-family: 'Outfit', sans-serif;">--</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-3); font-weight: 700; margin-bottom: 0.25rem;">Saved Sessions</div>
+        <div id="metricHistory" style="font-size: 1.75rem; font-weight: 800; color: var(--text-1); font-family: 'Outfit', sans-serif;">0</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-3); font-weight: 700; margin-bottom: 0.25rem;">Practice Mode</div>
+        <div id="metricMode" style="font-size: 1rem; font-weight: 700; color: var(--accent); margin-top: 0.3rem; font-family: 'Outfit', sans-serif;">Resume-based</div>
+      </div>
+    </div>
+
     <section class="layout">
       <div class="panel">
         <div class="panel-heading">Interview Setup</div>
@@ -271,7 +300,12 @@
         </div>
 
           <div class="field full">
-            <label for="resumeText">Resume summary or upload a resume</label>
+            <label for="savedResumeSelect">Select from your Saved Resumes</label>
+            <select id="savedResumeSelect" onchange="handleSavedResumeSelect(this)" style="width:100%; min-height:44px; padding:0.7rem 0.875rem; background:var(--bg-input); border:1px solid var(--border-md); border-radius:var(--r-md); color:var(--text-1); font-family:inherit; outline:none; margin-bottom:1rem;">
+              <option value="">✨ — Select from Saved Resumes —</option>
+            </select>
+
+            <label for="resumeText">Or paste a Resume summary / upload a resume</label>
             <textarea id="resumeText" placeholder="Paste a short resume summary, or choose your PDF/DOCX resume."></textarea>
             <div class="upload-row">
               <input id="resumeFile" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
@@ -428,6 +462,65 @@
   </main>
 
   <script>
+    const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
+    const supabaseClient = window.supabase && typeof window.supabase.createClient === 'function'
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+      : null;
+
+    let currentUser = null;
+    let savedResumesData = {};
+
+    async function loadSavedResumesDropdown() {
+      if (!currentUser) return;
+      const select = document.getElementById('savedResumeSelect');
+      if (!select) return;
+      try {
+        const { data, error } = await supabaseClient.from('resumes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
+        if (error || !data || !data.length) {
+          select.innerHTML = '<option value="">— No saved resumes found. Build one first! —</option>';
+          return;
+        }
+        select.innerHTML = '<option value="">✨ — Select from Saved Resumes —</option>';
+        data.forEach(r => {
+          savedResumesData[r.id] = r;
+          const opt = document.createElement('option');
+          opt.value = r.id;
+          opt.textContent = r.full_name ? `${r.full_name}'s Resume (${r.title || 'Untitled'})` : (r.title || 'Untitled Resume');
+          select.appendChild(opt);
+        });
+      } catch(e) {
+        console.error('Error loading saved resumes:', e);
+      }
+    }
+
+    function handleSavedResumeSelect(selectEl) {
+      const id = selectEl.value;
+      if (!id) {
+        els.resumeText.value = '';
+        els.resumeUploadHint.textContent = 'PDF or DOCX. The text will appear here automatically.';
+        return;
+      }
+      
+      const r = savedResumesData[id];
+      if (!r) return;
+      
+      let txt = `Name: ${r.full_name || ''}\nEmail: ${r.email || ''}\n`;
+      if (r.summary) txt += `Summary: ${r.summary}\n`;
+      if (r.skills && r.skills.length) txt += `Skills: ${r.skills.join(', ')}\n`;
+      if (r.experience && r.experience.length) {
+        txt += `Experience:\n`;
+        r.experience.forEach(ex => {
+          txt += `- ${ex.title} at ${ex.company} (${ex.startDate} - ${ex.endDate || 'Present'})\n  ${ex.description}\n`;
+        });
+      }
+      
+      els.resumeText.value = txt.trim();
+      els.resumeUploadHint.textContent = `Loaded saved resume: ${selectEl.options[selectEl.selectedIndex].text}`;
+      setStatus(els.setupStatus, 'Saved resume imported successfully!', 'success');
+      localStorage.setItem(draftKey, JSON.stringify(readContext()));
+    }
+
     const state = {
       questions: [],
       selectedId: '',
@@ -1038,8 +1131,34 @@
       });
     }
 
-    function init() {
+    async function init() {
+      if (!supabaseClient) {
+        const curtain = document.getElementById('auth-guard-curtain');
+        if (curtain) curtain.remove();
+        return;
+      }
+      
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          currentUser = session.user;
+        } else {
+          const localId = localStorage.getItem('userId');
+          if (localId) {
+            currentUser = { id: localId };
+          } else {
+            window.location.href = 'login.html';
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Auth error:', err);
+        window.location.href = 'login.html';
+        return;
+      }
+
       bindEvents();
+      await loadSavedResumesDropdown();
       restoreDraft();
       renderHistory();
       renderQuestionList();
@@ -1050,6 +1169,13 @@
       }
       if (apiBase) {
         setStatus(els.pageStatus, 'For resume extraction, use http://127.0.0.1:3000/interview instead of the file preview.');
+      }
+
+      // Smoothly remove secure auth curtain
+      const curtain = document.getElementById('auth-guard-curtain');
+      if (curtain) {
+        curtain.style.opacity = '0';
+        setTimeout(() => curtain.remove(), 400);
       }
     }
 
