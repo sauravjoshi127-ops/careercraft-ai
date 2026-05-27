@@ -121,6 +121,19 @@
           <p style="font-size: 0.9rem; font-weight: 600; letter-spacing: 0.1em; color: #a0a0b0;">SECURE GATEWAY VERIFICATION...</p>
       </div>
   </div>
+  <script>
+      // Immediate, zero-dependency synchronous failsafe
+      setTimeout(function() {
+          var curtain = document.getElementById('auth-guard-curtain');
+          if (curtain) {
+              console.warn('Auth curtain check timed out. Failsafe activated.');
+              curtain.style.opacity = '0';
+              setTimeout(function() {
+                  if (curtain.parentNode) curtain.parentNode.removeChild(curtain);
+              }, 400);
+          }
+      }, 1500);
+  </script>
   <style>
       @keyframes auth-spin { to { transform: rotate(360deg); } }
   </style>
@@ -268,7 +281,7 @@ let currentData = null;
     if (sessionError || !session || !session.user) {
       console.warn('Unauthorized access. Redirecting to login.');
       localStorage.clear();
-      window.location.href = 'login.html';
+      window.location.href = 'login.html?error=true';
       return;
     }
 
@@ -276,7 +289,7 @@ let currentData = null;
   } catch (e) {
     console.warn('Auth session error:', e);
     localStorage.clear();
-    window.location.href = 'login.html';
+    window.location.href = 'login.html?error=true';
     return;
   } finally {
     // Smoothly remove secure auth curtain

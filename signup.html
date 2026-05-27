@@ -196,10 +196,23 @@
                 document.getElementById('authWrapper').classList.add('show');
                 return;
             }
-            const { data: { session } } = await client.auth.getSession();
-            if (session) {
-                window.location.href = 'dashboard.html';
-            } else {
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasError = urlParams.has('error') || urlParams.has('loop');
+
+            try {
+                const { data: { session } } = await client.auth.getSession();
+                if (session && !hasError) {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    if (hasError && session) {
+                        console.warn('Redirect loop detected. Clearing session.');
+                        await client.auth.signOut().catch(() => {});
+                        localStorage.clear();
+                    }
+                    document.getElementById('authWrapper').classList.add('show');
+                }
+            } catch (err) {
+                console.error('Session check error:', err);
                 document.getElementById('authWrapper').classList.add('show');
             }
         }
