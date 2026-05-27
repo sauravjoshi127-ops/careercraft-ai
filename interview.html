@@ -1132,6 +1132,16 @@
     }
 
     async function init() {
+      // Failsafe timeout to prevent infinite loader trap
+      setTimeout(() => {
+        const curtain = document.getElementById('auth-guard-curtain');
+        if (curtain) {
+          console.warn('Auth curtain check timed out. Failsafe activated.');
+          curtain.style.opacity = '0';
+          setTimeout(() => curtain.remove(), 400);
+        }
+      }, 3000);
+
       if (!supabaseClient) {
         const curtain = document.getElementById('auth-guard-curtain');
         if (curtain) curtain.remove();
@@ -1139,43 +1149,42 @@
       }
       
       try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session) {
-          currentUser = session.user;
-        } else {
-          const localId = localStorage.getItem('userId');
-          if (localId) {
-            currentUser = { id: localId };
-          } else {
-            window.location.href = 'login.html';
-            return;
-          }
+        // Strict Supabase session validation
+        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+
+        if (sessionError || !session || !session.user) {
+          console.warn('Unauthorized access. Redirecting to login.');
+          localStorage.clear();
+          window.location.href = 'login.html';
+          return;
+        }
+
+        currentUser = session.user;
+        bindEvents();
+        await loadSavedResumesDropdown();
+        restoreDraft();
+        renderHistory();
+        renderQuestionList();
+        renderActiveQuestion();
+        els.metricHistory.textContent = String(loadHistory().length);
+        if (state.lastEvaluation?.score) {
+          els.metricScore.textContent = String(state.lastEvaluation.score);
+        }
+        if (apiBase) {
+          setStatus(els.pageStatus, 'For resume extraction, use http://127.0.0.1:3000/interview instead of the file preview.');
         }
       } catch (err) {
-        console.warn('Auth error:', err);
+        console.error('Initialization error:', err);
+        localStorage.clear();
         window.location.href = 'login.html';
         return;
-      }
-
-      bindEvents();
-      await loadSavedResumesDropdown();
-      restoreDraft();
-      renderHistory();
-      renderQuestionList();
-      renderActiveQuestion();
-      els.metricHistory.textContent = String(loadHistory().length);
-      if (state.lastEvaluation?.score) {
-        els.metricScore.textContent = String(state.lastEvaluation.score);
-      }
-      if (apiBase) {
-        setStatus(els.pageStatus, 'For resume extraction, use http://127.0.0.1:3000/interview instead of the file preview.');
-      }
-
-      // Smoothly remove secure auth curtain
-      const curtain = document.getElementById('auth-guard-curtain');
-      if (curtain) {
-        curtain.style.opacity = '0';
-        setTimeout(() => curtain.remove(), 400);
+      } finally {
+        // Smoothly remove secure auth curtain
+        const curtain = document.getElementById('auth-guard-curtain');
+        if (curtain) {
+          curtain.style.opacity = '0';
+          setTimeout(() => curtain.remove(), 400);
+        }
       }
     }
 

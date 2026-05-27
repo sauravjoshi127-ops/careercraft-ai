@@ -381,28 +381,43 @@
 
         // ΓöÇΓöÇ Auth Check ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         async function initPage() {
-            const { data: { session } } = await client.auth.getSession();
-            if (session && session.user) {
-                currentUserId = session.user.id;
-            } else {
-                // Fall back to localStorage userId
-                currentUserId = localStorage.getItem('userId');
-            }
+            // Failsafe timeout to prevent infinite loader trap
+            setTimeout(() => {
+                const curtain = document.getElementById('auth-guard-curtain');
+                if (curtain) {
+                    console.warn('Auth curtain check timed out. Failsafe activated.');
+                    curtain.style.opacity = '0';
+                    setTimeout(() => curtain.remove(), 400);
+                }
+            }, 3000);
 
-            if (!currentUserId) {
+            try {
+                // Strict Supabase session validation
+                const { data: { session }, error: sessionError } = await client.auth.getSession();
+
+                if (sessionError || !session || !session.user) {
+                    console.warn('Unauthorized access. Redirecting to login.');
+                    localStorage.clear();
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                currentUserId = session.user.id;
+                addExperience();
+                addEducation();
+                await loadResumes();
+            } catch (err) {
+                console.error('Initialization error:', err);
+                localStorage.clear();
                 window.location.href = 'login.html';
                 return;
-            }
-
-            addExperience();
-            addEducation();
-            await loadResumes();
-
-            // Smoothly remove secure auth curtain
-            const curtain = document.getElementById('auth-guard-curtain');
-            if (curtain) {
-                curtain.style.opacity = '0';
-                setTimeout(() => curtain.remove(), 400);
+            } finally {
+                // Smoothly remove secure auth curtain
+                const curtain = document.getElementById('auth-guard-curtain');
+                if (curtain) {
+                    curtain.style.opacity = '0';
+                    setTimeout(() => curtain.remove(), 400);
+                }
             }
         }
 
