@@ -34,9 +34,9 @@
 
         <!-- Profile Information -->
         <div class="glass-card mb-1">
-            <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">👤 Profile Information</h2>
-            <div id="profileError" class="alert error" style="padding: 0.85rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5;"></div>
-            <div id="profileSuccess" class="alert success" style="padding: 0.85rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7;"></div>
+            <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-md);">👤 Profile Information</h2>
+            <div id="profileError" class="alert error" style="padding: 0.85rem 1rem; border-radius: var(--r-sm); margin-bottom: 1rem; display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--danger);"></div>
+            <div id="profileSuccess" class="alert success" style="padding: 0.85rem 1rem; border-radius: var(--r-sm); margin-bottom: 1rem; display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--success);"></div>
             <form onsubmit="updateProfile(event)">
                 <div class="form-group mb-1">
                     <label>Full Name</label>
@@ -52,26 +52,26 @@
 
         <!-- Account Info -->
         <div class="glass-card mb-1">
-            <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">ℹ️ Account Info</h2>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color); font-size: 0.9rem;">
-                <span style="color: var(--text-secondary);">User ID</span>
+            <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-md);">ℹ️ Account Info</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-md); font-size: 0.9rem;">
+                <span style="color: var(--text-2);">User ID</span>
                 <span style="font-weight: 500;" id="userId">—</span>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color); font-size: 0.9rem;">
-                <span style="color: var(--text-secondary);">Account Created</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-md); font-size: 0.9rem;">
+                <span style="color: var(--text-2);">Account Created</span>
                 <span style="font-weight: 500;" id="createdAt">—</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; font-size: 0.9rem;">
-                <span style="color: var(--text-secondary);">Last Sign In</span>
+                <span style="color: var(--text-2);">Last Sign In</span>
                 <span style="font-weight: 500;" id="lastSignIn">—</span>
             </div>
         </div>
 
         <!-- Change Password -->
         <div class="glass-card mb-1">
-            <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">🔐 Change Password</h2>
-            <div id="pwError" class="alert error" style="padding: 0.85rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; display: none; background: #fee2e2; color: #991b1b;"></div>
-            <div id="pwSuccess" class="alert success" style="padding: 0.85rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem; display: none; background: #dcfce7; color: #166534;"></div>
+            <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-md);">🔐 Change Password</h2>
+            <div id="pwError" class="alert error" style="padding: 0.85rem 1rem; border-radius: var(--r-sm); margin-bottom: 1rem; display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--danger);"></div>
+            <div id="pwSuccess" class="alert success" style="padding: 0.85rem 1rem; border-radius: var(--r-sm); margin-bottom: 1rem; display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--success);"></div>
             <form onsubmit="changePassword(event)">
                 <div class="form-group mb-1">
                     <label>New Password</label>
@@ -87,11 +87,11 @@
 
         <!-- Danger Zone -->
         <div class="glass-card" style="border-color: rgba(239, 68, 68, 0.4);">
-            <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444;">⚠️ Danger Zone</h2>
-            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.25rem; line-height: 1.5;">
+            <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(239, 68, 68, 0.2); color: var(--danger);">⚠️ Danger Zone</h2>
+            <p style="color: var(--text-2); font-size: 0.9rem; margin-bottom: 1.25rem; line-height: 1.5;">
                 Deleting your account is permanent. All your resumes, settings, and data will be removed and cannot be recovered.
             </p>
-            <button type="button" class="btn-primary" style="background: transparent; border: 1px solid rgba(239, 68, 68, 0.5); color: #ef4444;" onclick="confirmDeleteAccount()" id="deleteBtn">Delete Account</button>
+            <button type="button" class="btn-primary" style="background: transparent; border: 1px solid rgba(239, 68, 68, 0.5); color: var(--danger);" onclick="confirmDeleteAccount()" id="deleteBtn">Delete Account</button>
         </div>
     </div>
 

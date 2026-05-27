@@ -22,17 +22,15 @@ function initWow() {
     
     animatables.forEach((el, index) => {
         el.style.opacity = '0';
-        el.style.transform = 'translateY(40px) scale(0.98)';
-        el.style.filter = 'blur(10px)';
-        el.style.transition = 'all 1.2s cubic-bezier(0.16, 1, 0.3, 1)';
+        el.style.transform = 'translateY(16px)';
+        el.style.transition = 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
         
-        const delay = index * 100; 
+        const delay = index * 60; 
         
         setTimeout(() => {
             el.style.opacity = '1';
-            el.style.transform = 'translateY(0) scale(1)';
-            el.style.filter = 'blur(0)';
-        }, 100 + delay);
+            el.style.transform = 'translateY(0)';
+        }, 80 + delay);
     });
 
     // Button Hover Sound Effects (Optional - Visual feedback is enough for now)

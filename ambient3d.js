@@ -142,12 +142,8 @@ class ParticleNetwork {
 }
 
 function initAmbient() {
-    if (!document.getElementById('ambient-canvas')) {
-        const canvas = document.createElement('canvas');
-        canvas.id = 'ambient-canvas';
-        document.body.prepend(canvas);
-    }
-    new ParticleNetwork('ambient-canvas');
+    // Silenced for high performance: CSS static glows are used instead.
+    return;
 }
 
 if (document.readyState === 'loading') {
