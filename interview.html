@@ -4,10 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Interview Coach - CareerCraft AI</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
-    <link rel="stylesheet" href="styles/premium.css">
   <style>
     /* ── Interview Coach page styles ── */
     .shell { max-width:1240px; margin:0 auto; padding:2rem 1.5rem 4rem; }
@@ -93,15 +91,15 @@
       background:var(--bg-input); border:1px solid var(--border-md);
       border-radius:var(--r-md); color:var(--text-1);
       font:inherit; font-size:0.9rem; outline:none;
-      transition:border-color var(--t-fast), box-shadow var(--t-fast);
+      transition:border-color 0.15s, box-shadow 0.15s;
     }
     .field select { appearance:none; -webkit-appearance:none;
       background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 7L11 1' stroke='%239898a8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
       background-repeat:no-repeat; background-position:right 0.875rem center; padding-right:2.5rem;
     }
-    .field select option { background:var(--bg-input); color:var(--text-1); }
+    .field select option { background:#1a1a24; color:#f0f0f5; }
     .field input:focus, .field textarea:focus, .field select:focus {
-      border-color:var(--border-focus); box-shadow:0 0 0 3px var(--accent-glow);
+      border-color:var(--border-focus); box-shadow:0 0 0 3px var(--accent-ring);
     }
     .field textarea { min-height:110px; resize:vertical; line-height:1.6; }
     .hint { color:var(--text-3); font-size:0.78rem; line-height:1.45; }
@@ -113,7 +111,7 @@
 
     /* More options */
     .more-options { margin-top:1.25rem; border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; }
-    .more-options summary { list-style:none; cursor:pointer; padding:0.875rem 1rem; color:var(--text-2); font-weight:600; font-size:0.88rem; transition:color var(--t-fast); }
+    .more-options summary { list-style:none; cursor:pointer; padding:0.875rem 1rem; color:var(--text-2); font-weight:600; font-size:0.88rem; transition:color 0.15s; }
     .more-options summary:hover { color:var(--text-1); }
     .more-options summary::-webkit-details-marker { display:none; }
     .more-options .more-body { padding:0 1rem 1rem; }
@@ -123,21 +121,21 @@
 
     /* Status */
     .status { min-height:22px; margin-top:0.75rem; font-size:0.85rem; color:var(--text-2); }
-    .status.error   { color:var(--danger); }
-    .status.success { color:var(--success); }
-    .status.loading { color:var(--warning); }
+    .status.error   { color:#fca5a5; }
+    .status.success { color:#86efac; }
+    .status.loading { color:#fcd34d; }
 
     /* Question list */
     .question-list { display:grid; gap:0.6rem; margin-top:1rem; }
     .question-item {
       border:1px solid var(--border-md); border-radius:var(--r-md);
       padding:0.875rem 1rem; background:var(--bg-input);
-      cursor:pointer; transition:border-color var(--t-fast), background var(--t-fast), transform var(--t-fast);
+      cursor:pointer; transition:border-color 0.15s, background 0.15s, transform 0.15s;
       text-align:left; color:var(--text-1); display:flex; gap:0.75rem; align-items:flex-start;
     }
-    .question-item:hover { border-color:var(--border-focus); background:var(--accent-dim); transform:translateX(2px); }
-    .question-item.active { border-color:var(--accent); background:var(--accent-dim); }
-    .q-num { font-size:0.72rem; font-weight:700; color:var(--accent); background:var(--accent-dim); border:1px solid var(--border-focus); border-radius:4px; padding:0.1rem 0.4rem; flex-shrink:0; margin-top:2px; }
+    .question-item:hover { border-color:var(--accent-soft-border-2); background:var(--accent-soft-bg); transform:translateX(2px); }
+    .question-item.active { border-color:var(--accent-soft-border-2); background:var(--accent-soft-bg); }
+    .q-num { font-size:0.72rem; font-weight:700; color:var(--cyan); background:var(--accent-soft-bg-2); border:1px solid var(--accent-soft-border); border-radius:4px; padding:0.1rem 0.4rem; flex-shrink:0; margin-top:2px; }
     .question-meta { display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.3rem; }
     .chip { display:inline-flex; align-items:center; padding:0.15rem 0.45rem; border-radius:999px; border:1px solid var(--border-md); background:rgba(255,255,255,0.03); font-size:0.7rem; color:var(--text-2); font-weight:600; }
     .question-text { font-size:0.92rem; line-height:1.55; color:var(--text-1); }
@@ -145,7 +143,7 @@
     /* Active question */
     .active-question {
       background:var(--bg-input); border:1px solid var(--border-md);
-      border-left:3px solid var(--accent);
+      border-left:3px solid var(--cyan);
       border-radius:var(--r-md); padding:1.25rem; margin-top:1rem;
     }
     .active-question h3 { font-size:0.95rem; margin-bottom:0.5rem; line-height:1.5; color:var(--text-1); }
@@ -164,16 +162,16 @@
     .score-number { font-size:2.5rem; font-weight:900; letter-spacing:-0.05em; color:var(--text-1); line-height:1; font-family:'Outfit',sans-serif; }
     .score-desc { color:var(--text-2); font-size:0.85rem; line-height:1.55; max-width:30ch; }
     .bar { width:100%; height:8px; border-radius:999px; background:rgba(255,255,255,0.07); overflow:hidden; margin-bottom:0.875rem; }
-    .bar-fill { height:100%; width:0%; border-radius:inherit; background:var(--accent); transition:width 0.5s cubic-bezier(0.16,1,0.3,1); }
+    .bar-fill { height:100%; width:0%; border-radius:inherit; background:var(--cyan); transition:width 0.5s cubic-bezier(0.16,1,0.3,1); }
     .list { display:grid; gap:0.5rem; }
     .list-item { color:var(--text-2); line-height:1.55; font-size:0.88rem; padding-left:1rem; position:relative; }
-    .list-item::before { content:''; position:absolute; left:0; top:0.6em; width:0.3rem; height:0.3rem; border-radius:50%; background:var(--accent); }
+    .list-item::before { content:''; position:absolute; left:0; top:0.6em; width:0.3rem; height:0.3rem; border-radius:50%; background:var(--cyan); }
     .better-answer { white-space:pre-wrap; line-height:1.75; color:var(--text-1); font-size:0.9rem; }
     .breakdown { display:grid; gap:0.5rem; margin-top:0.75rem; }
     .breakdown-row { display:grid; grid-template-columns:80px 1fr auto; gap:0.5rem; align-items:center; color:var(--text-2); font-size:0.8rem; }
     .mini-bar { height:6px; border-radius:999px; background:rgba(255,255,255,0.07); overflow:hidden; }
-    .mini-bar span { display:block; height:100%; border-radius:inherit; background:var(--accent); }
-    .progress-summary { border:1px solid var(--border-focus); background:var(--accent-dim); border-radius:var(--r-md); padding:0.875rem 1rem; color:var(--text-1); font-size:0.88rem; line-height:1.55; margin-top:1rem; }
+    .mini-bar span { display:block; height:100%; border-radius:inherit; background:var(--cyan); }
+    .progress-summary { border:1px solid var(--accent-soft-border); background:var(--accent-soft-bg); border-radius:var(--r-md); padding:0.875rem 1rem; color:var(--text-1); font-size:0.88rem; line-height:1.55; margin-top:1rem; }
 
     /* History */
     .history { margin-top:1rem; display:grid; gap:0.65rem; }
@@ -194,33 +192,13 @@
     }
     @media(max-width:480px){ .breakdown-row { grid-template-columns:1fr; } }
   </style>
+  <link rel="stylesheet" href="styles/premium.css">
 
 </head>
 
 <body>
-  <!-- Secure Auth Curtain -->
-  <div id="auth-guard-curtain" style="position: fixed; inset: 0; z-index: 99999; background: #0b0b0f; display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; color: #fff; transition: opacity 0.4s ease;">
-      <div style="text-align: center;">
-          <div style="width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #7c3aed; border-radius: 50%; animation: auth-spin 1s linear infinite; margin: 0 auto 1.5rem;"></div>
-          <p style="font-size: 0.9rem; font-weight: 600; letter-spacing: 0.1em; color: #a0a0b0;">SECURE GATEWAY VERIFICATION...</p>
-      </div>
-  </div>
-  <script>
-      // Immediate, zero-dependency synchronous failsafe
-      setTimeout(function() {
-          var curtain = document.getElementById('auth-guard-curtain');
-          if (curtain) {
-              console.warn('Auth curtain check timed out. Failsafe activated.');
-              curtain.style.opacity = '0';
-              setTimeout(function() {
-                  if (curtain.parentNode) curtain.parentNode.removeChild(curtain);
-              }, 400);
-          }
-      }, 1500);
-  </script>
-  <style>
-      @keyframes auth-spin { to { transform: rotate(360deg); } }
-  </style>
+
+
 
   <div class="topnav">
     <a href="dashboard.html" class="logo">
@@ -268,26 +246,6 @@
       <div id="pageStatus" class="status" aria-live="polite">Start with your role, company, and resume.</div>
     </div>
 
-    <!-- Stats Banner (Resolves textContent of null errors and adds premium summary context) -->
-    <div class="glass-card" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; padding: 1.25rem 2rem; margin-bottom: 2.5rem; text-align: center;">
-      <div>
-        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-3); font-weight: 700; margin-bottom: 0.25rem;">Total Questions</div>
-        <div id="metricQuestions" style="font-size: 1.75rem; font-weight: 800; color: var(--text-1); font-family: 'Outfit', sans-serif;">5</div>
-      </div>
-      <div>
-        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-3); font-weight: 700; margin-bottom: 0.25rem;">Latest Score</div>
-        <div id="metricScore" style="font-size: 1.75rem; font-weight: 800; color: var(--text-1); font-family: 'Outfit', sans-serif;">--</div>
-      </div>
-      <div>
-        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-3); font-weight: 700; margin-bottom: 0.25rem;">Saved Sessions</div>
-        <div id="metricHistory" style="font-size: 1.75rem; font-weight: 800; color: var(--text-1); font-family: 'Outfit', sans-serif;">0</div>
-      </div>
-      <div>
-        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-3); font-weight: 700; margin-bottom: 0.25rem;">Practice Mode</div>
-        <div id="metricMode" style="font-size: 1rem; font-weight: 700; color: var(--accent); margin-top: 0.3rem; font-family: 'Outfit', sans-serif;">Resume-based</div>
-      </div>
-    </div>
-
     <section class="layout">
       <div class="panel">
         <div class="panel-heading">Interview Setup</div>
@@ -313,12 +271,7 @@
         </div>
 
           <div class="field full">
-            <label for="savedResumeSelect">Select from your Saved Resumes</label>
-            <select id="savedResumeSelect" onchange="handleSavedResumeSelect(this)" style="width:100%; min-height:44px; padding:0.7rem 0.875rem; background:var(--bg-input); border:1px solid var(--border-md); border-radius:var(--r-md); color:var(--text-1); font-family:inherit; outline:none; margin-bottom:1rem;">
-              <option value="">✨ — Select from Saved Resumes —</option>
-            </select>
-
-            <label for="resumeText">Or paste a Resume summary / upload a resume</label>
+            <label for="resumeText">Resume summary or upload a resume</label>
             <textarea id="resumeText" placeholder="Paste a short resume summary, or choose your PDF/DOCX resume."></textarea>
             <div class="upload-row">
               <input id="resumeFile" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
@@ -475,65 +428,6 @@
   </main>
 
   <script>
-    const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
-    const supabaseClient = window.supabase && typeof window.supabase.createClient === 'function'
-      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
-      : null;
-
-    let currentUser = null;
-    let savedResumesData = {};
-
-    async function loadSavedResumesDropdown() {
-      if (!currentUser) return;
-      const select = document.getElementById('savedResumeSelect');
-      if (!select) return;
-      try {
-        const { data, error } = await supabaseClient.from('resumes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
-        if (error || !data || !data.length) {
-          select.innerHTML = '<option value="">— No saved resumes found. Build one first! —</option>';
-          return;
-        }
-        select.innerHTML = '<option value="">✨ — Select from Saved Resumes —</option>';
-        data.forEach(r => {
-          savedResumesData[r.id] = r;
-          const opt = document.createElement('option');
-          opt.value = r.id;
-          opt.textContent = r.full_name ? `${r.full_name}'s Resume (${r.title || 'Untitled'})` : (r.title || 'Untitled Resume');
-          select.appendChild(opt);
-        });
-      } catch(e) {
-        console.error('Error loading saved resumes:', e);
-      }
-    }
-
-    function handleSavedResumeSelect(selectEl) {
-      const id = selectEl.value;
-      if (!id) {
-        els.resumeText.value = '';
-        els.resumeUploadHint.textContent = 'PDF or DOCX. The text will appear here automatically.';
-        return;
-      }
-      
-      const r = savedResumesData[id];
-      if (!r) return;
-      
-      let txt = `Name: ${r.full_name || ''}\nEmail: ${r.email || ''}\n`;
-      if (r.summary) txt += `Summary: ${r.summary}\n`;
-      if (r.skills && r.skills.length) txt += `Skills: ${r.skills.join(', ')}\n`;
-      if (r.experience && r.experience.length) {
-        txt += `Experience:\n`;
-        r.experience.forEach(ex => {
-          txt += `- ${ex.title} at ${ex.company} (${ex.startDate} - ${ex.endDate || 'Present'})\n  ${ex.description}\n`;
-        });
-      }
-      
-      els.resumeText.value = txt.trim();
-      els.resumeUploadHint.textContent = `Loaded saved resume: ${selectEl.options[selectEl.selectedIndex].text}`;
-      setStatus(els.setupStatus, 'Saved resume imported successfully!', 'success');
-      localStorage.setItem(draftKey, JSON.stringify(readContext()));
-    }
-
     const state = {
       questions: [],
       selectedId: '',
@@ -1144,60 +1038,18 @@
       });
     }
 
-    async function init() {
-      // Failsafe timeout to prevent infinite loader trap
-      setTimeout(() => {
-        const curtain = document.getElementById('auth-guard-curtain');
-        if (curtain) {
-          console.warn('Auth curtain check timed out. Failsafe activated.');
-          curtain.style.opacity = '0';
-          setTimeout(() => curtain.remove(), 400);
-        }
-      }, 3000);
-
-      if (!supabaseClient) {
-        const curtain = document.getElementById('auth-guard-curtain');
-        if (curtain) curtain.remove();
-        return;
+    function init() {
+      bindEvents();
+      restoreDraft();
+      renderHistory();
+      renderQuestionList();
+      renderActiveQuestion();
+      els.metricHistory.textContent = String(loadHistory().length);
+      if (state.lastEvaluation?.score) {
+        els.metricScore.textContent = String(state.lastEvaluation.score);
       }
-      
-      try {
-        // Strict Supabase session validation
-        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-
-        if (sessionError || !session || !session.user) {
-          console.warn('Unauthorized access. Redirecting to login.');
-          localStorage.clear();
-          window.location.href = 'login.html?error=true';
-          return;
-        }
-
-        currentUser = session.user;
-        bindEvents();
-        await loadSavedResumesDropdown();
-        restoreDraft();
-        renderHistory();
-        renderQuestionList();
-        renderActiveQuestion();
-        els.metricHistory.textContent = String(loadHistory().length);
-        if (state.lastEvaluation?.score) {
-          els.metricScore.textContent = String(state.lastEvaluation.score);
-        }
-        if (apiBase) {
-          setStatus(els.pageStatus, 'For resume extraction, use http://127.0.0.1:3000/interview instead of the file preview.');
-        }
-      } catch (err) {
-        console.error('Initialization error:', err);
-        localStorage.clear();
-        window.location.href = 'login.html?error=true';
-        return;
-      } finally {
-        // Smoothly remove secure auth curtain
-        const curtain = document.getElementById('auth-guard-curtain');
-        if (curtain) {
-          curtain.style.opacity = '0';
-          setTimeout(() => curtain.remove(), 400);
-        }
+      if (apiBase) {
+        setStatus(els.pageStatus, 'For resume extraction, use http://127.0.0.1:3000/interview instead of the file preview.');
       }
     }
 
