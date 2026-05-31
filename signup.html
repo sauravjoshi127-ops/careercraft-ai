@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - CareerCraft AI</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app-sdk.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles/premium.css">
     <style>
@@ -203,20 +204,13 @@
     </div>
 
     <script>
-        // Initialize Supabase with YOUR keys
-        const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
-
-        const { createClient } = supabase;
-        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Use unified Client SDK
+        const client = window.appSdk ? window.appSdk.client : null;
 
         // Redirect if already logged in (hidden initially to prevent FOUC glitch)
         async function checkExistingSession() {
-            if (!client) {
-                document.getElementById('authWrapper').classList.add('show');
-                return;
-            }
-            const { data: { session } } = await client.auth.getSession();
+            await window.appSdk.ready;
+            const session = await window.appSdk.auth.getSession();
             if (session) {
                 window.location.href = 'dashboard.html';
             } else {

@@ -6,7 +6,8 @@
   <title>Cold Email Writer — CareerCraft AI</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="styles/premium.css">
+  <script src="app-sdk.js"></script>
+  <link rel="stylesheet" href="styles/premium.css">
     <style>
     :root{--bg:#050505;--surface:rgba(20,20,24,.6);--border:rgba(255,255,255,.08);--primary:#7c3aed;--primary-glow:rgba(124,58,237,.35);--accent:#a855f7;--text:#ffffff;--text-muted:#a1a1aa;--danger:#ef4444;--success:#10b981;--radius:1rem;--font:'Inter',system-ui,sans-serif}
     *{box-sizing:border-box;margin:0;padding:0}
@@ -239,27 +240,18 @@
   <script id="app-logic">
 // UI Logic (copied from original implementation)
 // ── Supabase Init ────────────────────────────────────────────────────────
-const SUPABASE_URL  = 'https://eduogxolvpqdtvtdiqav.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
-const supabaseClient = window.supabase && typeof window.supabase.createClient === 'function'
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
-  : null;
+const supabaseClient = window.appSdk ? window.appSdk.client : null;
 const nexusUnavailable = !supabaseClient;
-if (!supabaseClient) {
-  console.warn('Supabase client unavailable; Nexus import is disabled. Please refresh the page to retry.');
-}
 let currentUser = null;
 let savedResumes = [];
 let currentData = null;
+
 (async () => {
-  if (!supabaseClient) return;
+  await window.appSdk.ready;
   try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
+    const session = await window.appSdk.auth.getSession();
     if (session) {
       currentUser = session.user;
-    } else {
-      const localId = localStorage.getItem('userId');
-      if (localId) currentUser = { id: localId };
     }
   } catch (e) {
     console.warn('Auth session error:', e);
@@ -267,11 +259,7 @@ let currentData = null;
 })();
 // ── UI Helpers ────────────────────────────────────────────────────────
 function showToast(msg, isError = false) {
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.style.borderColor = isError ? 'var(--danger)' : 'var(--primary)';
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 3000);
+  window.appSdk.ui.showToast(msg, isError);
 }
 if (nexusUnavailable) {
   showToast('Nexus import is unavailable right now. You can still fill details manually.', true);

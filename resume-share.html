@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Resume - CareerCraft AI</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app-sdk.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="stylesheet" href="styles/premium.css">
     <style>
@@ -105,10 +106,7 @@
 
     <script>
         // ── Supabase Setup ────────────────────────────────────────────────────────
-        const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
-        const { createClient } = supabase;
-        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+        let client = null;
 
         let resumeDataGlobal = null;
 
@@ -134,6 +132,9 @@
 
         // ── Page Init ─────────────────────────────────────────────────────────────
         async function initSharePage() {
+            await window.appSdk.ready;
+            client = window.appSdk.client;
+
             const params = new URLSearchParams(window.location.search);
             const token = params.get('token');
 
