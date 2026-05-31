@@ -7,18 +7,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 2rem;
-            overflow: hidden;
-        }
         .auth-wrapper {
             width: 100%;
             max-width: 420px;
-            margin-top: 2rem;
+            margin: 6rem auto 4rem;
             display: none;
             position: relative;
             z-index: 10;
@@ -27,111 +19,99 @@
             display: block;
             animation: fadeInUp 0.5s ease-out forwards;
         }
-        h1 {
+        .auth-wrapper h1 {
             font-size: 2rem;
             text-align: center;
             margin-bottom: 0.5rem;
-            font-family: 'Outfit', sans-serif;
-            font-weight: 700;
         }
         .subtitle {
             text-align: center;
-            color: var(--text-secondary);
-            margin-bottom: 2.5rem;
+            color: var(--text-2);
+            margin-bottom: 2rem;
             font-size: 0.95rem;
-        }
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem;
-            color: var(--text-primary);
-            transition: all 0.3s ease;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: rgba(255,255,255,0.3);
-            box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
         }
         .terms {
             display: flex;
             align-items: flex-start;
             gap: 0.6rem;
-            margin: 2rem 0;
+            margin: 1.5rem 0;
             font-size: 0.85rem;
-            color: var(--text-secondary);
+            color: var(--text-2);
         }
         .terms input {
             width: auto;
             margin-top: 0.2rem;
         }
         .terms a {
-            color: #ffffff;
+            color: var(--text-1);
             text-decoration: none;
+            font-weight: 500;
+        }
+        .terms a:hover {
+            color: var(--accent);
         }
         .divider {
             display: flex;
             align-items: center;
-            margin: 2rem 0;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
+            margin: 1.5rem 0;
+            color: var(--text-3);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         .divider::before, .divider::after {
             content: '';
             flex: 1;
             height: 1px;
-            background: var(--border-color);
+            background: var(--border);
         }
         .divider::before { margin-right: 1rem; }
         .divider::after { margin-left: 1rem; }
-        .social-btn {
-            flex: 1;
-            padding: 0.8rem;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--border-color);
-            border-radius: 0.5rem;
-            color: var(--text-primary);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .social-btn:hover {
-            background: rgba(255,255,255,0.1);
-        }
         .social-login {
             display: flex;
             gap: 1rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        .social-btn {
+            flex: 1;
+            padding: 0.75rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
+            color: var(--text-1);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all var(--t-fast);
+        }
+        .social-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-hover);
         }
         .auth-link {
             text-align: center;
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            margin-top: 1rem;
+            color: var(--text-2);
+            font-size: 0.88rem;
+            margin-top: 1.5rem;
         }
         .auth-link a {
-            color: #ffffff;
+            color: var(--accent);
             text-decoration: none;
             font-weight: 600;
         }
+        .auth-link a:hover {
+            color: var(--accent-hover);
+        }
         .error-msg, .success-msg {
-            padding: 1rem;
-            border-radius: 0.5rem;
+            padding: 0.875rem 1rem;
+            border-radius: var(--r-sm);
             margin-bottom: 1.5rem;
             display: none;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
+            font-weight: 500;
         }
-        .error-msg { background: rgba(220,38,38,0.1); color: #fca5a5; border: 1px solid rgba(220,38,38,0.2); }
+        .error-msg { background: rgba(239,68,68,0.1); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); }
         .success-msg { background: rgba(16,185,129,0.1); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.2); }
     </style>
     <link rel="stylesheet" href="styles/premium.css">
@@ -216,10 +196,23 @@
                 document.getElementById('authWrapper').classList.add('show');
                 return;
             }
-            const { data: { session } } = await client.auth.getSession();
-            if (session) {
-                window.location.href = 'dashboard.html';
-            } else {
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasError = urlParams.has('error') || urlParams.has('loop');
+
+            try {
+                const { data: { session } } = await client.auth.getSession();
+                if (session && !hasError) {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    if (hasError && session) {
+                        console.warn('Redirect loop detected. Clearing session.');
+                        await client.auth.signOut().catch(() => {});
+                        localStorage.clear();
+                    }
+                    document.getElementById('authWrapper').classList.add('show');
+                }
+            } catch (err) {
+                console.error('Session check error:', err);
                 document.getElementById('authWrapper').classList.add('show');
             }
         }
