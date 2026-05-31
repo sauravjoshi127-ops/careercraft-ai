@@ -8,7 +8,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <link rel="stylesheet" href="styles/premium.css">
     <style>
 /* ΓöÇΓöÇ Resume Builder page styles ΓöÇΓöÇ */
 .resume-workspace { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; }
@@ -102,6 +101,7 @@
 .preview-skills { display:flex; flex-wrap:wrap; gap:0.3rem; margin-top:0.25rem; }
 .preview-skill { background:rgba(255,255,255,0.07); border:1px solid var(--border); border-radius:999px; padding:0.15rem 0.5rem; font-size:0.7rem; color:var(--text-2); }
 </style>
+    <link rel="stylesheet" href="styles/premium.css">
 
 </head>
 <body>
@@ -261,11 +261,8 @@
         <div class="customizer-group">
           <span class="customizer-label">Accent</span>
           <div class="color-swatches">
-            <div class="color-swatch active" style="background:#00d2ff;" data-color="#00d2ff" onclick="setAccentColor(this)"></div>
-            <div class="color-swatch" style="background:#a78bfa;" data-color="#a78bfa" onclick="setAccentColor(this)"></div>
-            <div class="color-swatch" style="background:#34d399;" data-color="#34d399" onclick="setAccentColor(this)"></div>
-            <div class="color-swatch" style="background:#fb923c;" data-color="#fb923c" onclick="setAccentColor(this)"></div>
-            <div class="color-swatch" style="background:#f0f0f5;" data-color="#f0f0f5" onclick="setAccentColor(this)"></div>
+            <div class="color-swatch active" style="background:#6366f1;" data-color="#6366f1" onclick="setAccentColor(this)"></div>
+            <div class="color-swatch" style="background:#a855f7;" data-color="#a855f7" onclick="setAccentColor(this)"></div>
           </div>
         </div>
       </div>
@@ -332,7 +329,7 @@
         let currentAISuggestion = '';
         let currentAISection = '';
         let currentTemplate = 'modern';
-        let accentColor = '#00d2ff';
+        let accentColor = '#6366f1';
 
         // ΓöÇΓöÇ Live Preview ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         function switchTemplate(name, btn) {
