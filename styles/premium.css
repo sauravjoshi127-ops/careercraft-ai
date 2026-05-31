@@ -73,6 +73,12 @@
   /* Additional legacy vars (used by some single-page tools) */
   --primary: var(--accent);
   --primary-glow: rgba(99,102,241,0.18);
+  /* Shared "soft accent" surfaces used to replace old hardcoded cyan RGBA snippets */
+  --accent-soft-bg: rgba(99,102,241,0.06);
+  --accent-soft-bg-2: rgba(99,102,241,0.10);
+  --accent-soft-border: rgba(99,102,241,0.15);
+  --accent-soft-border-2: rgba(99,102,241,0.25);
+  --accent-ring: rgba(99,102,241,0.14);
   --surface: var(--bg-card);
   --radius: var(--r-xl);
   --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
