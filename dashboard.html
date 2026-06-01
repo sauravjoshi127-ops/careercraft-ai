@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - CareerCraft AI</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app-sdk.js"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <link rel="stylesheet" href="styles/premium.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -155,33 +156,12 @@
     <div id="toast" class="toast"></div>
 
     <script>
-        const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
-
-        const { createClient } = supabase;
-        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
-
         let currentUserId = null;
-
-        function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = `toast ${type}`;
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 3000);
-        }
-
-        function formatDate(dateStr) {
-            if (!dateStr) return 'Unknown date';
-            return new Date(dateStr).toLocaleDateString('en-US', {
-                year: 'numeric', month: 'short', day: 'numeric'
-            });
-        }
 
         async function loadResumes() {
             const listEl = document.getElementById('resumeList');
 
-            const { data, error } = await client
+            const { data, error } = await window.appSdk.client
                 .from('resumes')
                 .select('*')
                 .eq('user_id', currentUserId)
@@ -204,7 +184,7 @@
 
             // Fetch share info for view counts
             const resumeIds = data.map(r => r.id);
-            const { data: sharesData } = await client
+            const { data: sharesData } = await window.appSdk.client
                 .from('resume_shares')
                 .select('resume_id, share_token')
                 .in('resume_id', resumeIds)
@@ -214,18 +194,18 @@
             (sharesData || []).forEach(s => { shareMap[s.resume_id] = s; });
 
             listEl.innerHTML = data.map(resume => {
-                const id = isValidUUID(resume.id) ? resume.id : '';
+                const id = window.appSdk.ui.isValidUUID(resume.id) ? resume.id : '';
                 const name = resume.full_name
                     ? `${resume.full_name}'s Resume`
                     : (resume.title || 'Untitled Resume');
-                const createdAt = formatDate(resume.created_at);
+                const createdAt = window.appSdk.ui.formatDate(resume.created_at);
                 const template = resume.template_name || 'modern';
                 const hasShare = shareMap[resume.id];
 
                 return `
                     <div class="resume-item" id="resume-${id}">
                         <div class="resume-info">
-                            <h4>${escapeHtml(name)}</h4>
+                            <h4>${window.appSdk.ui.escapeHtml(name)}</h4>
                             <div class="resume-meta">
                                 Created ${createdAt} &bull; Template: ${template}
                             </div>
@@ -241,22 +221,18 @@
             }).join('');
         }
 
-        function isValidUUID(str) {
-            return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-        }
-
         async function deleteResume(resumeId) {
-            if (!isValidUUID(resumeId)) return;
+            if (!window.appSdk.ui.isValidUUID(resumeId)) return;
             if (!confirm('Are you sure you want to delete this resume? This cannot be undone.')) return;
 
-            const { error } = await client
+            const { error } = await window.appSdk.client
                 .from('resumes')
                 .delete()
                 .eq('id', resumeId)
                 .eq('user_id', currentUserId);
 
             if (error) {
-                showToast('❌ Could not delete resume. Please try again.', 'error');
+                window.appSdk.ui.showToast('❌ Could not delete resume. Please try again.', 'error');
                 return;
             }
 
@@ -273,22 +249,11 @@
                     </div>`;
             }
 
-            showToast('✅ Resume deleted successfully.');
+            window.appSdk.ui.showToast('✅ Resume deleted successfully.');
         }
 
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.appendChild(document.createTextNode(str));
-            return div.innerHTML;
-        }
-
-        async function logout() {
-            await client.auth.signOut();
-            localStorage.removeItem('userEmail');
-            localStorage.removeItem('userName');
-            localStorage.removeItem('userId');
-            localStorage.removeItem('userToken');
-            window.location.href = 'index.html';
+        function logout() {
+            window.appSdk.auth.logout();
         }
 
         async function initPage() {
@@ -303,15 +268,9 @@
             }, 3000);
 
             try {
-                // Use Supabase session strictly for route security
-                const { data: { session }, error: sessionError } = await client.auth.getSession();
-
-                if (sessionError || !session || !session.user) {
-                    console.warn('Unauthorized access or session error. Redirecting to login.');
-                    localStorage.clear();
-                    window.location.href = 'login.html?error=true';
-                    return;
-                }
+                await window.appSdk.ready;
+                const session = await window.appSdk.auth.requireAuth();
+                if (!session) return;
 
                 currentUserId = session.user.id;
                 const name = session.user.user_metadata?.full_name
@@ -319,13 +278,16 @@
                     || session.user.email.split('@')[0];
                 const email = session.user.email;
 
-                document.getElementById('avatarInitial').textContent = name.charAt(0).toUpperCase();
-                if (document.getElementById('welcomeNameSpan')) {
-                    document.getElementById('welcomeNameSpan').textContent = name;
-                }
-                document.getElementById('welcomeEmail').textContent = email;
+                const avatarEl = document.getElementById('avatarInitial');
+                if (avatarEl) avatarEl.textContent = name.charAt(0).toUpperCase();
 
-                // Sync localStorage with active session
+                const nameEl = document.getElementById('welcomeNameSpan');
+                if (nameEl) nameEl.textContent = name;
+
+                const emailEl = document.getElementById('welcomeEmail');
+                if (emailEl) emailEl.textContent = email;
+
+                // Keep localStorage in sync
                 localStorage.setItem('userEmail', email);
                 localStorage.setItem('userName', name);
                 localStorage.setItem('userId', currentUserId);
@@ -351,9 +313,9 @@
         // --- Razorpay Integration Logic ---
         document.getElementById('btn-upgrade-pro').onclick = async function(e){
             e.preventDefault();
-            const { data: { session } } = await client.auth.getSession();
+            const session = await window.appSdk.auth.getSession();
             if (!session) {
-                showToast('Please log in again to upgrade.', 'error');
+                window.appSdk.ui.showToast('Please log in again to upgrade.', 'error');
                 return;
             }
             
@@ -393,16 +355,18 @@
                             });
                             const result = await verifyRes.json();
                             if (verifyRes.ok && result.success) {
-                                showToast('Successfully upgraded to Pro!', 'success');
+                                window.appSdk.ui.showToast('Successfully upgraded to Pro!', 'success');
                                 document.getElementById('btn-upgrade-pro').style.display = 'none';
                                 // Optional: refresh user session
-                                await client.auth.refreshSession();
+                                if (window.appSdk.client) {
+                                    await window.appSdk.client.auth.refreshSession();
+                                }
                             } else {
-                                showToast('Payment verification failed.', 'error');
+                                window.appSdk.ui.showToast('Payment verification failed.', 'error');
                             }
                         } catch (err) {
                             console.error(err);
-                            showToast('Verification error.', 'error');
+                            window.appSdk.ui.showToast('Verification error.', 'error');
                         }
                     },
                     prefill: {
@@ -413,13 +377,13 @@
                 
                 const rzp1 = new Razorpay(options);
                 rzp1.on('payment.failed', function (res){
-                    showToast("Payment Failed: " + res.error.description, 'error');
+                    window.appSdk.ui.showToast("Payment Failed: " + res.error.description, 'error');
                 });
                 rzp1.open();
                 
             } catch (err) {
                 console.error("Checkout error:", err);
-                showToast("Failed to initiate checkout.", 'error');
+                window.appSdk.ui.showToast("Failed to initiate checkout.", 'error');
             }
         };
     </script>

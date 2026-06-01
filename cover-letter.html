@@ -99,11 +99,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
-
-    /* ATS/Relevance Education Panel */
-    .ats-edu-panel{
-        background: var(--surface-glass);
-        border: 1px solid var(--border-color);
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app-sdk.js"></script>
 </head>
 
 <body>
@@ -365,10 +362,7 @@
   </div>
 
 <script>
-const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
-const { createClient } = supabase;
-const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+const client = window.appSdk ? window.appSdk.client : null;
 
 let currentUser = null;
 let lastGenerated = null;
@@ -403,17 +397,11 @@ function formatLetterText(text) {
 
 async function init() {
   try {
-    const { data: { session } } = await client.auth.getSession();
-    if (session) {
-      currentUser = session.user;
-    } else {
-      const localId = localStorage.getItem('userId');
-      if (localId) {
-        currentUser = { id: localId };
-      } else {
-        return window.location.href = 'login.html';
-      }
-    }
+    await window.appSdk.ready;
+    const session = await window.appSdk.auth.requireAuth();
+    if (!session) return;
+    currentUser = session.user;
+
     await loadSavedResumesDropdown();
     await loadHistory();
   } catch (err) {
@@ -550,7 +538,7 @@ async function loadSavedResumesDropdown() {
   if (!currentUser) return;
   const select = document.getElementById('savedResumeSelect');
   try {
-    const { data, error } = await client.from('resumes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
+    const { data, error } = await window.appSdk.client.from('resumes').select('*').eq('user_id', currentUser.id).order('created_at', {ascending: false});
     if (error || !data || !data.length) {
       select.innerHTML = '<option value="">— No saved resumes. Build one first! —</option>';
       select.disabled = true;
@@ -729,7 +717,7 @@ async function generateCoverLetter(event, regen = false) {
 
 async function saveCoverLetter() {
   if (!lastGenerated) return showAlert('error', 'Generate first.');
-  const { error } = await client.from('cover_letters').insert([{
+  const { error } = await window.appSdk.client.from('cover_letters').insert([{
     user_id: currentUser.id,
     job_title: document.getElementById('jobTitle').value,
     company_name: document.getElementById('companyName').value,
@@ -773,7 +761,7 @@ async function loadHistory() {
 }
 
 async function previewSaved(id) {
-  const { data } = await client.from('cover_letters').select('*').eq('id', id).single();
+  const { data } = await window.appSdk.client.from('cover_letters').select('*').eq('id', id).single();
   if (!data) return;
 
   lastGenerated = {

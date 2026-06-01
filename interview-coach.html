@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Interview Coach - CareerCraft AI</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app-sdk.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <style>
     /* Interview specific styles */
@@ -161,29 +162,21 @@
   <div class="toast" id="toast">Message</div>
 
   <script>
-    const SUPABASE_URL  = 'https://eduogxolvpqdtvtdiqav.supabase.co';
-    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    const supabase = window.appSdk ? window.appSdk.client : null;
 
     let currentUser = null;
     let chatHistory = [];
     
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      await window.appSdk.ready;
+      const session = await window.appSdk.auth.requireAuth();
       if (session) {
         currentUser = session.user;
-      } else {
-        const localId = localStorage.getItem('userId');
-        if (localId) currentUser = { id: localId };
       }
     })();
 
     function showToast(msg, isError = false) {
-      const toast = document.getElementById('toast');
-      toast.textContent = msg;
-      toast.style.borderColor = isError ? 'var(--danger)' : 'var(--primary)';
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 3000);
+      window.appSdk.ui.showToast(msg, isError);
     }
 
     async function openNexusModal() {
