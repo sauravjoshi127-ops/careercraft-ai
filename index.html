@@ -344,96 +344,14 @@
     </footer>
 
     <script>
-        // --- Razorpay Integration Logic ---
-        
-        async function initiateCheckout(planId, amount) {
-            try {
-                // 1. Create Order on Server
-                const response = await fetch('/api/create-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: amount, planId: planId })
-                });
-                
-                const orderData = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(orderData.error || 'Failed to create order');
-                }
-
-                // 2. Initialize Razorpay Checkout
-                const options = {
-                    key: orderData.key_id, // Enter the Key ID generated from the Dashboard
-                    amount: orderData.amount, // Amount is in currency subunits. Default currency is INR.
-                    currency: "INR",
-                    name: "CareerCraft AI",
-                    description: `Upgrade to ${planId === 'lifetime' ? 'Lifetime' : 'Pro'}`,
-                    image: "https://example.com/your_logo", // You can replace with an actual logo URL
-                    order_id: orderData.id, 
-                    handler: function (response){
-                        // Send success details to your server to verify and upgrade user
-                        verifyPayment(response, planId);
-                    },
-                    prefill: {
-                        name: "User",
-                        email: "user@example.com",
-                        contact: "9999999999"
-                    },
-                    theme: {
-                        color: "#7c3aed"
-                    }
-                };
-                
-                const rzp1 = new Razorpay(options);
-                
-                rzp1.on('payment.failed', function (response){
-                    alert("Payment Failed: " + response.error.description);
-                });
-                
-                rzp1.open();
-                
-            } catch (err) {
-                console.error("Checkout error:", err);
-                alert("Failed to initiate checkout. Please try again.");
-            }
-        }
-        
-        async function verifyPayment(paymentDetails, planId) {
-            try {
-                const response = await fetch('/api/verify-payment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        razorpay_order_id: paymentDetails.razorpay_order_id,
-                        razorpay_payment_id: paymentDetails.razorpay_payment_id,
-                        razorpay_signature: paymentDetails.razorpay_signature,
-                        planId: planId
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok && result.success) {
-                    alert("Payment Successful! Welcome to CareerCraft " + (planId === 'lifetime' ? 'Lifetime' : 'Pro'));
-                    // Redirect to dashboard or refresh UI
-                    window.location.href = "/dashboard.html";
-                } else {
-                    alert("Payment Verification Failed.");
-                }
-            } catch (err) {
-                console.error("Verification error:", err);
-                alert("Payment verification error.");
-            }
-        }
-
         document.getElementById('rzp-button1').onclick = function(e){
             e.preventDefault();
-            initiateCheckout('pro_monthly', 299);
+            window.appSdk.billing.initiateCheckout('pro_monthly', 299).catch(() => {});
         }
         
         document.getElementById('rzp-button2').onclick = function(e){
             e.preventDefault();
-            initiateCheckout('pro_lifetime', 2999);
+            window.appSdk.billing.initiateCheckout('pro_lifetime', 2999).catch(() => {});
         }
     </script>
 </body>
