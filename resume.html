@@ -9,7 +9,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <link rel="stylesheet" href="styles/premium.css">
     <style>
 /* ΓöÇΓöÇ Resume Builder page styles ΓöÇΓöÇ */
 .resume-workspace { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; }
@@ -40,7 +39,7 @@
 .form-group { margin-bottom:1.125rem; }
 .form-group label { display:block; font-weight:700; margin-bottom:0.4rem; font-size:0.72rem; color:var(--text-3); text-transform:uppercase; letter-spacing:0.05em; }
 .form-group input, .form-group textarea, .form-group select { width:100%; padding:0.75rem 1rem; background:var(--bg-input); border:1px solid var(--border-md); border-radius:var(--r-md); color:var(--text-1); font-family:inherit; font-size:0.9rem; outline:none; transition:border-color 0.15s, box-shadow 0.15s; min-height:44px; }
-.form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color:var(--border-focus); box-shadow:0 0 0 3px rgba(0,210,255,0.1); }
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color:var(--border-focus); box-shadow:0 0 0 3px var(--accent-ring); }
 .form-group textarea { resize:vertical; min-height:100px; line-height:1.65; }
 .form-group select { appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 7L11 1' stroke='%239898a8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 1rem center; padding-right:2.5rem; }
 .form-group select option { background:#1a1a24; color:#f0f0f5; }
@@ -52,7 +51,7 @@
 .btn-add-entry { width:100%; padding:0.875rem; background:transparent; border:1px dashed var(--border-md); color:var(--text-3); border-radius:var(--r-md); font-weight:600; font-size:0.85rem; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:0.4rem; font-family:inherit; }
 .btn-add-entry:hover { color:var(--text-1); border-color:var(--border-hover); background:rgba(255,255,255,0.03); }
 .skills-container { display:flex; flex-wrap:wrap; gap:0.5rem; min-height:48px; padding:0.5rem; background:var(--bg-input); border:1px solid var(--border-md); border-radius:var(--r-md); cursor:text; transition:border-color 0.15s; }
-.skills-container:focus-within { border-color:var(--border-focus); box-shadow:0 0 0 3px rgba(0,210,255,0.1); }
+.skills-container:focus-within { border-color:var(--border-focus); box-shadow:0 0 0 3px var(--accent-ring); }
 .skill-tag { display:inline-flex; align-items:center; gap:0.4rem; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); color:var(--text-1); padding:0.3rem 0.7rem; border-radius:999px; font-size:0.82rem; font-weight:500; }
 .skill-tag button { background:none; border:none; color:var(--text-3); cursor:pointer; font-size:1rem; line-height:1; padding:0; transition:color 0.15s; }
 .skill-tag button:hover { color:#fca5a5; }
@@ -69,7 +68,7 @@
 .resume-card-tag { background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text-2); padding:0.2rem 0.65rem; border-radius:999px; font-size:0.72rem; }
 .card-actions-row { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:auto; }
 .card-badges { display:flex; gap:0.4rem; margin-bottom:0.75rem; }
-.template-badge { background:rgba(0,210,255,0.08); border:1px solid rgba(0,210,255,0.2); color:var(--cyan); padding:0.15rem 0.55rem; border-radius:999px; font-size:0.7rem; font-weight:700; text-transform:capitalize; }
+.template-badge { background:var(--accent-soft-bg-2); border:1px solid var(--accent-soft-border); color:var(--cyan); padding:0.15rem 0.55rem; border-radius:999px; font-size:0.7rem; font-weight:700; text-transform:capitalize; }
 .view-badge { background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text-2); padding:0.15rem 0.55rem; border-radius:999px; font-size:0.7rem; }
 .empty-state { text-align:center; padding:3rem 2rem; color:var(--text-2); background:rgba(255,255,255,0.02); border:1px dashed var(--border); border-radius:var(--r-lg); }
 .empty-state .empty-icon { font-size:2.5rem; margin-bottom:1rem; opacity:0.5; }
@@ -85,8 +84,8 @@
 .share-link-box input { flex:1; padding:0.75rem 1rem; background:var(--bg-input); border:1px solid var(--border-md); border-radius:var(--r-md); color:var(--text-2); font-size:0.82rem; font-family:monospace; outline:none; }
 .ai-suggestions-box { background:var(--bg-input); border:1px solid var(--border); border-radius:var(--r-md); padding:1.25rem; min-height:120px; white-space:pre-wrap; font-size:0.9rem; line-height:1.7; color:var(--text-1); margin-bottom:1.5rem; }
 .modal-large { max-width:680px; }
-.btn-ai { padding:0.3rem 0.7rem; font-size:0.72rem; font-weight:700; border:1px solid rgba(0,210,255,0.25); background:rgba(0,210,255,0.08); color:var(--cyan); border-radius:999px; cursor:pointer; transition:background 0.15s; margin-left:auto; font-family:inherit; }
-.btn-ai:hover { background:rgba(0,210,255,0.15); }
+.btn-ai { padding:0.3rem 0.7rem; font-size:0.72rem; font-weight:700; border:1px solid var(--accent-soft-border-2); background:var(--accent-soft-bg-2); color:var(--cyan); border-radius:999px; cursor:pointer; transition:background 0.15s; margin-left:auto; font-family:inherit; }
+.btn-ai:hover { background:var(--accent-soft-bg); }
 #livePreviewContent { font-family:'Inter',sans-serif; }
 .preview-contact { font-size:0.75rem; color:var(--text-2); margin-bottom:0.875rem; }
 .tpl-classic .preview-contact { text-align:center; }
@@ -103,6 +102,7 @@
 .preview-skills { display:flex; flex-wrap:wrap; gap:0.3rem; margin-top:0.25rem; }
 .preview-skill { background:rgba(255,255,255,0.07); border:1px solid var(--border); border-radius:999px; padding:0.15rem 0.5rem; font-size:0.7rem; color:var(--text-2); }
 </style>
+    <link rel="stylesheet" href="styles/premium.css">
 
 </head>
 <body>
@@ -262,11 +262,8 @@
         <div class="customizer-group">
           <span class="customizer-label">Accent</span>
           <div class="color-swatches">
-            <div class="color-swatch active" style="background:#00d2ff;" data-color="#00d2ff" onclick="setAccentColor(this)"></div>
-            <div class="color-swatch" style="background:#a78bfa;" data-color="#a78bfa" onclick="setAccentColor(this)"></div>
-            <div class="color-swatch" style="background:#34d399;" data-color="#34d399" onclick="setAccentColor(this)"></div>
-            <div class="color-swatch" style="background:#fb923c;" data-color="#fb923c" onclick="setAccentColor(this)"></div>
-            <div class="color-swatch" style="background:#f0f0f5;" data-color="#f0f0f5" onclick="setAccentColor(this)"></div>
+            <div class="color-swatch active" style="background:#6366f1;" data-color="#6366f1" onclick="setAccentColor(this)"></div>
+            <div class="color-swatch" style="background:#a855f7;" data-color="#a855f7" onclick="setAccentColor(this)"></div>
           </div>
         </div>
       </div>
@@ -330,7 +327,7 @@
         let currentAISuggestion = '';
         let currentAISection = '';
         let currentTemplate = 'modern';
-        let accentColor = '#00d2ff';
+        let accentColor = '#6366f1';
 
         // ΓöÇΓöÇ Live Preview ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         function switchTemplate(name, btn) {
@@ -1407,8 +1404,6 @@ function generateCreativeTemplate(data, exp, edu, sk) {
         // ΓöÇΓöÇ Bootstrap ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         window.addEventListener('load', initPage);
     </script>
-<script src="ambient3d.js"></script>
-<script src="wow-effects.js"></script>
 </body></html>
 
 

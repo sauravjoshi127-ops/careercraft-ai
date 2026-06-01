@@ -13,6 +13,29 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Secure Auth Curtain -->
+    <div id="auth-guard-curtain" style="position: fixed; inset: 0; z-index: 99999; background: #0b0b0f; display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; color: #fff; transition: opacity 0.4s ease;">
+        <div style="text-align: center;">
+            <div style="width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #7c3aed; border-radius: 50%; animation: auth-spin 1s linear infinite; margin: 0 auto 1.5rem;"></div>
+            <p style="font-size: 0.9rem; font-weight: 600; letter-spacing: 0.1em; color: #a0a0b0;">SECURE GATEWAY VERIFICATION...</p>
+        </div>
+    </div>
+    <script>
+        // Immediate, zero-dependency synchronous failsafe
+        setTimeout(function() {
+            var curtain = document.getElementById('auth-guard-curtain');
+            if (curtain) {
+                console.warn('Auth curtain check timed out. Failsafe activated.');
+                curtain.style.opacity = '0';
+                setTimeout(function() {
+                    if (curtain.parentNode) curtain.parentNode.removeChild(curtain);
+                }, 400);
+            }
+        }, 1500);
+    </script>
+    <style>
+        @keyframes auth-spin { to { transform: rotate(360deg); } }
+    </style>
 
 
 
@@ -53,7 +76,7 @@
                 <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
                     <span style="color: var(--accent-cyan);">📄</span> My Resumes
                 </h2>
-                <a href="resume.html" class="btn-accent" style="border-radius: 12px; font-size: 0.85rem;">+ Create New</a>
+                <a href="resume.html" class="btn-accent">+ Create New</a>
             </div>
             <div id="resumeList">
                 <div style="text-align: center; color: var(--text-tertiary); padding: 3rem; border: 1px dashed var(--border-color); border-radius: 1.5rem;">
@@ -64,7 +87,7 @@
         </div>
 
         <!-- Tools Grid -->
-        <div id="tools" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 6rem;">
+        <div id="tools" class="features-grid" style="margin-bottom: 6rem;">
             <div class="feature-card">
                 <div class="feature-icon">📝</div>
                 <h3 style="margin-bottom: 0.75rem;">Resume Builder</h3>
@@ -101,7 +124,7 @@
                 <p style="color: var(--text-secondary); font-size: 1.1rem;">Choose the plan that fits your career ambitions.</p>
             </div>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; max-width: 900px; margin: 0 auto;">
+            <div class="pricing-grid">
                 <div class="pricing-card glass-card">
                     <div style="color: var(--text-tertiary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem; margin-bottom: 1rem;">Basic</div>
                     <div style="font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem;">Free</div>
@@ -234,31 +257,55 @@
         }
 
         async function initPage() {
-            await window.appSdk.ready;
-            const session = await window.appSdk.auth.requireAuth();
-            if (!session) return;
+            // Failsafe timeout to prevent infinite loader trap
+            setTimeout(() => {
+                const curtain = document.getElementById('auth-guard-curtain');
+                if (curtain) {
+                    console.warn('Auth curtain check timed out. Failsafe activated.');
+                    curtain.style.opacity = '0';
+                    setTimeout(() => curtain.remove(), 400);
+                }
+            }, 3000);
 
-            currentUserId = session.user.id;
-            const name = session.user.user_metadata?.full_name
-                || localStorage.getItem('userName')
-                || session.user.email.split('@')[0];
-            const email = session.user.email;
+            try {
+                await window.appSdk.ready;
+                const session = await window.appSdk.auth.requireAuth();
+                if (!session) return;
 
-            const avatarEl = document.getElementById('avatarInitial');
-            if (avatarEl) avatarEl.textContent = name.charAt(0).toUpperCase();
+                currentUserId = session.user.id;
+                const name = session.user.user_metadata?.full_name
+                    || localStorage.getItem('userName')
+                    || session.user.email.split('@')[0];
+                const email = session.user.email;
 
-            const nameEl = document.getElementById('welcomeNameSpan');
-            if (nameEl) nameEl.textContent = name;
+                const avatarEl = document.getElementById('avatarInitial');
+                if (avatarEl) avatarEl.textContent = name.charAt(0).toUpperCase();
 
-            const emailEl = document.getElementById('welcomeEmail');
-            if (emailEl) emailEl.textContent = email;
+                const nameEl = document.getElementById('welcomeNameSpan');
+                if (nameEl) nameEl.textContent = name;
 
-            // Keep localStorage in sync
-            localStorage.setItem('userEmail', email);
-            localStorage.setItem('userName', name);
-            localStorage.setItem('userId', currentUserId);
+                const emailEl = document.getElementById('welcomeEmail');
+                if (emailEl) emailEl.textContent = email;
 
-            await loadResumes();
+                // Keep localStorage in sync
+                localStorage.setItem('userEmail', email);
+                localStorage.setItem('userName', name);
+                localStorage.setItem('userId', currentUserId);
+
+                await loadResumes();
+            } catch (err) {
+                console.error('Initialization error:', err);
+                localStorage.clear();
+                window.location.href = 'login.html?error=true';
+                return;
+            } finally {
+                // Ensure curtain is always removed on exit
+                const curtain = document.getElementById('auth-guard-curtain');
+                if (curtain) {
+                    curtain.style.opacity = '0';
+                    setTimeout(() => curtain.remove(), 400);
+                }
+            }
         }
 
         window.addEventListener('load', initPage);
@@ -340,8 +387,6 @@
             }
         };
     </script>
-<script src="ambient3d.js"></script>
-<script src="wow-effects.js"></script>
 </body>
 </html>
 
