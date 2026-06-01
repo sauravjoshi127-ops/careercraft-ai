@@ -208,7 +208,7 @@
         </div>
       </div>
 
-      <div class="gen-wrap"><button type="submit" class="btn-gen" id="genBtn">🚀 Generate Elite Emails</button></div>
+      <div class="gen-wrap"><button type="submit" class="btn-gen" id="genBtn">Generate Elite Emails</button></div>
     </form>
 
     <!-- Skeleton -->
@@ -312,7 +312,7 @@ document.getElementById('rlist').addEventListener('click', e => {
   const r = savedResumes[idx];
   if (r.full_name) document.getElementById('senderName').value = r.full_name;
   let bg = '';
-  if (r.summary) bg += r.summary + ' ';
+  if (r.professional_summary) bg += r.professional_summary + ' ';
   if (r.experience && r.experience.length) bg += `Previously ${r.experience[0].title} at ${r.experience[0].company}. `;
   if (r.skills && r.skills.length) bg += `Core skills: ${r.skills.slice(0,6).join(', ')}.`;
   const bgInput = document.getElementById('background');
@@ -324,7 +324,7 @@ document.getElementById('rlist').addEventListener('click', e => {
     document.getElementById('bgCt').textContent = `${len} / 400`;
   });
   closeNexusModal();
-  showToast('✅ Context imported!');
+  showToast('Context imported!');
 });
 // PDF upload handling
 async function handlePDFUpload(input) {
@@ -343,14 +343,14 @@ async function handlePDFUpload(input) {
       const bg = document.getElementById('background');
       bg.value = data.resumeText.substring(0,400).trim();
       document.getElementById('bgCt').textContent = `${bg.value.length} / 400`;
-      status.textContent = `✅ Imported ${file.name}`;
-      showToast('✅ PDF imported!');
+      status.textContent = `Imported ${file.name}`;
+      showToast('PDF imported!');
     } else {
       throw new Error('No text extracted');
     }
   } catch (err) {
     console.error(err);
-    status.textContent = `❌ Upload failed: ${err.message}`;
+    status.textContent = `Upload failed: ${err.message}`;
     status.style.color = '#fca5a5';
   }
   input.value = '';
@@ -419,8 +419,8 @@ function renderResults(data) {
       <div class="subj-row"><span class="subj-text">Subject: ${v.subject}</span><span class="badge">${v.approach}</span></div>
       <div class="ebody" id="body-${i}">${v.body}</div>
       <div class="acts">
-        <button class="abtn cp" data-copy="body-${i}">📋 Copy</button>
-        <button class="abtn" data-gmail-sub="${encodeURIComponent(v.subject)}" data-gmail-body="${encodeURIComponent(v.body)}">📤 Gmail</button>
+        <button class="abtn cp" data-copy="body-${i}">Copy</button>
+        <button class="abtn" data-gmail-sub="${encodeURIComponent(v.subject)}" data-gmail-body="${encodeURIComponent(v.body)}">Gmail</button>
       </div>
       <div class="card" style="padding:1.5rem;background:rgba(0,0,0,.2);">
         <h4>AI Evaluation</h4>
@@ -462,7 +462,7 @@ document.addEventListener('click', e => {
     const id = copyBtn.dataset.copy;
     const txt = document.getElementById(id).textContent;
     navigator.clipboard.writeText(txt);
-    showToast('✅ Copied!');
+    showToast('Copied!');
   }
   if (gmailBtn) {
     const sub = gmailBtn.dataset.gmailSub;

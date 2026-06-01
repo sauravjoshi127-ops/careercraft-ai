@@ -212,9 +212,9 @@
         CareerCraft AI
     </a>
     <div class="nav-links" style="display:flex;gap:1rem;">
-      <a href="resume.html" class="nav-btn">📝 Resume</a>
-      <a href="cover-letter.html" class="nav-btn">📨 Cover Letter</a>
-      <a href="cold-email.html" class="nav-btn">✉️ Cold Email</a>
+      <a href="resume.html" class="nav-btn">Resume</a>
+      <a href="cover-letter.html" class="nav-btn">Cover Letter</a>
+      <a href="cold-email.html" class="nav-btn">Cold Email</a>
       <a href="dashboard.html" class="btn-primary" style="padding:0.4rem 0.8rem; font-size:0.85rem;">← Dashboard</a>
     </div>
   </div>
@@ -242,7 +242,7 @@
 
     <!-- Page hero -->
     <div class="page-hero">
-      <div class="eyebrow">🎤 AI Interview Coach</div>
+      <div class="eyebrow">AI Interview Coach</div>
       <h1>Practice interviews without the clutter.</h1>
       <p>Upload your resume, add the job, and practice one question at a time. Simple, focused, and resume-aware.</p>
       <div id="pageStatus" class="status" aria-live="polite">Start with your role, company, and resume.</div>
@@ -268,9 +268,6 @@
           </div>
         </div>
 
-        <div class="section-actions" style="margin-bottom:1.25rem;">
-          <button class="btn-primary" id="generateBtn" type="button">Build Practice Set</button>
-        </div>
 
           <div class="field full">
             <label for="resumeText">Resume summary or upload a resume</label>
@@ -1009,7 +1006,6 @@
     }
 
     function bindEvents() {
-      document.getElementById('generateBtn').addEventListener('click', generateQuestions);
       document.getElementById('generateBtnPanel').addEventListener('click', generateQuestions);
       document.getElementById('evaluateBtnPanel').addEventListener('click', evaluateAnswer);
       document.getElementById('nextBtn').addEventListener('click', nextQuestion);

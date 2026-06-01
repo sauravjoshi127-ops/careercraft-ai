@@ -191,14 +191,14 @@
                   <span class="premium-gradient-text">CareerCraft AI</span>
               </a>
               <div class="nav-links" style="display:flex;gap:0.5rem;">
-                  <a href="resume.html" ${resumeActive}>📄 Resume</a>
-                  <a href="cover-letter.html" ${coverLetterActive}>📨 Cover Letter</a>
-                  <a href="cold-email.html" ${coldEmailActive}>✉️ Cold Email</a>
-                  <a href="interview.html" ${interviewActive}>🎤 Interview</a>
+                  <a href="resume.html" ${resumeActive}>Resume</a>
+                  <a href="cover-letter.html" ${coverLetterActive}>Cover Letter</a>
+                  <a href="cold-email.html" ${coldEmailActive}>Cold Email</a>
+                  <a href="interview.html" ${interviewActive}>Interview</a>
               </div>
               <div class="user-menu" style="display:flex; align-items:center; gap:0.75rem;">
                   <div class="user-avatar" id="avatarInitial" onclick="window.location.href='settings.html'" title="Account" style="display:flex; align-items:center; justify-content:center; cursor:pointer;">${initial}</div>
-                  <a href="settings.html" class="nav-btn">⚙️ Settings</a>
+                  <a href="settings.html" class="nav-btn">Settings</a>
                   <button class="nav-btn" onclick="window.appSdk.auth.logout()">Sign Out</button>
               </div>
             `;
