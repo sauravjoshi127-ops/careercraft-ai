@@ -313,77 +313,13 @@
         // --- Razorpay Integration Logic ---
         document.getElementById('btn-upgrade-pro').onclick = async function(e){
             e.preventDefault();
-            const session = await window.appSdk.auth.getSession();
-            if (!session) {
-                window.appSdk.ui.showToast('Please log in again to upgrade.', 'error');
-                return;
-            }
-            
             try {
-                // 1. Create Order
-                const response = await fetch('/api/create-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: 299, planId: 'pro_monthly' })
-                });
-                
-                const orderData = await response.json();
-                if (!response.ok) throw new Error(orderData.error || 'Failed to create order');
-
-                // 2. Open Razorpay
-                const options = {
-                    key: orderData.key_id,
-                    amount: orderData.amount,
-                    currency: "INR",
-                    name: "CareerCraft AI",
-                    description: "Upgrade to Pro",
-                    order_id: orderData.id,
-                    handler: async function (paymentResponse){
-                        try {
-                            const verifyRes = await fetch('/api/verify-payment', {
-                                method: 'POST',
-                                headers: { 
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${session.access_token}`
-                                },
-                                body: JSON.stringify({
-                                    razorpay_order_id: paymentResponse.razorpay_order_id,
-                                    razorpay_payment_id: paymentResponse.razorpay_payment_id,
-                                    razorpay_signature: paymentResponse.razorpay_signature,
-                                    planId: 'pro_monthly'
-                                })
-                            });
-                            const result = await verifyRes.json();
-                            if (verifyRes.ok && result.success) {
-                                window.appSdk.ui.showToast('Successfully upgraded to Pro!', 'success');
-                                document.getElementById('btn-upgrade-pro').style.display = 'none';
-                                // Optional: refresh user session
-                                if (window.appSdk.client) {
-                                    await window.appSdk.client.auth.refreshSession();
-                                }
-                            } else {
-                                window.appSdk.ui.showToast('Payment verification failed.', 'error');
-                            }
-                        } catch (err) {
-                            console.error(err);
-                            window.appSdk.ui.showToast('Verification error.', 'error');
-                        }
-                    },
-                    prefill: {
-                        email: session.user.email
-                    },
-                    theme: { color: "#7c3aed" }
-                };
-                
-                const rzp1 = new Razorpay(options);
-                rzp1.on('payment.failed', function (res){
-                    window.appSdk.ui.showToast("Payment Failed: " + res.error.description, 'error');
-                });
-                rzp1.open();
-                
+                const upgraded = await window.appSdk.billing.initiateCheckout('pro_monthly', 299);
+                if (upgraded) {
+                    document.getElementById('btn-upgrade-pro').style.display = 'none';
+                }
             } catch (err) {
-                console.error("Checkout error:", err);
-                window.appSdk.ui.showToast("Failed to initiate checkout.", 'error');
+                console.error(err);
             }
         };
     </script>

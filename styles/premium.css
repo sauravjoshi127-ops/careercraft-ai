@@ -191,6 +191,12 @@ nav, .topnav {
   text-decoration: none;
 }
 .nav-btn:hover { color: var(--text-1); background: rgba(255,255,255,0.06); }
+.nav-btn.active {
+  color: var(--text-1) !important;
+  background: rgba(255,255,255,0.08);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--cyan);
+}
 
 .btn-signin {
   display: inline-flex;

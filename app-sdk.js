@@ -94,6 +94,262 @@
 
       isValidUUID(str) {
         return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+      },
+
+      async initLayout() {
+        const page = window.location.pathname.split('/').pop() || 'index.html';
+        const session = await appSdk.auth.getSession();
+        
+        // 1. Render Header Navigation
+        const topnav = document.querySelector('.topnav') || document.querySelector('nav');
+        if (topnav) {
+          if (page === 'index.html' || page === '') {
+            // Landing page header
+            const rightButtons = session 
+              ? `<a href="dashboard.html" class="btn-primary">Dashboard</a>
+                 <div class="user-avatar" onclick="window.location.href='settings.html'" title="Go to settings" style="margin-left:0.5rem; display:inline-flex;">${(session.user.user_metadata?.full_name || session.user.email || 'U').charAt(0).toUpperCase()}</div>`
+              : `<a href="login.html" class="btn-signin">Sign In</a>
+                 <a href="signup.html" class="btn-primary">Get Started</a>`;
+                 
+            topnav.innerHTML = `
+              <a href="index.html" class="logo">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="url(#paint0_linear)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M2 17L12 22L22 17" stroke="url(#paint1_linear)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M2 12L12 17L22 12" stroke="url(#paint2_linear)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <defs>
+                          <linearGradient id="paint0_linear" x1="2" y1="2" x2="22" y2="12" gradientUnits="userSpaceOnUse">
+                              <stop stop-color="#7c3aed"/>
+                              <stop offset="1" stop-color="#a855f7"/>
+                          </linearGradient>
+                          <linearGradient id="paint1_linear" x1="2" y1="17" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                              <stop stop-color="#7c3aed"/>
+                              <stop offset="1" stop-color="#a855f7"/>
+                          </linearGradient>
+                          <linearGradient id="paint2_linear" x1="2" y1="12" x2="22" y2="17" gradientUnits="userSpaceOnUse">
+                              <stop stop-color="#7c3aed"/>
+                              <stop offset="1" stop-color="#a855f7"/>
+                          </linearGradient>
+                      </defs>
+                  </svg>
+                  CareerCraft
+              </a>
+              <ul class="nav-links">
+                  <li><a href="#features">Features</a></li>
+                  <li><a href="#pricing">Pricing</a></li>
+                  <li><a href="#">Enterprise</a></li>
+              </ul>
+              <div class="nav-buttons" style="display:flex; align-items:center; gap:0.5rem;">
+                  ${rightButtons}
+              </div>
+            `;
+          } else if (page === 'login.html' || page === 'signup.html' || page === 'reset-password.html') {
+            // Simple back-to-home header
+            topnav.innerHTML = `
+              <a href="index.html" class="logo">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  CareerCraft AI
+              </a>
+              <a href="index.html" class="btn-primary" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.5rem 1rem; width: auto; font-size: 0.85rem;">← Back to Home</a>
+            `;
+          } else if (page === 'resume-share.html') {
+            // Public share header
+            topnav.innerHTML = `
+              <a href="index.html" class="logo">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  CareerCraft AI
+              </a>
+              <a href="signup.html" class="btn-accent" style="padding: 0.5rem 1.2rem; width: auto; font-size: 0.85rem;">Get Started for Free</a>
+            `;
+          } else {
+            // Authenticated App page header
+            const name = session ? (session.user.user_metadata?.full_name 
+              || localStorage.getItem('userName') 
+              || session.user.email.split('@')[0]) : 'User';
+            const initial = name.charAt(0).toUpperCase();
+
+            const resumeActive = page.startsWith('resume') ? 'class="nav-btn active"' : 'class="nav-btn"';
+            const coverLetterActive = page.startsWith('cover-letter') ? 'class="nav-btn active"' : 'class="nav-btn"';
+            const coldEmailActive = page.startsWith('cold-email') ? 'class="nav-btn active"' : 'class="nav-btn"';
+            const interviewActive = (page.startsWith('interview') || page.startsWith('mock')) ? 'class="nav-btn active"' : 'class="nav-btn"';
+
+            topnav.innerHTML = `
+              <a href="dashboard.html" class="logo">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span class="premium-gradient-text">CareerCraft AI</span>
+              </a>
+              <div class="nav-links" style="display:flex;gap:0.5rem;">
+                  <a href="resume.html" ${resumeActive}>📄 Resume</a>
+                  <a href="cover-letter.html" ${coverLetterActive}>📨 Cover Letter</a>
+                  <a href="cold-email.html" ${coldEmailActive}>✉️ Cold Email</a>
+                  <a href="interview.html" ${interviewActive}>🎤 Interview</a>
+              </div>
+              <div class="user-menu" style="display:flex; align-items:center; gap:0.75rem;">
+                  <div class="user-avatar" id="avatarInitial" onclick="window.location.href='settings.html'" title="Account" style="display:flex; align-items:center; justify-content:center; cursor:pointer;">${initial}</div>
+                  <a href="settings.html" class="nav-btn">⚙️ Settings</a>
+                  <button class="nav-btn" onclick="window.appSdk.auth.logout()">Sign Out</button>
+              </div>
+            `;
+          }
+        }
+
+        // 2. Render Footer
+        const footer = document.querySelector('footer');
+        if (footer && (page === 'index.html' || page === '')) {
+          footer.innerHTML = `
+            <div class="footer-brand">
+                <div class="logo" style="margin-bottom: 0.5rem; font-size: 1.2rem;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    CareerCraft AI
+                </div>
+                <p>&copy; 2026 CareerCraft AI Inc.<br>All rights reserved.</p>
+            </div>
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Contact Support</a>
+            </div>
+          `;
+        } else if (page !== 'index.html' && page !== 'login.html' && page !== 'signup.html' && page !== 'reset-password.html' && page !== '') {
+          // Sleek subtle copyright footer inside authorized pages container
+          const container = document.querySelector('.container') || document.querySelector('.shell');
+          if (container && !document.querySelector('.app-mini-footer')) {
+            const miniFooter = document.createElement('div');
+            miniFooter.className = 'app-mini-footer';
+            miniFooter.style.cssText = 'text-align: center; color: var(--text-3); font-size: 0.8rem; margin: 4rem 0 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);';
+            miniFooter.innerHTML = `&copy; 2026 CareerCraft AI &bull; Premium AI Career Toolkit`;
+            container.appendChild(miniFooter);
+          }
+        }
+      }
+    },
+
+    // Billing Module (Razorpay integration)
+    billing: {
+      async initiateCheckout(planId, amount) {
+        const session = await appSdk.auth.getSession();
+        if (!session) {
+          appSdk.ui.showToast('Please log in again to upgrade.', 'error');
+          return;
+        }
+
+        // Auto-load Razorpay checkout script if missing
+        if (!window.Razorpay) {
+          try {
+            await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+          } catch (err) {
+            console.error('Failed to load Razorpay Checkout script:', err);
+            appSdk.ui.showToast('Failed to load payment gateway script.', 'error');
+            throw err;
+          }
+        }
+
+        try {
+          // 1. Create Order on Server
+          const response = await fetch('/api/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: amount, planId: planId })
+          });
+          
+          const orderData = await response.json();
+          if (!response.ok) {
+            throw new Error(orderData.error || 'Failed to create order');
+          }
+
+          // 2. Initialize Razorpay Checkout
+          return new Promise((resolve, reject) => {
+            const options = {
+              key: orderData.key_id,
+              amount: orderData.amount,
+              currency: "INR",
+              name: "CareerCraft AI",
+              description: `Upgrade to ${planId === 'pro_lifetime' || planId === 'lifetime' ? 'Lifetime' : 'Pro'}`,
+              order_id: orderData.id,
+              handler: async function (paymentResponse) {
+                try {
+                  const verified = await appSdk.billing.verifyPayment(paymentResponse, planId);
+                  resolve(verified);
+                } catch (err) {
+                  reject(err);
+                }
+              },
+              prefill: {
+                name: session.user.user_metadata?.full_name || '',
+                email: session.user.email || ''
+              },
+              theme: {
+                color: "#7c3aed"
+              }
+            };
+
+            const rzp1 = new window.Razorpay(options);
+            
+            rzp1.on('payment.failed', function (res) {
+              appSdk.ui.showToast("Payment Failed: " + res.error.description, 'error');
+              reject(new Error(res.error.description));
+            });
+            
+            rzp1.open();
+          });
+        } catch (err) {
+          console.error("Checkout error:", err);
+          appSdk.ui.showToast(err.message || "Failed to initiate checkout.", 'error');
+          throw err;
+        }
+      },
+
+      async verifyPayment(paymentDetails, planId) {
+        const session = await appSdk.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        try {
+          const response = await fetch('/api/verify-payment', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+              razorpay_order_id: paymentDetails.razorpay_order_id,
+              razorpay_payment_id: paymentDetails.razorpay_payment_id,
+              razorpay_signature: paymentDetails.razorpay_signature,
+              planId: planId
+            })
+          });
+
+          const result = await response.json();
+          if (response.ok && result.success) {
+            appSdk.ui.showToast('Payment Successful! Welcome to Pro.', 'success');
+            if (appSdk.client) {
+              await appSdk.client.auth.refreshSession();
+            }
+            return true;
+          } else {
+            appSdk.ui.showToast(result.message || 'Payment verification failed.', 'error');
+            return false;
+          }
+        } catch (err) {
+          console.error("Verification error:", err);
+          appSdk.ui.showToast('Verification error occurred.', 'error');
+          return false;
+        }
       }
     }
   };
@@ -123,6 +379,13 @@
       appSdk.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     } else {
       console.error('Supabase library is not available.');
+    }
+
+    // Auto-init navigation layouts when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => appSdk.ui.initLayout());
+    } else {
+      appSdk.ui.initLayout();
     }
   })();
 
