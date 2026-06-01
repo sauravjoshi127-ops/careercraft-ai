@@ -61,7 +61,7 @@
         <!-- Welcome Section -->
         <div class="hero text-center" style="margin-top: 3rem; margin-bottom: 4rem;">
             <h1 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem;">
-                <span class="premium-gradient-text">Welcome back,</span> <span id="welcomeNameSpan">User</span> 👋
+                <span class="premium-gradient-text">Welcome back,</span> <span id="welcomeNameSpan">User</span>
             </h1>
             <p id="welcomeEmail" style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 2rem;"></p>
             <div style="display: flex; gap: 1rem; justify-content: center;">
@@ -74,7 +74,7 @@
         <div class="glass-card mb-2" style="margin-bottom: 4rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <span style="color: var(--accent-cyan);">📄</span> My Resumes
+                    My Resumes
                 </h2>
                 <a href="resume.html" class="btn-accent">+ Create New</a>
             </div>
@@ -210,12 +210,12 @@
                                 Created ${createdAt} &bull; Template: ${template}
                             </div>
                             <div class="resume-stats">
-                                ${hasShare ? `<span>🔗 Shared</span>` : '<span>🔒 Private</span>'}
+                                ${hasShare ? `<span>Shared</span>` : '<span>Private</span>'}
                             </div>
                         </div>
                         <div class="resume-actions">
-                            <a href="resume.html?edit=${id}" class="btn-action">✏️ Edit</a>
-                            <button class="btn-action delete" onclick="deleteResume('${id}')">🗑️ Delete</button>
+                            <a href="resume.html?edit=${id}" class="btn-action">Edit</a>
+                            <button class="btn-action delete" onclick="deleteResume('${id}')">Delete</button>
                         </div>
                     </div>`;
             }).join('');

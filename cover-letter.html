@@ -316,8 +316,8 @@
       </div>
 
       <div class="tools">
-        <button id="generateBtn" class="btn btn-primary" onclick="generateCoverLetter(event)">✨ Generate</button>
-        <button id="regenerateBtn" class="btn btn-secondary" onclick="generateCoverLetter(event, true)">🔁 Regenerate</button>
+        <button id="generateBtn" class="btn btn-primary" onclick="generateCoverLetter(event)">Generate</button>
+        <button id="regenerateBtn" class="btn btn-secondary" onclick="generateCoverLetter(event, true)">Regenerate</button>
       </div>
     </div>
 
@@ -327,9 +327,9 @@
       <div id="letterOutput" class="output-box">Your letter will appear here...</div>
 
       <div class="tools">
-        <button class="btn btn-primary" onclick="copyLetter()">📋 Copy</button>
-        <button class="btn btn-primary" onclick="downloadPDF()">⬇ Download PDF</button>
-        <button class="btn btn-secondary" onclick="saveCoverLetter()">💾 Save</button>
+        <button class="btn btn-primary" onclick="copyLetter()">Copy</button>
+        <button class="btn btn-primary" onclick="downloadPDF()">Download PDF</button>
+        <button class="btn btn-secondary" onclick="saveCoverLetter()">Save</button>
       </div>
 
       <!-- Scores shown on-screen only — never in the PDF -->
@@ -450,15 +450,15 @@ async function handleResumeUpload(input) {
   const mimeOk = allowed.includes(file.type);
   const extOk  = allowedExts.includes(ext);
   if (!mimeOk && !extOk) {
-    setResumeStatus('error', `❌ Unsupported file type (${file.type || ext || 'unknown'}). Only PDF or DOCX files are accepted.`);
+    setResumeStatus('error', `Unsupported file type (${file.type || ext || 'unknown'}). Only PDF or DOCX files are accepted.`);
     return;
   }
   if (file.size > 5 * 1024 * 1024) {
-    setResumeStatus('error', '❌ File too large. Maximum size is 5 MB.');
+    setResumeStatus('error', 'File too large. Maximum size is 5 MB.');
     return;
   }
 
-  setResumeStatus('loading', `⏳ Parsing ${file.name}…`);
+  setResumeStatus('loading', `Parsing ${file.name}...`);
   showProgress(true);
   animateProgress();
 
@@ -477,7 +477,7 @@ async function handleResumeUpload(input) {
 
     if (!res.ok) {
       const reason = data.error || `Server error (HTTP ${res.status}). Please try again.`;
-      setResumeStatus('error', '❌ ' + reason);
+      setResumeStatus('error', reason);
       console.error('[upload] Server rejected file:', res.status, reason);
       resumeText = '';
       document.getElementById('mirrorRow').style.display = 'none';
@@ -486,13 +486,13 @@ async function handleResumeUpload(input) {
     }
 
     resumeText = data.resumeText || '';
-    setResumeStatus('success', `✅ Resume parsed: ${file.name}`);
+    setResumeStatus('success', `Resume parsed: ${file.name}`);
     document.getElementById('mirrorRow').style.display = 'flex';
     document.getElementById('resumeClearRow').style.display = 'block';
   } catch (err) {
     showProgress(false);
     console.error('[upload] Fetch error:', err);
-    setResumeStatus('error', '❌ Upload failed: ' + (err.message || 'Network error. Check your connection and try again.'));
+    setResumeStatus('error', 'Upload failed: ' + (err.message || 'Network error. Check your connection and try again.'));
     resumeText = '';
   }
 }
@@ -569,18 +569,18 @@ function handleSavedResumeSelect(selectEl) {
   
   // Format resume as text for the AI
   let txt = `Name: ${r.full_name || ''}\nEmail: ${r.email || ''}\nPhone: ${r.phone || ''}\n\n`;
-  if (r.summary) txt += `Summary:\n${r.summary}\n\n`;
+  if (r.professional_summary) txt += `Summary:\n${r.professional_summary}\n\n`;
   
   if (r.experience && Array.isArray(r.experience)) {
     txt += `Experience:\n`;
     r.experience.forEach(ex => {
-      txt += `${ex.title} at ${ex.company} (${ex.startDate} - ${ex.endDate || 'Present'})\n${ex.description}\n\n`;
+      txt += `${ex.title} at ${ex.company} (${ex.start || ''}${ex.end ? ' - ' + ex.end : ''})\n${ex.description || ''}\n\n`;
     });
   }
   if (r.education && Array.isArray(r.education)) {
     txt += `Education:\n`;
     r.education.forEach(ed => {
-      txt += `${ed.degree} from ${ed.school} (${ed.startDate} - ${ed.endDate})\n\n`;
+      txt += `${ed.degree} from ${ed.school} (${ed.year || ''})\n\n`;
     });
   }
   if (r.skills && Array.isArray(r.skills)) {
@@ -590,7 +590,7 @@ function handleSavedResumeSelect(selectEl) {
   resumeText = txt;
   document.getElementById('candidateName').value = r.full_name || '';
   document.getElementById('resumeFile').value = ''; // clear file upload
-  setResumeStatus('success', `✅ Loaded saved resume: ${selectEl.options[selectEl.selectedIndex].text}`);
+  setResumeStatus('success', `Loaded saved resume: ${selectEl.options[selectEl.selectedIndex].text}`);
   document.getElementById('mirrorRow').style.display = 'flex';
   document.getElementById('resumeClearRow').style.display = 'block';
 }
