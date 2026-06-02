@@ -1,5 +1,6 @@
+const path = require('path');
 // Ensure environment variables are loaded (important for serverless functions bypassing server.js)
-require('dotenv').config();
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const { createClient } = require('@supabase/supabase-js');
 
 // Public fallback credentials (matching frontend app-sdk.js)
