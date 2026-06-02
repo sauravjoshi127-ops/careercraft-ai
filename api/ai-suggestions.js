@@ -30,17 +30,21 @@ module.exports = async function handler(req, res) {
 
     const systemPrompts = {
         summary:
-            'You are a professional resume writer. Improve the following professional summary ' +
-            'to be more impactful, concise, and compelling for recruiters. Keep it under 4 sentences. ' +
-            'Return only the improved summary text with no extra commentary.',
+            'You are an expert resume writer and ATS optimization coach. Rewrite the following professional summary ' +
+            'to make it highly impactful, keyword-rich, and tailored for senior recruiters. Focus on the candidate\'s ' +
+            'core expertise, value proposition, and key strengths. Keep it under 4 sentences. ' +
+            'Return ONLY the improved summary text with no extra commentary, chat preambles, or formatting markup.',
         experience:
-            'You are a professional resume writer. Improve the following work experience descriptions ' +
-            'to use strong action verbs, highlight quantifiable achievements, and be more impactful. ' +
-            'Return the improved text preserving the original structure. No extra commentary.',
+            'You are an expert resume writer and ATS coach. Optimize the following work experience bullet points. ' +
+            'Ensure they: 1. Start with strong, active verbs (e.g., "Spearheaded", "Optimized", "Designed" instead of "Responsible for", "Helped with", "Worked on"). ' +
+            '2. Emphasize quantifiable business achievements and outcomes. If the input lacks numbers/metrics, suggest realistic ' +
+            'estimation placeholders (e.g. "[X]%" or "[Y] dollars") to prompt the user to fill them in. 3. Remain concise and clear. ' +
+            'Return ONLY the improved text. Do not include conversational remarks, bullet marks, or markdown wrappers.',
         skills:
-            'You are a professional resume writer. Based on the resume data provided, ' +
-            'suggest 6-10 additional relevant technical and soft skills the candidate might have. ' +
-            'Return ONLY a comma-separated list of skill names with no additional text or explanation.',
+            'You are an expert resume writer. Analyze the candidate\'s current resume profile and suggest 8-12 ' +
+            'high-impact technical and soft skills that are highly relevant to their role. ' +
+            'Return ONLY a comma-separated list of skill names (e.g. "Project Management, Node.js, Agile"). ' +
+            'Do not include conversational text, lists, numbers, or introduction sentences.',
         grammar:
             'You are a professional editor. Fix any grammar, spelling, and punctuation issues ' +
             'in the following text. Return only the corrected text with no additional commentary.',
