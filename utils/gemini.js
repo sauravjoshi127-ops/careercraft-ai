@@ -1,6 +1,4 @@
-const path = require('path');
-// Ensure environment variables are loaded (important for serverless functions bypassing server.js)
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+require('./env-loader');
 
 const MAX_INDEXED_KEYS = 10;
 
