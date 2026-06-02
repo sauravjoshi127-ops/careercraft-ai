@@ -1,3 +1,5 @@
+// Ensure environment variables are loaded (important for serverless functions bypassing server.js)
+require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 
 module.exports = async function handler(req, res) {

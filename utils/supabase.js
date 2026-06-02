@@ -1,16 +1,23 @@
+// Ensure environment variables are loaded (important for serverless functions bypassing server.js)
+require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
+
+// Public fallback credentials (matching frontend app-sdk.js)
+const FALLBACK_SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
+const FALLBACK_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
 
 /**
  * Initializes a Supabase client. If a token is provided and we are using the anon key,
  * it authenticates the client session so RLS policies are satisfied.
  */
 async function getSupabaseClient(token = null) {
-  const supabaseUrl = process.env.SUPABASE_URL;
+  let supabaseUrl = process.env.SUPABASE_URL;
+  let anonKey = process.env.SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const anonKey = process.env.SUPABASE_ANON_KEY;
 
   if (!supabaseUrl) {
-    throw new Error('SUPABASE_URL is not configured in the environment.');
+    console.warn('[Supabase] Warning: SUPABASE_URL is not configured in the environment. Falling back to default public credentials.');
+    supabaseUrl = FALLBACK_SUPABASE_URL;
   }
 
   // Use service role key if available (admin access, bypasses RLS)
@@ -22,7 +29,11 @@ async function getSupabaseClient(token = null) {
 
   // Fallback to anon key
   if (!anonKey) {
-    throw new Error('Neither SUPABASE_SERVICE_ROLE_KEY nor SUPABASE_ANON_KEY is configured.');
+    if (supabaseUrl === FALLBACK_SUPABASE_URL) {
+      anonKey = FALLBACK_SUPABASE_ANON_KEY;
+    } else {
+      throw new Error('Neither SUPABASE_SERVICE_ROLE_KEY nor SUPABASE_ANON_KEY is configured in the environment.');
+    }
   }
 
   const supabase = createClient(supabaseUrl, anonKey, {
