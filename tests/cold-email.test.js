@@ -1,10 +1,10 @@
 'use strict';
 
+process.env.NODE_ENV = 'test';
+process.env.GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'test-dummy-key';
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
-
-process.env.GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'test-dummy-key';
 const app = require('../server');
 
 const originalFetch = global.fetch;

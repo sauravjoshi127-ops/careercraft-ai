@@ -120,10 +120,10 @@
             CareerCraft AI
         </a>
         <div class="nav-links" style="display:flex;gap:1rem;">
-            <a href="cover-letter.html" class="nav-btn">≡ƒô¿ Cover Letter</a>
-            <a href="cold-email.html" class="nav-btn">Γ£ë∩╕Å Cold Email</a>
-            <a href="interview.html" class="nav-btn">≡ƒÄñ Interview Coach</a>
-            <a href="dashboard.html" class="btn-primary">ΓåÉ Dashboard</a>
+            <a href="cover-letter.html" class="nav-btn">📨 Cover Letter</a>
+            <a href="cold-email.html" class="nav-btn">✉️ Cold Email</a>
+            <a href="interview.html" class="nav-btn">🎤 Interview Coach</a>
+            <a href="dashboard.html" class="btn-primary">← Dashboard</a>
         </div>
     </div>
 
@@ -703,7 +703,7 @@
             const errors = validateForm(data);
 
             if (errors.length > 0) {
-                showAlert('error', 'ΓÜá∩╕Å ' + errors.join(' '));
+                showAlert('error', '⚠️ ' + errors.join(' '));
                 return;
             }
 
@@ -830,9 +830,9 @@
             btn.textContent = 'Delete';
 
             if (error) {
-                showAlert('error', 'Γ¥î Failed to delete resume: ' + error.message);
+                showAlert('error', '❌ Failed to delete resume: ' + error.message);
             } else {
-                showAlert('success', 'Γ£à Resume deleted successfully.');
+                showAlert('success', '✅ Resume deleted successfully.');
                 await loadResumes();
             }
         }
@@ -901,17 +901,17 @@ async function downloadPDF(resumeId) {
             .single();
 
         if (error || !data) {
-            showAlert('error', 'Γ¥î Could not fetch resume data for PDF.');
+            showAlert('error', '❌ Could not fetch resume data for PDF.');
             return;
         }
 
-        console.log('≡ƒôÑ Resume Data:', data);
+        console.log('📄 Resume Data:', data);
 
         // Generate HTML
         const template = data.template_name || 'modern';
         const html = generateResumeHTML(data, template);
         
-        console.log('≡ƒôä Generated HTML:', html.substring(0, 200));
+        console.log('📄 Generated HTML:', html.substring(0, 200));
 
         // Create container and add to DOM
         const container = document.createElement('div');
@@ -924,7 +924,7 @@ async function downloadPDF(resumeId) {
         container.style.background = 'white';
         document.body.appendChild(container);
 
-        console.log('Γ£à Container added to DOM');
+        console.log('✅ Container added to DOM');
         
         // Wait for rendering
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -932,7 +932,7 @@ async function downloadPDF(resumeId) {
         // Get the actual content div
         const content = container.querySelector('.container') || container;
         
-        console.log('≡ƒÄ¿ Starting html2canvas...');
+        console.log('🎨 Starting html2canvas...');
 
         // Convert to canvas
         const canvas = await html2canvas(content, {
@@ -943,7 +943,7 @@ async function downloadPDF(resumeId) {
             allowTaint: true
         });
 
-        console.log('Γ£à Canvas created, size:', canvas.width, 'x', canvas.height);
+        console.log('✅ Canvas created, size:', canvas.width, 'x', canvas.height);
 
         // Create PDF
         const { jsPDF } = window.jspdf;
@@ -982,13 +982,13 @@ async function downloadPDF(resumeId) {
         const filename = (data.full_name || 'resume').replace(/\s+/g, '_') + '_resume.pdf';
         pdf.save(filename);
 
-        console.log('Γ£à PDF saved as:', filename);
+        console.log('✅ PDF saved as:', filename);
 
-        showAlert('success', 'Γ£à Resume PDF downloaded successfully!');
+        showAlert('success', '✅ Resume PDF downloaded successfully!');
 
     } catch (err) {
-        console.error('Γ¥î PDF Error:', err);
-        showAlert('error', 'Γ¥î Failed to generate PDF: ' + err.message);
+        console.error('❌ PDF Error:', err);
+        showAlert('error', '❌ Failed to generate PDF: ' + err.message);
     } finally {
         // Clean up
         if (container && container.parentNode) {
@@ -1303,9 +1303,15 @@ function generateCreativeTemplate(data, exp, edu, sk) {
     }
 
     try {
+        const session = await window.appSdk.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
         const response = await fetch('/api/ai-suggestions', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify({ section, content, resumeData }),
         });
 

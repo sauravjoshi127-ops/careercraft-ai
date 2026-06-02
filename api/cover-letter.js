@@ -1,4 +1,5 @@
 const { calculateAtsScore, calculateRelevanceScore } = require('../utils/scoring');
+const { authenticateRequest } = require('../utils/supabase');
 
 function parseGeminiResponse(text) {
   // Remove code fences if present
@@ -118,7 +119,21 @@ async function callGeminiWithKeyFallback(apiKeys, body) {
 }
 
 module.exports = async function handler(req, res) {
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  try {
+    await authenticateRequest(req);
+  } catch (authErr) {
+    console.error('[cover-letter] Authentication failure:', authErr.message);
+    return res.status(authErr.status || 401).json({ error: authErr.message });
+  }
 
   const body = req.body || {};
   const jobTitle = String(body.jobTitle || '').trim();

@@ -1,5 +1,7 @@
 'use strict';
 
+const { authenticateRequest } = require('../utils/supabase');
+
 const STOP_WORDS = new Set([
   'the', 'and', 'for', 'with', 'that', 'this', 'from', 'your', 'you', 'are', 'was', 'were',
   'have', 'has', 'had', 'will', 'shall', 'would', 'could', 'should', 'into', 'about', 'what',
@@ -262,8 +264,75 @@ function scoreAnswer(context) {
 }
 
 module.exports = async function handler(req, res) {
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // ── Usage limiting & Authentication ───────────────────────────────────────────
+  let user = null;
+  let isPro = false;
+  let supabase = null;
+
+  try {
+    const authResult = await authenticateRequest(req);
+    user = authResult.user;
+    isPro = authResult.isPro;
+    supabase = authResult.supabase;
+  } catch (authErr) {
+    console.error('[interview-coach] Authentication failure:', authErr.message);
+    return res.status(authErr.status || 401).json({ error: authErr.message });
+  }
+
+  if (!isPro && user && supabase) {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+
+      const { data: usage, error: fetchErr } = await supabase
+        .from('usage_tracking')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('tool', 'interview')
+        .maybeSingle();
+
+      if (fetchErr) {
+        console.error('[interview-coach] Failed to fetch usage tracking:', fetchErr.message);
+      }
+
+      if (usage) {
+        // Reset if it's a new day
+        if (usage.reset_date < today) {
+          await supabase
+            .from('usage_tracking')
+            .update({ count: 1, reset_date: today })
+            .eq('user_id', user.id)
+            .eq('tool', 'interview');
+        } else if (usage.count >= 10) {
+          return res.status(403).json({
+            error: "You've reached your free interview limit for today. Upgrade to Pro for unlimited sessions.",
+            usageLimitReached: true
+          });
+        } else {
+          await supabase
+            .from('usage_tracking')
+            .update({ count: usage.count + 1 })
+            .eq('user_id', user.id)
+            .eq('tool', 'interview');
+        }
+      } else {
+        await supabase
+          .from('usage_tracking')
+          .insert({ user_id: user.id, tool: 'interview', count: 1, reset_date: today });
+      }
+    } catch (usageErr) {
+      console.warn('[interview-coach] Usage tracking error (non-fatal):', usageErr.message);
+    }
   }
 
   const body = req.body || {};

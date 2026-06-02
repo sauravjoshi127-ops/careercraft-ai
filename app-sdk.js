@@ -261,10 +261,16 @@
         }
 
         try {
+          const session = await appSdk.auth.getSession();
+          const headers = { 'Content-Type': 'application/json' };
+          if (session) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+          }
+
           // 1. Create Order on Server
           const response = await fetch('/api/create-order', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify({ amount: amount, planId: planId })
           });
           

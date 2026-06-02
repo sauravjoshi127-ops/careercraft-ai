@@ -465,8 +465,14 @@ async function handleResumeUpload(input) {
   const form = new FormData();
   form.append('resume', file);
 
+  const session = await window.appSdk.auth.getSession();
+  const headers = {};
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+
   try {
-    const res = await fetch('/api/upload-resume', { method: 'POST', body: form });
+    const res = await fetch('/api/upload-resume', { method: 'POST', headers: headers, body: form });
     let data;
     try {
       data = await res.json();
@@ -643,9 +649,15 @@ async function generateCoverLetter(event, regen = false) {
       extraKeywords: document.getElementById('extraKeywords').value.trim()
     };
 
+    const session = await window.appSdk.auth.getSession();
+    const headers = { 'Content-Type': 'application/json' };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
     const res = await fetch('/api/cover-letter', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: headers,
       body: JSON.stringify(payload)
     });
 

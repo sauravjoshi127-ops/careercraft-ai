@@ -4,7 +4,7 @@
 // Returns:  { variants, scores, tips, followUp, bestTimeToSend, spamWords }
 // Usage-limits free users to 3 emails per day via the usage_tracking table.
 
-const { createClient } = require('@supabase/supabase-js');
+const { authenticateRequest } = require('../utils/supabase');
 
 const SPAM_WORDS = ['free', 'guaranteed', 'urgent', 'winner', 'cash', 'prize', 'click here',
   'act now', 'limited time', 'no obligation', 'risk-free', 'discount', 'earn money'];
@@ -210,68 +210,62 @@ module.exports = async function handler(req, res) {
 
   const apiKey = process.env.GEMINI_API_KEY;
 
-  // ── Usage limiting ───────────────────────────────────────────────────────────
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
-
-  let userId = null;
+  // ── Usage limiting & Authentication ───────────────────────────────────────────
+  let user = null;
   let isPro = false;
+  let supabase = null;
 
-  if (supabaseUrl && supabaseKey) {
+  try {
+    const authResult = await authenticateRequest(req);
+    user = authResult.user;
+    isPro = authResult.isPro;
+    supabase = authResult.supabase;
+  } catch (authErr) {
+    console.error('[cold-email] Authentication failure:', authErr.message);
+    return res.status(authErr.status || 401).json({ error: authErr.message });
+  }
+
+  if (!isPro && user && supabase) {
     try {
-      const authHeader = req.headers['authorization'] || '';
-      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+      const today = new Date().toISOString().split('T')[0];
 
-      if (token) {
-        const supabase = createClient(supabaseUrl, supabaseKey);
-        const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
-        if (!authErr && user) {
-          userId = user.id;
-          isPro = user.user_metadata?.plan === 'pro' ||
-                  user.user_metadata?.isPro === true ||
-                  user.app_metadata?.plan === 'pro';
-        }
+      const { data: usage, error: fetchErr } = await supabase
+        .from('usage_tracking')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('tool', 'cold_email')
+        .maybeSingle();
+
+      if (fetchErr) {
+        console.error('[cold-email] Failed to fetch usage tracking:', fetchErr.message);
       }
 
-      if (userId && !isPro) {
-        const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
-        const today = new Date().toISOString().split('T')[0];
-
-        const { data: usage } = await supabaseAdmin
-          .from('usage_tracking')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('tool', 'cold_email')
-          .single();
-
-        if (usage) {
-          // Reset if it's a new day
-          if (usage.reset_date < today) {
-            await supabaseAdmin
-              .from('usage_tracking')
-              .update({ count: 1, reset_date: today })
-              .eq('user_id', userId)
-              .eq('tool', 'cold_email');
-          } else if (usage.count >= 3) {
-            return res.status(403).json({
-              error: "You've used all 3 free emails today. Upgrade to Pro for unlimited access.",
-              usageLimitReached: true
-            });
-          } else {
-            await supabaseAdmin
-              .from('usage_tracking')
-              .update({ count: usage.count + 1 })
-              .eq('user_id', userId)
-              .eq('tool', 'cold_email');
-          }
-        } else {
-          await supabaseAdmin
+      if (usage) {
+        // Reset if it's a new day
+        if (usage.reset_date < today) {
+          await supabase
             .from('usage_tracking')
-            .insert({ user_id: userId, tool: 'cold_email', count: 1, reset_date: today });
+            .update({ count: 1, reset_date: today })
+            .eq('user_id', user.id)
+            .eq('tool', 'cold_email');
+        } else if (usage.count >= 3) {
+          return res.status(403).json({
+            error: "You've used all 3 free emails today. Upgrade to Pro for unlimited access.",
+            usageLimitReached: true
+          });
+        } else {
+          await supabase
+            .from('usage_tracking')
+            .update({ count: usage.count + 1 })
+            .eq('user_id', user.id)
+            .eq('tool', 'cold_email');
         }
+      } else {
+        await supabase
+          .from('usage_tracking')
+          .insert({ user_id: user.id, tool: 'cold_email', count: 1, reset_date: today });
       }
     } catch (usageErr) {
-      // Non-fatal: log and continue rather than block the user
       console.warn('[cold-email] Usage tracking error (non-fatal):', usageErr.message);
     }
   }

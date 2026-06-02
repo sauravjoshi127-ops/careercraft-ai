@@ -1,8 +1,10 @@
+const { authenticateRequest } = require('../utils/supabase');
+
 module.exports = async function handler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('Content-Type', 'application/json');
 
     if (req.method === 'OPTIONS') {
@@ -11,6 +13,13 @@ module.exports = async function handler(req, res) {
 
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        await authenticateRequest(req);
+    } catch (authErr) {
+        console.error('[ai-suggestions] Authentication failure:', authErr.message);
+        return res.status(authErr.status || 401).json({ error: authErr.message });
     }
 
     const { section, content, resumeData } = req.body || {};
