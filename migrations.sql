@@ -164,3 +164,8 @@ WITH CHECK (EXISTS (
   WHERE cover_letters.id = cover_letter_feedback.cover_letter_id
   AND cover_letters.user_id = auth.uid()
 ));
+
+-- ── Resume Personalization Styling Columns ──────────────────────────────────────
+ALTER TABLE resumes ADD COLUMN IF NOT EXISTS font_family VARCHAR DEFAULT 'Inter';
+ALTER TABLE resumes ADD COLUMN IF NOT EXISTS spacing VARCHAR DEFAULT 'normal';
+ALTER TABLE resumes ADD COLUMN IF NOT EXISTS accent_color VARCHAR DEFAULT '#6366f1';
