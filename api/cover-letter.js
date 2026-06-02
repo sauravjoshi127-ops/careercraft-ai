@@ -1,5 +1,6 @@
 const { calculateAtsScore, calculateRelevanceScore } = require('../utils/scoring');
 const { authenticateRequest } = require('../utils/supabase');
+const { callGemini } = require('../utils/gemini');
 
 function parseGeminiResponse(text) {
   // Remove code fences if present
@@ -43,80 +44,7 @@ function parseGeminiResponse(text) {
   return data;
 }
 
-// Collect all configured Gemini API keys from environment variables.
-// Supports:
-//   GEMINI_API_KEYS=key1,key2,key3  (comma-separated list)
-//   GEMINI_API_KEY_1, GEMINI_API_KEY_2, ... GEMINI_API_KEY_N  (indexed vars)
-//   GEMINI_API_KEY  (single key, backward-compatible)
-const MAX_INDEXED_KEYS = 10;
 
-function getApiKeys() {
-  const keys = [];
-  if (process.env.GEMINI_API_KEYS) {
-    keys.push(...process.env.GEMINI_API_KEYS.split(',').map(k => k.trim()).filter(Boolean));
-  }
-  for (let i = 1; i <= MAX_INDEXED_KEYS; i++) {
-    const key = process.env[`GEMINI_API_KEY_${i}`];
-    if (key && key.trim()) keys.push(key.trim());
-  }
-  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim()) {
-    const single = process.env.GEMINI_API_KEY.trim();
-    if (!keys.includes(single)) keys.push(single);
-  }
-  return keys;
-}
-
-async function callGeminiWithRetry(apiKey, body, maxRetries = 2) {
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-
-    if (r.status !== 429) return r;
-
-    const retryAfter = parseInt(r.headers.get('Retry-After') || '0', 10);
-    const waitMs = retryAfter > 0 ? retryAfter * 1000 : Math.pow(2, attempt + 1) * 1000;
-    console.warn(`Gemini API rate limited (429). Waiting ${waitMs}ms before retry ${attempt + 1}/${maxRetries}.`);
-    await new Promise(resolve => setTimeout(resolve, waitMs));
-  }
-
-  // Final attempt (no retry after this)
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (r.status === 429) {
-    const err = new Error('AI service is busy (rate limited). Please try again in a moment.');
-    err.status = 429;
-    throw err;
-  }
-  return r;
-}
-
-// Try each API key in sequence; rotate to the next key when one is rate-limited (429).
-async function callGeminiWithKeyFallback(apiKeys, body) {
-  let lastError = null;
-  for (let i = 0; i < apiKeys.length; i++) {
-    try {
-      const r = await callGeminiWithRetry(apiKeys[i], body);
-      return r;
-    } catch (err) {
-      if (err.status === 429) {
-        console.warn(`API key ${i + 1} rate limited, rotating to next key...`);
-        lastError = err;
-        continue;
-      }
-      throw err;
-    }
-  }
-  const err = new Error('All API keys are rate limited. Please wait a few minutes for your quota to reset, then try again.');
-  err.status = 429;
-  throw err;
-}
 
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -161,8 +89,7 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
 
-  const apiKeys = getApiKeys();
-  if (!apiKeys.length) return res.status(500).json({ error: 'No Gemini API key configured. Set GEMINI_API_KEY in your environment.' });
+
 
   const resumeSection = resumeText
     ? `\nCANDIDATE RESUME (use for context, skills and achievements):\n${resumeText.slice(0, 3000)}\n`
@@ -244,13 +171,13 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
   try {
     let r;
     try {
-      r = await callGeminiWithKeyFallback(apiKeys, {
+      r = await callGemini({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.75, maxOutputTokens: 4096 }
       });
     } catch (retryErr) {
-      console.error('Gemini API rate limit exhausted across all keys:', retryErr.message);
-      return res.status(429).json({ error: retryErr.message });
+      console.error('Gemini API execution failed:', retryErr.message);
+      return res.status(retryErr.status || 500).json({ error: retryErr.message });
     }
 
     if (!r.ok) {

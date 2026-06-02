@@ -1,4 +1,5 @@
 const { authenticateRequest } = require('../utils/supabase');
+const { callGemini } = require('../utils/gemini');
 
 module.exports = async function handler(req, res) {
     // CORS headers
@@ -60,35 +61,24 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: 'No content provided to improve.' });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        return res.status(500).json({ error: 'Gemini API key is not configured on this server.' });
-    }
-
     try {
         console.log('Calling Gemini API for section:', section);
         
-        // Call Google Gemini API
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                contents: [
-                    {
-                        parts: [
-                            {
-                                text: `${systemPrompt}\n\nContent to improve:\n${userContent}`,
-                            },
-                        ],
-                    },
-                ],
-                generationConfig: {
-                    maxOutputTokens: 600,
-                    temperature: 0.7,
+        // Call Google Gemini API using central helper
+        const geminiRes = await callGemini({
+            contents: [
+                {
+                    parts: [
+                        {
+                            text: `${systemPrompt}\n\nContent to improve:\n${userContent}`,
+                        },
+                    ],
                 },
-            }),
+            ],
+            generationConfig: {
+                maxOutputTokens: 600,
+                temperature: 0.7,
+            },
         });
 
         console.log('Gemini API Response Status:', geminiRes.status);
