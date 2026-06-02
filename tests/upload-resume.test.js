@@ -1,5 +1,8 @@
 'use strict';
 
+process.env.NODE_ENV = 'test';
+process.env.GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'test-dummy-key';
+
 /**
  * Backend tests for POST /api/upload-resume
  * Run with: npm test
@@ -13,7 +16,6 @@ const request = require('supertest');
 const PDFKit = require('pdfkit');
 
 // Load the app without starting the HTTP server
-process.env.GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'test-dummy-key';
 const app = require('../server');
 
 // ─── Helpers ────────────────────────────────────────────────────────────────

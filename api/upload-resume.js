@@ -2,6 +2,7 @@
 
 const path = require('path');
 const Busboy = require('busboy');
+const { authenticateRequest } = require('../utils/supabase');
 const pdfParse = require('pdf-parse/lib/pdf-parse.js');
 const mammoth = require('mammoth');
 
@@ -54,12 +55,19 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    await authenticateRequest(req);
+  } catch (authErr) {
+    console.error('[upload-resume] Authentication failure:', authErr.message);
+    return res.status(authErr.status || 401).json({ error: authErr.message });
   }
 
   let files;

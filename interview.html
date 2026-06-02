@@ -697,9 +697,15 @@
       toggleControls(true);
 
       try {
+        const session = await window.appSdk.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
         const response = await fetch(apiUrl('/api/interview-coach'), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify({
             action: 'generate_questions',
             ...context
@@ -748,9 +754,15 @@
       toggleControls(true);
 
       try {
+        const session = await window.appSdk.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
         const response = await fetch(apiUrl('/api/interview-coach'), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify({
             action: 'evaluate_answer',
             question: question.question,
@@ -787,8 +799,15 @@
       setStatus(els.setupStatus, 'Uploading resume...', 'loading');
 
       try {
+        const session = await window.appSdk.auth.getSession();
+        const headers = {};
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
         const response = await fetch(apiUrl('/api/upload-resume'), {
           method: 'POST',
+          headers: headers,
           body: formData
         });
 

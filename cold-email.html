@@ -335,8 +335,14 @@ async function handlePDFUpload(input) {
   status.textContent = `⏳ Parsing ${file.name}...`;
   const form = new FormData();
   form.append('resume', file);
+  const session = await window.appSdk.auth.getSession();
+  const headers = {};
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+
   try {
-    const res = await fetch('/api/upload-resume', { method: 'POST', body: form });
+    const res = await fetch('/api/upload-resume', { method: 'POST', headers: headers, body: form });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
     if (data.resumeText) {
@@ -382,9 +388,15 @@ document.getElementById('emailForm').addEventListener('submit', async e => {
     length
   };
   try {
+    const session = await window.appSdk.auth.getSession();
+    const headers = { 'Content-Type': 'application/json' };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
     const res = await fetch('/api/cold-email', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: headers,
       body: JSON.stringify(payload)
     });
     const data = await res.json();
