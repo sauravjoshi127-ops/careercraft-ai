@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { authenticateRequest } = require('../utils/supabase');
 const { callGemini } = require('../utils/gemini');
 
