@@ -5,6 +5,7 @@
 // Usage-limits free users to 3 emails per day via the usage_tracking table.
 
 const { authenticateRequest } = require('../utils/supabase');
+const { getApiKeys, callGemini } = require('../utils/gemini');
 
 const SPAM_WORDS = ['free', 'guaranteed', 'urgent', 'winner', 'cash', 'prize', 'click here',
   'act now', 'limited time', 'no obligation', 'risk-free', 'discount', 'earn money'];
@@ -161,32 +162,6 @@ function buildFallbackColdEmail(data, reason) {
   };
 }
 
-async function callGeminiWithRetry(apiKey, body, maxRetries = 3) {
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (r.status !== 429) return r;
-    const retryAfter = parseInt(r.headers.get('Retry-After') || '0', 10);
-    const waitMs = retryAfter > 0 ? retryAfter * 1000 : Math.pow(2, attempt + 1) * 1000;
-    console.warn(`[cold-email] Gemini rate limited. Waiting ${waitMs}ms (attempt ${attempt + 1}/${maxRetries}).`);
-    await new Promise(resolve => setTimeout(resolve, waitMs));
-  }
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (r.status === 429) {
-    const err = new Error('AI service is busy. Please try again in a moment.');
-    err.status = 429;
-    throw err;
-  }
-  return r;
-}
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -208,7 +183,7 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const keys = getApiKeys();
 
   // ── Usage limiting & Authentication ───────────────────────────────────────────
   let user = null;
@@ -273,7 +248,7 @@ module.exports = async function handler(req, res) {
   // ── Generate emails ──────────────────────────────────────────────────────────
   const prompt = buildEmailPrompt({ company, recipientTitle, recipientName, senderName, background, purpose, valueProposition, industry, tone, length });
 
-  if (!apiKey) {
+  if (keys.length === 0) {
     const fallback = buildFallbackColdEmail(
       { company, recipientTitle, recipientName, senderName, background, purpose, valueProposition, industry, tone, length },
       'GEMINI_API_KEY is not set.'
@@ -284,7 +259,7 @@ module.exports = async function handler(req, res) {
   try {
     let r;
     try {
-      r = await callGeminiWithRetry(apiKey, {
+      r = await callGemini({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.8, maxOutputTokens: 2000 }
       });
