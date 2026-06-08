@@ -3,15 +3,15 @@ const path = require('path');
 const express = require('express');
 
 // Modular API Handlers
-const uploadResumeHandler = require('./api/upload-resume');
-const coverLetterHandler = require('./api/cover-letter');
-const coldEmailHandler = require('./api/cold-email');
-const aiSuggestionsHandler = require('./api/ai-suggestions');
-const deleteUserHandler = require('./api/delete-user');
-const interviewCoachHandler = require('./api/interview-coach');
-const generatePdfHandler = require('./api/generate-pdf');
-const createOrderHandler = require('./api/create-order');
-const verifyPaymentHandler = require('./api/verify-payment');
+const uploadResumeHandler = require('./api-handlers/upload-resume');
+const coverLetterHandler = require('./api-handlers/cover-letter');
+const coldEmailHandler = require('./api-handlers/cold-email');
+const aiSuggestionsHandler = require('./api-handlers/ai-suggestions');
+const deleteUserHandler = require('./api-handlers/delete-user');
+const interviewCoachHandler = require('./api-handlers/interview-coach');
+const generatePdfHandler = require('./api-handlers/generate-pdf');
+const createOrderHandler = require('./api-handlers/create-order');
+const verifyPaymentHandler = require('./api-handlers/verify-payment');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
