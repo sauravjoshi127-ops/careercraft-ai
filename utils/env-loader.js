@@ -69,7 +69,10 @@ if (!global.__envLoaded) {
     if (loaded) {
       console.log(`[EnvLoader] Loaded environment variables from: ${loadedPath}`);
     } else {
-      console.warn('[EnvLoader] Warning: No .env file found in any of the expected locations.');
+      const hasCriticalEnv = process.env.GEMINI_API_KEY && process.env.SUPABASE_URL;
+      if (!hasCriticalEnv) {
+        console.warn('[EnvLoader] Warning: No .env file found, and GEMINI_API_KEY / SUPABASE_URL are not configured in the environment.');
+      }
     }
   }
 
