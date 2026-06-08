@@ -3,6 +3,23 @@ require('./env-loader');
 const MAX_INDEXED_KEYS = 10;
 
 /**
+ * Sanitizes a key by stripping outer double/single quotes and leading/trailing whitespace.
+ */
+function cleanApiKey(key) {
+  if (!key) return '';
+  let cleaned = key.trim();
+  // Strip surrounding double quotes
+  if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+    cleaned = cleaned.slice(1, -1);
+  }
+  // Strip surrounding single quotes
+  if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
+    cleaned = cleaned.slice(1, -1);
+  }
+  return cleaned.trim();
+}
+
+/**
  * Resolves all configured Gemini API keys from the environment.
  * Supports:
  * - GEMINI_API_KEYS (comma-separated list of keys)
@@ -12,15 +29,16 @@ const MAX_INDEXED_KEYS = 10;
 function getApiKeys() {
   const keys = [];
   if (process.env.GEMINI_API_KEYS) {
-    keys.push(...process.env.GEMINI_API_KEYS.split(',').map(k => k.trim()).filter(Boolean));
+    keys.push(...process.env.GEMINI_API_KEYS.split(',').map(k => cleanApiKey(k)).filter(Boolean));
   }
   for (let i = 1; i <= MAX_INDEXED_KEYS; i++) {
     const key = process.env[`GEMINI_API_KEY_${i}`];
-    if (key && key.trim()) keys.push(key.trim());
+    const cleaned = cleanApiKey(key);
+    if (cleaned) keys.push(cleaned);
   }
-  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim()) {
-    const single = process.env.GEMINI_API_KEY.trim();
-    if (!keys.includes(single)) keys.push(single);
+  if (process.env.GEMINI_API_KEY) {
+    const single = cleanApiKey(process.env.GEMINI_API_KEY);
+    if (single && !keys.includes(single)) keys.push(single);
   }
   return keys;
 }
@@ -41,8 +59,8 @@ async function callGemini(body, maxRetries = 2) {
       const response = await callGeminiWithRetry(apiKey, body, maxRetries);
       return response;
     } catch (err) {
-      if (err.status === 429) {
-        console.warn(`[Gemini] API Key ${i + 1} rate limited. Rotating to next key...`);
+      if (err.status === 429 || err.status === 401 || err.status === 403) {
+        console.warn(`[Gemini] API Key ${i + 1} failed with status ${err.status} (${err.message}). Rotating to next key...`);
         lastError = err;
         continue;
       }
@@ -50,7 +68,7 @@ async function callGemini(body, maxRetries = 2) {
     }
   }
 
-  throw lastError || new Error('All Gemini API keys are rate limited. Please try again later.');
+  throw lastError || new Error('All Gemini API keys failed or are rate limited. Please check your credentials and try again later.');
 }
 
 async function callGeminiWithRetry(apiKey, body, maxRetries) {
@@ -61,6 +79,14 @@ async function callGeminiWithRetry(apiKey, body, maxRetries) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
+
+    if (r.status === 401 || r.status === 403) {
+      const errBody = await r.json().catch(() => ({}));
+      const msg = errBody?.error?.message || r.statusText || 'Unauthorized';
+      const err = new Error(`Gemini Authentication Failure: ${msg}. Please check that your API key is valid and not revoked.`);
+      err.status = r.status;
+      throw err;
+    }
 
     if (r.status !== 429) {
       return r;
@@ -78,6 +104,15 @@ async function callGeminiWithRetry(apiKey, body, maxRetries) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
+
+  if (r.status === 401 || r.status === 403) {
+    const errBody = await r.json().catch(() => ({}));
+    const msg = errBody?.error?.message || r.statusText || 'Unauthorized';
+    const err = new Error(`Gemini Authentication Failure: ${msg}. Please check that your API key is valid and not revoked.`);
+    err.status = r.status;
+    throw err;
+  }
+
   if (r.status === 429) {
     const err = new Error('AI service is busy (rate limited). Please try again in a moment.');
     err.status = 429;
