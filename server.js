@@ -16,17 +16,54 @@ const verifyPaymentHandler = require('./api-handlers/verify-payment');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Custom in-memory sliding window IP rate limiter for protecting Gemini AI API calls
+const aiRateLimits = new Map();
+function createAiRateLimiter(limit = 15, windowMs = 60000) {
+  return (req, res, next) => {
+    if (process.env.NODE_ENV === 'test') {
+      return next();
+    }
+
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown-ip';
+    const now = Date.now();
+
+    if (!aiRateLimits.has(ip)) {
+      aiRateLimits.set(ip, []);
+    }
+
+    const timestamps = aiRateLimits.get(ip).filter(time => now - time < windowMs);
+    timestamps.push(now);
+    aiRateLimits.set(ip, timestamps);
+
+    if (timestamps.length > limit) {
+      return res.status(429).json({
+        error: 'Too many requests. Please wait a moment before trying again.'
+      });
+    }
+
+    next();
+  };
+}
+const aiLimiter = createAiRateLimiter(15, 60000);
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname), { extensions: ['html'] }));
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
+app.get('/api/config', (req, res) => {
+  res.json({
+    supabaseUrl: process.env.SUPABASE_URL,
+    supabaseKey: process.env.SUPABASE_ANON_KEY
+  });
+});
+
 app.post('/api/upload-resume', uploadResumeHandler);
-app.post('/api/cover-letter', coverLetterHandler);
-app.post('/api/cold-email', coldEmailHandler);
-app.post('/api/ai-suggestions', aiSuggestionsHandler);
+app.post('/api/cover-letter', aiLimiter, coverLetterHandler);
+app.post('/api/cold-email', aiLimiter, coldEmailHandler);
+app.post('/api/ai-suggestions', aiLimiter, aiSuggestionsHandler);
 app.post('/api/delete-user', deleteUserHandler);
-app.post('/api/interview-coach', interviewCoachHandler);
+app.post('/api/interview-coach', aiLimiter, interviewCoachHandler);
 app.post('/api/generate-pdf', generatePdfHandler);
 app.post('/api/create-order', createOrderHandler);
 app.post('/api/verify-payment', verifyPaymentHandler);

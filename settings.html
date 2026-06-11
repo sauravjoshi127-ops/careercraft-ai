@@ -266,9 +266,15 @@
             throw new Error('User not found');
         }
 
+        const session = await window.appSdk.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
         const response = await fetch('/api/delete-user', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify({ userId: currentUser.id })
         });
 

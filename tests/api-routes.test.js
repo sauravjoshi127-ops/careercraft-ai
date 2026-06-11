@@ -28,6 +28,16 @@ describe('local API route wiring', () => {
     assert.equal(res.body.error, 'User ID is required');
   });
 
+  it('rejects /api/delete-user with 403 Forbidden when userId does not match authenticated user', async () => {
+    const res = await request(app)
+      .post('/api/delete-user')
+      .send({ userId: 'different-uuid-value' });
+
+    assert.equal(res.status, 403);
+    assert.match(res.type, /json/);
+    assert.equal(res.body.error, 'Forbidden: You can only delete your own account');
+  });
+
   it('serves /interview locally', async () => {
     const res = await request(app).get('/interview');
 

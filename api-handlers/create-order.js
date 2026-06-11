@@ -3,10 +3,13 @@
 const Razorpay = require('razorpay');
 const { authenticateRequest } = require('../utils/supabase');
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_YOUR_TEST_KEY',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'YOUR_TEST_SECRET'
-});
+const keyId = process.env.RAZORPAY_KEY_ID;
+const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+let razorpay = null;
+if (keyId && keySecret) {
+  razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
+}
 
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -21,6 +24,10 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    if (!razorpay) {
+      return res.status(500).json({ error: 'Razorpay billing credentials are not configured on the server.' });
+    }
+
     // Authenticate the user requesting order creation
     await authenticateRequest(req);
 
@@ -42,7 +49,7 @@ module.exports = async function handler(req, res) {
       id: order.id,
       currency: order.currency,
       amount: order.amount,
-      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_YOUR_TEST_KEY'
+      key_id: keyId
     });
   } catch (error) {
     console.error("Razorpay create order error:", error);

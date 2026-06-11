@@ -1,12 +1,13 @@
 'use strict';
 
 const { generateCoverLetterPDF } = require('../utils/pdf-generator');
+const { authenticateRequest } = require('../utils/supabase');
 
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     return res.status(200).end();
   }
 
@@ -21,6 +22,8 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    // Authenticate request to prevent resource abuse
+    await authenticateRequest(req);
     // Only pass content fields — no scores or metrics included in the PDF
     const pdfBuffer = await generateCoverLetterPDF({
       letter,

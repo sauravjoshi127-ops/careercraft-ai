@@ -823,9 +823,15 @@ async function downloadPDF() {
     downloadBtn.textContent = '⏳ Generating PDF…';
     downloadBtn.disabled = true;
 
+    const session = await window.appSdk.auth.getSession();
+    const headers = { 'Content-Type': 'application/json' };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
     const res = await fetch('/api/generate-pdf', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: headers,
       body: JSON.stringify({
         letter: lastGenerated.letter,
         jobTitle: document.getElementById('jobTitle').value,

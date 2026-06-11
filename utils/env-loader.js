@@ -22,9 +22,9 @@ if (!global.__envLoaded) {
   }
 
   // Safe diagnostics log (suppressed partially in tests to avoid test output noise, but active in development)
-  const isTest = process.env.NODE_ENV === 'test';
+  const isSilent = process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'production';
   
-  if (!isTest) {
+  if (!isSilent) {
     console.log('\n==================================================');
     console.log('[EnvLoader] Runtime Environment Diagnostics:');
     console.log(`  - process.cwd(): ${process.cwd()}`);
@@ -39,7 +39,7 @@ if (!global.__envLoaded) {
     const printKeyInfo = (name) => {
       const val = process.env[name];
       if (val) {
-        console.log(`    - ${name}: RESOLVED (Length: ${val.length})`);
+        console.log(`    - ${name}: RESOLVED`);
       } else {
         console.log(`    - ${name}: UNDEFINED`);
       }
@@ -69,7 +69,10 @@ if (!global.__envLoaded) {
     if (loaded) {
       console.log(`[EnvLoader] Loaded environment variables from: ${loadedPath}`);
     } else {
-      console.warn('[EnvLoader] Warning: No .env file found in any of the expected locations.');
+      const hasCriticalEnv = process.env.GEMINI_API_KEY && process.env.SUPABASE_URL;
+      if (!hasCriticalEnv) {
+        console.warn('[EnvLoader] Warning: No .env file found, and GEMINI_API_KEY / SUPABASE_URL are not configured in the environment.');
+      }
     }
   }
 
