@@ -362,7 +362,7 @@
   </div>
 
 <script>
-const client = window.appSdk ? window.appSdk.client : null;
+let client = null;
 
 let currentUser = null;
 let lastGenerated = null;
@@ -398,6 +398,7 @@ function formatLetterText(text) {
 async function init() {
   try {
     await window.appSdk.ready;
+    client = window.appSdk.client;
     const session = await window.appSdk.auth.requireAuth();
     if (!session) return;
     currentUser = session.user;

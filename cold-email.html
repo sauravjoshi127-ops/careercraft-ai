@@ -241,14 +241,19 @@
   <script id="app-logic">
 // UI Logic (copied from original implementation)
 // ── Supabase Init ────────────────────────────────────────────────────────
-const supabaseClient = window.appSdk ? window.appSdk.client : null;
-const nexusUnavailable = !supabaseClient;
+let supabaseClient = null;
+let nexusUnavailable = true;
 let currentUser = null;
 let savedResumes = [];
 let currentData = null;
 
 (async () => {
   await window.appSdk.ready;
+  supabaseClient = window.appSdk.client;
+  nexusUnavailable = !supabaseClient;
+  if (nexusUnavailable) {
+    showToast('Nexus import is unavailable right now. You can still fill details manually.', true);
+  }
   try {
     const session = await window.appSdk.auth.getSession();
     if (session) {
@@ -261,9 +266,6 @@ let currentData = null;
 // ── UI Helpers ────────────────────────────────────────────────────────
 function showToast(msg, isError = false) {
   window.appSdk.ui.showToast(msg, isError);
-}
-if (nexusUnavailable) {
-  showToast('Nexus import is unavailable right now. You can still fill details manually.', true);
 }
 function setActivePill(group, clickedPill) {
   if (!group || !clickedPill) return;
