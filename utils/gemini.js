@@ -19,11 +19,6 @@ function isValidApiKeyFormat(key) {
     return false;
   }
   
-  // Google API keys typically start with AIzaSy
-  if (!key.startsWith('AIzaSy')) {
-    return false;
-  }
-  
   // API keys are long alphanumeric strings (at least 30 characters)
   if (key.length < 30) {
     return false;
