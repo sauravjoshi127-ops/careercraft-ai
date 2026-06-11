@@ -185,11 +185,12 @@
 
     <script>
         // Use unified Client SDK
-        const client = window.appSdk ? window.appSdk.client : null;
+        let client = null;
 
         // Redirect if already logged in (hidden initially to prevent FOUC glitch)
         async function checkExistingSession() {
             await window.appSdk.ready;
+            client = window.appSdk.client;
             const urlParams = new URLSearchParams(window.location.search);
             const hasError = urlParams.has('error') || urlParams.has('loop');
 
