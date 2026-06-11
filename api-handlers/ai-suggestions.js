@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('../utils/env-loader');
 const { authenticateRequest } = require('../utils/supabase');
 const { callGemini } = require('../utils/gemini');
 

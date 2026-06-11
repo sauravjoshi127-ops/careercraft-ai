@@ -381,8 +381,24 @@
       }
     }
 
+    let supabaseUrl = SUPABASE_URL;
+    let supabaseKey = SUPABASE_KEY;
+
+    try {
+      const configRes = await fetch('/api/config');
+      if (configRes.ok) {
+        const config = await configRes.json();
+        if (config.supabaseUrl && config.supabaseKey) {
+          supabaseUrl = config.supabaseUrl;
+          supabaseKey = config.supabaseKey;
+        }
+      }
+    } catch (err) {
+      console.warn('[SDK] Failed to load configuration from server, falling back to static settings:', err);
+    }
+
     if (window.supabase && typeof window.supabase.createClient === 'function') {
-      appSdk.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      appSdk.client = window.supabase.createClient(supabaseUrl, supabaseKey);
     } else {
       console.error('Supabase library is not available.');
     }

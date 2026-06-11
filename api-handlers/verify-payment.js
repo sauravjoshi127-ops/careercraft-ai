@@ -22,10 +22,15 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'Missing payment details' });
     }
 
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keySecret) {
+      return res.status(500).json({ success: false, message: "Razorpay billing credentials are not configured on the server." });
+    }
+
     // Verify signature
     const sign = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSign = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || 'YOUR_TEST_SECRET')
+      .createHmac("sha256", keySecret)
       .update(sign.toString())
       .digest("hex");
 

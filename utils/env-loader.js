@@ -22,9 +22,9 @@ if (!global.__envLoaded) {
   }
 
   // Safe diagnostics log (suppressed partially in tests to avoid test output noise, but active in development)
-  const isTest = process.env.NODE_ENV === 'test';
+  const isSilent = process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'production';
   
-  if (!isTest) {
+  if (!isSilent) {
     console.log('\n==================================================');
     console.log('[EnvLoader] Runtime Environment Diagnostics:');
     console.log(`  - process.cwd(): ${process.cwd()}`);
@@ -39,7 +39,7 @@ if (!global.__envLoaded) {
     const printKeyInfo = (name) => {
       const val = process.env[name];
       if (val) {
-        console.log(`    - ${name}: RESOLVED (Length: ${val.length})`);
+        console.log(`    - ${name}: RESOLVED`);
       } else {
         console.log(`    - ${name}: UNDEFINED`);
       }

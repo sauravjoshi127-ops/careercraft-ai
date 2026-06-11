@@ -1,5 +1,6 @@
 require('../utils/env-loader');
 const { createClient } = require('@supabase/supabase-js');
+const { authenticateRequest } = require('../utils/supabase');
 
 module.exports = async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -13,6 +14,14 @@ module.exports = async function handler(req, res) {
     }
 
     try {
+        // Authenticate the request
+        const { user } = await authenticateRequest(req);
+
+        // Prevent IDOR: Ensure users can only delete their own account
+        if (user.id !== userId) {
+            return res.status(403).json({ error: 'Forbidden: You can only delete your own account' });
+        }
+
         const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
         const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
