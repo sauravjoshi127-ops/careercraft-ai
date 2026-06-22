@@ -45,4 +45,31 @@ describe('local API route wiring', () => {
     assert.match(res.type, /html/);
     assert.match(res.text, /Interview Coach/i);
   });
+
+  it('returns runtime Supabase config only when env vars are defined', async () => {
+    const originalUrl = process.env.SUPABASE_URL;
+    const originalAnon = process.env.SUPABASE_ANON_KEY;
+
+    try {
+      process.env.SUPABASE_URL = 'https://example.supabase.co';
+      process.env.SUPABASE_ANON_KEY = 'public-anon-key';
+      let res = await request(app).get('/api/config');
+      assert.equal(res.status, 200);
+      assert.equal(res.body.supabaseUrl, 'https://example.supabase.co');
+      assert.equal(res.body.supabaseKey, 'public-anon-key');
+
+      delete process.env.SUPABASE_URL;
+      delete process.env.SUPABASE_ANON_KEY;
+      res = await request(app).get('/api/config');
+      assert.equal(res.status, 503);
+      assert.match(res.type, /json/);
+      assert.match(res.body.error, /Missing SUPABASE_URL or SUPABASE_ANON_KEY/);
+    } finally {
+      if (originalUrl === undefined) delete process.env.SUPABASE_URL;
+      else process.env.SUPABASE_URL = originalUrl;
+
+      if (originalAnon === undefined) delete process.env.SUPABASE_ANON_KEY;
+      else process.env.SUPABASE_ANON_KEY = originalAnon;
+    }
+  });
 });
