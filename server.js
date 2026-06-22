@@ -12,6 +12,7 @@ const interviewCoachHandler = require('./api-handlers/interview-coach');
 const generatePdfHandler = require('./api-handlers/generate-pdf');
 const createOrderHandler = require('./api-handlers/create-order');
 const verifyPaymentHandler = require('./api-handlers/verify-payment');
+const debugGeminiHandler = require('./api-handlers/debug-gemini');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -57,6 +58,9 @@ app.get('/api/config', (req, res) => {
     supabaseKey: process.env.SUPABASE_ANON_KEY
   });
 });
+
+app.get('/api/debug/gemini', debugGeminiHandler);
+app.post('/api/debug/gemini', debugGeminiHandler);
 
 app.post('/api/upload-resume', uploadResumeHandler);
 app.post('/api/cover-letter', aiLimiter, coverLetterHandler);

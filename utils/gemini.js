@@ -19,11 +19,6 @@ function isValidApiKeyFormat(key) {
     return false;
   }
   
-  // Google API keys typically start with AIzaSy
-  if (!key.startsWith('AIzaSy')) {
-    return false;
-  }
-  
   // API keys are long alphanumeric strings (at least 30 characters)
   if (key.length < 30) {
     return false;
@@ -50,55 +45,41 @@ function cleanApiKey(key) {
 }
 
 /**
- * Resolves all configured Gemini API keys from the environment.
- * Supports:
- * - GEMINI_API_KEYS (comma-separated list of keys)
- * - GEMINI_API_KEY_1 to GEMINI_API_KEY_10
- * - GEMINI_API_KEY (single fallback key)
+ * Retrieves the standardized Gemini API key.
+ * Validates existence and format.
  */
-function getApiKeys() {
-  const keys = [];
-  if (process.env.GEMINI_API_KEYS) {
-    keys.push(...process.env.GEMINI_API_KEYS.split(',').map(k => cleanApiKey(k)).filter(Boolean));
+function getApiKey() {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY missing');
   }
-  for (let i = 1; i <= MAX_INDEXED_KEYS; i++) {
-    const key = process.env[`GEMINI_API_KEY_${i}`];
-    const cleaned = cleanApiKey(key);
-    if (cleaned) keys.push(cleaned);
+  
+  const cleaned = cleanApiKey(process.env.GEMINI_API_KEY);
+  if (!isValidApiKeyFormat(cleaned)) {
+    throw new Error('Gemini API key is not configured on this server. Set GEMINI_API_KEY in your environment.');
   }
-  if (process.env.GEMINI_API_KEY) {
-    const single = cleanApiKey(process.env.GEMINI_API_KEY);
-    if (single && !keys.includes(single)) keys.push(single);
-  }
-  return keys.filter(isValidApiKeyFormat);
+  
+  return cleaned;
 }
 
 /**
- * Calls Gemini API with key rotation and retry logic for 429 rate limit responses.
+ * Resolves configured Gemini API keys from the environment.
+ * Maintained as a wrapper for backward compatibility with existing backend handlers.
+ */
+function getApiKeys() {
+  try {
+    const key = getApiKey();
+    return [key];
+  } catch (err) {
+    return [];
+  }
+}
+
+/**
+ * Calls Gemini API with retry logic for 429 rate limit responses.
  */
 async function callGemini(body, maxRetries = 2) {
-  const keys = getApiKeys();
-  if (keys.length === 0) {
-    throw new Error('Gemini API key is not configured on this server. Set GEMINI_API_KEY in your environment.');
-  }
-
-  let lastError = null;
-  for (let i = 0; i < keys.length; i++) {
-    const apiKey = keys[i];
-    try {
-      const response = await callGeminiWithRetry(apiKey, body, maxRetries);
-      return response;
-    } catch (err) {
-      if (err.status === 429 || err.status === 401 || err.status === 403) {
-        console.warn(`[Gemini] API Key ${i + 1} failed with status ${err.status} (${err.message}). Rotating to next key...`);
-        lastError = err;
-        continue;
-      }
-      throw err;
-    }
-  }
-
-  throw lastError || new Error('All Gemini API keys failed or are rate limited. Please check your credentials and try again later.');
+  const apiKey = getApiKey();
+  return callGeminiWithRetry(apiKey, body, maxRetries);
 }
 
 async function callGeminiWithRetry(apiKey, body, maxRetries) {
@@ -152,6 +133,7 @@ async function callGeminiWithRetry(apiKey, body, maxRetries) {
 }
 
 module.exports = {
+  getApiKey,
   getApiKeys,
   callGemini
 };

@@ -176,8 +176,15 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
         generationConfig: { temperature: 0.75, maxOutputTokens: 4096 }
       });
     } catch (retryErr) {
-      console.error('Gemini API execution failed:', retryErr.message);
-      return res.status(retryErr.status || 500).json({ error: retryErr.message });
+      console.error('[cover-letter] Gemini API execution failed:', retryErr.message);
+      const status = retryErr.status || 500;
+      const msg = retryErr.message;
+      return res.status(status).json({
+        success: false,
+        error: msg === 'GEMINI_API_KEY missing' || msg.includes('Gemini API key is not configured')
+          ? 'Gemini API key is not configured on this server. Set GEMINI_API_KEY in your environment.'
+          : msg
+      });
     }
 
     if (!r.ok) {
@@ -220,7 +227,14 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
 
     return res.status(200).json(data);
   } catch (err) {
-    console.error('Cover letter generation error:', err);
-    return res.status(500).json({ error: 'Failed to generate cover letter. Please try again.' });
+    console.error('[cover-letter] Error generating cover letter:', err);
+    const status = err.status || 500;
+    const msg = err.message || 'Failed to generate cover letter. Please try again.';
+    return res.status(status).json({
+      success: false,
+      error: msg === 'GEMINI_API_KEY missing' || msg.includes('Gemini API key is not configured')
+        ? 'Gemini API key is not configured on this server. Set GEMINI_API_KEY in your environment.'
+        : msg
+    });
   }
 }
