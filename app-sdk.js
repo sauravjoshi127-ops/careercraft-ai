@@ -394,7 +394,7 @@
         console.error('Supabase library is not available.');
       }
     } catch (err) {
-      console.error('[SDK] Failed to initialize Supabase client from /api/config:', err);
+      console.error('[SDK] Failed to initialize Supabase client from /api/config. Check server SUPABASE_URL and SUPABASE_ANON_KEY setup in README (Environment Variables & Secrets):', err);
     }
 
     // Auto-init navigation layouts when DOM is ready

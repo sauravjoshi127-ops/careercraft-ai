@@ -65,11 +65,8 @@ describe('local API route wiring', () => {
       assert.match(res.type, /json/);
       assert.match(res.body.error, /Missing SUPABASE_URL or SUPABASE_ANON_KEY/);
     } finally {
-      if (originalUrl === undefined) delete process.env.SUPABASE_URL;
-      else process.env.SUPABASE_URL = originalUrl;
-
-      if (originalAnon === undefined) delete process.env.SUPABASE_ANON_KEY;
-      else process.env.SUPABASE_ANON_KEY = originalAnon;
+      originalUrl !== undefined ? process.env.SUPABASE_URL = originalUrl : delete process.env.SUPABASE_URL;
+      originalAnon !== undefined ? process.env.SUPABASE_ANON_KEY = originalAnon : delete process.env.SUPABASE_ANON_KEY;
     }
   });
 });
