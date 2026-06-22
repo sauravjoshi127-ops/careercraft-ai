@@ -4,146 +4,918 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Cold Email Writer - CareerCraft AI</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app-sdk.js"></script>
   <link rel="stylesheet" href="styles/premium.css">
-    <style>
-    :root{--bg:#050505;--surface:rgba(20,20,24,.6);--border:rgba(255,255,255,.08);--primary:#7c3aed;--primary-glow:rgba(124,58,237,.35);--accent:#a855f7;--text:#ffffff;--text-muted:#a1a1aa;--danger:#ef4444;--success:#10b981;--radius:1rem;--font:'Inter',system-ui,sans-serif}
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;overflow-x:hidden}
-    .orb{position:fixed;border-radius:50%;filter:blur(100px);pointer-events:none;z-index:-1}
-    .orb-1{width:400px;height:400px;top:-100px;left:-100px;background:rgba(124,58,237,.2)}
-    .orb-2{width:500px;height:500px;bottom:20%;right:-200px;background:rgba(168,85,247,.15)}
+  <style>
+    :root {
+      --bg: #050505;
+      --surface: rgba(20, 20, 24, .6);
+      --border: rgba(255, 255, 255, .08);
+      --primary: #7c3aed;
+      --primary-glow: rgba(124, 58, 237, .35);
+      --accent: #a855f7;
+      --text: #ffffff;
+      --text-muted: #a1a1aa;
+      --danger: #ef4444;
+      --success: #10b981;
+      --radius: 1rem;
+      --font: 'Inter', system-ui, sans-serif;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    .orb-1 {
+      width: 400px;
+      height: 400px;
+      top: -100px;
+      left: -100px;
+      background: rgba(124, 58, 237, .2);
+    }
+    
+    .orb-2 {
+      width: 500px;
+      height: 500px;
+      bottom: 20%;
+      right: -200px;
+      background: rgba(168, 85, 247, .15);
+    }
 
-    /* ── Nav (Now using premium.css, keeping overrides minimal) ── */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+    
+    .hero {
+      text-align: center;
+      margin-bottom: 2rem;
+      animation: fadeDown .5s ease-out;
+    }
+    
+    .hero h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: .35rem;
+    }
+    
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+    }
 
     /* ── Layout ── */
-    .container{max-width:880px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
-    .hero{text-align:center;margin-bottom:2.5rem;animation:fadeDown .5s ease-out}
-    .hero h1{font-family:'Outfit',sans-serif;font-size:2.4rem;font-weight:800;letter-spacing:-1px;margin-bottom:.35rem}
-    .hero h1 em{font-style:normal;background:linear-gradient(135deg,#7c3aed,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .hero p{font-size:1.05rem;color:var(--text-muted)}
+    .app-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 2rem;
+      align-items: start;
+      margin-top: 1.5rem;
+    }
+    
+    @media (max-width: 1024px) {
+      .app-layout {
+        grid-template-columns: 1fr;
+      }
+    }
 
-    /* ── Cards ── */
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.75rem;margin-bottom:1.25rem;backdrop-filter:blur(12px);animation:fadeUp .5s ease-out backwards}
-    .card-head{font-size:1.05rem;font-weight:700;margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem;padding-bottom:.65rem;border-bottom:1px solid var(--border)}
+    /* ── Cards & Sections ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      margin-bottom: 1.25rem;
+      backdrop-filter: blur(12px);
+      animation: fadeUp .5s ease-out backwards;
+      position: relative;
+    }
+    
+    .card-head {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding-bottom: .65rem;
+      border-bottom: 1px solid var(--border);
+      font-family: 'Outfit', sans-serif;
+    }
 
     /* ── Nexus ── */
-    .nexus{background:linear-gradient(145deg,rgba(139,92,246,.12),rgba(56,189,248,.04));border:1px solid rgba(139,92,246,.22);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.75rem;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:1rem}
-    .nexus h3{font-size:1rem;color:#e2e8f0;margin-bottom:.15rem}
-    .nexus p{font-size:.82rem;color:var(--text-muted)}
-    .nexus-actions{display:flex;gap:.5rem;flex-wrap:wrap}
-    .nbtn{background:var(--primary);color:#fff;border:none;padding:.65rem 1.1rem;border-radius:.5rem;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:.2s}
-    .nbtn:hover{filter:brightness(1.15);transform:translateY(-1px)}
-    .nbtn.outline{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:var(--text)}
-    #pdfStatus{display:none;font-size:.82rem;padding:.5rem .75rem;border-radius:.5rem;margin-top:.5rem;width:100%}
+    .nexus {
+      background: linear-gradient(145deg, rgba(139,92,246,.1), rgba(56,189,248,.03));
+      border: 1px solid rgba(139,92,246,.18);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .nexus h3 {
+      font-size: 0.95rem;
+      color: #e2e8f0;
+      margin-bottom: .15rem;
+    }
+    
+    .nexus p {
+      font-size: .8rem;
+      color: var(--text-muted);
+    }
+    
+    .nexus-actions {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+    }
+    
+    .nbtn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: .55rem 1rem;
+      border-radius: .5rem;
+      font-weight: 600;
+      font-size: .8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      transition: .2s;
+    }
+    
+    .nbtn:hover {
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+    }
+    
+    .nbtn.outline {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.15);
+      color: var(--text);
+    }
+    
+    #pdfStatus {
+      display: none;
+      font-size: .8rem;
+      padding: .4rem .6rem;
+      border-radius: .5rem;
+      width: 100%;
+      color: var(--text-muted);
+    }
 
-    /* ── Forms ── */
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
-    .fg{display:flex;flex-direction:column;gap:.4rem}
-    .fg.full{grid-column:span 2}
-    label{font-size:.82rem;font-weight:600;color:var(--text-muted)}
-    label .req{color:var(--danger)}
-    input,textarea,select{background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:.5rem;padding:.7rem .9rem;color:var(--text);font-family:var(--font);font-size:.92rem;transition:.2s}
-    input:focus,textarea:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-glow)}
-    textarea{min-height:90px;resize:vertical}
-    .char-ct{text-align:right;font-size:.72rem;color:var(--text-muted)}
+    /* ── Forms & Validation ── */
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    
+    .fg {
+      display: flex;
+      flex-direction: column;
+      gap: .4rem;
+      position: relative;
+    }
+    
+    .fg.full {
+      grid-column: span 2;
+    }
+    
+    @media (max-width: 640px) {
+      .grid2 {
+        grid-template-columns: 1fr;
+      }
+      .fg.full {
+        grid-column: auto;
+      }
+    }
+    
+    label {
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    
+    label .req {
+      color: var(--danger);
+    }
+    
+    input, textarea, select {
+      background: rgba(0, 0, 0, .35);
+      border: 1px solid var(--border);
+      border-radius: .5rem;
+      padding: .65rem .85rem;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: .9rem;
+      transition: .2s;
+      width: 100%;
+    }
+    
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-glow);
+    }
 
-    /* ── Pills ── */
-    .pills{display:flex;flex-wrap:wrap;gap:.6rem}
-    .pill{background:rgba(255,255,255,.04);border:1px solid var(--border);padding:.55rem 1.1rem;border-radius:999px;font-size:.82rem;font-weight:500;cursor:pointer;transition:.2s;user-select:none;color:var(--text);font-family:var(--font)}
-    .pill:hover{border-color:rgba(255,255,255,.2)}
-    .pill.on{background:rgba(139,92,246,.18);border-color:var(--primary);color:#c4b5fd}
+    input.invalid, textarea.invalid, select.invalid {
+      border-color: var(--danger) !important;
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
+    }
+    
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    
+    .char-ct {
+      text-align: right;
+      font-size: .72rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
 
-    /* ── Generate ── */
-    .gen-wrap{text-align:center;margin-top:1.75rem}
-    .btn-gen{background:linear-gradient(135deg,#8b5cf6,#38bdf8);color:#fff;border:none;padding:.95rem 2.8rem;border-radius:999px;font-size:1.05rem;font-weight:700;cursor:pointer;transition:.25s;box-shadow:0 8px 24px -8px var(--primary-glow);font-family:var(--font)}
-    .btn-gen:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 12px 32px -8px var(--primary-glow)}
-    .btn-gen:disabled{opacity:.5;cursor:not-allowed;transform:none}
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: .3rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .4rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+    
+    .tab {
+      padding: .5rem 1rem;
+      background: 0;
+      border: none;
+      color: var(--text-muted);
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      position: relative;
+      transition: .2s;
+      font-family: var(--font);
+      border-radius: 0.25rem;
+    }
+    
+    .tab:hover {
+      color: var(--text);
+      background: rgba(255,255,255,.03);
+    }
+    
+    .tab.on {
+      color: var(--primary);
+      background: rgba(124, 58, 237, 0.1);
+    }
+    
+    .tab.on::after {
+      content: '';
+      position: absolute;
+      bottom: -.45rem;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
 
+    /* ── Preview Area ── */
+    .preview-header {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: .5rem .5rem 0 0;
+      padding: .75rem 1rem;
+      font-size: .85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .preview-meta-row {
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .preview-subject-line {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .preview-body-container {
+      background: rgba(0, 0, 0, .4);
+      border: 1px solid var(--border);
+      border-radius: 0 0 .5rem .5rem;
+      padding: 1.25rem;
+      white-space: pre-wrap;
+      font-size: .95rem;
+      line-height: 1.7;
+      min-height: 250px;
+      margin-bottom: 1.25rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .preview-body-container:focus {
+      border-color: var(--primary);
+    }
+
+    .preview-actions-row {
+      display: flex;
+      gap: .75rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .abtn {
+      padding: .55rem 1.1rem;
+      border-radius: .5rem;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, .04);
+      color: var(--text);
+      font-weight: 600;
+      font-size: .82rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      transition: .2s;
+      font-family: var(--font);
+    }
+    
+    .abtn:hover {
+      background: rgba(255, 255, 255, .08);
+      border-color: rgba(255,255,255,.15);
+    }
+    
+    .abtn.primary {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+    }
+    
+    .abtn.primary:hover {
+      filter: brightness(1.15);
+    }
+
+    /* ── Quality Engine UI ── */
+    .quality-box {
+      background: rgba(255, 255, 255, .02);
+      border: 1px solid var(--border);
+      border-radius: .75rem;
+      padding: 1.25rem;
+      margin-top: 1.25rem;
+    }
+
+    .quality-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .score-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 99px;
+      font-size: 0.85rem;
+      font-weight: 800;
+    }
+
+    .score-high { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .score-mid { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .score-low { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .quality-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .quality-item {
+      font-size: 0.85rem;
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+
+    .quality-icon {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* ── Subject Lines Selector ── */
+    .subjects-box {
+      background: rgba(255, 255, 255, .01);
+      border: 1px solid var(--border);
+      border-radius: .75rem;
+      padding: 1.25rem;
+      margin-top: 1.25rem;
+    }
+
+    .subjects-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .subjects-title-row h4 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .subjects-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+
+    .subject-item {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 0.65rem 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      gap: 0.75rem;
+      text-align: left;
+    }
+
+    .subject-item:hover {
+      border-color: var(--primary);
+      background: rgba(124, 58, 237, 0.05);
+    }
+
+    .subject-item.active {
+      border-color: var(--primary);
+      background: rgba(124, 58, 237, 0.12);
+    }
+
+    .subject-text {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text);
+      word-break: break-all;
+    }
+
+    .subject-badges {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-shrink: 0;
+    }
+
+    .prob-badge {
+      background: rgba(255,255,255,0.05);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      padding: 0.15rem 0.45rem;
+      border-radius: 99px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .reco-badge {
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      padding: 0.15rem 0.45rem;
+      border-radius: 99px;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    /* ── Email Optimizer UI ── */
+    .optimizer-box {
+      background: rgba(124, 58, 237, 0.03);
+      border: 1px solid rgba(124, 58, 237, 0.15);
+      border-radius: .75rem;
+      padding: 1.25rem;
+      margin-top: 1.25rem;
+    }
+
+    .optimizer-head {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #c4b5fd;
+      margin-bottom: 0.75rem;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .optimizer-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .optimizer-row input {
+      background: rgba(0,0,0,0.4);
+    }
+
+    /* ── Spam Words Alert ── */
+    .spam-alert {
+      background: rgba(239, 68, 68, 0.07);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1.25rem;
+      display: none;
+      font-size: 0.82rem;
+      color: #fca5a5;
+    }
+
+    /* ── Generate Button Wrapper ── */
+    .gen-wrap {
+      margin-top: 1.75rem;
+    }
+    
+    .btn-gen {
+      background: linear-gradient(135deg, #8b5cf6, #38bdf8);
+      color: #fff;
+      border: none;
+      padding: .9rem 2.5rem;
+      border-radius: 999px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .25s;
+      box-shadow: 0 8px 24px -8px var(--primary-glow);
+      font-family: var(--font);
+      width: 100%;
+    }
+    
+    .btn-gen:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px -8px var(--primary-glow);
+    }
+    
+    .btn-gen:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
     /* ── Alert ── */
-    .alert{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:.5rem;padding:1rem 1.25rem;margin-bottom:1.25rem;display:none}
-    .alert.show{display:block;animation:fadeIn .3s}
-    .alert h4{color:#fca5a5;font-size:.95rem;margin-bottom:.2rem}
-    .alert p{color:#fecaca;font-size:.88rem}
-
+    .alert {
+      background: rgba(239, 68, 68, .08);
+      border: 1px solid rgba(239, 68, 68, .25);
+      border-radius: .5rem;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      display: none;
+    }
+    
+    .alert.show {
+      display: block;
+      animation: fadeIn .3s;
+    }
+    
+    .alert h4 {
+      color: #fca5a5;
+      font-size: .95rem;
+      margin-bottom: .2rem;
+    }
+    
+    .alert p {
+      color: #fecaca;
+      font-size: .88rem;
+    }
+    
     /* ── Skeleton ── */
-    .skel-wrap{display:none;margin-top:2.5rem}
-    .skel-wrap.show{display:block}
-    .skel{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:.5rem;margin-bottom:.75rem}
-    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-    .skel-msg{text-align:center;color:var(--text-muted);margin-bottom:1.5rem;font-size:.92rem}
+    .skel-wrap {
+      display: none;
+      margin-top: 2rem;
+    }
+    
+    .skel-wrap.show {
+      display: block;
+    }
+    
+    .skel {
+      background: linear-gradient(90deg, rgba(255, 255, 255, .04) 25%, rgba(255, 255, 255, .08) 50%, rgba(255, 255, 255, .04) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: .5rem;
+      margin-bottom: .75rem;
+    }
+    
+    @keyframes shimmer {
+      0% { background-position: 200% 0 }
+      100% { background-position: -200% 0 }
+    }
+    
+    .skel-msg {
+      text-align: center;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      font-size: .92rem;
+    }
+    
+    /* ── Drafts History System ── */
+    .history-card {
+      margin-top: 3rem;
+      border-top: 1px solid var(--border);
+      padding-top: 2rem;
+    }
 
-    /* ── Results ── */
-    #results{display:none;margin-top:2.5rem;animation:fadeUp .5s ease}
-    .tabs{display:flex;gap:.4rem;border-bottom:1px solid var(--border);padding-bottom:.4rem;margin-bottom:1.25rem}
-    .tab{padding:.65rem 1.25rem;background:0;border:none;color:var(--text-muted);font-size:.9rem;font-weight:600;cursor:pointer;position:relative;transition:.2s;font-family:var(--font)}
-    .tab:hover{color:var(--text)}
-    .tab.on{color:var(--primary)}
-    .tab.on::after{content:'';position:absolute;bottom:-.45rem;left:0;width:100%;height:2px;background:var(--primary);border-radius:2px}
-    .vpanel{display:none}
-    .vpanel.on{display:block;animation:fadeIn .35s}
-    .subj-row{background:rgba(0,0,0,.3);padding:.85rem 1.1rem;border-radius:.5rem;border:1px solid var(--border);margin-bottom:.85rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}
-    .subj-text{font-size:1rem;font-weight:600}
-    .badge{background:rgba(139,92,246,.12);color:#c4b5fd;padding:.2rem .65rem;border-radius:999px;font-size:.72rem;font-weight:700;border:1px solid rgba(139,92,246,.25)}
-    .ebody{background:rgba(0,0,0,.3);padding:1.25rem;border-radius:.5rem;border:1px solid var(--border);white-space:pre-wrap;font-size:.95rem;line-height:1.7;margin-bottom:1.25rem}
-    .acts{display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap}
-    .abtn{padding:.6rem 1.2rem;border-radius:.5rem;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:.2s;font-family:var(--font)}
-    .abtn:hover{background:rgba(255,255,255,.08)}
-    .abtn.cp{background:var(--primary);color:#fff;border:none}
-    .abtn.cp:hover{filter:brightness(1.15)}
+    .history-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
 
-    /* ── Scores ── */
-    .score-grid{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:1.25rem}
-    .si label{display:flex;justify-content:space-between;margin-bottom:.3rem;font-size:.78rem}
-    .st{height:5px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}
-    .sf{height:100%;background:linear-gradient(90deg,#8b5cf6,#38bdf8);width:0%;transition:width .8s cubic-bezier(.4,0,.2,1)}
-    .tip-box{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.22);padding:1rem;border-radius:.5rem;margin-bottom:1.5rem}
-    .tip-box h4{color:#6ee7b7;font-size:.85rem;margin-bottom:.35rem}
-    .tip-box p{color:#a7f3d0;font-size:.88rem}
+    .history-search-input {
+      max-width: 320px;
+      font-size: 0.85rem;
+      padding: 0.5rem 0.75rem;
+    }
 
-    /* ── Follow-up ── */
-    #fuCard{display:none;margin-top:1.5rem;background:rgba(56,189,248,.04);border-color:rgba(56,189,248,.22)}
+    .drafts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .draft-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+
+    .draft-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .draft-card-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .draft-card-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 0.35rem;
+      color: var(--text);
+      word-break: break-all;
+    }
+
+    .draft-card-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .draft-card-actions {
+      display: flex;
+      gap: 0.4rem;
+      justify-content: flex-end;
+    }
+
+    .draft-btn {
+      padding: 0.35rem 0.65rem;
+      font-size: 0.75rem;
+      border-radius: 0.25rem;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .draft-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .draft-btn.load {
+      background: rgba(124, 58, 237, 0.1);
+      color: #c4b5fd;
+      border-color: rgba(124, 58, 237, 0.3);
+    }
+
+    .draft-btn.load:hover {
+      background: rgba(124, 58, 237, 0.2);
+    }
+
+    .draft-btn.delete {
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .draft-btn.delete:hover {
+      background: rgba(239, 68, 68, 0.1);
+    }
 
     /* ── Modal ── */
-    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;pointer-events:none;transition:.2s}
-    .modal-bg.show{opacity:1;visibility:visible;pointer-events:auto}
-    .modal{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);width:92%;max-width:480px;padding:1.75rem;box-shadow:0 20px 40px rgba(0,0,0,.4)}
-    .modal h2{font-size:1.15rem;margin-bottom:1.25rem}
-    .rlist{max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:.4rem}
-    .ritem{padding:.85rem;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:.5rem;cursor:pointer;transition:.2s;text-align:left;color:var(--text)}
-    .ritem:hover{border-color:var(--primary);background:rgba(139,92,246,.08)}
-    .ritem h4{font-size:.9rem;margin-bottom:.15rem}
-    .ritem p{font-size:.78rem;color:var(--text-muted)}
-    .mcl{margin-top:1.25rem;width:100%;padding:.65rem;background:0;border:1px solid var(--border);color:var(--text-muted);border-radius:.5rem;cursor:pointer;font-family:var(--font)}
-    .mcl:hover{background:rgba(255,255,255,.04)}
-
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .65);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: .2s;
+    }
+    
+    .modal-bg.show {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+    
+    .modal {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 92%;
+      max-width: 480px;
+      padding: 1.75rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, .4);
+    }
+    
+    .modal h2 {
+      font-size: 1.15rem;
+      margin-bottom: 1.25rem;
+      font-family: 'Outfit', sans-serif;
+    }
+    
+    .rlist {
+      max-height: 280px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: .4rem;
+    }
+    
+    .ritem {
+      padding: .85rem;
+      background: rgba(255, 255, 255, .02);
+      border: 1px solid var(--border);
+      border-radius: .5rem;
+      cursor: pointer;
+      transition: .2s;
+      text-align: left;
+      color: var(--text);
+    }
+    
+    .ritem:hover {
+      border-color: var(--primary);
+      background: rgba(139, 92, 246, .08);
+    }
+    
+    .ritem h4 {
+      font-size: .9rem;
+      margin-bottom: .15rem;
+    }
+    
+    .ritem p {
+      font-size: .78rem;
+      color: var(--text-muted);
+    }
+    
+    .mcl {
+      margin-top: 1.25rem;
+      width: 100%;
+      padding: .65rem;
+      background: 0;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: .5rem;
+      cursor: pointer;
+      font-family: var(--font);
+    }
+    
+    .mcl:hover {
+      background: rgba(255, 255, 255, .04);
+    }
+    
     /* ── Toast ── */
-    .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface);backdrop-filter:blur(12px);border:1px solid var(--primary);color:#fff;padding:.85rem 1.25rem;border-radius:.5rem;box-shadow:0 8px 20px rgba(0,0,0,.3);transform:translateY(16px);opacity:0;transition:.3s;z-index:2000;pointer-events:none;font-size:.9rem}
-    .toast.show{transform:translateY(0);opacity:1}
-
-    @keyframes fadeDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    @keyframes spin{to{transform:rotate(360deg)}}
-
-    @media(max-width:640px){.grid2{grid-template-columns:1fr}.fg.full{grid-column:auto}.score-grid{grid-template-columns:1fr}.topnav{flex-direction:column;gap:.75rem}.nav-links{justify-content:center}}
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--surface);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--primary);
+      color: #fff;
+      padding: .85rem 1.25rem;
+      border-radius: .5rem;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, .3);
+      transform: translateY(16px);
+      opacity: 0;
+      transition: .3s;
+      z-index: 2000;
+      pointer-events: none;
+      font-size: .9rem;
+    }
+    
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-16px) }
+      to { opacity: 1; transform: translateY(0) }
+    }
+    
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px) }
+      to { opacity: 1; transform: translateY(0) }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0 }
+      to { opacity: 1 }
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg) }
+    }
   </style>
-  <link rel="stylesheet" href="styles/premium.css">
 </head>
 <body>
 
-
-
   <div class="topnav">
     <a href="dashboard.html" class="logo">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        CareerCraft AI
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      CareerCraft AI
     </a>
     <div class="nav-links" style="display:flex;gap:1rem;">
       <a href="resume.html" class="nav-btn">📝 Resume</a>
@@ -156,7 +928,7 @@
   <div class="container">
     <div class="hero">
       <h1>Cold Email <em>Writer</em></h1>
-      <p>Elite sales frameworks (PAS · AIDA) that guarantee replies.</p>
+      <p>Elite outreach and sales copywriting frameworks that maximize response rates.</p>
     </div>
 
     <div class="alert" id="errAlert">
@@ -164,70 +936,249 @@
       <p id="errMsg">Something went wrong.</p>
     </div>
 
-    <!-- Nexus -->
-    <div class="nexus">
-      <div>
-        <h3>✨ The Nexus — Import Context</h3>
-        <p>Skip typing. Load your background from a saved resume or PDF.</p>
+    <!-- Layout Grid -->
+    <div class="app-layout">
+      
+      <!-- LEFT: FORM COLUMN -->
+      <div class="left-pane">
+        
+        <!-- Nexus Import Card -->
+        <div class="nexus">
+          <div>
+            <h3>✨ Context Nexus</h3>
+            <p>Load background summary directly from a saved resume or upload a PDF.</p>
+          </div>
+          <div class="nexus-actions">
+            <button type="button" class="nbtn outline" id="btnUploadPdf">⬆ Upload PDF</button>
+            <input type="file" id="fileIn" accept=".pdf,.docx,application/pdf" style="display:none">
+            <button type="button" class="nbtn" id="btnSelectSaved">＋ Select Saved</button>
+          </div>
+          <div id="pdfStatus"></div>
+        </div>
+
+        <form id="emailForm" novalidate>
+          
+          <!-- STEP 1: Select Email Goal -->
+          <div class="card" style="animation-delay:.05s">
+            <div class="card-head">🎯 Step 1 — Select Email Goal</div>
+            <div class="fg">
+              <label for="emailGoal">What is the objective of this cold email? <span class="req">*</span></label>
+              <select id="emailGoal" required>
+                <option value="">— Select Goal —</option>
+                <option value="Internship Request">Internship Request</option>
+                <option value="Job Application">Job Application</option>
+                <option value="Recruiter Outreach">Recruiter Outreach</option>
+                <option value="Referral Request">Referral Request</option>
+                <option value="Networking">Networking</option>
+                <option value="Follow-Up">Follow-Up</option>
+                <option value="Business Proposal">Business Proposal</option>
+                <option value="Custom">Custom</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- STEP 2: Enter Recipient Details -->
+          <div class="card" style="animation-delay:.1s">
+            <div class="card-head">👥 Step 2 — Enter Recipient Details</div>
+            <div class="grid2">
+              <div class="fg">
+                <label for="recipientName">Recipient Name (optional)</label>
+                <input id="recipientName" placeholder="e.g. Sarah">
+              </div>
+              <div class="fg">
+                <label for="companyName">Company Name <span class="req">*</span></label>
+                <input id="companyName" required placeholder="e.g. Stripe, OpenAI">
+              </div>
+              <div class="fg">
+                <label for="position">Recipient Position <span class="req">*</span></label>
+                <input id="position" required placeholder="e.g. VP of Engineering">
+              </div>
+              <div class="fg">
+                <label for="linkedinUrl">LinkedIn URL (optional)</label>
+                <input id="linkedinUrl" placeholder="e.g. https://linkedin.com/in/username">
+              </div>
+              <div class="fg full">
+                <label for="companyWebsite">Company Website (optional)</label>
+                <input id="companyWebsite" placeholder="e.g. https://company.com">
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3: Enter User Context -->
+          <div class="card" style="animation-delay:.15s">
+            <div class="card-head">👤 Step 3 — Enter Your Context</div>
+            <div class="grid2">
+              <div class="fg full">
+                <label for="userName">Your Name <span class="req">*</span></label>
+                <input id="userName" required placeholder="e.g. John Doe">
+              </div>
+              <div class="fg full">
+                <label for="background">Professional Background Summary <span class="req">*</span></label>
+                <textarea id="background" required placeholder="Describe your background briefly (or load it from Nexus above)…" style="min-height:90px"></textarea>
+                <div class="char-ct" id="bgCt">0 / 400</div>
+              </div>
+              <div class="fg full">
+                <label for="keySkills">Key Skills & Technologies <span class="req">*</span></label>
+                <input id="keySkills" required placeholder="e.g. Node.js, Python, AWS, React, Project Management">
+              </div>
+              <div class="fg full">
+                <label for="experience">Relevant Accomplishments & Experience <span class="req">*</span></label>
+                <textarea id="experience" required placeholder="e.g. Built and shipped 3 internal microservices, worked 2 years at TechCorp..." style="min-height:80px"></textarea>
+              </div>
+              <div class="fg full">
+                <label for="whyContacting">Why Contacting / Value Hook <span class="req">*</span></label>
+                <textarea id="whyContacting" required placeholder="What interesting value proposition do you bring? e.g. 'I want to show how Stripe can reduce API latency by 12%'" style="min-height:72px"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 4: AI Config -->
+          <div class="card" style="animation-delay:.2s">
+            <div class="card-head">⚙️ Step 4 — AI Length Config</div>
+            <div class="fg">
+              <label>Target Length</label>
+              <select id="emailLength">
+                <option value="Short (<100 words)" selected>Short (&lt;100 words)</option>
+                <option value="Ultra-Short (<50 words)">Ultra-Short (&lt;50 words)</option>
+                <option value="Medium (<200 words)">Medium (&lt;200 words)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="gen-wrap">
+            <button type="submit" class="btn-gen" id="genBtn">Generate Elite Emails</button>
+          </div>
+        </form>
       </div>
-      <div class="nexus-actions">
-        <button type="button" class="nbtn outline" id="btnUploadPdf">⬆ Upload PDF</button>
-        <input type="file" id="fileIn" accept=".pdf,.docx,application/pdf" style="display:none">
-        <button type="button" class="nbtn" id="btnSelectSaved">＋ Select Saved</button>
+
+      <!-- RIGHT: LIVE PREVIEW & WORKSPACE -->
+      <div class="right-pane">
+        
+        <!-- Live Email Preview Card -->
+        <div class="card" id="previewCard" style="animation-delay:.05s">
+          <div class="card-head" id="previewTitle">📝 Live Email Preview</div>
+          
+          <div class="spam-alert" id="spamAlert">
+            ⚠️ <strong>Spam Trigger Warning:</strong> The current variant contains spam-associated words (<span id="spamWordsText"></span>) which may affect deliverability. Consider replacing them.
+          </div>
+
+          <!-- Preview Header -->
+          <div class="preview-header">
+            <div class="preview-meta-row">
+              <span id="previewMeta">To: [Recipient Details]</span>
+              <span class="badge" id="previewApproachBadge" style="display:none">PAS Framework</span>
+            </div>
+            <div class="preview-subject-line" id="previewSubject">Subject: [Subject Line]</div>
+          </div>
+
+          <!-- Preview Body -->
+          <div class="preview-body-container" id="previewBody" contenteditable="true" spellcheck="false" title="Click to edit content directly">
+            [Email Body text will compile here as you fill out the form...]
+          </div>
+
+          <!-- Variant Selector (Hidden before generate) -->
+          <div id="variantTabsRow" style="display:none;">
+            <label style="display:block;margin-bottom:0.4rem;font-size:0.8rem;font-weight:700;">Compare Variants</label>
+            <div class="tabs" id="vtabs">
+              <button type="button" class="tab on" data-key="A">Professional</button>
+              <button type="button" class="tab" data-key="B">Friendly</button>
+              <button type="button" class="tab" data-key="C">Direct</button>
+              <button type="button" class="tab" data-key="D">Formal</button>
+              <button type="button" class="tab" data-key="E">High-Response</button>
+            </div>
+          </div>
+
+          <!-- Export Actions -->
+          <div class="preview-actions-row">
+            <button type="button" class="abtn primary" id="btnCopyEmail">📋 Copy Email</button>
+            <button type="button" class="abtn" id="btnCopySubject">📋 Copy Subject</button>
+            <button type="button" class="abtn" id="btnExportTxt">📄 Export TXT</button>
+            <button type="button" class="abtn" id="btnExportPdf">📕 Export PDF</button>
+            <button type="button" class="abtn" id="btnSaveDraft">💾 Save Draft</button>
+          </div>
+
+          <!-- Email Optimizer Panel -->
+          <div class="optimizer-box" id="optimizerBox" style="display:none;">
+            <div class="optimizer-head">⚡ AI Email Optimizer</div>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem">Provide feedback to instantly rewrite and refine this specific variant (e.g. "make it punchier", "focus on cloud migration skills").</p>
+            <div class="optimizer-row">
+              <input type="text" id="optimizerFeedback" placeholder="e.g. Make it shorter and add a link hook...">
+              <button type="button" class="nbtn" id="btnRunOptimizer">Improve</button>
+            </div>
+          </div>
+
+          <!-- Subject Line Generator Panel -->
+          <div class="subjects-box" id="subjectsBox" style="display:none;">
+            <div class="subjects-title-row">
+              <h4>🎯 Alternative Subject Lines</h4>
+              <button type="button" class="draft-btn" id="btnRegenSubjects" style="padding:0.25rem 0.5rem">🔄 Regenerate</button>
+            </div>
+            <div class="subjects-list" id="subjectsList">
+              <!-- Subject items will go here -->
+            </div>
+          </div>
+
+          <!-- Quality Engine Panel -->
+          <div class="quality-box" id="qualityBox" style="display:none;">
+            <div class="quality-title">
+              <span>📊 AI Quality Evaluation</span>
+              <span class="score-badge score-high" id="overallScoreBadge">90% Reply Probability</span>
+            </div>
+            <div class="quality-list">
+              <div class="quality-item">
+                <span class="quality-icon">✅</span>
+                <span id="strengthsText"></span>
+              </div>
+              <div class="quality-item">
+                <span class="quality-icon">⚠️</span>
+                <span id="weaknessesText"></span>
+              </div>
+              <div class="quality-item">
+                <span class="quality-icon">💡</span>
+                <span id="suggestionsText"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Follow-up Card -->
+          <div class="card" id="fuCard" style="display:none;margin-top:1.25rem;background:rgba(56,189,248,.04);border-color:rgba(56,189,248,.22)">
+            <div class="card-head">🔄 3-Day Follow-Up Sequence</div>
+            <div class="preview-body-container" id="fuBody" style="min-height:auto;background:rgba(0,0,0,0.15)"></div>
+            <button type="button" class="abtn" id="cpFu" style="width:100%;justify-content:center">📋 Copy Follow-up</button>
+          </div>
+
+        </div>
+
       </div>
-      <div id="pdfStatus"></div>
+
     </div>
 
-    <!-- Form -->
-    <form id="emailForm" novalidate>
-      <div class="card" style="animation-delay:.05s">
-        <div class="card-head">🎯 Step 1 — Target</div>
-        <div class="grid2">
-          <div class="fg"><label>Company <span class="req">*</span></label><input id="company" required placeholder="e.g. Stripe, OpenAI"></div>
-          <div class="fg"><label>Recipient Title <span class="req">*</span></label><input id="recipientTitle" required placeholder="e.g. VP of Engineering"></div>
-          <div class="fg full"><label>Recipient Name <span style="color:var(--text-muted);font-weight:400">(optional)</span></label><input id="recipientName" placeholder="e.g. Sarah"></div>
-        </div>
-      </div>
-
-      <div class="card" style="animation-delay:.1s">
-        <div class="card-head">👤 Step 2 — Your Context</div>
-        <div class="grid2">
-          <div class="fg full"><label>Your Name <span class="req">*</span></label><input id="senderName" required placeholder="e.g. John Doe"></div>
-          <div class="fg full"><label>Background / Skills <span class="req">*</span></label><textarea id="background" required placeholder="Auto-fill via Nexus above, or type here…"></textarea><div class="char-ct" id="bgCt">0 / 400</div></div>
-          <div class="fg"><label>Industry <span class="req">*</span></label><select id="industry" required><option value="">— Select —</option><option>Tech & Software</option><option>Finance & Crypto</option><option>Marketing</option><option>Healthcare</option><option>Other</option></select></div>
-          <div class="fg"><label>Purpose <span class="req">*</span></label><select id="purpose" required><option value="">— Select —</option><option>Job Inquiry</option><option>Freelance Pitch</option><option>Networking</option><option>Partnership</option></select></div>
-          <div class="fg full"><label>Unique Value Hook <span class="req">*</span></label><textarea id="valueProp" required placeholder="What impressive thing have you done? e.g. 'Scaled a Node backend to 5M req/day'" style="min-height:72px"></textarea></div>
-        </div>
-      </div>
-
-      <div class="card" style="animation-delay:.15s">
-        <div class="card-head">⚙️ Step 3 — AI Config</div>
-        <div class="grid2">
-          <div class="fg"><label>Tone</label><div class="pills" id="tonePills"><button type="button" class="pill on">Professional</button><button type="button" class="pill">Conversational</button><button type="button" class="pill">Bold & Direct</button></div></div>
-          <div class="fg"><label>Length</label><div class="pills" id="lenPills"><button type="button" class="pill on">Short (&lt;100 words)</button><button type="button" class="pill">Ultra-Short (&lt;50 words)</button></div></div>
-        </div>
-      </div>
-
-      <div class="gen-wrap"><button type="submit" class="btn-gen" id="genBtn">Generate Elite Emails</button></div>
-    </form>
-
-    <!-- Skeleton -->
+    <!-- Skeleton loader -->
     <div class="skel-wrap" id="skelWrap">
-      <div class="skel-msg"><svg style="animation:spin 1s linear infinite;width:20px;height:20px;display:inline-block;vertical-align:middle;margin-right:.4rem" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-dasharray="32" stroke-linecap="round"/></svg>Analysing frameworks & writing copy…</div>
+      <div class="skel-msg">
+        <svg style="animation:spin 1s linear infinite;width:20px;height:20px;display:inline-block;vertical-align:middle;margin-right:.4rem" fill="none" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-dasharray="32" stroke-linecap="round"/>
+        </svg>
+        AI is writing and evaluating your copy...
+      </div>
       <div class="card"><div class="skel" style="height:28px;width:35%"></div><div class="skel" style="height:90px;width:100%"></div></div>
       <div class="card" style="opacity:.6"><div class="skel" style="height:28px;width:28%"></div><div class="skel" style="height:90px;width:100%"></div></div>
     </div>
 
-    <!-- Results -->
-    <div id="results">
-      <h2 style="font-size:1.35rem;text-align:center;margin-bottom:1.25rem">📬 Your Elite Variants</h2>
-      <div class="tabs" id="vtabs"></div>
-      <div id="panels"></div>
-      <div class="card" id="fuCard"><div class="card-head">🔄 3-Day Follow-Up</div><div class="ebody" id="fuBody"></div><button type="button" class="abtn cp" id="cpFu">📋 Copy Follow-up</button></div>
+    <!-- SAVED DRAFTS / DRAFT HISTORY -->
+    <div class="history-card" id="historySection">
+      <div class="history-header-row">
+        <h2>📂 Saved Outreach Drafts</h2>
+        <input type="text" id="draftSearch" class="history-search-input" placeholder="Search drafts by company, position...">
+      </div>
+      <div class="drafts-grid" id="draftsList">
+        <p style="color:var(--text-muted);text-align:center;grid-column:1/-1;padding:2rem;">Loading saved drafts...</p>
+      </div>
     </div>
+
   </div>
 
-  <!-- Modal -->
+  <!-- Saved Resume Nexus Modal -->
   <div class="modal-bg" id="nexusModal">
     <div class="modal">
       <h2>✨ Select a Saved Resume</h2>
@@ -238,256 +1189,1046 @@
 
   <div class="toast" id="toast">Message</div>
 
-  <script id="app-logic">
-// UI Logic (copied from original implementation)
-// ── Supabase Init ────────────────────────────────────────────────────────
-let supabaseClient = null;
-let nexusUnavailable = true;
-let currentUser = null;
-let savedResumes = [];
-let currentData = null;
+  <script>
+    // ── Supabase Init & Global Variables ─────────────────────────────────────
+    let supabaseClient = null;
+    let currentUser = null;
+    let savedResumes = [];
+    
+    // Application State Variables
+    let currentGenerated = null; // Stores currently generated payload
+    let activeVariantKey = 'A'; // 'A' | 'B' | 'C' | 'D' | 'E'
+    let currentDraftId = null; // Stores loaded draft database ID
 
-(async () => {
-  await window.appSdk.ready;
-  supabaseClient = window.appSdk.client;
-  nexusUnavailable = !supabaseClient;
-  if (nexusUnavailable) {
-    showToast('Nexus import is unavailable right now. You can still fill details manually.', true);
-  }
-  try {
-    const session = await window.appSdk.auth.getSession();
-    if (session) {
-      currentUser = session.user;
-    }
-  } catch (e) {
-    console.warn('Auth session error:', e);
-  }
-})();
-// ── UI Helpers ────────────────────────────────────────────────────────
-function showToast(msg, isError = false) {
-  window.appSdk.ui.showToast(msg, isError);
-}
-function setActivePill(group, clickedPill) {
-  if (!group || !clickedPill) return;
-  group.querySelectorAll('.pill').forEach(p => p.classList.remove('on'));
-  clickedPill.classList.add('on');
-}
-document.querySelectorAll('.pills').forEach(group => {
-  group.addEventListener('click', e => {
-    const clicked = e.target.closest('.pill');
-    if (!clicked) return;
-    setActivePill(group, clicked);
-  });
-});
-// Nexus Modal
-async function openNexusModal() {
-  if (!supabaseClient) return showToast('Nexus is currently unavailable. Please refresh the page.', true);
-  if (!currentUser) return showToast('Please log in first to access saved resumes.', true);
-  document.getElementById('nexusModal').classList.add('show');
-  const { data, error } = await supabaseClient.from('resumes').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-  const list = document.getElementById('rlist');
-  if (error || !data || data.length === 0) {
-    list.innerHTML = '<p style="color:var(--text-muted);text-align:center;">No saved resumes found.</p>';
-    return;
-  }
-  savedResumes = data;
-  list.innerHTML = '';
-  data.forEach((r, idx) => {
-    const div = document.createElement('div');
-    div.className = 'ritem';
-    div.dataset.idx = idx;
-    div.innerHTML = `<h4>${r.full_name || 'Untitled'}</h4><p>${r.title || ''}</p>`;
-    list.appendChild(div);
-  });
-}
-function closeNexusModal() { document.getElementById('nexusModal').classList.remove('show'); }
-document.getElementById('btnSelectSaved').addEventListener('click', e => { e.stopPropagation(); openNexusModal(); });
-document.getElementById('closeModal').addEventListener('click', e => { e.stopPropagation(); closeNexusModal(); });
-document.getElementById('nexusModal').addEventListener('click', e => { if (e.target === document.getElementById('nexusModal')) closeNexusModal(); });
-document.querySelector('.modal').addEventListener('click', e => e.stopPropagation());
-// Click resume from list
-document.getElementById('rlist').addEventListener('click', e => {
-  const item = e.target.closest('.ritem');
-  if (!item) return;
-  const idx = Number(item.dataset.idx);
-  if (isNaN(idx) || !savedResumes[idx]) return;
-  const r = savedResumes[idx];
-  if (r.full_name) document.getElementById('senderName').value = r.full_name;
-  let bg = '';
-  if (r.professional_summary) bg += r.professional_summary + ' ';
-  if (r.experience && r.experience.length) bg += `Previously ${r.experience[0].title} at ${r.experience[0].company}. `;
-  if (r.skills && r.skills.length) bg += `Core skills: ${r.skills.slice(0,6).join(', ')}.`;
-  const bgInput = document.getElementById('background');
-  bgInput.value = bg.trim().substring(0,400);
-  document.getElementById('bgCt').textContent = `${bgInput.value.length} / 400`;
-  // Live character count for manual edits
-  document.getElementById('background').addEventListener('input', e => {
-    const len = e.target.value.length;
-    document.getElementById('bgCt').textContent = `${len} / 400`;
-  });
-  closeNexusModal();
-  showToast('Context imported!');
-});
-// PDF upload handling
-async function handlePDFUpload(input) {
-  const file = (input.files && (input.files[0] || input.files.item(0))) || null;
-  if (!file) return;
-  const status = document.getElementById('pdfStatus');
-  status.style.display = 'block';
-  status.textContent = `⏳ Parsing ${file.name}...`;
-  const form = new FormData();
-  form.append('resume', file);
-  const session = await window.appSdk.auth.getSession();
-  const headers = {};
-  if (session?.access_token) {
-    headers['Authorization'] = `Bearer ${session.access_token}`;
-  }
+    // Dual-Layer Storage Layer
+    const DraftStore = {
+      dbAvailable: null,
 
-  try {
-    const res = await fetch('/api/upload-resume', { method: 'POST', headers: headers, body: form });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
-    if (data.resumeText) {
-      const bg = document.getElementById('background');
-      bg.value = data.resumeText.substring(0,400).trim();
-      document.getElementById('bgCt').textContent = `${bg.value.length} / 400`;
-      status.textContent = `Imported ${file.name}`;
-      showToast('PDF imported!');
-    } else {
-      throw new Error('No text extracted');
-    }
-  } catch (err) {
-    console.error(err);
-    status.textContent = `Upload failed: ${err.message}`;
-    status.style.color = '#fca5a5';
-  }
-  input.value = '';
-}
-// Bind upload button
-document.getElementById('btnUploadPdf').addEventListener('click', () => {
-  document.getElementById('fileIn').click();
-});
-document.getElementById('fileIn').addEventListener('change', function(){ handlePDFUpload(this); });
-// Form submission
-document.getElementById('emailForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  document.getElementById('errAlert').classList.remove('show');
-  document.getElementById('results').style.display = 'none';
-  document.getElementById('skelWrap').classList.add('show');
-  document.getElementById('genBtn').disabled = true;
-  const tone = document.querySelector('#tonePills .on')?.textContent.trim() || 'Professional';
-  const length = document.querySelector('#lenPills .on')?.textContent.trim() || 'Short (<100 words)';
-  const payload = {
-    company: document.getElementById('company').value.trim(),
-    recipientTitle: document.getElementById('recipientTitle').value.trim(),
-    recipientName: document.getElementById('recipientName').value.trim(),
-    senderName: document.getElementById('senderName').value.trim(),
-    background: document.getElementById('background').value.trim(),
-    industry: document.getElementById('industry').value,
-    purpose: document.getElementById('purpose').value,
-    valueProposition: document.getElementById('valueProp').value.trim(),
-    tone,
-    length
-  };
-  try {
-    const session = await window.appSdk.auth.getSession();
-    const headers = { 'Content-Type': 'application/json' };
-    if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
+      async checkDb() {
+        if (!supabaseClient || !currentUser) {
+          this.dbAvailable = false;
+          return false;
+        }
+        try {
+          const { data, error } = await supabaseClient.from('email_history').select('id').limit(1);
+          if (error && error.code === 'PGRST205') {
+            this.dbAvailable = false;
+          } else {
+            this.dbAvailable = true;
+          }
+        } catch (e) {
+          this.dbAvailable = false;
+        }
+        return this.dbAvailable;
+      },
+
+      async save(draftData) {
+        if (this.dbAvailable === null) await this.checkDb();
+
+        const metadata = {
+          variantName: activeVariantKey,
+          emailGoal: draftData.emailGoal,
+          recipientName: draftData.recipientName,
+          linkedinUrl: draftData.linkedinUrl,
+          website: draftData.companyWebsite,
+          userName: draftData.userName,
+          background: draftData.background,
+          keySkills: draftData.keySkills,
+          experience: draftData.experience,
+          whyContacting: draftData.whyContacting,
+          length: draftData.length,
+          generatedPayload: currentGenerated // Save entire payload so we can reload subject lines, evaluation, variants
+        };
+
+        const record = {
+          user_id: currentUser?.id || 'anonymous',
+          company: draftData.companyName,
+          recipient_title: draftData.position,
+          subject: draftData.subject,
+          body: draftData.body,
+          variant: JSON.stringify(metadata),
+          status: 'draft',
+          created_at: new Date().toISOString()
+        };
+
+        if (this.dbAvailable) {
+          try {
+            if (currentDraftId && !String(currentDraftId).startsWith('local_')) {
+              const { data, error } = await supabaseClient
+                .from('email_history')
+                .update({
+                  company: record.company,
+                  recipient_title: record.recipient_title,
+                  subject: record.subject,
+                  body: record.body,
+                  variant: record.variant
+                })
+                .eq('id', currentDraftId)
+                .select();
+              if (error) throw error;
+              return data[0];
+            } else {
+              const { data, error } = await supabaseClient
+                .from('email_history')
+                .insert([record])
+                .select();
+              if (error) throw error;
+              if (data && data[0]) {
+                currentDraftId = data[0].id;
+              }
+              return data[0];
+            }
+          } catch (err) {
+            console.warn('Supabase save failed, falling back to localStorage:', err);
+          }
+        }
+
+        // LocalStorage Fallback
+        let localDrafts = JSON.parse(localStorage.getItem('cc_email_drafts') || '[]');
+        if (currentDraftId && String(currentDraftId).startsWith('local_')) {
+          const idx = localDrafts.findIndex(d => d.id === currentDraftId);
+          if (idx !== -1) {
+            localDrafts[idx] = { ...localDrafts[idx], ...record, id: currentDraftId };
+          }
+        } else {
+          currentDraftId = 'local_' + Math.random().toString(36).substr(2, 9);
+          const newDraft = { ...record, id: currentDraftId };
+          localDrafts.unshift(newDraft);
+        }
+        localStorage.setItem('cc_email_drafts', JSON.stringify(localDrafts));
+        return { id: currentDraftId, ...record };
+      },
+
+      async list() {
+        if (this.dbAvailable === null) await this.checkDb();
+
+        let dbDrafts = [];
+        if (this.dbAvailable) {
+          try {
+            const { data, error } = await supabaseClient
+              .from('email_history')
+              .select('*')
+              .eq('user_id', currentUser.id)
+              .order('created_at', { ascending: false });
+            if (!error && data) {
+              dbDrafts = data;
+            }
+          } catch (err) {
+            console.warn('Supabase list failed:', err);
+          }
+        }
+
+        const localDrafts = JSON.parse(localStorage.getItem('cc_email_drafts') || '[]');
+        const userLocalDrafts = localDrafts.filter(d => d.user_id === (currentUser?.id || 'anonymous'));
+
+        const combined = [...userLocalDrafts, ...dbDrafts];
+        combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        return combined;
+      },
+
+      async delete(id) {
+        if (this.dbAvailable === null) await this.checkDb();
+
+        if (this.dbAvailable && !String(id).startsWith('local_')) {
+          try {
+            const { error } = await supabaseClient
+              .from('email_history')
+              .delete()
+              .eq('id', id);
+            if (!error) return true;
+          } catch (err) {
+            console.warn('Supabase delete failed:', err);
+          }
+        }
+
+        let localDrafts = JSON.parse(localStorage.getItem('cc_email_drafts') || '[]');
+        localDrafts = localDrafts.filter(d => d.id !== id);
+        localStorage.setItem('cc_email_drafts', JSON.stringify(localDrafts));
+        return true;
+      }
+    };
+
+    // ── App Initialization ───────────────────────────────────────────────────
+    async function init() {
+      try {
+        await window.appSdk.ready;
+        supabaseClient = window.appSdk.client;
+        
+        // Enforce user login to access page features
+        const session = await window.appSdk.auth.requireAuth();
+        if (!session) return;
+        currentUser = session.user;
+
+        // Verify/Set up database support status
+        await DraftStore.checkDb();
+        if (!DraftStore.dbAvailable) {
+          showToast('Draft database table not found. Operating in local storage mode.', false);
+        }
+
+        // Initialize lists & listeners
+        await loadHistory();
+        wireUpLivePreview();
+        loadSavedResumes();
+
+      } catch (err) {
+        console.error('Initialization error:', err);
+        showToast('System initialization error: ' + err.message, true);
+      }
     }
 
-    const res = await fetch('/api/cold-email', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(payload)
+    function showToast(msg, isError = false) {
+      window.appSdk.ui.showToast(msg, isError);
+    }
+
+    // ── UI Interactions & Live Preview ───────────────────────────────────────
+    function wireUpLivePreview() {
+      const inputs = [
+        'companyName', 'recipientName', 'position', 'userName', 
+        'background', 'keySkills', 'experience', 'whyContacting', 'emailGoal'
+      ];
+      inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', updateLivePreview);
+          el.addEventListener('change', updateLivePreview);
+        }
+      });
+      // Character count hook for background
+      const bgInput = document.getElementById('background');
+      if (bgInput) {
+        bgInput.addEventListener('input', e => {
+          document.getElementById('bgCt').textContent = `${e.target.value.length} / 400`;
+        });
+      }
+      updateLivePreview();
+    }
+
+    function updateLivePreview() {
+      // Do not update placeholder preview if content has already been generated
+      if (currentGenerated) return;
+
+      const goal = document.getElementById('emailGoal').value || '[Email Goal]';
+      const company = document.getElementById('companyName').value.trim() || '[Company Name]';
+      const recipient = document.getElementById('recipientName').value.trim() || '[Recipient Name]';
+      const position = document.getElementById('position').value.trim() || '[Recipient Position]';
+      const userName = document.getElementById('userName').value.trim() || '[Your Name]';
+      const background = document.getElementById('background').value.trim() || '[Your Background summary]';
+      const keySkills = document.getElementById('keySkills').value.trim() || '[Key Skills]';
+      const experience = document.getElementById('experience').value.trim() || '[Accomplishments]';
+      const whyContacting = document.getElementById('whyContacting').value.trim() || '[Why you are writing]';
+
+      const subject = `inquiry regarding ${company.toLowerCase()} — ${goal.toLowerCase()}`;
+      const body = `Hi ${recipient},\n\nI’m reaching out because I saw you work as the ${position} at ${company}.\n\nMy name is ${userName}, and I have a background in ${background}, with specialized skills in ${keySkills}.\n\nGiven my experience in ${experience}, I'm connecting to discuss ${whyContacting}.\n\nWould you be open to a brief 2-minute chat next week to see if my background aligns with your team's needs?\n\nBest,\n${userName}`;
+
+      document.getElementById('previewSubject').textContent = `Subject: ${subject}`;
+      document.getElementById('previewBody').textContent = body;
+      document.getElementById('previewMeta').textContent = `To: ${recipient} (${company})`;
+    }
+
+    // ── Form Validation ──────────────────────────────────────────────────────
+    function validateForm() {
+      let isValid = true;
+      document.querySelectorAll('.fg .error-msg').forEach(el => el.remove());
+      document.querySelectorAll('.fg input, .fg textarea, .fg select').forEach(el => el.classList.remove('invalid'));
+
+      function setError(id, msg) {
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.add('invalid');
+          const err = document.createElement('span');
+          err.className = 'error-msg';
+          err.style.cssText = 'color:var(--danger);font-size:0.75rem;margin-top:0.25rem;font-weight:500;';
+          err.textContent = msg;
+          el.parentNode.appendChild(err);
+        }
+        isValid = false;
+      }
+
+      const goal = document.getElementById('emailGoal').value;
+      if (!goal) setError('emailGoal', 'Please select an email goal');
+
+      const company = document.getElementById('companyName').value.trim();
+      if (!company) setError('companyName', 'Company Name is required');
+
+      const position = document.getElementById('position').value.trim();
+      if (!position) setError('position', 'Recipient Position is required');
+
+      const userName = document.getElementById('userName').value.trim();
+      if (!userName) setError('userName', 'Your Name is required');
+
+      const background = document.getElementById('background').value.trim();
+      if (!background) setError('background', 'Background summary is required');
+      else if (background.length < 10) setError('background', 'Please write a brief summary of at least 10 characters');
+
+      const keySkills = document.getElementById('keySkills').value.trim();
+      if (!keySkills) setError('keySkills', 'Key Skills are required');
+
+      const experience = document.getElementById('experience').value.trim();
+      if (!experience) setError('experience', 'Accomplishments are required');
+
+      const whyContacting = document.getElementById('whyContacting').value.trim();
+      if (!whyContacting) setError('whyContacting', 'Reason for contacting is required');
+
+      // Validate optional URL fields
+      const linkedin = document.getElementById('linkedinUrl').value.trim();
+      if (linkedin && !/^https?:\/\/(www\.)?linkedin\.com\/.*$/i.test(linkedin)) {
+        setError('linkedinUrl', 'Please enter a valid LinkedIn URL');
+      }
+
+      const website = document.getElementById('companyWebsite').value.trim();
+      if (website && !/^https?:\/\/([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/i.test(website)) {
+        setError('companyWebsite', 'Please enter a valid website URL');
+      }
+
+      if (!isValid) {
+        showToast('Please correct the highlighted form errors.', true);
+        const firstErr = document.querySelector('.invalid');
+        if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      return isValid;
+    }
+
+    // ── Nexus Saved Resumes load ─────────────────────────────────────────────
+    async function loadSavedResumes() {
+      if (!supabaseClient) return;
+      document.getElementById('btnSelectSaved').addEventListener('click', async e => {
+        e.stopPropagation();
+        if (!currentUser) return showToast('Please log in first to access saved resumes.', true);
+        document.getElementById('nexusModal').classList.add('show');
+        
+        const list = document.getElementById('rlist');
+        list.innerHTML = '<p style="color:var(--text-muted);text-align:center">Loading saved resumes...</p>';
+
+        try {
+          const { data, error } = await supabaseClient
+            .from('resumes')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .order('created_at', { ascending: false });
+
+          if (error || !data || data.length === 0) {
+            list.innerHTML = '<p style="color:var(--text-muted);text-align:center;">No saved resumes found. Build one on the Resume builder page first!</p>';
+            return;
+          }
+          savedResumes = data;
+          list.innerHTML = '';
+          data.forEach((r, idx) => {
+            const div = document.createElement('div');
+            div.className = 'ritem';
+            div.dataset.idx = idx;
+            div.innerHTML = `<h4>${r.full_name || 'Untitled'}</h4><p>${r.title || ''}</p>`;
+            list.appendChild(div);
+          });
+        } catch (err) {
+          list.innerHTML = '<p style="color:var(--text-muted);text-align:center;">Error loading resumes.</p>';
+        }
+      });
+    }
+
+    document.getElementById('closeModal').addEventListener('click', e => { e.stopPropagation(); document.getElementById('nexusModal').classList.remove('show'); });
+    document.getElementById('nexusModal').addEventListener('click', e => { if (e.target.id === 'nexusModal') document.getElementById('nexusModal').classList.remove('show'); });
+
+    // Click resume from modal list
+    document.getElementById('rlist').addEventListener('click', e => {
+      const item = e.target.closest('.ritem');
+      if (!item) return;
+      const idx = Number(item.dataset.idx);
+      if (isNaN(idx) || !savedResumes[idx]) return;
+      const r = savedResumes[idx];
+      
+      if (r.full_name) document.getElementById('userName').value = r.full_name;
+      
+      let bg = '';
+      if (r.professional_summary) bg += r.professional_summary + ' ';
+      document.getElementById('background').value = bg.trim().substring(0, 400);
+      document.getElementById('bgCt').textContent = `${document.getElementById('background').value.length} / 400`;
+
+      if (r.skills && Array.isArray(r.skills)) {
+        document.getElementById('keySkills').value = r.skills.slice(0, 8).join(', ');
+      }
+
+      let expStr = '';
+      if (r.experience && Array.isArray(r.experience) && r.experience.length > 0) {
+        r.experience.slice(0, 2).forEach(ex => {
+          expStr += `${ex.title} at ${ex.company}: ${ex.description || ''}\n`;
+        });
+      }
+      document.getElementById('experience').value = expStr.trim();
+
+      document.getElementById('nexusModal').classList.remove('show');
+      showToast('Context imported from saved resume!');
+      updateLivePreview();
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Server error');
-    currentData = data;
-    renderResults(data);
-    if (data.fallbackUsed) {
-      showToast('AI is unavailable right now, so fallback drafts were generated.', false);
+
+    // PDF parse handling
+    async function handlePDFUpload(input) {
+      const file = (input.files && (input.files[0] || input.files.item(0))) || null;
+      if (!file) return;
+      const status = document.getElementById('pdfStatus');
+      status.style.display = 'block';
+      status.style.color = 'var(--text-muted)';
+      status.textContent = `⏳ Parsing ${file.name}...`;
+      
+      const form = new FormData();
+      form.append('resume', file);
+      
+      const session = await window.appSdk.auth.getSession();
+      const headers = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      try {
+        const res = await fetch('/api/upload-resume', { method: 'POST', headers: headers, body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
+        if (data.resumeText) {
+          const bg = document.getElementById('background');
+          bg.value = data.resumeText.substring(0, 400).trim();
+          document.getElementById('bgCt').textContent = `${bg.value.length} / 400`;
+          
+          status.textContent = `Imported: ${file.name}`;
+          status.style.color = 'var(--success)';
+          showToast('PDF background summary imported!');
+          updateLivePreview();
+        } else {
+          throw new Error('No text extracted');
+        }
+      } catch (err) {
+        console.error(err);
+        status.textContent = `Upload failed: ${err.message}`;
+        status.style.color = 'var(--danger)';
+        showToast('PDF parsing failed: ' + err.message, true);
+      }
+      input.value = '';
     }
-  } catch (err) {
-    console.error(err);
-    const alert = document.getElementById('errAlert');
-    document.getElementById('errMsg').textContent = err.message;
-    alert.classList.add('show');
-    alert.scrollIntoView({ behavior: 'smooth' });
-  } finally {
-    document.getElementById('skelWrap').classList.remove('show');
-    document.getElementById('genBtn').disabled = false;
-  }
-});
-// Rendering logic
-function renderResults(data) {
-  document.getElementById('results').style.display = 'block';
-  const panels = document.getElementById('panels');
-  const tabs = document.getElementById('vtabs');
-  panels.innerHTML = '';
-  tabs.innerHTML = '';
-  data.variants.forEach((v, i) => {
-    const active = i === 0 ? 'on' : '';
-    tabs.insertAdjacentHTML('beforeend', `<button class="tab ${active}" data-index="${i}">${v.approach}</button>`);
-    panels.insertAdjacentHTML('beforeend', `<div class="vpanel ${active}" id="panel-${i}">
-      <div class="subj-row"><span class="subj-text">Subject: ${v.subject}</span><span class="badge">${v.approach}</span></div>
-      <div class="ebody" id="body-${i}">${v.body}</div>
-      <div class="acts">
-        <button class="abtn cp" data-copy="body-${i}">Copy</button>
-        <button class="abtn" data-gmail-sub="${encodeURIComponent(v.subject)}" data-gmail-body="${encodeURIComponent(v.body)}">Gmail</button>
-      </div>
-      <div class="card" style="padding:1.5rem;background:rgba(0,0,0,.2);">
-        <h4>AI Evaluation</h4>
-        <div class="score-grid">
-          ${renderScore('Personalisation', data.scores.personalisation)}
-          ${renderScore('Clarity', data.scores.clarity)}
-          ${renderScore('CTA', 100 - data.scores.cta)}
-          ${renderScore('Length', data.scores.length)}
-        </div>
-        <div class="tip-box"><h4>Why this works</h4><p>${data.tips[i] || ''}</p></div>
-      </div>
-    </div>`);
-  });
-  // Follow‑up
-  if (data.followUp) {
-    document.getElementById('fuBody').textContent = data.followUp;
-    document.getElementById('fuCard').style.display = 'block';
-  } else {
-    document.getElementById('fuCard').style.display = 'none';
-  }
-  // Tab switching
-  document.getElementById('vtabs').addEventListener('click', e => {
-    const btn = e.target.closest('.tab');
-    if (!btn) return;
-    const idx = Number(btn.dataset.index);
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', Number(t.dataset.index) === idx));
-    document.querySelectorAll('.vpanel').forEach(p => p.classList.toggle('on', Number(p.id.split('-')[1]) === idx));
-  });
-}
-function renderScore(label, val) {
-  const v = Math.max(0, Math.min(100, val));
-  return `<div class="si"><label><span>${label}</span> <span>${v}%</span></label><div class="st"><div class="sf" style="width:${v}%"></div></div></div>`;
-}
-// Copy & Gmail actions
-document.addEventListener('click', e => {
-  const copyBtn = e.target.closest('[data-copy]');
-  const gmailBtn = e.target.closest('[data-gmail-sub]');
-  if (copyBtn) {
-    const id = copyBtn.dataset.copy;
-    const txt = document.getElementById(id).textContent;
-    navigator.clipboard.writeText(txt);
-    showToast('Copied!');
-  }
-  if (gmailBtn) {
-    const sub = gmailBtn.dataset.gmailSub;
-    const body = gmailBtn.dataset.gmailBody;
-    window.open(`https://mail.google.com/mail/?view=cm&fs=1&su=${sub}&body=${body}`, '_blank');
-  }
-});
-</script>
+
+    document.getElementById('btnUploadPdf').addEventListener('click', () => { document.getElementById('fileIn').click(); });
+    document.getElementById('fileIn').addEventListener('change', function() { handlePDFUpload(this); });
+
+    // ── Email Generation Call ────────────────────────────────────────────────
+    document.getElementById('emailForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!validateForm()) return;
+
+      document.getElementById('errAlert').classList.remove('show');
+      document.getElementById('skelWrap').classList.add('show');
+      document.getElementById('genBtn').disabled = true;
+
+      const payload = {
+        action: 'generate',
+        emailGoal: document.getElementById('emailGoal').value,
+        recipient: {
+          name: document.getElementById('recipientName').value.trim(),
+          company: document.getElementById('companyName').value.trim(),
+          position: document.getElementById('position').value.trim(),
+          linkedinUrl: document.getElementById('linkedinUrl').value.trim(),
+          website: document.getElementById('companyWebsite').value.trim()
+        },
+        userContext: {
+          name: document.getElementById('userName').value.trim(),
+          background: document.getElementById('background').value.trim(),
+          keySkills: document.getElementById('keySkills').value.trim(),
+          experience: document.getElementById('experience').value.trim(),
+          whyContacting: document.getElementById('whyContacting').value.trim()
+        },
+        length: document.getElementById('emailLength').value
+      };
+
+      try {
+        const session = await window.appSdk.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        // Setup controller for client-side API timeout (18 seconds)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 18000);
+
+        let res;
+        try {
+          res = await fetch('/api/cold-email', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload),
+            signal: controller.signal
+          });
+        } finally {
+          clearTimeout(timeoutId);
+        }
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `Generation failed: HTTP ${res.status}`);
+        
+        currentGenerated = data;
+        activeVariantKey = 'A';
+        currentDraftId = null; // Clear active draft id for new generate
+
+        renderActiveVariant();
+        
+        if (data.fallbackUsed) {
+          showToast('AI service currently unavailable. Local fallback drafts applied.', false);
+        } else {
+          showToast('Elite emails generated successfully!');
+        }
+
+      } catch (err) {
+        console.error(err);
+        let errorMsg = err.message;
+        if (err.name === 'AbortError') {
+          errorMsg = 'AI request timed out. Please try again or use local fallbacks.';
+        }
+        
+        const alert = document.getElementById('errAlert');
+        document.getElementById('errMsg').textContent = errorMsg;
+        alert.classList.add('show');
+        alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showToast('Email generation failed: ' + errorMsg, true);
+      } finally {
+        document.getElementById('skelWrap').classList.remove('show');
+        document.getElementById('genBtn').disabled = false;
+      }
+    });
+
+    // ── Variant Rendering & Tabs ─────────────────────────────────────────────
+    function getVariantByKey(key) {
+      if (!currentGenerated || !currentGenerated.variants) return null;
+      if (Array.isArray(currentGenerated.variants)) {
+        const keyToIndex = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4 };
+        return currentGenerated.variants[keyToIndex[key]];
+      }
+      return currentGenerated.variants[key];
+    }
+
+    function renderActiveVariant() {
+      if (!currentGenerated) return;
+
+      const variant = getVariantByKey(activeVariantKey);
+      if (!variant) return;
+
+      // Update Subject & Body in Preview
+      document.getElementById('previewSubject').textContent = `Subject: ${variant.subject}`;
+      document.getElementById('previewBody').textContent = variant.body;
+      
+      const recipientName = document.getElementById('recipientName').value.trim();
+      const companyName = document.getElementById('companyName').value.trim();
+      document.getElementById('previewMeta').textContent = `To: ${recipientName || '[RecipientName]'} at ${companyName || '[CompanyName]'}`;
+      
+      // Update Framework Badge
+      const badge = document.getElementById('previewApproachBadge');
+      badge.textContent = variant.approach || `${variant.tone} Tone`;
+      badge.style.display = 'inline-block';
+
+      // Update Tabs styling
+      document.querySelectorAll('.tab').forEach(btn => {
+        btn.classList.toggle('on', btn.dataset.key === activeVariantKey);
+      });
+      document.getElementById('variantTabsRow').style.display = 'block';
+
+      // Update Spam alert
+      const spamWordsText = document.getElementById('spamWordsText');
+      const spamAlert = document.getElementById('spamAlert');
+      const bodyTextLower = variant.body.toLowerCase() + ' ' + variant.subject.toLowerCase();
+      const activeSpam = currentGenerated.spamWords.filter(word => bodyTextLower.includes(word.toLowerCase()));
+
+      if (activeSpam.length > 0) {
+        spamWordsText.textContent = activeSpam.map(w => `"${w}"`).join(', ');
+        spamAlert.style.display = 'block';
+      } else {
+        spamAlert.style.display = 'none';
+      }
+
+      // Render Quality Engine Evaluations
+      renderQualityMetrics();
+
+      // Render Alternative Subject Lines
+      renderSubjectLines();
+
+      // Render Follow-Up
+      if (currentGenerated.followUp) {
+        document.getElementById('fuBody').textContent = currentGenerated.followUp;
+        document.getElementById('fuCard').style.display = 'block';
+      } else {
+        document.getElementById('fuCard').style.display = 'none';
+      }
+
+      // Display Sub-panels
+      document.getElementById('optimizerBox').style.display = 'block';
+      document.getElementById('subjectsBox').style.display = 'block';
+      document.getElementById('qualityBox').style.display = 'block';
+    }
+
+    // Tab switcher events
+    document.getElementById('vtabs').addEventListener('click', e => {
+      const tab = e.target.closest('.tab');
+      if (!tab) return;
+      activeVariantKey = tab.dataset.key;
+      renderActiveVariant();
+    });
+
+    // ── Render Quality Metrics ────────────────────────────────────────────────
+    function renderQualityMetrics() {
+      if (!currentGenerated || !currentGenerated.evaluation) return;
+      const evalData = currentGenerated.evaluation;
+
+      const badge = document.getElementById('overallScoreBadge');
+      badge.textContent = `Quality Score: ${evalData.overallScore}%`;
+      
+      badge.className = 'score-badge ' + (evalData.overallScore >= 75 ? 'score-high' : evalData.overallScore >= 50 ? 'score-mid' : 'score-low');
+
+      document.getElementById('strengthsText').innerHTML = `<strong>Strengths:</strong> ${evalData.strengths.join(' · ')}`;
+      document.getElementById('weaknessesText').innerHTML = `<strong>Weaknesses:</strong> ${evalData.weaknesses.join(' · ')}`;
+      document.getElementById('suggestionsText').innerHTML = `<strong>Suggestions:</strong> ${evalData.suggestions.join(' · ')}`;
+    }
+
+    // ── Render Alternative Subject Lines ─────────────────────────────────────
+    function renderSubjectLines() {
+      if (!currentGenerated || !currentGenerated.subjectLines) return;
+      const listContainer = document.getElementById('subjectsList');
+      listContainer.innerHTML = '';
+
+      const activeSubject = document.getElementById('previewSubject').textContent.replace('Subject: ', '');
+
+      currentGenerated.subjectLines.forEach(item => {
+        const div = document.createElement('div');
+        const isActive = item.text.trim() === activeSubject.trim();
+        div.className = `subject-item ${isActive ? 'active' : ''}`;
+        
+        div.innerHTML = `
+          <div class="subject-text">${item.text}</div>
+          <div class="subject-badges">
+            ${item.recommended ? '<span class="reco-badge">Recommended</span>' : ''}
+            <span class="prob-badge">${item.probability || 'N/A'} open rate</span>
+          </div>
+        `;
+        
+        div.addEventListener('click', () => {
+          document.getElementById('previewSubject').textContent = `Subject: ${item.text}`;
+          // Set in current variant as well
+          const v = getVariantByKey(activeVariantKey);
+          if (v) v.subject = item.text;
+          renderSubjectLines();
+          showToast('Subject line updated!');
+        });
+
+        listContainer.appendChild(div);
+      });
+    }
+
+    // Regenerate subjects button
+    document.getElementById('btnRegenSubjects').addEventListener('click', async () => {
+      if (!currentGenerated) return;
+
+      const bodyText = document.getElementById('previewBody').textContent;
+      const btn = document.getElementById('btnRegenSubjects');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '⏳ ...';
+
+      const payload = {
+        action: 'regenerate-subjects',
+        emailBody: bodyText,
+        companyName: document.getElementById('companyName').value.trim(),
+        recipientName: document.getElementById('recipientName').value.trim(),
+        position: document.getElementById('position').value.trim(),
+        emailGoal: document.getElementById('emailGoal').value
+      };
+
+      try {
+        const session = await window.appSdk.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        const res = await fetch('/api/cold-email', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Server returned error');
+
+        if (data.subjectLines) {
+          currentGenerated.subjectLines = data.subjectLines;
+          renderSubjectLines();
+          showToast('Fresh subject lines generated!');
+        }
+      } catch (err) {
+        showToast('Failed to regenerate subjects: ' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    });
+
+    // ── AI Email Optimizer rewrite ───────────────────────────────────────────
+    document.getElementById('btnRunOptimizer').addEventListener('click', async () => {
+      if (!currentGenerated) return;
+
+      const feedback = document.getElementById('optimizerFeedback').value.trim();
+      if (!feedback) return showToast('Please enter optimization feedback first.', true);
+
+      const btn = document.getElementById('btnRunOptimizer');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Improving…';
+
+      const payload = {
+        action: 'optimize',
+        emailBody: document.getElementById('previewBody').textContent,
+        feedback: feedback,
+        emailGoal: document.getElementById('emailGoal').value,
+        recipientName: document.getElementById('recipientName').value.trim(),
+        companyName: document.getElementById('companyName').value.trim(),
+        position: document.getElementById('position').value.trim(),
+        userName: document.getElementById('userName').value.trim(),
+        background: document.getElementById('background').value.trim(),
+        whyContacting: document.getElementById('whyContacting').value.trim()
+      };
+
+      try {
+        const session = await window.appSdk.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        const res = await fetch('/api/cold-email', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Server error');
+
+        if (data.optimizedBody) {
+          const v = getVariantByKey(activeVariantKey);
+          if (v) v.body = data.optimizedBody;
+          if (data.evaluation) {
+            currentGenerated.evaluation = data.evaluation;
+          }
+          renderActiveVariant();
+          document.getElementById('optimizerFeedback').value = '';
+          showToast('Email optimized and scores updated!');
+        }
+      } catch (err) {
+        showToast('Optimization failed: ' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    });
+
+    // ── Export and Copy Actions ──────────────────────────────────────────────
+    document.getElementById('btnCopyEmail').addEventListener('click', () => {
+      const text = document.getElementById('previewBody').textContent;
+      navigator.clipboard.writeText(text);
+      showToast('Email body copied to clipboard!');
+    });
+
+    document.getElementById('btnCopySubject').addEventListener('click', () => {
+      const text = document.getElementById('previewSubject').textContent.replace('Subject: ', '');
+      navigator.clipboard.writeText(text);
+      showToast('Subject line copied to clipboard!');
+    });
+
+    document.getElementById('cpFu').addEventListener('click', () => {
+      const text = document.getElementById('fuBody').textContent;
+      navigator.clipboard.writeText(text);
+      showToast('Follow-up text copied to clipboard!');
+    });
+
+    document.getElementById('btnExportTxt').addEventListener('click', () => {
+      const subject = document.getElementById('previewSubject').textContent;
+      const body = document.getElementById('previewBody').textContent;
+      const fullText = `${subject}\n\n${body}`;
+
+      const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const comp = (document.getElementById('companyName').value || 'outreach').replace(/\s+/g, '-');
+      a.download = `ColdEmail-${comp}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('TXT draft exported!');
+    });
+
+    document.getElementById('btnExportPdf').addEventListener('click', async () => {
+      const bodyText = document.getElementById('previewBody').textContent;
+      const subjectText = document.getElementById('previewSubject').textContent.replace('Subject: ', '');
+      const btn = document.getElementById('btnExportPdf');
+      const originalText = btn.textContent;
+      
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+
+      const payload = {
+        type: 'cold-email',
+        subject: subjectText,
+        body: bodyText,
+        companyName: document.getElementById('companyName').value.trim(),
+        recipientName: document.getElementById('recipientName').value.trim(),
+        senderName: document.getElementById('userName').value.trim()
+      };
+
+      try {
+        const session = await window.appSdk.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        const res = await fetch('/api/generate-pdf', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error('PDF service returned error');
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const comp = (document.getElementById('companyName').value || 'outreach').replace(/\s+/g, '-');
+        a.download = `ColdEmail-${comp}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('PDF document downloaded!');
+      } catch (err) {
+        showToast('PDF download failed: ' + err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    });
+
+    // ── Drafts history saving & loading ──────────────────────────────────────
+    async function saveDraft() {
+      const emailGoal = document.getElementById('emailGoal').value;
+      const companyName = document.getElementById('companyName').value.trim();
+      const position = document.getElementById('position').value.trim();
+      const userName = document.getElementById('userName').value.trim();
+      const background = document.getElementById('background').value.trim();
+      
+      if (!companyName || !position) {
+        return showToast('Save requires at least Company Name and Recipient Position.', true);
+      }
+
+      const draftPayload = {
+        emailGoal,
+        companyName,
+        position,
+        userName,
+        background,
+        keySkills: document.getElementById('keySkills').value.trim(),
+        experience: document.getElementById('experience').value.trim(),
+        whyContacting: document.getElementById('whyContacting').value.trim(),
+        linkedinUrl: document.getElementById('linkedinUrl').value.trim(),
+        companyWebsite: document.getElementById('companyWebsite').value.trim(),
+        length: document.getElementById('emailLength').value,
+        subject: document.getElementById('previewSubject').textContent.replace('Subject: ', ''),
+        body: document.getElementById('previewBody').textContent
+      };
+
+      try {
+        const savedRecord = await DraftStore.save(draftPayload);
+        if (savedRecord) {
+          showToast('Draft saved successfully!');
+          await loadHistory();
+        }
+      } catch (e) {
+        showToast('Failed to save draft: ' + e.message, true);
+      }
+    }
+
+    document.getElementById('btnSaveDraft').addEventListener('click', saveDraft);
+
+    async function loadHistory() {
+      const listContainer = document.getElementById('draftsList');
+      try {
+        const drafts = await DraftStore.list();
+        window.allDrafts = drafts; // Store globally for searching
+        renderDraftsGrid(drafts);
+      } catch (err) {
+        listContainer.innerHTML = '<p style="color:var(--text-muted);text-align:center;">Failed to load saved drafts.</p>';
+      }
+    }
+
+    function renderDraftsGrid(drafts) {
+      const listContainer = document.getElementById('draftsList');
+      listContainer.innerHTML = '';
+
+      if (drafts.length === 0) {
+        listContainer.innerHTML = '<p style="color:var(--text-muted);text-align:center;grid-column:1/-1;padding:2rem;">No drafts found.</p>';
+        return;
+      }
+
+      drafts.forEach(d => {
+        // Parse metadata inside variant field
+        let meta = {};
+        try {
+          meta = JSON.parse(d.variant);
+        } catch (e) {
+          meta = { variantName: d.variant || 'A' };
+        }
+
+        const dateStr = new Date(d.created_at).toLocaleDateString('en-US', {
+          month: 'short', day: 'numeric', year: 'numeric'
+        });
+
+        const isLocal = String(d.id).startsWith('local_');
+
+        const card = document.createElement('div');
+        card.className = 'draft-card';
+        card.innerHTML = `
+          <div>
+            <div class="draft-card-meta">
+              <span>${dateStr}</span>
+              <span>${isLocal ? '💾 local' : '🌐 cloud'}</span>
+            </div>
+            <div class="draft-card-title">${d.company || 'Untitled'} - ${d.recipient_title || 'Untitled'}</div>
+            <div class="draft-card-desc">${d.subject || 'No Subject'}\n${d.body || 'No Body'}</div>
+          </div>
+          <div class="draft-card-actions">
+            <button class="draft-btn load" onclick="loadDraft('${d.id}')">Load</button>
+            <button class="draft-btn" onclick="duplicateDraft('${d.id}')">Duplicate</button>
+            <button class="draft-btn delete" onclick="deleteDraft('${d.id}')">Delete</button>
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    // Search drafts
+    document.getElementById('draftSearch').addEventListener('input', e => {
+      const term = e.target.value.toLowerCase().trim();
+      if (!window.allDrafts) return;
+
+      const filtered = window.allDrafts.filter(d => {
+        return (d.company || '').toLowerCase().includes(term) ||
+               (d.recipient_title || '').toLowerCase().includes(term) ||
+               (d.subject || '').toLowerCase().includes(term) ||
+               (d.body || '').toLowerCase().includes(term);
+      });
+      renderDraftsGrid(filtered);
+    });
+
+    // Global hooks called from HTML string actions
+    window.loadDraft = function(id) {
+      const d = window.allDrafts.find(item => String(item.id) === String(id));
+      if (!d) return;
+
+      currentDraftId = d.id;
+
+      // Extract metadata
+      let meta = {};
+      try {
+        meta = JSON.parse(d.variant);
+      } catch (e) {
+        meta = { variantName: d.variant || 'A' };
+      }
+
+      activeVariantKey = meta.variantName || 'A';
+
+      // Repopulate form inputs
+      if (meta.emailGoal) document.getElementById('emailGoal').value = meta.emailGoal;
+      document.getElementById('companyName').value = d.company || '';
+      document.getElementById('position').value = d.recipient_title || '';
+      document.getElementById('recipientName').value = meta.recipientName || '';
+      if (meta.linkedinUrl) document.getElementById('linkedinUrl').value = meta.linkedinUrl;
+      if (meta.website) document.getElementById('companyWebsite').value = meta.website;
+      if (meta.userName) document.getElementById('userName').value = meta.userName;
+      if (meta.background) document.getElementById('background').value = meta.background;
+      if (meta.keySkills) document.getElementById('keySkills').value = meta.keySkills;
+      if (meta.experience) document.getElementById('experience').value = meta.experience;
+      if (meta.whyContacting) document.getElementById('whyContacting').value = meta.whyContacting;
+      if (meta.length) document.getElementById('emailLength').value = meta.length;
+
+      // Restore generated state if payload was saved
+      if (meta.generatedPayload) {
+        currentGenerated = meta.generatedPayload;
+      } else {
+        // Build single variant object in array format
+        currentGenerated = {
+          variants: [
+            { tone: 'Professional', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
+            { tone: 'Friendly', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
+            { tone: 'Direct', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
+            { tone: 'Formal', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
+            { tone: 'High-Response Optimized', subject: d.subject, body: d.body, approach: 'Loaded Draft' }
+          ],
+          subjectLines: [{ text: d.subject, probability: 'N/A', recommended: true }],
+          evaluation: {
+            overallScore: 80,
+            strengths: ["Loaded draft"],
+            weaknesses: ["Recalculation needed"],
+            suggestions: ["Generate elite emails to get deep analysis"]
+          },
+          followUp: '',
+          spamWords: []
+        };
+      }
+
+      renderActiveVariant();
+      document.getElementById('bgCt').textContent = `${(meta.background || '').length} / 400`;
+      showToast('Draft loaded successfully!');
+      
+      // Scroll to top layout
+      document.getElementById('previewCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    window.duplicateDraft = async function(id) {
+      const d = window.allDrafts.find(item => String(item.id) === String(id));
+      if (!d) return;
+
+      const record = {
+        ...d,
+        company: d.company + ' (Copy)',
+        created_at: new Date().toISOString()
+      };
+      delete record.id; // Strip old ID
+
+      try {
+        if (supabaseClient && DraftStore.dbAvailable && !String(id).startsWith('local_')) {
+          const { error } = await supabaseClient.from('email_history').insert([record]);
+          if (error) throw error;
+        } else {
+          const newLocalId = 'local_' + Math.random().toString(36).substr(2, 9);
+          let localDrafts = JSON.parse(localStorage.getItem('cc_email_drafts') || '[]');
+          localDrafts.unshift({ ...record, id: newLocalId });
+          localStorage.setItem('cc_email_drafts', JSON.stringify(localDrafts));
+        }
+        showToast('Draft duplicated!');
+        await loadHistory();
+      } catch (err) {
+        showToast('Failed to duplicate draft: ' + err.message, true);
+      }
+    };
+
+    window.deleteDraft = async function(id) {
+      if (!confirm('Are you sure you want to delete this draft?')) return;
+      try {
+        await DraftStore.delete(id);
+        if (String(currentDraftId) === String(id)) {
+          currentDraftId = null;
+        }
+        showToast('Draft deleted!');
+        await loadHistory();
+      } catch (err) {
+        showToast('Failed to delete draft: ' + err.message, true);
+      }
+    };
+
+    window.addEventListener('load', init);
+  </script>
 </body>
 </html>
-
-
-
-
