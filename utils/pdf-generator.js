@@ -125,4 +125,133 @@ function generateCoverLetterPDF(data) {
   });
 }
 
-module.exports = { generateCoverLetterPDF };
+/**
+ * Generate a premium, minimalist cold email PDF using PDFKit.
+ *
+ * @param {object} data
+ * @param {string} data.subject       - Email subject
+ * @param {string} data.body          - Email body
+ * @param {string} data.companyName   - Target company name
+ * @param {string} data.recipientName  - Recipient name
+ * @param {string} data.senderName     - Sender name
+ * @returns {Promise<Buffer>} - PDF as a Buffer
+ */
+function generateColdEmailPDF(data) {
+  return new Promise((resolve, reject) => {
+    const {
+      subject = '',
+      body = '',
+      companyName = '',
+      recipientName = '',
+      senderName = ''
+    } = data;
+
+    const doc = new PDFDocument({
+      margins: { top: 72, bottom: 72, left: 80, right: 80 },
+      size: 'A4',
+      info: {
+        Title: `Cold Email – ${companyName || 'Outreach'}`,
+        Author: senderName || 'CareerCraft AI',
+        Subject: subject
+      }
+    });
+
+    const chunks = [];
+    doc.on('data', chunk => chunks.push(chunk));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    // ── Header ─────────────────────────────────────────────────────────────────
+    if (senderName) {
+      doc
+        .fontSize(16)
+        .fillColor('#111111')
+        .font('Helvetica-Bold')
+        .text(senderName, { align: 'left' });
+      doc.moveDown(0.3);
+    }
+
+    doc
+      .fontSize(10)
+      .fillColor('#666666')
+      .font('Helvetica')
+      .text(dateStr, { align: 'left' });
+
+    doc.moveDown(0.3);
+
+    if (companyName) {
+      doc
+        .fontSize(10)
+        .fillColor('#333333')
+        .font('Helvetica-Bold')
+        .text(`To: ${recipientName ? `${recipientName} at ` : ''}${companyName}`, { align: 'left' });
+      doc.moveDown(0.3);
+    }
+
+    if (subject) {
+      doc
+        .fontSize(10)
+        .fillColor('#111111')
+        .font('Helvetica-Bold')
+        .text(`Subject: ${subject}`, { align: 'left' });
+    }
+
+    // Thin separator
+    doc
+      .moveDown(0.8)
+      .moveTo(doc.page.margins.left, doc.y)
+      .lineTo(doc.page.margins.left + pageWidth, doc.y)
+      .strokeColor('#dddddd')
+      .lineWidth(0.75)
+      .stroke()
+      .moveDown(1.2);
+
+    // ── Email body ────────────────────────────────────────────────────────────
+    doc
+      .fontSize(11)
+      .fillColor('#1a1a1a')
+      .font('Helvetica');
+
+    const cleanBody = body
+      .replace(/\\n\\n/g, '\n\n')
+      .replace(/\\n/g, '\n')
+      .replace(/\\/g, '');
+
+    const paragraphs = cleanBody
+      .split(/\n\n+/)
+      .map(p => p.trim())
+      .filter(Boolean);
+
+    paragraphs.forEach((para, idx) => {
+      const lines = para.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length === 1) {
+        doc.text(lines[0], { align: 'left', lineGap: 4 });
+      } else {
+        lines.forEach((line) => {
+          doc.text(line, { align: 'left', lineGap: 2 });
+        });
+      }
+      if (idx < paragraphs.length - 1) doc.moveDown(0.9);
+    });
+
+    // ── Footer ─────────────────────────────────────────────────────────────────
+    doc
+      .fontSize(8)
+      .fillColor('#bbbbbb')
+      .font('Helvetica')
+      .text('CareerCraft AI', doc.page.margins.left, doc.page.height - 50, {
+        align: 'center',
+        width: pageWidth
+      });
+
+    doc.end();
+  });
+}
+
+module.exports = {
+  generateCoverLetterPDF,
+  generateColdEmailPDF
+};

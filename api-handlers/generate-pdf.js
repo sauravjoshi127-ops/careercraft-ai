@@ -1,6 +1,6 @@
 'use strict';
 
-const { generateCoverLetterPDF } = require('../utils/pdf-generator');
+const { generateCoverLetterPDF, generateColdEmailPDF } = require('../utils/pdf-generator');
 const { authenticateRequest } = require('../utils/supabase');
 
 module.exports = async function handler(req, res) {
@@ -15,25 +15,55 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { letter, jobTitle, companyName, candidateName } = req.body || {};
+  const {
+    letter,
+    jobTitle,
+    companyName,
+    candidateName,
+    type,
+    subject,
+    body,
+    recipientName,
+    senderName
+  } = req.body || {};
 
-  if (!letter || !letter.trim()) {
-    return res.status(400).json({ error: 'No letter content provided.' });
+  if (type === 'cold-email') {
+    if (!body || !body.trim()) {
+      return res.status(400).json({ error: 'No email body content provided.' });
+    }
+  } else {
+    if (!letter || !letter.trim()) {
+      return res.status(400).json({ error: 'No letter content provided.' });
+    }
   }
 
   try {
     // Authenticate request to prevent resource abuse
     await authenticateRequest(req);
-    // Only pass content fields — no scores or metrics included in the PDF
-    const pdfBuffer = await generateCoverLetterPDF({
-      letter,
-      jobTitle: jobTitle || 'Cover Letter',
-      companyName: companyName || '',
-      candidateName: candidateName || ''
-    });
+    
+    let pdfBuffer;
+    let filename;
 
-    const safe = (jobTitle || 'letter').replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-').slice(0, 60);
-    const filename = `CoverLetter-${safe}-${new Date().toISOString().split('T')[0]}.pdf`;
+    if (type === 'cold-email') {
+      pdfBuffer = await generateColdEmailPDF({
+        subject: subject || '',
+        body: body || '',
+        companyName: companyName || '',
+        recipientName: recipientName || '',
+        senderName: senderName || ''
+      });
+      const safe = (companyName || 'email').replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-').slice(0, 60);
+      filename = `ColdEmail-${safe}-${new Date().toISOString().split('T')[0]}.pdf`;
+    } else {
+      pdfBuffer = await generateCoverLetterPDF({
+        letter,
+        jobTitle: jobTitle || 'Cover Letter',
+        companyName: companyName || '',
+        candidateName: candidateName || ''
+      });
+      const safe = (jobTitle || 'letter').replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-').slice(0, 60);
+      filename = `CoverLetter-${safe}-${new Date().toISOString().split('T')[0]}.pdf`;
+    }
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
