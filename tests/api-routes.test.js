@@ -7,6 +7,14 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 const app = require('../server');
 
+function restoreEnvVar(name, previousValue) {
+  if (previousValue === undefined) {
+    delete process.env[name];
+    return;
+  }
+  process.env[name] = previousValue;
+}
+
 describe('local API route wiring', () => {
   it('serves /api/ai-suggestions locally with JSON validation errors', async () => {
     const res = await request(app)
@@ -65,8 +73,8 @@ describe('local API route wiring', () => {
       assert.match(res.type, /json/);
       assert.match(res.body.error, /Missing SUPABASE_URL or SUPABASE_ANON_KEY/);
     } finally {
-      originalUrl !== undefined ? process.env.SUPABASE_URL = originalUrl : delete process.env.SUPABASE_URL;
-      originalAnon !== undefined ? process.env.SUPABASE_ANON_KEY = originalAnon : delete process.env.SUPABASE_ANON_KEY;
+      restoreEnvVar('SUPABASE_URL', originalUrl);
+      restoreEnvVar('SUPABASE_ANON_KEY', originalAnon);
     }
   });
 });
