@@ -46,19 +46,6 @@ if (!global.__envLoaded) {
     };
 
     printKeyInfo('GEMINI_API_KEY');
-    printKeyInfo('GEMINI_API_KEYS');
-    
-    let geminiIndexedCount = 0;
-    for (let i = 1; i <= 10; i++) {
-      if (process.env[`GEMINI_API_KEY_${i}`]) {
-        geminiIndexedCount++;
-      }
-    }
-    if (geminiIndexedCount > 0) {
-      console.log(`    - GEMINI_API_KEY_1..10: RESOLVED (${geminiIndexedCount} indexed keys found)`);
-    } else {
-      console.log('    - GEMINI_API_KEY_1..10: UNDEFINED');
-    }
 
     printKeyInfo('SUPABASE_URL');
     printKeyInfo('SUPABASE_ANON_KEY');

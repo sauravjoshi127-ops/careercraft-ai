@@ -100,7 +100,14 @@ module.exports = async function handler(req, res) {
         console.log('Suggestions generated successfully');
         return res.status(200).json({ suggestions });
     } catch (err) {
-        console.error('AI suggestions error:', err);
-        return res.status(500).json({ error: err.message || 'Failed to get AI suggestions.' });
+        console.error('[ai-suggestions] Error generating suggestions:', err);
+        const status = err.status || 500;
+        const msg = err.message || 'Failed to get AI suggestions.';
+        return res.status(status).json({
+            success: false,
+            error: msg === 'GEMINI_API_KEY missing' || msg.includes('Gemini API key is not configured')
+                ? 'Gemini API key is not configured on this server. Set GEMINI_API_KEY in your environment.'
+                : msg
+        });
     }
 }
