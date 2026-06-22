@@ -22,12 +22,33 @@ Open [http://localhost:3000](http://localhost:3000) in your browser. 🚀
 
 ---
 
-## Environment Variables
+## Environment Variables & Secrets
 
-| Variable | Required | Description |
-|---|---|---|
-| `GEMINI_API_KEY` | ✅ Yes | Google Gemini API key from [AI Studio](https://aistudio.google.com/app/apikey) |
-| `PORT` | No | Local server port (default: `3000`) |
+### Where to put keys locally
+1. In the project root, copy `.env.example` to `.env`.
+2. Fill in real values in `.env` (this file is ignored by git).
+3. Restart the server after changing environment variables.
+
+```bash
+cp .env.example .env
+```
+
+### Variable reference
+
+| Variable | Required | Safe in browser? | Description |
+|---|---|---|---|
+| `GEMINI_API_KEY` | ✅ Yes | ❌ No (server only) | Gemini key used by backend API handlers |
+| `SUPABASE_URL` | ✅ Yes | ✅ Public | Supabase project URL served by `/api/config` |
+| `SUPABASE_ANON_KEY` | ✅ Yes | ✅ Public | Supabase anon key served by `/api/config` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Optional | ❌ No (server only) | Supabase privileged server key |
+| `RAZORPAY_KEY_ID` | Optional | ✅ Public | Razorpay public checkout key id |
+| `RAZORPAY_KEY_SECRET` | Optional | ❌ No (server only) | Razorpay secret for payment verification |
+| `PORT` | No | ❌ No (server only) | Local server port (default: `3000`) |
+
+### Client-safe vs server-only rule
+- Only values intentionally returned from backend endpoints (for example `/api/config`) should be used client-side.
+- Never hardcode secret keys in frontend files (`*.html`, browser JS).
+- Any private third-party key must stay in server environment variables and be used only in backend handlers.
 
 ---
 
@@ -126,4 +147,9 @@ The server streams the finished PDF back as an `application/pdf` attachment, whi
 
 ## Deployment
 
-The `api/` folder contains Vercel-compatible serverless functions. Set `GEMINI_API_KEY` in your Vercel project environment variables and deploy normally.
+Set environment variables in your deployment platform settings (do not commit `.env`):
+- **Vercel**: Project → Settings → Environment Variables
+- **Netlify**: Site settings → Environment variables
+- **GitHub Actions**: Repository → Settings → Secrets and variables → Actions
+
+Use the same variable names listed in `.env.example`.

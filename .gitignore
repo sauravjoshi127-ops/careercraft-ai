@@ -5,11 +5,17 @@ node_modules/
 # Environment files
 # Contains sensitive credentials like API keys and database URLs. Never commit these files.
 .env
+.env.*
 .env.local
 .env.production
 .env.development
 .env.development.local
 .env.production.local
+!.env.example
+.envrc
+secrets.*
+*.pem
+*.key
 
 # Next.js build output
 # Automatically generated when building Next.js apps.

@@ -25,7 +25,7 @@ describe('GET /api/debug/gemini', () => {
       assert.equal(res.body.configured, false);
 
       // Case 3: Valid format key in production mode
-      process.env.GEMINI_API_KEY = 'AIzaSyA1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6';
+      process.env.GEMINI_API_KEY = 'prod_dummy_key_for_format_testing_1234567890';
       res = await request(app).get('/api/debug/gemini');
       assert.equal(res.status, 200);
       assert.equal(res.body.configured, true);

@@ -3,8 +3,6 @@
  * Centralizes Supabase integration, user auth guards, and common UI elements.
  */
 (function () {
-  const SUPABASE_URL = 'https://eduogxolvpqdtvtdiqav.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkdW9neG9sdnBxZHR2dGRpcWF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjkzMjksImV4cCI6MjA5MDIwNTMyOX0.MmCTr5qceI2iSCBzs2AcLPhn7_aoKfsoWUoKMUwhPhc';
 
   const appSdk = {
     client: null,
@@ -381,26 +379,22 @@
       }
     }
 
-    let supabaseUrl = SUPABASE_URL;
-    let supabaseKey = SUPABASE_KEY;
-
     try {
       const configRes = await fetch('/api/config');
-      if (configRes.ok) {
-        const config = await configRes.json();
-        if (config.supabaseUrl && config.supabaseKey) {
-          supabaseUrl = config.supabaseUrl;
-          supabaseKey = config.supabaseKey;
-        }
+      if (!configRes.ok) {
+        throw new Error(`Failed to load runtime configuration: ${configRes.status} ${configRes.statusText}`);
+      }
+      const config = await configRes.json();
+      if (!config.supabaseUrl || !config.supabaseKey) {
+        throw new Error('Missing required fields in runtime configuration: supabaseUrl and/or supabaseKey');
+      }
+      if (window.supabase && typeof window.supabase.createClient === 'function') {
+        appSdk.client = window.supabase.createClient(config.supabaseUrl, config.supabaseKey);
+      } else {
+        console.error('Supabase library is not available.');
       }
     } catch (err) {
-      console.warn('[SDK] Failed to load configuration from server, falling back to static settings:', err);
-    }
-
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
-      appSdk.client = window.supabase.createClient(supabaseUrl, supabaseKey);
-    } else {
-      console.error('Supabase library is not available.');
+      console.error('[SDK] Failed to initialize Supabase client from /api/config. Check server SUPABASE_URL and SUPABASE_ANON_KEY setup in the README:', err);
     }
 
     // Auto-init navigation layouts when DOM is ready
