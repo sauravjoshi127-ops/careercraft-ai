@@ -382,11 +382,11 @@
     try {
       const configRes = await fetch('/api/config');
       if (!configRes.ok) {
-        throw new Error(`Failed to load runtime configuration (${configRes.status})`);
+        throw new Error(`Failed to load runtime configuration: ${configRes.status} ${configRes.statusText}`);
       }
       const config = await configRes.json();
       if (!config.supabaseUrl || !config.supabaseKey) {
-        throw new Error('Missing Supabase runtime configuration');
+        throw new Error('Missing required fields in runtime configuration: supabaseUrl and/or supabaseKey');
       }
       if (window.supabase && typeof window.supabase.createClient === 'function') {
         appSdk.client = window.supabase.createClient(config.supabaseUrl, config.supabaseKey);

@@ -55,7 +55,7 @@ app.use(express.static(path.join(__dirname), { extensions: ['html'] }));
 app.get('/api/config', (req, res) => {
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
     return res.status(503).json({
-      error: 'Missing SUPABASE_URL or SUPABASE_ANON_KEY server environment variables'
+      error: 'Missing SUPABASE_URL or SUPABASE_ANON_KEY. Configure these server environment variables (see README: Environment Variables & Secrets).'
     });
   }
   res.json({
