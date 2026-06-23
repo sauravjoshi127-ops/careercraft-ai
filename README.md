@@ -50,6 +50,21 @@ cp .env.example .env
 - Never hardcode secret keys in frontend files (`*.html`, browser JS).
 - Any private third-party key must stay in server environment variables and be used only in backend handlers.
 
+### Exact key placement in this repository
+- Put your real values in: `./.env` (project root, same folder as `package.json`).
+- Source template: `./.env.example` (copy this file, then replace placeholders).
+
+| Variable | Put in `.env`? | Read by | Exposed to browser? |
+|---|---|---|---|
+| `GEMINI_API_KEY` | ✅ | `utils/gemini.js` | ❌ No |
+| `SUPABASE_URL` | ✅ | `server.js` (`/api/config`) | ✅ Yes (via `/api/config`) |
+| `SUPABASE_ANON_KEY` | ✅ | `server.js` (`/api/config`) | ✅ Yes (via `/api/config`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ (if using admin flows) | `utils/supabase.js`, `api-handlers/delete-user.js`, `api-handlers/verify-payment.js` | ❌ No |
+| `RAZORPAY_KEY_ID` | ✅ (if using payments) | `api-handlers/create-order.js` | ✅ Yes (returned from `create-order` response) |
+| `RAZORPAY_KEY_SECRET` | ✅ (if using payments) | `api-handlers/create-order.js`, `api-handlers/verify-payment.js` | ❌ No |
+
+Do not create `NEXT_PUBLIC_*` versions of secret keys.
+
 ---
 
 ## Project Structure
