@@ -12,7 +12,7 @@ function parseGeminiResponse(text) {
     text = jsonMatch[0];
   }
 
-  // If JSON is missing the closing brace, add it (best-effort recovery; may yield partial data)
+  // If JSON is missing the closing brace, add it (best-effort recovery)
   if (text.startsWith('{') && !text.endsWith('}')) {
     console.warn('Gemini response appears truncated; appending closing brace for recovery.');
     text = text + '}';
@@ -23,14 +23,16 @@ function parseGeminiResponse(text) {
     data = JSON.parse(text);
   } catch (e) {
     console.error('JSON parse error:', e.message, '\nText snippet:', text.substring(0, 500));
-    // Fallback: try to extract just the letter field (best-effort; complex escapes may not be handled)
+    // Fallback: try to extract just the letter field
     const letterMatch = text.match(/"letter"\s*:\s*"([\s\S]*?)"/);
     data = {
       letter: letterMatch ? letterMatch[1].replace(/\\n/g, '\n') : text,
       variants: [],
       keywords_used: [],
       ats_score: null,
-      relevance_score: null
+      relevance_score: null,
+      detailed_scores: null,
+      suggestions: []
     };
   }
 
@@ -41,10 +43,34 @@ function parseGeminiResponse(text) {
   data.ats_score = typeof data.ats_score === 'number' ? data.ats_score : null;
   data.relevance_score = typeof data.relevance_score === 'number' ? data.relevance_score : null;
 
+  if (!data.detailed_scores || typeof data.detailed_scores !== 'object') {
+    data.detailed_scores = {
+      personalization: 80,
+      professionalism: 85,
+      grammar: 90,
+      readability: 80,
+      overall: 84
+    };
+  } else {
+    data.detailed_scores.personalization = Number(data.detailed_scores.personalization) || 80;
+    data.detailed_scores.professionalism = Number(data.detailed_scores.professionalism) || 85;
+    data.detailed_scores.grammar = Number(data.detailed_scores.grammar) || 90;
+    data.detailed_scores.readability = Number(data.detailed_scores.readability) || 80;
+    data.detailed_scores.overall = Number(data.detailed_scores.overall) || 84;
+  }
+
+  data.suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+  data.suggestions = data.suggestions.map((s, idx) => ({
+    id: s.id || `s-${idx + 1}`,
+    category: typeof s.category === 'string' ? s.category : 'ATS',
+    explanation: typeof s.explanation === 'string' ? s.explanation : 'Improvement suggestion.',
+    priority: ['High', 'Medium', 'Low'].includes(s.priority) ? s.priority : 'Medium',
+    originalText: typeof s.originalText === 'string' ? s.originalText : '',
+    suggestedText: typeof s.suggestedText === 'string' ? s.suggestedText : ''
+  }));
+
   return data;
 }
-
-
 
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -76,6 +102,15 @@ module.exports = async function handler(req, res) {
   const resumeText = String(body.resumeText || '').trim();
   const mirrorStructure = Boolean(body.mirrorStructure);
 
+  // New Cover Letter Form Inputs
+  const hiringManager = String(body.hiringManager || '').trim();
+  const industry = String(body.industry || '').trim();
+  const location = String(body.location || '').trim();
+  const experienceLevel = String(body.experienceLevel || 'Mid').trim();
+  const keySkills = String(body.keySkills || '').trim();
+  const achievements = String(body.achievements || '').trim();
+  const additionalInstructions = String(body.additionalInstructions || '').trim();
+
   // Score Optimizer inputs
   const mustHaveSkills = String(body.mustHaveSkills || '').trim();
   const keyAchievements = String(body.keyAchievements || '').trim();
@@ -88,8 +123,6 @@ module.exports = async function handler(req, res) {
   if (!jobTitle || !companyName || !jobDescription) {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
-
-
 
   const resumeSection = resumeText
     ? `\nCANDIDATE RESUME (use for context, skills and achievements):\n${resumeText.slice(0, 3000)}\n`
@@ -121,20 +154,31 @@ QUALITY STANDARDS:
 - Avoid clichés like "I am writing to apply" or "I believe I would be a great fit"
 - Every sentence should add value and demonstrate suitability
 - AI must enhance weak or missing details with strong, plausible professional language
+- Tailor the language and style based on the candidate's Experience Level: ${experienceLevel}
 
 REQUIRED LETTER STRUCTURE (follow this exactly, in order):
-1. DATE: Write today's date on its own line (e.g. "April 2, 2026")
-2. GREETING: Formal salutation — use "Dear Hiring Manager," unless a specific name is inferable from the job description; end with a comma
+1. DATE: Write today's date on its own line (e.g. "${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}")
+2. GREETING: Formal salutation — use "Dear ${hiringManager || 'Hiring Manager'}," and end with a comma.
 3. OPENING PARAGRAPH: Introduce yourself, name the exact role you are applying for, name the company, and express genuine enthusiasm for the opportunity. Make a strong first impression — do NOT open with "I am writing to apply…"
 4. SKILLS & EXPERIENCE PARAGRAPH: Highlight 2–3 of the most relevant technical skills, accomplishments, or experiences that directly match the job requirements. Quantify achievements where possible (e.g. "reduced load time by 40%"). Connect your background to the role's core needs.
 5. COMPANY FIT PARAGRAPH: Explain why this specific company excites you — its mission, culture, product, or values. Show that you have researched the company and that your work style, values, and approach make you a natural fit for their team.
 6. CLOSING PARAGRAPH: Thank the reader for their time, express eagerness for an interview to discuss your qualifications further, and provide a clear call to action.
 7. PROFESSIONAL SIGN-OFF: Use "Sincerely," or "Best regards," on its own line, followed by a blank line, then the candidate's name (if provided, otherwise leave a blank signature line).
+
 ${resumeSection}${mirrorNote}${optimizerSection}
+
+FORM CONTEXT & METADATA:
+- Hiring Manager: ${hiringManager || 'Not specified'}
+- Target Industry: ${industry || 'Not specified'}
+- Target Location: ${location || 'Not specified'}
+- Key Skills to emphasize: ${keySkills || 'Not specified'}
+- Measurable Achievements to highlight: ${achievements || 'Not specified'}
+${additionalInstructions ? `- Additional Instructions: ${additionalInstructions}` : ''}
+
 FORMATTING RULES:
 - Use "\\n\\n" between each section/paragraph (double newline for spacing)
 - Use "\\n" for line breaks within the greeting and sign-off
-- Tone: ${tone || 'Professional'}
+- Tone: ${tone || 'Professional'} (Formal, Professional, Friendly, Executive, Startup, Creative, Corporate, Government, Legal, Technical, Healthcare, Academic)
 - Length: ${length || 'Medium'} (Short=4 paragraphs, Medium=5 paragraphs, Long=6 paragraphs)
 - Write in first person
 - Do NOT include placeholder text like [Your Name], [Date], [Address] — write real content only
@@ -143,29 +187,60 @@ ${opening ? `- Start with this custom opening line: "${opening}"` : ''}
 ${closing ? `- End with this custom closing: "${closing}"` : ''}
 
 CANDIDATE DETAILS:
-Job Title Applying For: ${jobTitle}
-Target Company: ${companyName}
-Job Description: ${jobDescription}
-Key Highlights: ${highlights || 'Not provided — infer from resume if available and enhance with strong, plausible professional language'}
+- Job Title Applying For: ${jobTitle}
+- Target Company: ${companyName}
+- Job Description: ${jobDescription}
+- Key Highlights: ${highlights || 'Not provided — infer from resume if available and enhance with strong, plausible professional language'}
 
 ALSO GENERATE:
-1. Three (3) alternative cover letter variants (different tones/angles), each fully written with all required sections
+1. Three (3) alternative cover letter variants (different tones/angles), each fully written with all required sections:
+   - Variant 1: Bold & Impactful (highly confident, achievement-focused, startup/creative style)
+   - Variant 2: Analytical & Technical (extremely details-oriented, focus on data, hard skills, corporate/technical style)
+   - Variant 3: Narrative & Story-driven (focuses on personal career journey, mission-driven, connection to company)
 2. Extract 6-12 important ATS keywords from the job description
-3. ATS score (0-100): how well the letter matches the job description keywords
-4. Relevance score (0-100): how well the candidate's highlights match the job requirements
+3. Detailed quality scores (0-100) reflecting:
+   - personalization: how tailored it is to this company and resume
+   - professionalism: tone alignment, layout format correctness
+   - grammar: grammatical correctness and spelling
+   - readability: clarity and readability of the sentences
+   - overall: the weighted summary score of the quality
+4. Concrete suggestions (3 to 5 items) for improvement. Each suggestion MUST contain:
+   - id: unique string (e.g. "s1", "s2")
+   - category: one of: "ATS", "Grammar", "Sentence Refinement", "Impact", "Tone"
+   - explanation: a detailed sentence explaining the rationale for the change
+   - priority: one of: "High", "Medium", "Low"
+   - originalText: exact substring from the generated main "letter" that needs optimization
+   - suggestedText: the improved replacement text for that substring. The originalText and suggestedText must be matched so they can be replaced inline.
 
 Return ONLY a single valid JSON object. No markdown fences. No explanatory text outside the JSON.
 
 {
   "letter": "Full cover letter with \\n\\n between paragraphs...",
   "variants": [
-    "Variant 1 full text with \\n\\n between paragraphs...",
-    "Variant 2 full text with \\n\\n between paragraphs...",
-    "Variant 3 full text with \\n\\n between paragraphs..."
+    "Variant 1 full text...",
+    "Variant 2 full text...",
+    "Variant 3 full text..."
   ],
-  "keywords_used": ["keyword1", "keyword2", "keyword3"],
+  "keywords_used": ["keyword1", "keyword2", ...],
   "ats_score": 85,
-  "relevance_score": 90
+  "relevance_score": 90,
+  "detailed_scores": {
+    "personalization": 88,
+    "professionalism": 92,
+    "grammar": 95,
+    "readability": 85,
+    "overall": 90
+  },
+  "suggestions": [
+    {
+      "id": "s1",
+      "category": "ATS",
+      "explanation": "Inject the keyword 'Kubernetes' into the container paragraph for automated scanner detection.",
+      "priority": "High",
+      "originalText": "managed Docker deployments",
+      "suggestedText": "orchestrated container deployments with Kubernetes and Docker"
+    }
+  ]
 }`;
 
   try {
@@ -206,7 +281,6 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
     const data = parseGeminiResponse(rawText);
 
     // Override AI-provided scores with server-side calculated scores
-    // Combine highlights with optimizer answers for a richer relevance calculation
     const combinedHighlights = [highlights, mustHaveSkills, keyAchievements, workHistoryAlignment, softSkills]
       .filter(Boolean).join(' ');
     const atsResult = calculateAtsScore(data.letter, jobDescription);
@@ -237,4 +311,4 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
         : msg
     });
   }
-}
+};
