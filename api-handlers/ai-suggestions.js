@@ -2,6 +2,18 @@ require('../utils/env-loader');
 const { authenticateRequest } = require('../utils/supabase');
 const { callGemini } = require('../utils/gemini');
 
+function extractGeminiText(result) {
+    const candidates = Array.isArray(result?.candidates) ? result.candidates : [];
+    const firstCandidate = candidates[0] || {};
+    const parts = Array.isArray(firstCandidate?.content?.parts) ? firstCandidate.content.parts : [];
+
+    // Gemini can split a single response across multiple text parts.
+    return parts
+        .map(part => (typeof part?.text === 'string' ? part.text : ''))
+        .join('')
+        .trim();
+}
+
 module.exports = async function handler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -77,7 +89,7 @@ module.exports = async function handler(req, res) {
                 },
             ],
             generationConfig: {
-                maxOutputTokens: 600,
+                maxOutputTokens: 2048,
                 temperature: 0.7,
             },
         });
@@ -91,13 +103,15 @@ module.exports = async function handler(req, res) {
         }
 
         const result = await geminiRes.json();
-        const suggestions = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+        console.log('[ai-suggestions] Raw Gemini response:', JSON.stringify(result));
+
+        const suggestions = extractGeminiText(result);
 
         if (!suggestions) {
             throw new Error('No suggestions returned from Gemini API');
         }
 
-        console.log('Suggestions generated successfully');
+        console.log('[ai-suggestions] Suggestions generated successfully. Length:', suggestions.length);
         return res.status(200).json({ suggestions });
     } catch (err) {
         console.error('[ai-suggestions] Error generating suggestions:', err);

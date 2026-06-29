@@ -1171,6 +1171,8 @@ async function downloadPDF(resumeId) {
 
                 const result = await response.json();
                 currentAISuggestion = result.suggestions || '';
+                console.log('[AI Suggestions] Raw API suggestion length:', currentAISuggestion.length);
+                console.log('[AI Suggestions] Raw API suggestion text:', currentAISuggestion);
                 box.textContent = currentAISuggestion || '(No suggestion returned)';
 
                 if (currentAISuggestion && (section === 'summary' || section === 'skills' || (section === 'experience' && itemIndex !== null))) {
@@ -1189,7 +1191,10 @@ async function downloadPDF(resumeId) {
         function acceptAISuggestion() {
             if (!currentAISuggestion) return;
             if (currentAISection === 'summary') {
-                document.getElementById('summary').value = currentAISuggestion;
+                const summaryEl = document.getElementById('summary');
+                summaryEl.value = currentAISuggestion;
+                console.log('[AI Suggestions] Summary textarea length:', summaryEl.value.length);
+                console.log('[AI Suggestions] Summary equals API text:', summaryEl.value === currentAISuggestion);
                 showAlert('success', 'Summary updated with AI suggestion.');
             } else if (currentAISection === 'skills') {
                 const newSkills = currentAISuggestion.split(',').map(s => s.trim()).filter(s => s);
@@ -1199,6 +1204,8 @@ async function downloadPDF(resumeId) {
                 const textEl = document.getElementById(`expDesc-${currentAIItemIndex}`);
                 if (textEl) {
                     textEl.value = currentAISuggestion;
+                    console.log('[AI Suggestions] Experience textarea length:', textEl.value.length);
+                    console.log('[AI Suggestions] Experience equals API text:', textEl.value === currentAISuggestion);
                     showAlert('success', 'Experience description polished with AI suggestion.');
                 }
             }
