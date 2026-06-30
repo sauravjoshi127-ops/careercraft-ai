@@ -43,45 +43,56 @@ function cleanResumeInputs(text) {
 /**
  * Checks if the generated email output satisfies all production quality rules.
  */
-function validateColdEmailOutput(data) {
+function validateColdEmailOutput(data, minLength, maxLength) {
   if (!data || !Array.isArray(data.variants) || data.variants.length < 6) {
     console.warn('[cold-email validation] Failed: Missing or insufficient variants (expected 6).');
-    return false;
+    return { isValid: false, reason: 'Missing or insufficient variants (expected 6)' };
   }
   
   const placeholderRegex = /\[[A-Za-z0-9\s_-]+\]|<[A-Za-z0-9\s_-]+>|{your\s|your_placeholder/i;
   const resumeHeaderRegex = /(education|skills|work experience|summary|languages|references|certifications)\s*:/i;
   const debugRegex = /internal prompt|system prompt|gemini|llm|ai fallback/i;
   
-  for (const variant of data.variants) {
+  for (let i = 0; i < data.variants.length; i++) {
+    const variant = data.variants[i];
     if (!variant.subject || !variant.body || !variant.tone) {
       console.warn('[cold-email validation] Failed: Empty variant fields.');
-      return false;
+      return { isValid: false, reason: 'Empty variant fields' };
+    }
+    
+    // Check word count
+    const words = variant.body.trim().split(/\s+/).filter(Boolean).length;
+    if (words < minLength || words > maxLength) {
+      console.warn(`[cold-email validation] Failed: Variant ${variant.tone} has ${words} words, which is outside the range [${minLength}, ${maxLength}].`);
+      return {
+        isValid: false,
+        reason: `Variant ${variant.tone} has ${words} words, which is outside the required range of ${minLength}-${maxLength} words.`
+      };
     }
     
     // Check for resume leakage / headings
     if (resumeHeaderRegex.test(variant.body) || resumeHeaderRegex.test(variant.subject)) {
       console.warn('[cold-email validation] Failed: Resume section headers found in variant', variant.tone);
-      return false;
+      return { isValid: false, reason: `Resume section headers found in variant ${variant.tone}` };
     }
     
     // Check for placeholders
     if (placeholderRegex.test(variant.body) || placeholderRegex.test(variant.subject)) {
       console.warn('[cold-email validation] Failed: Placeholders found in variant', variant.tone);
-      return false;
+      return { isValid: false, reason: `Placeholder tags found in variant ${variant.tone}` };
     }
     
     // Check for incomplete sentences (ends with dot, question mark, or exclamation, not space/comma/ellipsis)
     const cleanedBody = variant.body.trim();
     if (!cleanedBody.endsWith('.') && !cleanedBody.endsWith('?') && !cleanedBody.endsWith('!') && !cleanedBody.endsWith('"') && !cleanedBody.endsWith("'")) {
       console.warn('[cold-email validation] Failed: Variant body does not end with complete sentence punctuation.');
-      return false;
+      return { isValid: false, reason: `Variant ${variant.tone} body does not end with a complete sentence punctuation.` };
     }
     
     // Check for debug/internal prompt text
     if (debugRegex.test(variant.body) || debugRegex.test(variant.subject)) {
       console.warn('[cold-email validation] Failed: Internal debug/prompt leakage found.');
-      return false;
+      return { isValid: false, reason: 'Internal debug/prompt leakage found' };
     }
     
     // Check for duplicate paragraphs
@@ -89,17 +100,46 @@ function validateColdEmailOutput(data) {
     const uniqueParagraphs = new Set(paragraphs);
     if (paragraphs.length !== uniqueParagraphs.size) {
       console.warn('[cold-email validation] Failed: Duplicate paragraphs found.');
-      return false;
+      return { isValid: false, reason: 'Duplicate paragraphs found in variant body' };
     }
     
     // Check for markdown or HTML fences/tags in email bodies
     if (variant.body.includes('```') || variant.body.includes('<html>') || variant.body.includes('<div>')) {
       console.warn('[cold-email validation] Failed: Markdown/HTML code blocks found in variant body.');
-      return false;
+      return { isValid: false, reason: 'Markdown/HTML code blocks found in variant body' };
     }
   }
   
-  return true;
+  return { isValid: true };
+}
+
+function validateOptimizeOutput(data, minLength, maxLength) {
+  if (!data || !data.optimizedBody) {
+    console.warn('[cold-email validation] Failed: Missing optimizedBody field.');
+    return { isValid: false, reason: 'Missing optimizedBody field' };
+  }
+  
+  const words = data.optimizedBody.trim().split(/\s+/).filter(Boolean).length;
+  if (words < minLength || words > maxLength) {
+    console.warn(`[cold-email validation] Failed: Optimized body has ${words} words, which is outside the range [${minLength}, ${maxLength}].`);
+    return {
+      isValid: false,
+      reason: `Optimized body has ${words} words, which is outside the required range of ${minLength}-${maxLength} words.`
+    };
+  }
+  
+  const placeholderRegex = /\[[A-Za-z0-9\s_-]+\]|<[A-Za-z0-9\s_-]+>|{your\s|your_placeholder/i;
+  if (placeholderRegex.test(data.optimizedBody)) {
+    console.warn('[cold-email validation] Failed: Placeholders found in optimized body.');
+    return { isValid: false, reason: 'Placeholder tags found in optimized body' };
+  }
+  
+  if (data.optimizedBody.includes('```') || data.optimizedBody.includes('<html>')) {
+    console.warn('[cold-email validation] Failed: Markdown/HTML code blocks found in optimized body.');
+    return { isValid: false, reason: 'Markdown/HTML code blocks found in optimized body' };
+  }
+  
+  return { isValid: true };
 }
 
 function buildGeneratePrompt(data) {
@@ -126,7 +166,28 @@ USER CONTEXT (strictly use for custom value propositions, NEVER paste raw text o
 - Experience/Achievements: ${cleanExp}
 - Reason for Contacting: ${cleanWhy}
 
-Length Constraint: ${data.length} (Short = ~50-80 words, Medium = ~100-150 words, Long = ~180-250 words)
+Length Constraint: The body of each of the 6 generated email variants must contain between ${data.minLength} and ${data.maxLength} words. Never exceed or fall below this range.
+
+CRITICAL INSTRUCTIONS FOR TARGET LENGTH:
+Each of the 6 generated email bodies must strictly consist of a total word count between ${data.minLength} and ${data.maxLength} words.
+${data.lengthType === 'Short' ? `
+- This is a Short email (target 80-100 words).
+- Best for recruiter outreach, busy hiring managers, and networking.
+- Characteristics: Direct, high impact, one call-to-action (CTA), and zero unnecessary details.
+` : data.lengthType === 'Medium' ? `
+- This is a Medium email (target 120-170 words).
+- Best for standard cold outreach.
+- Characteristics: Brief introduction, strong value proposition, one key achievement, and one CTA.
+` : data.lengthType === 'Long' ? `
+- This is a Long email (target 180-250 words).
+- Best for senior professionals and executive outreach.
+- Characteristics: Detailed introduction, more personalization, two key achievements, a strong narrative, and clear motivation.
+` : `
+- This is a Custom length email (target ${data.minLength}-${data.maxLength} words).
+- Adjust narrative depth, personalization, achievements, and detail to fit within this range without adding filler content or leaving incomplete thoughts.
+`}
+Ensure each sentence is complete and natural, while strictly adhering to this length range.
+
 
 QUALITY STANDARDS & LEAKAGE PREVENTION:
 1. The generated email must NEVER include raw resume sections (like "Education", "Skills", "Languages", "Certifications"), contact details (emails, phones), markdown fences, HTML code, internal prompts, or AI fallback messages.
@@ -259,8 +320,11 @@ User Context:
 
 RULES:
 1. Revise the email to improve grammar, length, flow, tone, and CTA strength based on the instructions.
-2. Keep it punchy and mobile-friendly.
-3. Re-evaluate the optimized email, returning updated metrics (Overall Score, Strengths, Weaknesses, Suggestions).
+2. The optimized email body must strictly contain between ${data.minLength} and ${data.maxLength} words. Never exceed or fall below this range.
+   - If the current email is too long: Condense repetitive sentences while preserving meaning.
+   - If the current email is too short: Expand with relevant achievements or personalization. Never pad with filler text.
+3. Keep it punchy and mobile-friendly.
+4. Re-evaluate the optimized email, returning updated metrics (Overall Score, Strengths, Weaknesses, Suggestions).
 
 Return ONLY valid JSON in this exact format (no markdown code blocks, no backticks, no other text):
 {
@@ -459,7 +523,49 @@ module.exports = async function handler(req, res) {
   const experience = String(userContext.experience || '').trim();
   const whyContacting = String(userContext.whyContacting || body.valueProposition || '').trim();
 
-  const length = String(body.length || 'Medium').trim();
+  let lengthType = body.lengthType || body.length || 'Medium';
+  let minLength = parseInt(body.minLength, 10);
+  let maxLength = parseInt(body.maxLength, 10);
+
+  if (typeof lengthType === 'string') {
+    const norm = lengthType.toLowerCase();
+    if (norm.includes('short')) {
+      lengthType = 'Short';
+      minLength = 80;
+      maxLength = 100;
+    } else if (norm.includes('medium')) {
+      lengthType = 'Medium';
+      minLength = 120;
+      maxLength = 170;
+    } else if (norm.includes('long')) {
+      lengthType = 'Long';
+      minLength = 180;
+      maxLength = 250;
+    } else if (norm.includes('custom')) {
+      lengthType = 'Custom';
+    } else {
+      lengthType = 'Medium';
+      minLength = 120;
+      maxLength = 170;
+    }
+  }
+
+  if (lengthType === 'Custom') {
+    if (isNaN(minLength) || minLength < 1) minLength = 80;
+    if (isNaN(maxLength) || maxLength < minLength) maxLength = Math.max(minLength, 250);
+  } else {
+    if (lengthType === 'Short') {
+      minLength = 80;
+      maxLength = 100;
+    } else if (lengthType === 'Long') {
+      minLength = 180;
+      maxLength = 250;
+    } else {
+      lengthType = 'Medium';
+      minLength = 120;
+      maxLength = 170;
+    }
+  }
 
   const dataFields = {
     emailGoal,
@@ -473,7 +579,10 @@ module.exports = async function handler(req, res) {
     keySkills,
     experience,
     whyContacting,
-    length,
+    length: lengthType,
+    lengthType,
+    minLength,
+    maxLength,
     emailBody: String(body.emailBody || '').trim(),
     feedback: String(body.feedback || '').trim()
   };
@@ -579,7 +688,7 @@ module.exports = async function handler(req, res) {
     let activePrompt = prompt;
     if (validationAttempt > 0) {
       // Append strict quality feedback to prompt on retries
-      activePrompt = `${prompt}\n\nRETRY INSTRUCTION: The previous output failed quality validation: ${validationErrorMsg}. Rewrite the outreach package ensuring no placeholders like [Your Name] remain, no markdown formatting fences exist in variant bodies, no bulleted resume sections leak, and all sentences are complete.`;
+      activePrompt = `${prompt}\n\nRETRY INSTRUCTION: The previous output failed quality validation: ${validationErrorMsg}. Rewrite the outreach package ensuring no placeholders like [Your Name] remain, no markdown formatting fences exist in variant bodies, no bulleted resume sections leak, all sentences are complete, and all content strictly adheres to the word count range of ${minLength} to ${maxLength} words.`;
     }
 
     try {
@@ -608,16 +717,25 @@ module.exports = async function handler(req, res) {
       let data = parseGeminiResponse(rawText, action);
 
       if (action === 'generate') {
-        const isValid = validateColdEmailOutput(data);
-        if (isValid) {
+        const valResult = validateColdEmailOutput(data, minLength, maxLength);
+        if (valResult.isValid) {
           validatedData = data;
           break;
         } else {
-          validationErrorMsg = 'Validation failed: Output contained incomplete sentences, placeholder tags, resume headings, or markdown blocks in bodies.';
+          validationErrorMsg = valResult.reason;
+          validationAttempt++;
+        }
+      } else if (action === 'optimize') {
+        const valResult = validateOptimizeOutput(data, minLength, maxLength);
+        if (valResult.isValid) {
+          validatedData = data;
+          break;
+        } else {
+          validationErrorMsg = valResult.reason;
           validationAttempt++;
         }
       } else {
-        // For optimize or subjects, parsing check is sufficient
+        // For subjects, parsing check is sufficient
         if (data && Object.keys(data).length > 0) {
           validatedData = data;
           break;

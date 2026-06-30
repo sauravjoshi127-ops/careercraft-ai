@@ -68,6 +68,9 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
       .send({
         action: 'generate',
         emailGoal: 'Job Application',
+        lengthType: 'Custom',
+        minLength: 1,
+        maxLength: 500,
         recipient: {
           name: 'Sarah',
           company: 'Stripe',
@@ -159,11 +162,102 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
         feedback: 'make it punchier and shorter',
         companyName: 'Google',
         recipientName: 'Sundar',
-        position: 'CEO'
+        position: 'CEO',
+        lengthType: 'Custom',
+        minLength: 1,
+        maxLength: 500
       });
 
     assert.equal(res.status, 200);
     assert.equal(res.body.optimizedBody, 'This is the optimized email body.');
     assert.equal(res.body.evaluation.overallScore, 94);
+  });
+
+  it('triggers validation retry and successfully recovers when first attempt fails length constraint', async () => {
+    let fetchCallCount = 0;
+    global.fetch = async () => {
+      fetchCallCount++;
+      if (fetchCallCount === 1) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            candidates: [{
+              content: {
+                parts: [{
+                  text: JSON.stringify({
+                    variants: [
+                      { tone: 'Professional', subject: 'sub A', body: 'too short body', approach: 'PAS' },
+                      { tone: 'Friendly', subject: 'sub B', body: 'too short body', approach: 'AIDA' },
+                      { tone: 'Executive', subject: 'sub C', body: 'too short body', approach: 'PAS' },
+                      { tone: 'Startup', subject: 'sub D', body: 'too short body', approach: 'PAS' },
+                      { tone: 'Technical', subject: 'sub E', body: 'too short body', approach: 'PAS' },
+                      { tone: 'Networking', subject: 'sub F', body: 'too short body', approach: 'PAS' }
+                    ],
+                    subjectLines: [{ text: 'sub A', label: 'Conservative', openRate: '80%' }],
+                    evaluation: { overallScore: 85, personalizationScore: 80, openRatePrediction: 80, recruiterEngagementScore: 80, professionalToneScore: 80, spamRiskScore: 10, grammarScore: 90, clarityScore: 90, strengths: ['s'], weaknesses: ['w'], suggestions: ['s'] },
+                    followUp: 'followup text.',
+                    spamWords: []
+                  })
+                }]
+              }
+            }]
+          })
+        };
+      } else {
+        const validBody = Array(90).fill('word').join(' ') + '.';
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            candidates: [{
+              content: {
+                parts: [{
+                  text: JSON.stringify({
+                    variants: [
+                      { tone: 'Professional', subject: 'sub A', body: validBody, approach: 'PAS' },
+                      { tone: 'Friendly', subject: 'sub B', body: validBody, approach: 'AIDA' },
+                      { tone: 'Executive', subject: 'sub C', body: validBody, approach: 'PAS' },
+                      { tone: 'Startup', subject: 'sub D', body: validBody, approach: 'PAS' },
+                      { tone: 'Technical', subject: 'sub E', body: validBody, approach: 'PAS' },
+                      { tone: 'Networking', subject: 'sub F', body: validBody, approach: 'PAS' }
+                    ],
+                    subjectLines: [{ text: 'sub A', label: 'Conservative', openRate: '80%' }],
+                    evaluation: { overallScore: 85, personalizationScore: 80, openRatePrediction: 80, recruiterEngagementScore: 80, professionalToneScore: 80, spamRiskScore: 10, grammarScore: 90, clarityScore: 90, strengths: ['s'], weaknesses: ['w'], suggestions: ['s'] },
+                    followUp: 'followup text.',
+                    spamWords: []
+                  })
+                }]
+              }
+            }]
+          })
+        };
+      }
+    };
+
+    const res = await request(app)
+      .post('/api/cold-email')
+      .send({
+        action: 'generate',
+        emailGoal: 'Job Application',
+        lengthType: 'Short', // 80 - 100 words range
+        recipient: {
+          name: 'Sarah',
+          company: 'Stripe',
+          position: 'VP'
+        },
+        userContext: {
+          name: 'Alex',
+          background: 'Full stack development',
+          keySkills: 'Node.js',
+          experience: '2 years',
+          whyContacting: 'I want to discuss engineering.'
+        }
+      });
+
+    assert.equal(res.status, 200);
+    assert.equal(fetchCallCount, 2); // Confirm retry was made
+    assert.ok(res.body.variants);
+    assert.equal(res.body.variants[0].body.split(/\s+/).length, 90); // Confirms correct length was returned
   });
 });

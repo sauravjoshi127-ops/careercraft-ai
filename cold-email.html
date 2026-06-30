@@ -904,6 +904,123 @@
     @keyframes spin {
       to { transform: rotate(360deg) }
     }
+
+    /* ── Target Length Selector Cards ── */
+    .length-options-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    
+    @media (min-width: 640px) {
+      .length-options-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .length-option-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      position: relative;
+    }
+
+    .length-option-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .length-option-card.active {
+      border-color: var(--primary);
+      background: rgba(124, 58, 237, 0.08);
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+
+    .length-option-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .length-range {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .length-option-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .custom-length-inputs {
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    /* ── Live Email Statistics ── */
+    .preview-stats-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.8rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .stat-item {
+      display: flex;
+      gap: 0.35rem;
+      align-items: center;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .stat-value {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .stat-status-badge {
+      padding: 0.25rem 0.65rem;
+      border-radius: 99px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: all 0.2s ease;
+    }
+
+    .status-ok {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .status-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
   </style>
 </head>
 <body>
@@ -1032,16 +1149,56 @@
             </div>
           </div>
 
-          <!-- STEP 4: AI Config -->
+          <!-- STEP 4: AI Length Config -->
           <div class="card" style="animation-delay:.2s">
             <div class="card-head">⚙️ Step 4 — AI Length Config</div>
             <div class="fg">
-              <label>Target Length</label>
-              <select id="emailLength">
-                <option value="Short (<100 words)" selected>Short (&lt;100 words)</option>
-                <option value="Ultra-Short (<50 words)">Ultra-Short (&lt;50 words)</option>
-                <option value="Medium (<200 words)">Medium (&lt;200 words)</option>
-              </select>
+              <label style="margin-bottom: 0.25rem;">Target Length</label>
+              <div class="length-options-grid">
+                <!-- Short -->
+                <div class="length-option-card active" data-preset="Short" onclick="selectLengthOption('Short')">
+                  <div class="length-option-title">
+                    <span>Short</span>
+                    <span class="length-range">(80–100 words)</span>
+                  </div>
+                  <div class="length-option-desc">Best for quick recruiter outreach.</div>
+                </div>
+                <!-- Medium -->
+                <div class="length-option-card" data-preset="Medium" onclick="selectLengthOption('Medium')">
+                  <div class="length-option-title">
+                    <span>Medium</span>
+                    <span class="length-range">(120–170 words)</span>
+                  </div>
+                  <div class="length-option-desc">Recommended for most standard cold emails.</div>
+                </div>
+                <!-- Long -->
+                <div class="length-option-card" data-preset="Long" onclick="selectLengthOption('Long')">
+                  <div class="length-option-title">
+                    <span>Long</span>
+                    <span class="length-range">(180–250 words)</span>
+                  </div>
+                  <div class="length-option-desc">Best for executive networking and senior professionals.</div>
+                </div>
+                <!-- Custom -->
+                <div class="length-option-card" data-preset="Custom" onclick="selectLengthOption('Custom')">
+                  <div class="length-option-title">Custom</div>
+                  <div class="length-option-desc">Choose your own custom word range.</div>
+                </div>
+              </div>
+
+              <!-- Custom Min/Max Inputs (hidden by default) -->
+              <div id="customLengthInputs" class="custom-length-inputs" style="display: none; margin-top: 1.25rem;">
+                <div class="grid2">
+                  <div class="fg">
+                    <label for="minLengthInput">Min Words <span class="req">*</span></label>
+                    <input type="number" id="minLengthInput" min="1" placeholder="e.g. 100" value="100">
+                  </div>
+                  <div class="fg">
+                    <label for="maxLengthInput">Max Words <span class="req">*</span></label>
+                    <input type="number" id="maxLengthInput" min="1" placeholder="e.g. 140" value="140">
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1074,6 +1231,25 @@
           <!-- Preview Body -->
           <div class="preview-body-container" id="previewBody" contenteditable="true" spellcheck="false" title="Click to edit content directly">
             [Email Body text will compile here as you fill out the form...]
+          </div>
+
+          <!-- Live Email Statistics -->
+          <div class="preview-stats-bar" id="previewStatsBar" style="display: none;">
+            <div class="stat-item">
+              <span class="stat-label">Words:</span>
+              <span class="stat-value" id="statWordCount">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Characters:</span>
+              <span class="stat-value" id="statCharCount">0</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Reading Time:</span>
+              <span class="stat-value" id="statReadTime">0s</span>
+            </div>
+            <div class="stat-status-badge" id="statLengthStatus">
+              ✓ Within target
+            </div>
           </div>
 
           <!-- Variant Selector (Hidden before generate) -->
@@ -1290,6 +1466,123 @@
     let currentDraftId = null; // Stores loaded draft database ID
     let activeGenerationController = null; // Tracks active generation request for duplicate prevention
 
+    let selectedLengthPreset = 'Short'; // 'Short' | 'Medium' | 'Long' | 'Custom'
+
+    window.selectLengthOption = function(preset) {
+      selectedLengthPreset = preset;
+      
+      // Update UI active class
+      document.querySelectorAll('.length-option-card').forEach(card => {
+        if (card.dataset.preset === preset) {
+          card.classList.add('active');
+        } else {
+          card.classList.remove('active');
+        }
+      });
+      
+      // Toggle custom inputs visibility
+      const customInputs = document.getElementById('customLengthInputs');
+      if (preset === 'Custom') {
+        customInputs.style.display = 'block';
+      } else {
+        customInputs.style.display = 'none';
+      }
+      
+      updateLiveStats();
+    };
+
+    function getSelectedLengthRange() {
+      if (selectedLengthPreset === 'Short') {
+        return { min: 80, max: 100 };
+      } else if (selectedLengthPreset === 'Medium') {
+        return { min: 120, max: 170 };
+      } else if (selectedLengthPreset === 'Long') {
+        return { min: 180, max: 250 };
+      } else {
+        const minVal = parseInt(document.getElementById('minLengthInput').value, 10);
+        const maxVal = parseInt(document.getElementById('maxLengthInput').value, 10);
+        return {
+          min: isNaN(minVal) ? 100 : minVal,
+          max: isNaN(maxVal) ? 140 : maxVal
+        };
+      }
+    }
+
+    function setLengthUI(lengthType, minLength, maxLength) {
+      selectedLengthPreset = lengthType || 'Short';
+      
+      document.querySelectorAll('.length-option-card').forEach(card => {
+        if (card.dataset.preset === selectedLengthPreset) {
+          card.classList.add('active');
+        } else {
+          card.classList.remove('active');
+        }
+      });
+      
+      const customInputs = document.getElementById('customLengthInputs');
+      if (selectedLengthPreset === 'Custom') {
+        customInputs.style.display = 'block';
+        if (minLength) document.getElementById('minLengthInput').value = minLength;
+        if (maxLength) document.getElementById('maxLengthInput').value = maxLength;
+      } else {
+        customInputs.style.display = 'none';
+      }
+      updateLiveStats();
+    }
+
+    function calculateWordCount(text) {
+      if (!text) return 0;
+      return text.trim().split(/\s+/).filter(Boolean).length;
+    }
+
+    function calculateCharCount(text) {
+      if (!text) return 0;
+      return text.length;
+    }
+
+    function updateLiveStats() {
+      const previewBody = document.getElementById('previewBody');
+      if (!previewBody) return;
+      
+      const text = previewBody.textContent.trim();
+      const isPlaceholder = text.startsWith('[Email Body text');
+      
+      const statsBar = document.getElementById('previewStatsBar');
+      if (isPlaceholder || !text) {
+        if (statsBar) statsBar.style.display = 'none';
+        return;
+      }
+      
+      if (statsBar) statsBar.style.display = 'flex';
+      
+      const words = calculateWordCount(text);
+      const chars = calculateCharCount(text);
+      const readingTimeSec = Math.ceil((words / 200) * 60);
+      
+      const wordCountEl = document.getElementById('statWordCount');
+      const charCountEl = document.getElementById('statCharCount');
+      const readTimeEl = document.getElementById('statReadTime');
+      const statusBadge = document.getElementById('statLengthStatus');
+      
+      if (wordCountEl) wordCountEl.textContent = words;
+      if (charCountEl) charCountEl.textContent = chars;
+      if (readTimeEl) readTimeEl.textContent = `${readingTimeSec}s`;
+      
+      if (statusBadge) {
+        const range = getSelectedLengthRange();
+        if (words >= range.min && words <= range.max) {
+          statusBadge.textContent = '✓ Within target';
+          statusBadge.className = 'stat-status-badge status-ok';
+        } else if (words < range.min) {
+          statusBadge.textContent = `⚠ Too short (Target: ${range.min}–${range.max})`;
+          statusBadge.className = 'stat-status-badge status-warning';
+        } else {
+          statusBadge.textContent = `⚠ Too long (Target: ${range.min}–${range.max})`;
+          statusBadge.className = 'stat-status-badge status-warning';
+        }
+      }
+    }
+
     // Configurable API settings
     window.COLD_EMAIL_CONFIG = window.COLD_EMAIL_CONFIG || {
       apiTimeout: 60000 // 60 seconds (appropriate for Gemini with validation retries)
@@ -1320,6 +1613,7 @@
       async save(draftData) {
         if (this.dbAvailable === null) await this.checkDb();
 
+        const range = getSelectedLengthRange();
         const metadata = {
           variantName: activeVariantKey,
           emailGoal: draftData.emailGoal,
@@ -1331,7 +1625,10 @@
           keySkills: draftData.keySkills,
           experience: draftData.experience,
           whyContacting: draftData.whyContacting,
-          length: draftData.length,
+          length: selectedLengthPreset,
+          lengthType: selectedLengthPreset,
+          minLength: range.min,
+          maxLength: range.max,
           generatedPayload: currentGenerated // Save entire payload so we can reload subject lines, evaluation, variants
         };
 
@@ -1495,6 +1792,17 @@
           document.getElementById('bgCt').textContent = `${e.target.value.length} / 400`;
         });
       }
+      
+      const previewBody = document.getElementById('previewBody');
+      if (previewBody) {
+        previewBody.addEventListener('input', updateLiveStats);
+      }
+      
+      const minLenEl = document.getElementById('minLengthInput');
+      const maxLenEl = document.getElementById('maxLengthInput');
+      if (minLenEl) minLenEl.addEventListener('input', updateLiveStats);
+      if (maxLenEl) maxLenEl.addEventListener('input', updateLiveStats);
+
       updateLivePreview();
     }
 
@@ -1573,6 +1881,20 @@
       const website = document.getElementById('companyWebsite').value.trim();
       if (website && !/^https?:\/\/([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/i.test(website)) {
         setError('companyWebsite', 'Please enter a valid website URL');
+      }
+
+      if (selectedLengthPreset === 'Custom') {
+        const minVal = parseInt(document.getElementById('minLengthInput').value, 10);
+        const maxVal = parseInt(document.getElementById('maxLengthInput').value, 10);
+        
+        if (isNaN(minVal) || minVal < 1) {
+          setError('minLengthInput', 'Min words must be at least 1');
+        }
+        if (isNaN(maxVal) || maxVal < 1) {
+          setError('maxLengthInput', 'Max words must be at least 1');
+        } else if (maxVal < minVal) {
+          setError('maxLengthInput', 'Max words cannot be less than Min words');
+        }
       }
 
       if (!isValid) {
@@ -1739,7 +2061,10 @@
           experience: document.getElementById('experience').value.trim(),
           whyContacting: document.getElementById('whyContacting').value.trim()
         },
-        length: document.getElementById('emailLength').value
+        length: selectedLengthPreset,
+        lengthType: selectedLengthPreset,
+        minLength: getSelectedLengthRange().min,
+        maxLength: getSelectedLengthRange().max
       };
 
       const requestStartTimestamp = new Date().toISOString();
@@ -1917,6 +2242,8 @@
       document.getElementById('optimizerBox').style.display = 'block';
       document.getElementById('subjectsBox').style.display = 'block';
       document.getElementById('qualityBox').style.display = 'block';
+      
+      updateLiveStats();
     }
 
     // Tab switcher events
@@ -2144,6 +2471,7 @@
       btn.disabled = true;
       btn.textContent = 'Improving…';
 
+      const range = getSelectedLengthRange();
       const payload = {
         action: 'optimize',
         emailBody: document.getElementById('previewBody').textContent,
@@ -2154,7 +2482,11 @@
         position: document.getElementById('position').value.trim(),
         userName: document.getElementById('userName').value.trim(),
         background: document.getElementById('background').value.trim(),
-        whyContacting: document.getElementById('whyContacting').value.trim()
+        whyContacting: document.getElementById('whyContacting').value.trim(),
+        length: selectedLengthPreset,
+        lengthType: selectedLengthPreset,
+        minLength: range.min,
+        maxLength: range.max
       };
 
       try {
@@ -2302,7 +2634,7 @@
         whyContacting: document.getElementById('whyContacting').value.trim(),
         linkedinUrl: document.getElementById('linkedinUrl').value.trim(),
         companyWebsite: document.getElementById('companyWebsite').value.trim(),
-        length: document.getElementById('emailLength').value,
+        length: selectedLengthPreset,
         subject: document.getElementById('previewSubject').textContent.replace('Subject: ', ''),
         body: document.getElementById('previewBody').textContent
       };
@@ -2419,7 +2751,16 @@
       if (meta.keySkills) document.getElementById('keySkills').value = meta.keySkills;
       if (meta.experience) document.getElementById('experience').value = meta.experience;
       if (meta.whyContacting) document.getElementById('whyContacting').value = meta.whyContacting;
-      if (meta.length) document.getElementById('emailLength').value = meta.length;
+      if (meta.lengthType) {
+        setLengthUI(meta.lengthType, meta.minLength, meta.maxLength);
+      } else if (meta.length) {
+        const len = String(meta.length).toLowerCase();
+        if (len.includes('short')) setLengthUI('Short');
+        else if (len.includes('long')) setLengthUI('Long');
+        else setLengthUI('Medium');
+      } else {
+        setLengthUI('Medium');
+      }
 
       // Restore generated state if payload was saved
       if (meta.generatedPayload) {
