@@ -86,7 +86,28 @@ module.exports = async function handler(req, res) {
     await authenticateRequest(req);
   } catch (authErr) {
     console.error('[cover-letter] Authentication failure:', authErr.message);
-    return res.status(authErr.status || 401).json({ error: authErr.message });
+    console.error('[cover-letter] Original Auth Exception:', authErr);
+    
+    // Check if it's a Supabase/Postgrest error
+    const isSupabaseError = authErr.code || authErr.details || authErr.hint;
+    const msg = isSupabaseError 
+      ? `Supabase DB Error: [${authErr.code || 'UNKNOWN_CODE'}] ${authErr.message}. Details: ${authErr.details || 'None'}. Hint: ${authErr.hint || 'None'}`
+      : authErr.message;
+      
+    return res.status(authErr.status || 401).json({
+      success: false,
+      error: msg,
+      details: {
+        source: 'supabase_auth',
+        status: authErr.status || 401,
+        message: msg,
+        raw: {
+          code: authErr.code,
+          details: authErr.details,
+          hint: authErr.hint
+        }
+      }
+    });
   }
 
   const body = req.body || {};
@@ -245,30 +266,76 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
 
   try {
     let r;
+    const geminiRequestPayload = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.75, maxOutputTokens: 4096 }
+    };
+
+    console.log('=== [cover-letter] Gemini Request Start ===');
+    console.log('Payload:', JSON.stringify(geminiRequestPayload, null, 2));
+    console.log('=== [cover-letter] Gemini Request End ===');
+
     try {
-      r = await callGemini({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.75, maxOutputTokens: 4096 }
-      });
+      r = await callGemini(geminiRequestPayload);
     } catch (retryErr) {
-      console.error('[cover-letter] Gemini API execution failed:', retryErr.message);
+      console.error('=== [cover-letter] Gemini API Exception Start ===');
+      console.error('Original Exception:', retryErr);
+      console.error('Stack Trace:', retryErr.stack);
+      console.error('=== [cover-letter] Gemini API Exception End ===');
+      
       const status = retryErr.status || 500;
       const msg = retryErr.message;
       return res.status(status).json({
         success: false,
         error: msg === 'GEMINI_API_KEY missing' || msg.includes('Gemini API key is not configured')
           ? 'Gemini API key is not configured on this server. Set GEMINI_API_KEY in your environment.'
-          : msg
+          : `Gemini API execution failed: ${msg}`,
+        details: {
+          source: 'gemini_exception',
+          status,
+          message: msg,
+          stack: retryErr.stack
+        }
       });
     }
 
     if (!r.ok) {
       const errText = await r.text();
-      console.error('Gemini API HTTP error:', r.status, errText);
-      return res.status(502).json({ error: `AI service error: ${r.status}. Please try again.` });
+      console.error('=== [cover-letter] Gemini API Error Response Start ===');
+      console.error('Status:', r.status);
+      console.error('Status Text:', r.statusText);
+      console.error('Headers:', JSON.stringify(Object.fromEntries(r.headers.entries()), null, 2));
+      console.error('Body:', errText);
+      console.error('=== [cover-letter] Gemini API Error Response End ===');
+
+      // Try to parse the exact Google API error message
+      let googleErrorMessage = errText;
+      try {
+        const parsed = JSON.parse(errText);
+        if (parsed.error && parsed.error.message) {
+          googleErrorMessage = parsed.error.message;
+        }
+      } catch (_) {}
+
+      // Replace generic "AI service error: 503" with descriptive JSON errors that include the real cause
+      const responseStatus = r.status || 502;
+      return res.status(responseStatus).json({
+        success: false,
+        error: `AI service error: ${responseStatus}. ${googleErrorMessage}`,
+        details: {
+          source: 'gemini_http_error',
+          status: responseStatus,
+          message: googleErrorMessage,
+          raw: errText
+        }
+      });
     }
 
     const result = await r.json();
+    console.log('=== [cover-letter] Gemini API Successful Response Start ===');
+    console.log('Status:', r.status);
+    console.log('Body:', JSON.stringify(result, null, 2));
+    console.log('=== [cover-letter] Gemini API Successful Response End ===');
 
     if (!result?.candidates?.[0]?.content?.parts?.[0]) {
       console.error('Unexpected Gemini response structure:', JSON.stringify(result));
@@ -301,14 +368,36 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
 
     return res.status(200).json(data);
   } catch (err) {
-    console.error('[cover-letter] Error generating cover letter:', err);
+    console.error('=== [cover-letter] Original Handler Exception Start ===');
+    console.error('Original Exception:', err);
+    console.error('Stack Trace:', err.stack);
+    console.error('=== [cover-letter] Original Handler Exception End ===');
+    
+    // Check if the error originates from Supabase / Database
+    const isSupabaseError = err.code || err.details || err.hint || (err.message && err.message.includes('Supabase'));
+    let msg = err.message || 'Failed to generate cover letter. Please try again.';
+    if (isSupabaseError) {
+      msg = `Supabase DB Error: [${err.code || 'UNKNOWN_CODE'}] ${err.message}. Details: ${err.details || 'None'}. Hint: ${err.hint || 'None'}`;
+      console.error('[cover-letter] Supabase Database Error:', msg);
+    }
+
     const status = err.status || 500;
-    const msg = err.message || 'Failed to generate cover letter. Please try again.';
     return res.status(status).json({
       success: false,
       error: msg === 'GEMINI_API_KEY missing' || msg.includes('Gemini API key is not configured')
         ? 'Gemini API key is not configured on this server. Set GEMINI_API_KEY in your environment.'
-        : msg
+        : msg,
+      details: {
+        source: isSupabaseError ? 'supabase' : 'server_handler',
+        status,
+        message: msg,
+        stack: err.stack,
+        raw: {
+          code: err.code,
+          details: err.details,
+          hint: err.hint
+        }
+      }
     });
   }
 };
