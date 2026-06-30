@@ -1082,9 +1082,10 @@
             <div class="tabs" id="vtabs">
               <button type="button" class="tab on" data-key="A">Professional</button>
               <button type="button" class="tab" data-key="B">Friendly</button>
-              <button type="button" class="tab" data-key="C">Direct</button>
-              <button type="button" class="tab" data-key="D">Formal</button>
-              <button type="button" class="tab" data-key="E">High-Response</button>
+              <button type="button" class="tab" data-key="C">Executive</button>
+              <button type="button" class="tab" data-key="D">Startup</button>
+              <button type="button" class="tab" data-key="E">Technical</button>
+              <button type="button" class="tab" data-key="F">Networking</button>
             </div>
           </div>
 
@@ -1124,7 +1125,82 @@
               <span>📊 AI Quality Evaluation</span>
               <span class="score-badge score-high" id="overallScoreBadge">90% Reply Probability</span>
             </div>
-            <div class="quality-list">
+            
+            <!-- 7 Score Progress Bars -->
+            <div class="score-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-top:1rem; margin-bottom:1.25rem;">
+              <div class="score-item-bar">
+                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.25rem;">
+                  <span>Personalization</span>
+                  <span id="scoreValPersonalization" style="font-weight:600;">0%</span>
+                </div>
+                <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
+                  <div id="scoreBarPersonalization" style="height:100%; width:0%; background:var(--primary); transition: width 0.4s ease-out;"></div>
+                </div>
+              </div>
+              <div class="score-item-bar">
+                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.25rem;">
+                  <span>Open Rate Prediction</span>
+                  <span id="scoreValOpenRate" style="font-weight:600;">0%</span>
+                </div>
+                <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
+                  <div id="scoreBarOpenRate" style="height:100%; width:0%; background:var(--primary); transition: width 0.4s ease-out;"></div>
+                </div>
+              </div>
+              <div class="score-item-bar">
+                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.25rem;">
+                  <span>Recruiter Engagement</span>
+                  <span id="scoreValRecruiter" style="font-weight:600;">0%</span>
+                </div>
+                <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
+                  <div id="scoreBarRecruiter" style="height:100%; width:0%; background:var(--primary); transition: width 0.4s ease-out;"></div>
+                </div>
+              </div>
+              <div class="score-item-bar">
+                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.25rem;">
+                  <span>Professional Tone</span>
+                  <span id="scoreValTone" style="font-weight:600;">0%</span>
+                </div>
+                <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
+                  <div id="scoreBarTone" style="height:100%; width:0%; background:var(--primary); transition: width 0.4s ease-out;"></div>
+                </div>
+              </div>
+              <div class="score-item-bar">
+                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.25rem;">
+                  <span>Spam Risk Score</span>
+                  <span id="scoreValSpam" style="font-weight:600;">0%</span>
+                </div>
+                <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
+                  <div id="scoreBarSpam" style="height:100%; width:0%; background:var(--primary); transition: width 0.4s ease-out;"></div>
+                </div>
+              </div>
+              <div class="score-item-bar">
+                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.25rem;">
+                  <span>Grammar Quality</span>
+                  <span id="scoreValGrammar" style="font-weight:600;">0%</span>
+                </div>
+                <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
+                  <div id="scoreBarGrammar" style="height:100%; width:0%; background:var(--primary); transition: width 0.4s ease-out;"></div>
+                </div>
+              </div>
+              <div class="score-item-bar" style="grid-column: 1 / -1;">
+                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.25rem;">
+                  <span>Clarity & Focus</span>
+                  <span id="scoreValClarity" style="font-weight:600;">0%</span>
+                </div>
+                <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
+                  <div id="scoreBarClarity" style="height:100%; width:0%; background:var(--primary); transition: width 0.4s ease-out;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Interactive Suggestions List -->
+            <div id="suggestionsWrapper" style="border-top:1px solid var(--border); padding-top:1rem; margin-top:1rem;">
+              <h4 style="font-size:0.85rem; font-weight:700; margin-bottom:0.75rem; color:#fff;">✨ Interactive Outreach Improvements</h4>
+              <div id="suggestionsInteractiveList" style="display:flex; flex-direction:column; gap:0.75rem;"></div>
+            </div>
+
+            <!-- Strengths and Weaknesses -->
+            <div class="quality-list" style="margin-top:1.25rem;">
               <div class="quality-item">
                 <span class="quality-icon">✅</span>
                 <span id="strengthsText"></span>
@@ -1133,10 +1209,23 @@
                 <span class="quality-icon">⚠️</span>
                 <span id="weaknessesText"></span>
               </div>
-              <div class="quality-item">
-                <span class="quality-icon">💡</span>
-                <span id="suggestionsText"></span>
-              </div>
+            </div>
+          </div>
+
+          <!-- Spam Radar Panel -->
+          <div class="card" id="spamRadarBox" style="display:none; margin-top: 1.25rem; background:rgba(239,68,68,.02); border-color:rgba(239,68,68,.2)">
+            <div class="card-head">🚨 Spam Radar</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+              <span style="font-size:0.9rem; font-weight:600; color:var(--text-muted);">Spam Trigger Risk:</span>
+              <span id="spamScoreBadge" class="score-badge">Low Risk</span>
+            </div>
+            <div id="spamWordsContainer" style="margin-bottom:1rem; display:none;">
+              <p style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.4rem;">Flagged Spam Keywords:</p>
+              <div id="spamWordsList" style="display:flex; flex-wrap:wrap; gap:0.4rem;"></div>
+            </div>
+            <div id="spamRecsContainer" style="margin-bottom:0.5rem;">
+              <p style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.4rem;">Placement Recommendations:</p>
+              <ul id="spamRecsList" style="font-size:0.78rem; color:var(--text-muted); padding-left:1.2rem; display:flex; flex-direction:column; gap:0.25rem;"></ul>
             </div>
           </div>
 
@@ -1197,7 +1286,7 @@
     
     // Application State Variables
     let currentGenerated = null; // Stores currently generated payload
-    let activeVariantKey = 'A'; // 'A' | 'B' | 'C' | 'D' | 'E'
+    let activeVariantKey = 'A'; // 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
     let currentDraftId = null; // Stores loaded draft database ID
 
     // Dual-Layer Storage Layer
@@ -1696,7 +1785,7 @@
     function getVariantByKey(key) {
       if (!currentGenerated || !currentGenerated.variants) return null;
       if (Array.isArray(currentGenerated.variants)) {
-        const keyToIndex = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4 };
+        const keyToIndex = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5 };
         return currentGenerated.variants[keyToIndex[key]];
       }
       return currentGenerated.variants[key];
@@ -1727,17 +1816,39 @@
       });
       document.getElementById('variantTabsRow').style.display = 'block';
 
-      // Update Spam alert
-      const spamWordsText = document.getElementById('spamWordsText');
+      // Hide legacy simple spam alert as we now use Spam Radar Panel
       const spamAlert = document.getElementById('spamAlert');
-      const bodyTextLower = variant.body.toLowerCase() + ' ' + variant.subject.toLowerCase();
-      const activeSpam = currentGenerated.spamWords.filter(word => bodyTextLower.includes(word.toLowerCase()));
+      if (spamAlert) spamAlert.style.display = 'none';
 
-      if (activeSpam.length > 0) {
-        spamWordsText.textContent = activeSpam.map(w => `"${w}"`).join(', ');
-        spamAlert.style.display = 'block';
-      } else {
-        spamAlert.style.display = 'none';
+      // Render Spam Radar Panel
+      const spamRadar = document.getElementById('spamRadarBox');
+      if (spamRadar) {
+        spamRadar.style.display = 'block';
+        const spamScore = currentGenerated.spamScore || 0;
+        const spamScoreBadge = document.getElementById('spamScoreBadge');
+        spamScoreBadge.textContent = `${spamScore}% Risk`;
+        spamScoreBadge.className = 'score-badge ' + (spamScore >= 50 ? 'score-low' : spamScore >= 20 ? 'score-mid' : 'score-high');
+        
+        // Highlight flagged words
+        const spamWordsList = document.getElementById('spamWordsList');
+        const spamWordsContainer = document.getElementById('spamWordsContainer');
+        const bodyTextLower = (variant.body + ' ' + variant.subject).toLowerCase();
+        const activeSpam = (currentGenerated.spamWords || []).filter(word => bodyTextLower.includes(word.toLowerCase()));
+        
+        if (activeSpam.length > 0) {
+          spamWordsContainer.style.display = 'block';
+          spamWordsList.innerHTML = activeSpam.map(w => `<span class="tag tag-missing" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); font-size:0.75rem; padding:0.25rem 0.5rem; border-radius:4px;">${w}</span>`).join('');
+        } else {
+          spamWordsContainer.style.display = 'none';
+        }
+        
+        // Populate Spam recommendations
+        const spamRecsList = document.getElementById('spamRecsList');
+        const recommendations = currentGenerated.spamRecommendations || [
+          "Keep the email length below 150 words.",
+          "Ensure CTA is clear, low-friction, and has no sales trigger words."
+        ];
+        spamRecsList.innerHTML = recommendations.map(rec => `<li>${rec}</li>`).join('');
       }
 
       // Render Quality Engine Evaluations
@@ -1774,14 +1885,123 @@
       const evalData = currentGenerated.evaluation;
 
       const badge = document.getElementById('overallScoreBadge');
-      badge.textContent = `Quality Score: ${evalData.overallScore}%`;
-      
+      badge.textContent = `Overall Score: ${evalData.overallScore}%`;
       badge.className = 'score-badge ' + (evalData.overallScore >= 75 ? 'score-high' : evalData.overallScore >= 50 ? 'score-mid' : 'score-low');
+
+      // Helper to update progress bar
+      function updateBar(id, val) {
+        const valEl = document.getElementById(`scoreVal${id}`);
+        const barEl = document.getElementById(`scoreBar${id}`);
+        if (valEl && barEl) {
+          valEl.textContent = `${val}%`;
+          barEl.style.width = `${val}%`;
+        }
+      }
+
+      // Update 7 Score Progress Bars
+      updateBar('Personalization', evalData.personalizationScore || evalData.overallScore || 0);
+      updateBar('OpenRate', evalData.openRatePrediction || evalData.overallScore || 0);
+      updateBar('Recruiter', evalData.recruiterEngagementScore || evalData.overallScore || 0);
+      updateBar('Tone', evalData.professionalToneScore || evalData.overallScore || 0);
+      updateBar('Spam', evalData.spamRiskScore || currentGenerated.spamScore || 0);
+      updateBar('Grammar', evalData.grammarScore || 95);
+      updateBar('Clarity', evalData.clarityScore || 90);
+
+      // Render Interactive Suggestions Panel
+      const listContainer = document.getElementById('suggestionsInteractiveList');
+      if (listContainer) {
+        listContainer.innerHTML = '';
+        const suggestions = currentGenerated.suggestions || [];
+        
+        if (suggestions.length === 0) {
+          listContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">No optimization recommendations. Your copy is ready to go!</p>';
+        } else {
+          suggestions.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'subject-item'; // repurpose subject-item styling
+            card.style.cssText = 'flex-direction:column; align-items:flex-start; gap:0.5rem; padding:0.85rem; border-color:var(--border);';
+            card.id = `suggestion-card-${item.id}`;
+            
+            card.innerHTML = `
+              <div style="font-size:0.8rem; color:var(--text); font-weight:500;">${item.explanation}</div>
+              ${item.originalText && item.suggestedText ? `
+                <div style="font-size:0.75rem; color:var(--text-muted); background:rgba(0,0,0,0.15); padding:0.4rem; border-radius:4px; width:100%; border-left:2px solid var(--primary);">
+                  <div style="text-decoration:line-through; opacity:0.6;">${item.originalText}</div>
+                  <div style="color:var(--success); font-weight:500; margin-top:0.15rem;">+ ${item.suggestedText}</div>
+                </div>
+              ` : ''}
+              <div style="display:flex; gap:0.4rem; width:100%; justify-content:flex-end; margin-top:0.25rem;">
+                ${item.originalText && item.suggestedText ? `
+                  <button type="button" class="draft-btn apply" style="padding:0.2rem 0.5rem; font-size:0.7rem; background:rgba(16,185,129,0.15); color:#a7f3d0; border-color:rgba(16,185,129,0.3);" onclick="applySuggestion('${item.id}', \`${escapeJSQuotes(item.originalText)}\`, \`${escapeJSQuotes(item.suggestedText)}\`)">Apply</button>
+                ` : ''}
+                <button type="button" class="draft-btn ignore" style="padding:0.2rem 0.5rem; font-size:0.7rem; background:rgba(255,255,255,0.05); color:var(--text-muted); border-color:var(--border);" onclick="ignoreSuggestion('${item.id}')">Ignore</button>
+                <button type="button" class="draft-btn regen" style="padding:0.2rem 0.5rem; font-size:0.7rem; background:rgba(124,58,237,0.15); color:#ddd6fe; border-color:rgba(124,58,237,0.3);" onclick="regenerateSuggestion('${item.id}', \`${escapeJSQuotes(item.explanation)}\`)">Regenerate</button>
+              </div>
+            `;
+            listContainer.appendChild(card);
+          });
+        }
+      }
 
       document.getElementById('strengthsText').innerHTML = `<strong>Strengths:</strong> ${evalData.strengths.join(' · ')}`;
       document.getElementById('weaknessesText').innerHTML = `<strong>Weaknesses:</strong> ${evalData.weaknesses.join(' · ')}`;
-      document.getElementById('suggestionsText').innerHTML = `<strong>Suggestions:</strong> ${evalData.suggestions.join(' · ')}`;
     }
+
+    function escapeJSQuotes(str) {
+      if (!str) return '';
+      return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
+    }
+
+    window.applySuggestion = function(id, originalText, suggestedText) {
+      const previewBody = document.getElementById('previewBody');
+      let currentText = previewBody.textContent;
+      
+      if (currentText.includes(originalText)) {
+        currentText = currentText.replace(originalText, suggestedText);
+        previewBody.textContent = currentText;
+        
+        // Sync back to variant body
+        const v = getVariantByKey(activeVariantKey);
+        if (v) v.body = currentText;
+        
+        showToast('Suggestion applied successfully!');
+        ignoreSuggestion(id);
+      } else {
+        const regex = new RegExp(originalText.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
+        if (regex.test(currentText)) {
+          currentText = currentText.replace(regex, suggestedText);
+          previewBody.textContent = currentText;
+          const v = getVariantByKey(activeVariantKey);
+          if (v) v.body = currentText;
+          showToast('Suggestion applied successfully!');
+          ignoreSuggestion(id);
+        } else {
+          showToast('Original text not found in preview. You can manually edit the preview.', true);
+        }
+      }
+    };
+
+    window.ignoreSuggestion = function(id) {
+      const el = document.getElementById(`suggestion-card-${id}`);
+      if (el) {
+        el.style.transition = 'all 0.3s ease';
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(10px)';
+        setTimeout(() => {
+          el.remove();
+          const list = document.getElementById('suggestionsInteractiveList');
+          if (list && list.children.length === 0) {
+            list.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">All suggestions resolved!</p>';
+          }
+        }, 300);
+      }
+    };
+
+    window.regenerateSuggestion = function(id, explanation) {
+      document.getElementById('optimizerFeedback').value = `Improve: ${explanation}`;
+      document.getElementById('btnRunOptimizer').click();
+      ignoreSuggestion(id);
+    };
 
     // ── Render Alternative Subject Lines ─────────────────────────────────────
     function renderSubjectLines() {
@@ -1799,8 +2019,8 @@
         div.innerHTML = `
           <div class="subject-text">${item.text}</div>
           <div class="subject-badges">
-            ${item.recommended ? '<span class="reco-badge">Recommended</span>' : ''}
-            <span class="prob-badge">${item.probability || 'N/A'} open rate</span>
+            ${item.label ? `<span class="reco-badge" style="background:var(--primary);">${item.label}</span>` : ''}
+            <span class="prob-badge">${item.openRate || item.probability || 'N/A'} open rate</span>
           </div>
         `;
         
@@ -2162,11 +2382,12 @@
           variants: [
             { tone: 'Professional', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
             { tone: 'Friendly', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
-            { tone: 'Direct', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
-            { tone: 'Formal', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
-            { tone: 'High-Response Optimized', subject: d.subject, body: d.body, approach: 'Loaded Draft' }
+            { tone: 'Executive', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
+            { tone: 'Startup', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
+            { tone: 'Technical', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
+            { tone: 'Networking', subject: d.subject, body: d.body, approach: 'Loaded Draft' }
           ],
-          subjectLines: [{ text: d.subject, probability: 'N/A', recommended: true }],
+          subjectLines: [{ text: d.subject, label: 'Conservative', openRate: 'N/A' }],
           evaluation: {
             overallScore: 80,
             strengths: ["Loaded draft"],

@@ -19,7 +19,7 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
     global.fetch = originalFetch;
   });
 
-  it('successfully generates 5 variants and subject lines (action: generate)', async () => {
+  it('successfully generates 6 variants and subject lines (action: generate)', async () => {
     // Mock successful Gemini response
     global.fetch = async () => ({
       ok: true,
@@ -30,23 +30,31 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
             parts: [{
               text: JSON.stringify({
                 variants: [
-                  { tone: 'Professional', subject: 'sub A', body: 'body A', approach: 'PAS' },
-                  { tone: 'Friendly', subject: 'sub B', body: 'body B', approach: 'AIDA' },
-                  { tone: 'Direct', subject: 'sub C', body: 'body C', approach: 'Ultra-Short' },
-                  { tone: 'Formal', subject: 'sub D', body: 'body D', approach: 'Formal' },
-                  { tone: 'High-Response Optimized', subject: 'sub E', body: 'body E', approach: 'Pattern Interrupt' }
+                  { tone: 'Professional', subject: 'sub A.', body: 'body A.', approach: 'PAS' },
+                  { tone: 'Friendly', subject: 'sub B.', body: 'body B.', approach: 'AIDA' },
+                  { tone: 'Executive', subject: 'sub C.', body: 'body C.', approach: 'Executive' },
+                  { tone: 'Startup', subject: 'sub D.', body: 'body D.', approach: 'Startup' },
+                  { tone: 'Technical', subject: 'sub E.', body: 'body E.', approach: 'Technical' },
+                  { tone: 'Networking', subject: 'sub F.', body: 'body F.', approach: 'Networking' }
                 ],
                 subjectLines: [
-                  { text: 'sub A', probability: '90%', recommended: true },
-                  { text: 'sub B', probability: '80%', recommended: false }
+                  { text: 'sub A.', label: 'Conservative', openRate: '90%' },
+                  { text: 'sub B.', label: 'Curiosity', openRate: '80%' }
                 ],
                 evaluation: {
                   overallScore: 88,
+                  personalizationScore: 90,
+                  openRatePrediction: 85,
+                  recruiterEngagementScore: 80,
+                  professionalToneScore: 95,
+                  spamRiskScore: 10,
+                  grammarScore: 98,
+                  clarityScore: 90,
                   strengths: ['Strength 1'],
                   weaknesses: ['Weakness 1'],
                   suggestions: ['Suggestion 1']
                 },
-                followUp: 'follow-up text',
+                followUp: 'follow-up text.',
                 spamWords: []
               })
             }]
@@ -76,8 +84,9 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
 
     assert.equal(res.status, 200);
     assert.ok(res.body.variants);
-    assert.equal(res.body.variants[0].subject, 'sub A');
-    assert.equal(res.body.variants[4].tone, 'High-Response Optimized');
+    assert.equal(res.body.variants[0].subject, 'sub A.');
+    assert.equal(res.body.variants[4].tone, 'Technical');
+    assert.equal(res.body.variants[5].tone, 'Networking');
     assert.equal(res.body.subjectLines.length, 2);
     assert.equal(res.body.evaluation.overallScore, 88);
   });

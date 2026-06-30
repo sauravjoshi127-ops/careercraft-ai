@@ -43,7 +43,7 @@ describe('POST /api/cold-email', () => {
     assert.equal(res.status, 200);
     assert.equal(res.body.fallbackUsed, true);
     assert.match(res.body.fallbackReason, /503/);
-    assert.equal(res.body.variants.length, 5);
+    assert.equal(res.body.variants.length, 6);
     assert.ok(res.body.variants[0].subject.trim().length > 0);
     assert.ok(res.body.followUp.trim().length > 0);
   });
