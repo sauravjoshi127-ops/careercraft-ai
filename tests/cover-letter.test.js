@@ -114,4 +114,40 @@ describe('POST /api/cover-letter', () => {
     assert.equal(res.body.detailed_scores.personalization, 88);
     assert.equal(res.body.suggestions[0].category, 'ATS');
   });
+
+  it('returns 503 with descriptive JSON error when Gemini returns 503', async () => {
+    const mockGoogleError = {
+      error: {
+        code: 503,
+        message: "The service is currently unavailable.",
+        status: "UNAVAILABLE"
+      }
+    };
+
+    global.fetch = async () => ({
+      ok: false,
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: new Map([['content-type', 'application/json']]),
+      text: async () => JSON.stringify(mockGoogleError)
+    });
+
+    const res = await request(app)
+      .post('/api/cover-letter')
+      .send({
+        jobTitle: 'Frontend Engineer',
+        companyName: 'Acme Labs',
+        jobDescription: 'We need a Frontend Engineer who writes clean JavaScript and React.',
+        highlights: 'I write clean JavaScript.',
+        tone: 'Professional',
+        length: 'Short'
+      });
+
+    assert.equal(res.status, 503);
+    assert.equal(res.body.success, false);
+    assert.match(res.body.error, /service is currently unavailable/i);
+    assert.equal(res.body.details.source, 'gemini_http_error');
+    assert.equal(res.body.details.status, 503);
+    assert.equal(res.body.details.message, "The service is currently unavailable.");
+  });
 });
