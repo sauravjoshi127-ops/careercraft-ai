@@ -1288,6 +1288,12 @@
     let currentGenerated = null; // Stores currently generated payload
     let activeVariantKey = 'A'; // 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
     let currentDraftId = null; // Stores loaded draft database ID
+    let activeGenerationController = null; // Tracks active generation request for duplicate prevention
+
+    // Configurable API settings
+    window.COLD_EMAIL_CONFIG = window.COLD_EMAIL_CONFIG || {
+      apiTimeout: 60000 // 60 seconds (appropriate for Gemini with validation retries)
+    };
 
     // Dual-Layer Storage Layer
     const DraftStore = {
@@ -1705,6 +1711,17 @@
       document.getElementById('skelWrap').classList.add('show');
       document.getElementById('genBtn').disabled = true;
 
+      // Abort any existing active request (duplicate request prevention)
+      if (activeGenerationController) {
+        const timestamp = new Date().toISOString();
+        console.warn(`[Cold Email] [${timestamp}] Cancelling active duplicate request as stale.`);
+        activeGenerationController.abortReason = 'stale';
+        activeGenerationController.abort('stale');
+      }
+
+      const controller = new AbortController();
+      activeGenerationController = controller;
+
       const payload = {
         action: 'generate',
         emailGoal: document.getElementById('emailGoal').value,
@@ -1725,6 +1742,18 @@
         length: document.getElementById('emailLength').value
       };
 
+      const requestStartTimestamp = new Date().toISOString();
+      console.log(`[Cold Email] [${requestStartTimestamp}] Starting generation request. Action: generate, Goal: ${payload.emailGoal}`);
+
+      const timeoutDuration = window.COLD_EMAIL_CONFIG?.apiTimeout || 60000;
+      const timeoutId = setTimeout(() => {
+        const abortTimestamp = new Date().toISOString();
+        console.warn(`[Cold Email] [${abortTimestamp}] Timeout threshold of ${timeoutDuration}ms reached. Aborting request.`);
+        controller.abortReason = 'timeout';
+        controller.abort('timeout');
+      }, timeoutDuration);
+      console.log(`[Cold Email] [${requestStartTimestamp}] Timeout created with duration: ${timeoutDuration}ms`);
+
       try {
         const session = await window.appSdk.auth.getSession();
         const headers = { 'Content-Type': 'application/json' };
@@ -1732,11 +1761,8 @@
           headers['Authorization'] = `Bearer ${session.access_token}`;
         }
 
-        // Setup controller for client-side API timeout (18 seconds)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 18000);
-
         let res;
+        let data;
         try {
           res = await fetch('/api/cold-email', {
             method: 'POST',
@@ -1744,11 +1770,15 @@
             body: JSON.stringify(payload),
             signal: controller.signal
           });
+          data = await res.json();
         } finally {
           clearTimeout(timeoutId);
+          console.log(`[Cold Email] [${new Date().toISOString()}] Timeout cleared.`);
         }
 
-        const data = await res.json();
+        const completionTimestamp = new Date().toISOString();
+        console.log(`[Cold Email] [${completionTimestamp}] Request completed. HTTP Status: ${res.status}`);
+
         if (!res.ok) throw new Error(data.error || `Generation failed: HTTP ${res.status}`);
         
         currentGenerated = data;
@@ -1764,20 +1794,38 @@
         }
 
       } catch (err) {
-        console.error(err);
-        let errorMsg = err.message;
+        const errTimestamp = new Date().toISOString();
         if (err.name === 'AbortError') {
-          errorMsg = 'AI request timed out. Please try again or use local fallbacks.';
+          const reason = controller.abortReason || controller.signal.reason || 'unknown';
+          console.warn(`[Cold Email] [${errTimestamp}] Request abort triggered. Reason: ${reason}`);
+          
+          if (reason === 'stale') {
+            // Silently return without updating UI, as a newer request is already running
+            return;
+          }
+          
+          let errorMsg = 'AI request timed out. Please try again or use local fallbacks.';
+          const alert = document.getElementById('errAlert');
+          document.getElementById('errMsg').textContent = errorMsg;
+          alert.classList.add('show');
+          alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          showToast('Email generation failed: ' + errorMsg, true);
+        } else {
+          console.error(`[Cold Email] [${errTimestamp}] Request failed:`, err);
+          let errorMsg = err.message;
+          const alert = document.getElementById('errAlert');
+          document.getElementById('errMsg').textContent = errorMsg;
+          alert.classList.add('show');
+          alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          showToast('Email generation failed: ' + errorMsg, true);
         }
-        
-        const alert = document.getElementById('errAlert');
-        document.getElementById('errMsg').textContent = errorMsg;
-        alert.classList.add('show');
-        alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        showToast('Email generation failed: ' + errorMsg, true);
       } finally {
-        document.getElementById('skelWrap').classList.remove('show');
-        document.getElementById('genBtn').disabled = false;
+        // Only reset the loading state if this is the active request
+        if (activeGenerationController === controller) {
+          document.getElementById('skelWrap').classList.remove('show');
+          document.getElementById('genBtn').disabled = false;
+          activeGenerationController = null;
+        }
       }
     });
 
