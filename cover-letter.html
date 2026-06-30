@@ -549,6 +549,199 @@
       from { opacity: 0; transform: translateX(100px); }
       to { opacity: 1; transform: translateX(0); }
     }
+
+    /* ATS Suggestions Engine Styles */
+    .badge-missing-keyword { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+    .badge-grammar-&-language { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .badge-impact-analysis { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .badge-missing-achievements { background: rgba(236, 72, 153, 0.15); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.3); }
+    .badge-tone-analysis { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-readability { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
+    .badge-ats-formatting { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-recruiter-perspective { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-personalization { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+
+    .suggestion-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-1);
+      margin-bottom: 0.4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .suggestion-reason {
+      font-size: 0.78rem;
+      color: var(--text-3);
+      background: rgba(255,255,255,0.02);
+      border-radius: 4px;
+      padding: 0.4rem 0.6rem;
+      margin-bottom: 0.75rem;
+      border-left: 2px solid var(--border);
+    }
+    
+    .suggestion-gain-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #22c55e;
+      background: rgba(34, 197, 94, 0.1);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .summary-card {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%);
+      border: 1px solid rgba(168, 85, 247, 0.2);
+      border-radius: var(--r-md);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .summary-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text-1);
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .summary-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 0.75rem;
+      border-radius: 6px;
+    }
+
+    .summary-stat-item {
+      font-size: 0.82rem;
+      color: var(--text-2);
+    }
+
+    .summary-stat-val {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: var(--text-1);
+    }
+
+    .summary-list {
+      margin: 0;
+      padding-left: 1.2rem;
+      font-size: 0.82rem;
+      color: var(--text-2);
+      line-height: 1.5;
+    }
+
+    .summary-list li {
+      margin-bottom: 0.4rem;
+    }
+
+    /* Comparison Modal styles */
+    .compare-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2100;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .compare-modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      width: 90%;
+      max-width: 650px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      animation: slideUp 0.2s ease;
+    }
+
+    .compare-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .close-modal-btn {
+      background: none;
+      border: none;
+      color: var(--text-3);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .close-modal-btn:hover {
+      color: var(--text-1);
+    }
+
+    .compare-modal-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .compare-col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .compare-col-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-3);
+      margin-bottom: 0.4rem;
+      font-weight: 700;
+    }
+
+    .compare-text-box {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      min-height: 120px;
+      max-height: 250px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .compare-text-box.before {
+      border-left: 3px solid var(--danger);
+      background: rgba(239, 68, 68, 0.04);
+      color: #fca5a5;
+    }
+
+    .compare-text-box.after {
+      border-left: 3px solid var(--success);
+      background: rgba(34, 197, 94, 0.04);
+      color: #86efac;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
   </style>
 </head>
 
@@ -852,18 +1045,34 @@
             <div class="metric-card">
               <svg class="gauge-svg">
                 <circle class="gauge-bg" cx="40" cy="40" r="36" />
-                <circle class="gauge-fill" id="gauge-readability" cx="40" cy="40" r="36" />
+                <circle class="gauge-fill" id="gauge-overallATSScore" cx="40" cy="40" r="36" />
               </svg>
-              <div class="metric-value" id="val-readability">—</div>
+              <div class="metric-value" id="val-overallATSScore">—</div>
+              <div class="metric-label">Overall ATS</div>
+            </div>
+            <div class="metric-card">
+              <svg class="gauge-svg">
+                <circle class="gauge-bg" cx="40" cy="40" r="36" />
+                <circle class="gauge-fill" id="gauge-keywordMatch" cx="40" cy="40" r="36" />
+              </svg>
+              <div class="metric-value" id="val-keywordMatch">—</div>
+              <div class="metric-label">Keyword Match</div>
+            </div>
+            <div class="metric-card">
+              <svg class="gauge-svg">
+                <circle class="gauge-bg" cx="40" cy="40" r="36" />
+                <circle class="gauge-fill" id="gauge-recruiterReadability" cx="40" cy="40" r="36" />
+              </svg>
+              <div class="metric-value" id="val-recruiterReadability">—</div>
               <div class="metric-label">Readability</div>
             </div>
             <div class="metric-card">
               <svg class="gauge-svg">
                 <circle class="gauge-bg" cx="40" cy="40" r="36" />
-                <circle class="gauge-fill" id="gauge-professionalism" cx="40" cy="40" r="36" />
+                <circle class="gauge-fill" id="gauge-professionalTone" cx="40" cy="40" r="36" />
               </svg>
-              <div class="metric-value" id="val-professionalism">—</div>
-              <div class="metric-label">Professionalism</div>
+              <div class="metric-value" id="val-professionalTone">—</div>
+              <div class="metric-label">Tone</div>
             </div>
             <div class="metric-card">
               <svg class="gauge-svg">
@@ -875,7 +1084,13 @@
             </div>
           </div>
 
-          <h3 style="font-size:1.05rem; margin-bottom:0.75rem;">Interactive Suggestions</h3>
+          <div style="display: flex; gap: 0.5rem; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <h3 style="font-size:1.05rem; margin:0;">Interactive Suggestions</h3>
+            <button id="reanalyzeAtsBtn" class="btn btn-secondary btn-sm" style="min-height:30px; font-size:0.75rem; padding:0.2rem 0.6rem; display:none;" onclick="reanalyzeATS()">🔄 Re-analyze ATS</button>
+          </div>
+          
+          <div id="suggestionsSummaryContainer"></div>
+
           <div id="suggestionsList">
             <p style="color:var(--text-3); font-size:0.85rem;">No recommendations generated yet. Generate your letter to receive improvement suggestions.</p>
           </div>
@@ -1334,22 +1549,23 @@
         
         // Populate editor sheet
         const sheet = document.getElementById('editorSheet');
-        sheet.innerHTML = cleanEscapes(data.letter);
+        const letterText = cleanEscapes(data.letter);
+        sheet.innerHTML = letterText;
         saveEditorState();
         updateCounts();
 
-        // Render detailed scores & gauges
+        // Render detailed scores & gauges (legacy backup)
         updateGauges(data.detailed_scores || {});
         renderATSAnalysis(data);
-
-        // Render AI suggestions
-        renderSuggestions(data.suggestions || []);
 
         // Render Variants
         renderVariants(data.variants || [], data.letter);
 
         showToast('success', 'Cover letter generated successfully!');
         switchEditorTab('editPane');
+
+        // Automatically trigger new deep ATS Analysis
+        runAtsAnalysisOnText(letterText);
       } catch (err) {
         showToast('error', 'Generation error: ' + err.message);
         document.getElementById('editorSheet').textContent = 'Error writing cover letter. Please fix your settings and try again.';
@@ -1367,12 +1583,16 @@
 
     // Gauge animations
     function updateGauges(scores) {
+      // If loading legacy scores, map them to the new 5 gauges
       const readability = scores.readability || 80;
       const professionalism = scores.professionalism || 85;
       const personalization = scores.personalization || 80;
+      const overall = scores.overall || 82;
 
-      animateGauge('readability', readability);
-      animateGauge('professionalism', professionalism);
+      animateGauge('overallATSScore', overall);
+      animateGauge('keywordMatch', overall);
+      animateGauge('recruiterReadability', readability);
+      animateGauge('professionalTone', professionalism);
       animateGauge('personalization', personalization);
     }
 
@@ -1386,8 +1606,122 @@
       textVal.textContent = `${score}%`;
     }
 
-    // Render suggestions
+    // Render legacy suggestions
     function renderSuggestions(suggestions) {
+      renderAtsSuggestions(suggestions);
+    }
+
+    function escapeJSQuotes(str) {
+      return str.replace(/`/g, '\\`').replace(/"/g, '\\"').replace(/'/g, "\\'");
+    }
+
+    function dismissSuggestion(id) {
+      dismissAtsSuggestion(id);
+    }
+
+    function applySuggestion(id, original, replacement) {
+      applyAtsSuggestion(id, original, replacement, "+2%");
+    }
+
+    // ─── ATS Improvement Engine JavaScript Implementations ───
+    let currentAtsData = null;
+    let originalAtsScores = {};
+
+    async function runAtsAnalysisOnText(letterText) {
+      const reBtn = document.getElementById('reanalyzeAtsBtn');
+      if (reBtn) {
+        reBtn.disabled = true;
+        reBtn.textContent = '⏳ Analyzing...';
+      }
+      
+      try {
+        const payload = {
+          letter: letterText,
+          jobDescription: document.getElementById('jobDescription').value.trim(),
+          jobTitle: document.getElementById('jobTitle').value.trim(),
+          companyName: document.getElementById('companyName').value.trim(),
+          resumeText: resumeText || '',
+          industry: document.getElementById('industry').value.trim(),
+          experienceLevel: document.getElementById('experienceLevel').value
+        };
+
+        const session = await window.appSdk.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        const res = await fetch('/api/ats-suggestions', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: 'ATS analysis failed' }));
+          throw new Error(err.error || 'ATS analysis failed');
+        }
+
+        const data = await res.json();
+        currentAtsData = data;
+        
+        // Store original scores so we can apply incremental gains correctly
+        originalAtsScores = {
+          overallATSScore: data.overallATSScore,
+          keywordMatch: data.keywordMatch,
+          recruiterReadability: data.recruiterReadability,
+          professionalTone: data.professionalTone,
+          personalization: data.personalization
+        };
+
+        // Render gauges
+        updateAtsGauges(data);
+        
+        // Render Suggestions & Final Summary
+        renderAtsSuggestions(data.suggestions || []);
+        renderAtsSummary(data.summary || {});
+
+        // Show reanalyze button
+        if (reBtn) {
+          reBtn.style.display = 'inline-block';
+        }
+      } catch (err) {
+        console.error('ATS Analysis error:', err);
+        showToast('error', 'ATS Analysis failed: ' + err.message);
+      } finally {
+        if (reBtn) {
+          reBtn.disabled = false;
+          reBtn.textContent = '🔄 Re-analyze ATS';
+        }
+      }
+    }
+
+    function reanalyzeATS() {
+      const letterText = document.getElementById('editorSheet').innerText;
+      if (!letterText.trim() || letterText.startsWith('Your generated cover letter will appear here.')) {
+        showToast('error', 'Generate a cover letter first to analyze.');
+        return;
+      }
+      runAtsAnalysisOnText(letterText);
+    }
+
+    function updateAtsGauges(data) {
+      animateGauge('overallATSScore', data.overallATSScore || 0);
+      animateGauge('keywordMatch', data.keywordMatch || 0);
+      animateGauge('recruiterReadability', data.recruiterReadability || 0);
+      animateGauge('professionalTone', data.professionalTone || 0);
+      animateGauge('personalization', data.personalization || 0);
+
+      // Also update standard ATS tab score display
+      const atsDisplay = document.getElementById('atsScoreDisplay');
+      if (atsDisplay) {
+        const score = data.overallATSScore || 0;
+        atsDisplay.textContent = score;
+        atsDisplay.className = 'score-number' + (score >= 70 ? ' score-high' : score >= 50 ? ' score-mid' : ' score-low');
+      }
+    }
+
+    function renderAtsSuggestions(suggestions) {
       const countEl = document.getElementById('suggestionsCount');
       countEl.textContent = suggestions.length ? `(${suggestions.length})` : '';
 
@@ -1398,36 +1732,97 @@
       }
 
       listEl.innerHTML = suggestions.map((s, idx) => {
-        const catClass = `badge-${s.category.toLowerCase().replace(/\s+/g, '-')}`;
-        const hasDiff = s.originalText && s.suggestedText;
+        const normalizedCategory = (s.category || 'Missing Keyword').toLowerCase().replace(/\s+/g, '-');
+        const catClass = `badge-${normalizedCategory}`;
+        const priorityColor = s.priority === 'High' ? '🔴' : s.priority === 'Medium' ? '🟡' : '🟢';
+        const hasDiff = s.currentText && s.suggestedText;
 
         return `
           <div class="suggestion-card" id="sug-${s.id}">
-            <div class="suggestion-header">
-              <span class="suggestion-cat-badge ${catClass}">${s.category}</span>
-              <span class="priority-badge priority-${s.priority.toLowerCase()}">${s.priority} Priority</span>
-            </div>
-            <div class="suggestion-desc">${s.explanation}</div>
-            ${hasDiff ? `
-              <div class="suggestion-diff">
-                <span class="diff-del">- "${s.originalText}"</span>
-                <span class="diff-ins">+ "${s.suggestedText}"</span>
+            <div class="suggestion-header" style="margin-bottom:0.6rem;">
+              <span class="suggestion-cat-badge ${catClass}">${s.category || 'Missing Keyword'}</span>
+              <div style="display:flex; gap:0.5rem; align-items:center;">
+                <span class="suggestion-gain-badge">${s.estimatedATSGain || '+2%'} Gain</span>
+                <span class="priority-badge priority-${(s.priority || 'Medium').toLowerCase()}" style="font-weight:700;">${priorityColor} ${s.priority || 'Medium'}</span>
               </div>
-            ` : ''}
-            <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
-              <button class="btn btn-secondary btn-sm" style="min-height:30px; font-size:0.75rem; padding:0.2rem 0.5rem;" onclick="dismissSuggestion('${s.id}')">Dismiss</button>
-              ${hasDiff ? `<button class="btn btn-primary btn-sm" style="min-height:30px; font-size:0.75rem; padding:0.2rem 0.5rem;" onclick="applySuggestion('${s.id}', \`${escapeJSQuotes(s.originalText)}\`, \`${escapeJSQuotes(s.suggestedText)}\`)">One-click Apply</button>` : ''}
+            </div>
+            
+            <div class="suggestion-title">${s.title || 'Improvement Opportunity'}</div>
+            <div class="suggestion-desc" style="margin-bottom:0.5rem;">${s.description}</div>
+            <div class="suggestion-reason">${s.reason}</div>
+            
+            <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.75rem;">
+              <button class="btn btn-secondary btn-sm" style="min-height:30px; font-size:0.75rem; padding:0.2rem 0.5rem;" onclick="ignoreSuggestion('${s.id}')">Ignore</button>
+              <button class="btn btn-secondary btn-sm" style="min-height:30px; font-size:0.75rem; padding:0.2rem 0.5rem;" onclick="copySuggestionText(\`${escapeJSQuotes(s.suggestedText || '')}\`)">Copy</button>
+              ${hasDiff ? `
+                <button class="btn btn-secondary btn-sm" style="min-height:30px; font-size:0.75rem; padding:0.2rem 0.5rem;" onclick="openCompareModal('${s.id}', \`${escapeJSQuotes(s.currentText)}\`, \`${escapeJSQuotes(s.suggestedText)}\`)">Compare Before/After</button>
+              ` : ''}
+              ${s.oneClickApplicable && hasDiff ? `
+                <button class="btn btn-primary btn-sm" style="min-height:30px; font-size:0.75rem; padding:0.2rem 0.5rem;" onclick="applyAtsSuggestion('${s.id}', \`${escapeJSQuotes(s.currentText)}\`, \`${escapeJSQuotes(s.suggestedText)}\`, '${s.estimatedATSGain || '+2%'}')">One-click Apply</button>
+              ` : ''}
             </div>
           </div>
         `;
       }).join('');
     }
 
-    function escapeJSQuotes(str) {
-      return str.replace(/`/g, '\\`').replace(/"/g, '\\"').replace(/'/g, "\\'");
+    function applyAtsSuggestion(id, original, replacement, gainStr) {
+      const sheet = document.getElementById('editorSheet');
+      let content = sheet.innerHTML;
+      let textContent = sheet.innerText;
+
+      let applied = false;
+      if (content.includes(original)) {
+        content = content.replace(original, `<strong>${replacement}</strong>`);
+        sheet.innerHTML = content;
+        saveEditorState();
+        updateCounts();
+        
+        setTimeout(() => {
+          sheet.innerHTML = sheet.innerHTML.replace(`<strong>${replacement}</strong>`, replacement);
+          saveEditorState();
+        }, 2500);
+        applied = true;
+      } else if (textContent.includes(original)) {
+        textContent = textContent.replace(original, replacement);
+        sheet.innerText = textContent;
+        saveEditorState();
+        updateCounts();
+        applied = true;
+      }
+
+      if (applied) {
+        showToast('success', 'Suggestion applied inline.');
+        
+        // Immediately increase scores in UI
+        const gainVal = parseInt((gainStr || '+2%').replace(/[^0-9]/g, ''), 10) || 2;
+        if (currentAtsData) {
+          currentAtsData.overallATSScore = Math.min(100, currentAtsData.overallATSScore + gainVal);
+          currentAtsData.keywordMatch = Math.min(100, currentAtsData.keywordMatch + gainVal);
+          currentAtsData.recruiterReadability = Math.min(100, currentAtsData.recruiterReadability + Math.round(gainVal / 2));
+          currentAtsData.personalization = Math.min(100, currentAtsData.personalization + Math.round(gainVal / 2));
+          
+          updateAtsGauges(currentAtsData);
+          
+          // Re-render summary with new overall score
+          if (currentAtsData.summary) {
+            currentAtsData.summary.overallATSScore = currentAtsData.overallATSScore;
+            renderAtsSummary(currentAtsData.summary);
+          }
+        }
+        
+        dismissAtsSuggestion(id);
+      } else {
+        showToast('error', 'Could not locate the text in the editor. You can copy/paste it manually.');
+      }
     }
 
-    function dismissSuggestion(id) {
+    function ignoreSuggestion(id) {
+      dismissAtsSuggestion(id);
+      showToast('success', 'Suggestion ignored.');
+    }
+
+    function dismissAtsSuggestion(id) {
       const card = document.getElementById(`sug-${id}`);
       if (card) {
         card.style.opacity = '0';
@@ -1435,49 +1830,81 @@
         card.style.transition = 'all 0.3s ease';
         setTimeout(() => {
           card.remove();
-          const suggestions = document.querySelectorAll('.suggestion-card');
-          document.getElementById('suggestionsCount').textContent = suggestions.length ? `(${suggestions.length})` : '';
-          if (!suggestions.length) {
+          
+          // Update count
+          const remainingCards = document.querySelectorAll('#suggestionsList .suggestion-card');
+          const countEl = document.getElementById('suggestionsCount');
+          countEl.textContent = remainingCards.length ? `(${remainingCards.length})` : '';
+          
+          if (!remainingCards.length) {
             document.getElementById('suggestionsList').innerHTML = '<p style="color:var(--text-3); font-size:0.85rem;">All suggestions completed!</p>';
           }
         }, 300);
       }
     }
 
-    function applySuggestion(id, original, replacement) {
-      const sheet = document.getElementById('editorSheet');
-      // Normalize line breaks to make string matching work reliably
-      let content = sheet.innerHTML;
-      
-      // Perform replace
-      if (content.includes(original)) {
-        content = content.replace(original, `<strong>${replacement}</strong>`); // Highlight replacement briefly
-        sheet.innerHTML = content;
-        saveEditorState();
-        updateCounts();
-        
-        // Remove bold tag after 2.5s
-        setTimeout(() => {
-          sheet.innerHTML = sheet.innerHTML.replace(`<strong>${replacement}</strong>`, replacement);
-          saveEditorState();
-        }, 2500);
+    function copySuggestionText(text) {
+      navigator.clipboard.writeText(cleanEscapes(text));
+      showToast('success', 'Suggested text copied to clipboard.');
+    }
 
-        showToast('success', 'Suggestion applied inline.');
-        dismissSuggestion(id);
-      } else {
-        // Fallback: search in text context directly
-        let textContent = sheet.innerText;
-        if (textContent.includes(original)) {
-          textContent = textContent.replace(original, replacement);
-          sheet.innerText = textContent;
-          saveEditorState();
-          updateCounts();
-          showToast('success', 'Suggestion applied inline.');
-          dismissSuggestion(id);
-        } else {
-          showToast('error', 'Could not locate the sentence in the editor. You can copy/paste it manually.');
-        }
+    let activeCompareId = null;
+    let activeCompareOriginal = '';
+    let activeCompareReplacement = '';
+
+    function openCompareModal(id, original, replacement) {
+      activeCompareId = id;
+      activeCompareOriginal = original;
+      activeCompareReplacement = replacement;
+
+      document.getElementById('compareBeforeVal').textContent = original;
+      document.getElementById('compareAfterVal').textContent = replacement;
+
+      const applyBtn = document.getElementById('compareApplyBtn');
+      let gainStr = '+2%';
+      if (currentAtsData && currentAtsData.suggestions) {
+        const found = currentAtsData.suggestions.find(s => s.id === id);
+        if (found) gainStr = found.estimatedATSGain;
       }
+      
+      applyBtn.onclick = () => {
+        applyAtsSuggestion(id, original, replacement, gainStr);
+        closeCompareModal();
+      };
+
+      document.getElementById('compareModal').style.display = 'flex';
+    }
+
+    function closeCompareModal() {
+      document.getElementById('compareModal').style.display = 'none';
+    }
+
+    function renderAtsSummary(summary) {
+      const container = document.getElementById('suggestionsSummaryContainer');
+      if (!summary || !summary.overallATSScore) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const shortlistEmoji = summary.recruiterLikelihood === 'High' ? '🔥 High Likelihood' : summary.recruiterLikelihood === 'Medium' ? '⚡ Medium Likelihood' : '⚠️ Low Likelihood';
+      const confidenceEmoji = summary.confidenceLevel === 'High' ? '🔒 High Confidence' : summary.confidenceLevel === 'Medium' ? '✓ Medium Confidence' : '⚠️ Low Confidence';
+
+      container.innerHTML = `
+        <div class="summary-card">
+          <div class="summary-title">
+            <span>📊 ATS Executive Summary</span>
+            <span class="suggestion-gain-badge" style="font-size:0.75rem; background:rgba(139, 92, 246, 0.15); color:#a78bfa; border:1px solid rgba(139, 92, 246, 0.3)">Target: ${summary.estimatedATSAfterApplying}% after optimizations</span>
+          </div>
+          <div class="summary-stats">
+            <div class="summary-stat-item">Recruiter Likelihood: <span class="summary-stat-val">${shortlistEmoji}</span></div>
+            <div class="summary-stat-item">Analysis Confidence: <span class="summary-stat-val">${confidenceEmoji}</span></div>
+          </div>
+          <h4 style="font-size:0.8rem; margin:0 0 0.4rem 0; color:var(--text-1); text-transform:uppercase; letter-spacing:0.04em;">Top 5 Improvement Areas:</h4>
+          <ul class="summary-list">
+            ${summary.topImprovements && summary.topImprovements.length ? summary.topImprovements.map(imp => `<li>${imp}</li>`).join('') : '<li>Optimize keyword match and formatting to proceed.</li>'}
+          </ul>
+        </div>
+      `;
     }
 
     // Render ATS scoring page details
@@ -1956,6 +2383,31 @@
       showToast('success', 'Text copied to clipboard!');
     }
 
+  <!-- Compare Before/After Modal -->
+  <div id="compareModal" class="compare-modal" style="display:none;">
+    <div class="compare-modal-content">
+      <div class="compare-modal-header">
+        <h3 style="font-family:'Outfit',sans-serif; font-size:1.1rem; margin:0; color:var(--text-1);">Compare Changes</h3>
+        <button class="close-modal-btn" onclick="closeCompareModal()">×</button>
+      </div>
+      <div class="compare-modal-body">
+        <div class="compare-col">
+          <div class="compare-col-title">Before</div>
+          <div class="compare-text-box before" id="compareBeforeVal"></div>
+        </div>
+        <div class="compare-col">
+          <div class="compare-col-title">After</div>
+          <div class="compare-text-box after" id="compareAfterVal"></div>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.25rem;">
+        <button class="btn btn-secondary" onclick="closeCompareModal()">Close</button>
+        <button class="btn btn-primary" id="compareApplyBtn">Apply Change</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
     window.addEventListener('load', init);
   </script>
 </body>
