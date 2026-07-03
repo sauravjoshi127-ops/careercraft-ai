@@ -280,6 +280,7 @@
                 localStorage.setItem('userName', name);
                 localStorage.setItem('userId', data.user.id);
                 localStorage.setItem('userToken', data.session.access_token);
+                sessionStorage.removeItem('signup_verification_required');
 
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';

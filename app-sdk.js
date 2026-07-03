@@ -4,6 +4,11 @@
  */
 (function () {
 
+  let resolveAuthReady;
+  const authReady = new Promise(resolve => {
+    resolveAuthReady = resolve;
+  });
+
   // ─── Centralized Workspace Manager ─────────────────────────
   const WorkspaceManager = {
     workspace: localStorage.getItem('careercraft_workspace') || 'ai',
@@ -153,8 +158,9 @@
       async getSession() {
         await appSdk.ready;
         if (!appSdk.client) return null;
+        const restoredSession = await authReady;
         const { data: { session } } = await appSdk.client.auth.getSession();
-        return session;
+        return session || restoredSession;
       },
 
       async getUser() {
@@ -552,11 +558,18 @@
       }
       if (window.supabase && typeof window.supabase.createClient === 'function') {
         appSdk.client = window.supabase.createClient(config.supabaseUrl, config.supabaseKey);
+        
+        // Listen to the initial auth state to resolve the recovery check
+        appSdk.client.auth.onAuthStateChange((event, session) => {
+          resolveAuthReady(session);
+        });
       } else {
         console.error('Supabase library is not available.');
+        resolveAuthReady(null);
       }
     } catch (err) {
       console.error('[SDK] Failed to initialize Supabase client from /api/config. Check server SUPABASE_URL and SUPABASE_ANON_KEY setup in the README:', err);
+      resolveAuthReady(null);
     }
 
     // Auto-init navigation layouts when DOM is ready
