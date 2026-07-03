@@ -188,9 +188,49 @@
         let client = null;
 
         // Redirect if already logged in (hidden initially to prevent FOUC glitch)
+        function showVerificationScreen(email) {
+            document.getElementById('signupForm').style.display = 'none';
+            const divider = document.querySelector('.divider');
+            if (divider) divider.style.display = 'none';
+            const socialLogin = document.querySelector('.social-login');
+            if (socialLogin) socialLogin.style.display = 'none';
+            const authLink = document.querySelector('.auth-link');
+            if (authLink) authLink.style.display = 'none';
+
+            document.querySelector('h1').textContent = 'Verify Your Email';
+            document.querySelector('.subtitle').textContent = `Verification link sent.`;
+
+            const successMsg = document.getElementById('successMsg');
+            successMsg.innerHTML = `
+                <div style="text-align: center; padding: 1rem 0;">
+                    <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">✉️</span>
+                    <h3 style="color: #6ee7b7; margin-bottom: 0.5rem; font-size: 1.1rem; font-weight: 700;">Check Your Inbox</h3>
+                    <p style="color: var(--text-2); font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.5;">
+                        We've sent a verification link to <strong>${email}</strong>.<br>Please click the link to activate your account.
+                    </p>
+                    <button class="btn-primary" type="button" onclick="clearVerificationAndGoToLogin()" style="padding: 0.65rem 1.25rem; font-size: 0.85rem; width: auto; display: inline-block;">Proceed to Login</button>
+                </div>
+            `;
+            successMsg.style.display = 'block';
+            document.getElementById('authWrapper').classList.add('show');
+        }
+
+        function clearVerificationAndGoToLogin() {
+            sessionStorage.removeItem('signup_verification_required');
+            window.location.href = 'login.html';
+        }
+
+        // Redirect if already logged in (hidden initially to prevent FOUC glitch)
         async function checkExistingSession() {
             await window.appSdk.ready;
             client = window.appSdk.client;
+            
+            const verificationEmail = sessionStorage.getItem('signup_verification_required');
+            if (verificationEmail) {
+                showVerificationScreen(verificationEmail);
+                return;
+            }
+
             const urlParams = new URLSearchParams(window.location.search);
             const hasError = urlParams.has('error') || urlParams.has('loop');
 
@@ -323,29 +363,8 @@
 
                 // Case A: Email verification required
                 if (!authData.session) {
-                    // Hide signup forms and show verification message
-                    document.getElementById('signupForm').style.display = 'none';
-                    const divider = document.querySelector('.divider');
-                    if (divider) divider.style.display = 'none';
-                    const socialLogin = document.querySelector('.social-login');
-                    if (socialLogin) socialLogin.style.display = 'none';
-                    const authLink = document.querySelector('.auth-link');
-                    if (authLink) authLink.style.display = 'none';
-
-                    document.querySelector('h1').textContent = 'Verify Your Email';
-                    document.querySelector('.subtitle').textContent = `Verification link sent.`;
-
-                    successMsg.innerHTML = `
-                        <div style="text-align: center; padding: 1rem 0;">
-                            <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">✉️</span>
-                            <h3 style="color: #6ee7b7; margin-bottom: 0.5rem; font-size: 1.1rem; font-weight: 700;">Check Your Inbox</h3>
-                            <p style="color: var(--text-2); font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.5;">
-                                We've sent a verification link to <strong>${email}</strong>.<br>Please click the link to activate your account.
-                            </p>
-                            <button class="btn-primary" type="button" onclick="window.location.href='login.html'" style="padding: 0.65rem 1.25rem; font-size: 0.85rem; width: auto; display: inline-block;">Proceed to Login</button>
-                        </div>
-                    `;
-                    successMsg.style.display = 'block';
+                    sessionStorage.setItem('signup_verification_required', email);
+                    showVerificationScreen(email);
                     return;
                 }
 
