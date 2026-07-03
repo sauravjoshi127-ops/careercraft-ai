@@ -4,6 +4,147 @@
  */
 (function () {
 
+  // ─── Centralized Workspace Manager ─────────────────────────
+  const WorkspaceManager = {
+    workspace: localStorage.getItem('careercraft_workspace') || 'ai',
+
+    init() {
+      // Apply theme class early to avoid FOUC
+      this.applyThemeClass();
+
+      // Listen to cross-tab storage changes
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'careercraft_workspace') {
+          const val = e.newValue || 'ai';
+          if (val !== this.workspace) {
+            this.setWorkspace(val, false);
+          }
+        }
+      });
+    },
+
+    applyThemeClass() {
+      const page = window.location.pathname.split('/').pop() || 'index.html';
+      const isAppPage = page !== 'index.html' && page !== 'login.html' && page !== 'signup.html' && page !== 'reset-password.html' && page !== '';
+      const isDocPage = isAppPage && (page.startsWith('resume') || page.startsWith('cover-letter') || page.startsWith('cold-email') || page.startsWith('dashboard'));
+
+      if (isAppPage) {
+        if (this.workspace === 'manual') {
+          document.body.classList.remove('theme-ai-active');
+          document.body.classList.add('theme-manual-active');
+          if (isDocPage) {
+            document.body.classList.add('manual-studio-active');
+          } else {
+            document.body.classList.remove('manual-studio-active');
+          }
+        } else {
+          document.body.classList.remove('theme-manual-active');
+          document.body.classList.remove('manual-studio-active');
+          document.body.classList.add('theme-ai-active');
+        }
+      }
+    },
+
+    getButtonHtml() {
+      const active = this.workspace === 'manual';
+      const label = active ? 'Manual Studio' : 'AI Studio';
+      const dotColor = active ? '#10b981' : '#7c3aed';
+      const dotGlow = active ? 'rgba(16,185,129,0.6)' : 'rgba(124,58,237,0.8)';
+      return `
+        <button type="button" class="workspace-toggle-btn" id="global-workspace-switcher" onclick="window.WorkspaceManager.toggle()" style="margin-right:0.5rem;">
+          <span class="badge-dot" style="background: ${dotColor}; box-shadow: 0 0 10px ${dotGlow}; width: 7px; height: 7px; border-radius: 50%; display: inline-block;"></span>
+          <span>${label}</span>
+          <span style="opacity: 0.5;">↔</span>
+        </button>
+      `;
+    },
+
+    async toggle() {
+      const target = this.workspace === 'ai' ? 'manual' : 'ai';
+      await this.setWorkspace(target, true);
+    },
+
+    async setWorkspace(target, animate = true) {
+      if (animate) {
+        // Show portal loader
+        let portal = document.getElementById('workspace-portal');
+        if (!portal) {
+          portal = document.createElement('div');
+          portal.id = 'workspace-portal';
+          portal.className = 'workspace-portal-overlay';
+          portal.innerHTML = `
+            <div class="workspace-portal-card">
+              <div class="workspace-portal-spinner"></div>
+              <div class="workspace-portal-title" id="portal-title">Aligning Workspace...</div>
+              <div class="workspace-portal-subtitle" id="portal-subtitle">Applying design system tokens</div>
+            </div>
+          `;
+          document.body.appendChild(portal);
+        }
+
+        const title = document.getElementById('portal-title');
+        const subtitle = document.getElementById('portal-subtitle');
+        if (title && subtitle) {
+          title.textContent = target === 'manual' ? 'Opening Manual Studio' : 'Launching AI Studio';
+          subtitle.textContent = target === 'manual' 
+            ? 'Entering elegant Apple/Notion environment...' 
+            : 'Powering up career copilot & ATS suggestions...';
+        }
+
+        portal.classList.add('active');
+        document.body.classList.add('workspace-transitioning');
+
+        // Let the portal and scale animations run (350ms)
+        await new Promise(resolve => setTimeout(resolve, 350));
+      }
+
+      this.workspace = target;
+      localStorage.setItem('careercraft_workspace', target);
+
+      const page = window.location.pathname.split('/').pop() || 'index.html';
+      if (target === 'manual' && page.startsWith('interview')) {
+        if (animate) {
+          await new Promise(resolve => setTimeout(resolve, 150));
+          document.body.classList.remove('workspace-transitioning');
+          const portal = document.getElementById('workspace-portal');
+          if (portal) portal.classList.remove('active');
+        }
+        window.location.href = 'dashboard.html';
+        return;
+      }
+
+      this.applyThemeClass();
+
+      // Update button elements on page if they exist
+      const btn = document.getElementById('global-workspace-switcher');
+      if (btn) {
+        const active = target === 'manual';
+        const label = active ? 'Manual Studio' : 'AI Studio';
+        const dotColor = active ? '#10b981' : '#7c3aed';
+        const dotGlow = active ? 'rgba(16,185,129,0.6)' : 'rgba(124,58,237,0.8)';
+        
+        btn.innerHTML = `
+          <span class="badge-dot" style="background: ${dotColor}; box-shadow: 0 0 10px ${dotGlow}; width: 7px; height: 7px; border-radius: 50%; display: inline-block;"></span>
+          <span>${label}</span>
+          <span style="opacity: 0.5;">↔</span>
+        `;
+      }
+
+      // Broadcast event so other modules can react
+      window.dispatchEvent(new CustomEvent('workspaceChanged', { detail: { workspace: target } }));
+
+      if (animate) {
+        await new Promise(resolve => setTimeout(resolve, 150));
+        document.body.classList.remove('workspace-transitioning');
+        const portal = document.getElementById('workspace-portal');
+        if (portal) portal.classList.remove('active');
+      }
+    }
+  };
+
+  window.WorkspaceManager = WorkspaceManager;
+  WorkspaceManager.init();
+
   const appSdk = {
     client: null,
 
@@ -195,6 +336,7 @@
                   <a href="interview.html" ${interviewActive}>Interview</a>
               </div>
               <div class="user-menu" style="display:flex; align-items:center; gap:0.75rem;">
+                  ${window.WorkspaceManager ? window.WorkspaceManager.getButtonHtml() : ''}
                   <div class="user-avatar" id="avatarInitial" onclick="window.location.href='settings.html'" title="Account" style="display:flex; align-items:center; justify-content:center; cursor:pointer;">${initial}</div>
                   <a href="settings.html" class="nav-btn">Settings</a>
                   <button class="nav-btn" onclick="window.appSdk.auth.logout()">Sign Out</button>
@@ -380,13 +522,8 @@
 
   // Start initialization immediately
   appSdk.ready = (async function init() {
-    const activeWorkspace = localStorage.getItem('careercraft_workspace');
     const page = window.location.pathname.split('/').pop() || 'index.html';
     const isAppPage = page !== 'index.html' && page !== 'login.html' && page !== 'signup.html' && page !== 'reset-password.html' && page !== '';
-
-    if (isAppPage && activeWorkspace === 'manual') {
-      document.body.classList.add('manual-studio-active');
-    }
 
     if (!window.supabase) {
       try {

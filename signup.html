@@ -213,11 +213,38 @@
         }
         checkExistingSession();
 
+        function getFriendlySignUpError(error) {
+            const message = String(error?.message || error || '').trim();
+            const lower = message.toLowerCase();
+
+            if (!client) {
+                return 'Sign up service could not load. Please refresh the page or check your internet connection.';
+            }
+
+            if (!navigator.onLine || lower.includes('failed to fetch') || lower.includes('networkerror') || lower.includes('load failed')) {
+                return 'We could not reach the sign up service. Please check your internet connection and try again.';
+            }
+
+            if (lower.includes('already registered') || lower.includes('email already in use') || lower.includes('user already exists')) {
+                return 'This email address is already registered. Please sign in instead.';
+            }
+
+            if (lower.includes('password should be') || lower.includes('weak password')) {
+                return 'Your password is too weak. Please use at least 8 characters with a mix of letters and numbers.';
+            }
+
+            if (lower.includes('invalid email') || lower.includes('unable to validate email')) {
+                return 'Please enter a valid email address.';
+            }
+
+            return message || 'Unable to create account right now. Please try again.';
+        }
+
         async function handleSignup(event) {
             event.preventDefault();
 
-            const fullName = document.getElementById('fullName').value;
-            const email = document.getElementById('email').value;
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             const submitBtn = document.getElementById('submitBtn');
@@ -231,6 +258,12 @@
             // Validate passwords match
             if (password !== confirmPassword) {
                 errorMsg.textContent = '❌ Passwords do not match!';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            if (!client) {
+                errorMsg.textContent = '❌ Authentication service is offline. Please try again.';
                 errorMsg.style.display = 'block';
                 return;
             }
@@ -256,17 +289,23 @@
                 console.log('Auth signup response:', { authData, authError });
 
                 if (authError) {
-                    throw new Error(`Auth Error: ${authError.message}`);
+                    throw new Error(authError.message);
                 }
 
                 if (!authData.user) {
-                    throw new Error('No user returned from auth signup');
+                    throw new Error('No user returned from sign up.');
+                }
+
+                // Check if email already registered (identities check in Supabase)
+                const isExistingUser = authData.user.identities && authData.user.identities.length === 0;
+                if (isExistingUser) {
+                    throw new Error('This email address is already registered. Please sign in instead.');
                 }
 
                 console.log('Step 2: User created in Auth:', authData.user.id);
                 console.log('Step 3: Saving user to database...');
 
-                // ✅ Store user profile in users table
+                // ✅ Store user profile in users table (optional fallback, db trigger handles it in production)
                 const { error: dbError } = await client
                     .from('users')
                     .insert([
@@ -278,30 +317,56 @@
 
                 if (dbError) {
                     console.warn('Database insert warning:', dbError);
-                    // Don't throw - auth user is already created
                 }
 
-                console.log('Step 4: Success! User saved to database');
+                console.log('Step 4: Success! checking session...');
 
-                // Success!
+                // Case A: Email verification required
+                if (!authData.session) {
+                    // Hide signup forms and show verification message
+                    document.getElementById('signupForm').style.display = 'none';
+                    const divider = document.querySelector('.divider');
+                    if (divider) divider.style.display = 'none';
+                    const socialLogin = document.querySelector('.social-login');
+                    if (socialLogin) socialLogin.style.display = 'none';
+                    const authLink = document.querySelector('.auth-link');
+                    if (authLink) authLink.style.display = 'none';
+
+                    document.querySelector('h1').textContent = 'Verify Your Email';
+                    document.querySelector('.subtitle').textContent = `Verification link sent.`;
+
+                    successMsg.innerHTML = `
+                        <div style="text-align: center; padding: 1rem 0;">
+                            <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">✉️</span>
+                            <h3 style="color: #6ee7b7; margin-bottom: 0.5rem; font-size: 1.1rem; font-weight: 700;">Check Your Inbox</h3>
+                            <p style="color: var(--text-2); font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.5;">
+                                We've sent a verification link to <strong>${email}</strong>.<br>Please click the link to activate your account.
+                            </p>
+                            <button class="btn-primary" type="button" onclick="window.location.href='login.html'" style="padding: 0.65rem 1.25rem; font-size: 0.85rem; width: auto; display: inline-block;">Proceed to Login</button>
+                        </div>
+                    `;
+                    successMsg.style.display = 'block';
+                    return;
+                }
+
+                // Case B: Auto-login session established
                 successMsg.textContent = '✅ Account created successfully! Redirecting to dashboard...';
                 successMsg.style.display = 'block';
 
-                // Store email in localStorage for dashboard
+                // Keep localStorage in sync for dashboard fallback
                 localStorage.setItem('userEmail', email);
                 localStorage.setItem('userName', fullName);
                 localStorage.setItem('userId', authData.user.id);
+                localStorage.setItem('userToken', authData.session.access_token);
 
                 console.log('Redirecting to dashboard...');
-
-                // Redirect after 2 seconds
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
-                }, 2000);
+                }, 1500);
 
             } catch (error) {
                 console.error('Signup error:', error);
-                errorMsg.textContent = `❌ Error: ${error.message}`;
+                errorMsg.textContent = `❌ Error: ${getFriendlySignUpError(error)}`;
                 errorMsg.style.display = 'block';
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Create Account';
