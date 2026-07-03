@@ -96,39 +96,55 @@
       else if (page.startsWith('cold-email')) this.activeTab = 'cold-email';
       else if (page.startsWith('dashboard')) this.activeTab = 'home';
 
+      const isDocPage = page.startsWith('resume') || page.startsWith('cover-letter') || page.startsWith('cold-email') || page.startsWith('dashboard');
+      if (!isDocPage) return;
+
       // 2. Load workspace preference
-      const storedWorkspace = localStorage.getItem('careercraft_workspace');
-      this.workspace = storedWorkspace || 'ai';
+      this.workspace = window.WorkspaceManager ? window.WorkspaceManager.workspace : (localStorage.getItem('careercraft_workspace') || 'ai');
 
-      // 3. Setup workspace transition backdrop
-      this.createTransitionPortal();
-
-      // 4. Inject floating switch button in the navigation header
-      this.injectToggleBtn();
-
-      // 5. Initialize manual layout elements
+      // 3. Initialize manual layout elements
       this.buildManualStudioLayout();
 
-      // 6. Setup general listeners (shortcuts, selections, drag-drop)
+      // 4. Setup general listeners (shortcuts, selections, drag-drop)
       this.setupListeners();
 
-      // 7. Load user profile details
+      // 5. Load user profile details
       this.loadUserProfile();
 
-      // 7.5 Install original page hooks to capture document loading
+      // 6. Install original page hooks to capture document loading
       this.installHooks();
+
+      // 7. Subscribe to global WorkspaceManager events
+      window.addEventListener('workspaceChanged', (e) => {
+        this.workspace = e.detail.workspace;
+        this.handleWorkspaceChange();
+      });
 
       // 8. If manual workspace is active, switch to it immediately
       if (this.workspace === 'manual') {
-        document.body.classList.add('manual-studio-active');
-        const root = document.getElementById('manual-studio-root');
-        if (root) root.style.display = 'grid';
-        
         // Wait for page initial load to sync state
         setTimeout(() => {
-          this.syncStateFromOriginalPage();
-          this.renderActiveDocument();
-        }, 300);
+          this.handleWorkspaceChange();
+        }, 150);
+      }
+    },
+
+    handleWorkspaceChange() {
+      const root = document.getElementById('manual-studio-root');
+      if (this.workspace === 'manual') {
+        document.body.classList.add('manual-studio-active');
+        if (root) root.style.display = 'grid';
+        this.syncStateFromOriginalPage();
+        this.renderActiveDocument();
+      } else {
+        document.body.classList.remove('manual-studio-active');
+        if (root) root.style.display = 'none';
+        this.syncStateToOriginalPage();
+
+        // Refresh original page live preview if function is available
+        if (window.updatePreview) window.updatePreview();
+        else if (window.updateLivePreview) window.updateLivePreview();
+        else if (window.updateLiveStats) window.updateLiveStats();
       }
     },
 
@@ -162,111 +178,6 @@
           this.renderActiveDocument();
         }
       };
-    },
-
-    // ─── TRANSITION WORKSPACE MECHANISM ─────────────────────────
-    createTransitionPortal() {
-      if (document.getElementById('workspace-portal')) return;
-      const portal = document.createElement('div');
-      portal.id = 'workspace-portal';
-      portal.className = 'workspace-portal-overlay';
-      portal.innerHTML = `
-        <div class="workspace-portal-card">
-          <div class="workspace-portal-spinner"></div>
-          <div class="workspace-portal-title" id="portal-title">Aligning Workspace...</div>
-          <div class="workspace-portal-subtitle" id="portal-subtitle">Applying design system tokens</div>
-        </div>
-      `;
-      document.body.appendChild(portal);
-    },
-
-    injectToggleBtn() {
-      // Find top nav and place switcher
-      const navLinks = document.querySelector('.topnav .nav-links') || document.querySelector('.topnav');
-      if (!navLinks) return;
-
-      if (document.getElementById('workspace-toggle-trigger')) return;
-
-      const toggleContainer = document.createElement('div');
-      toggleContainer.style.display = 'flex';
-      toggleContainer.style.alignItems = 'center';
-      toggleContainer.style.marginLeft = '1rem';
-      toggleContainer.id = 'workspace-toggle-trigger';
-
-      const toggleBtn = document.createElement('button');
-      toggleBtn.type = 'button';
-      toggleBtn.className = 'workspace-toggle-btn';
-      toggleBtn.innerHTML = `
-        <span class="badge-dot"></span>
-        <span id="toggle-label">${this.workspace === 'ai' ? 'AI Studio' : 'Manual Studio'}</span>
-        <span style="opacity: 0.5;">↔</span>
-      `;
-      toggleBtn.onclick = () => this.toggleWorkspace();
-
-      toggleContainer.appendChild(toggleBtn);
-
-      // Append before user menu or at the end of nav links
-      const userMenu = document.querySelector('.topnav .user-menu');
-      if (userMenu) {
-        userMenu.insertBefore(toggleContainer, userMenu.firstChild);
-      } else {
-        navLinks.appendChild(toggleContainer);
-      }
-    },
-
-    async toggleWorkspace() {
-      const targetWorkspace = this.workspace === 'ai' ? 'manual' : 'ai';
-      
-      // 1. Show dynamic transition portal
-      const portal = document.getElementById('workspace-portal');
-      const title = document.getElementById('portal-title');
-      const subtitle = document.getElementById('portal-subtitle');
-      if (portal) {
-        title.textContent = targetWorkspace === 'manual' ? 'Opening Manual Studio' : 'Launching AI Studio';
-        subtitle.textContent = targetWorkspace === 'manual' 
-          ? 'Entering elegant Apple/Notion environment...' 
-          : 'Powering up career copilot & ATS suggestions...';
-        portal.classList.add('active');
-      }
-
-      // 2. Add transition blurring to body
-      document.body.classList.add('workspace-transitioning');
-
-      // 3. Process the transition after 350ms
-      await new Promise(resolve => setTimeout(resolve, 350));
-
-      this.workspace = targetWorkspace;
-      localStorage.setItem('careercraft_workspace', targetWorkspace);
-
-      const label = document.getElementById('toggle-label');
-      if (label) {
-        label.textContent = targetWorkspace === 'manual' ? 'Manual Studio' : 'AI Studio';
-      }
-
-      const root = document.getElementById('manual-studio-root');
-
-      if (targetWorkspace === 'manual') {
-        // Sync state from the current page's fields
-        this.syncStateFromOriginalPage();
-        document.body.classList.add('manual-studio-active');
-        if (root) root.style.display = 'grid';
-        this.renderActiveDocument();
-      } else {
-        // Sync state back to the original page's fields
-        this.syncStateToOriginalPage();
-        document.body.classList.remove('manual-studio-active');
-        if (root) root.style.display = 'none';
-
-        // Refresh original page live preview if function is available
-        if (window.updatePreview) window.updatePreview();
-        else if (window.updateLivePreview) window.updateLivePreview();
-        else if (window.updateLiveStats) window.updateLiveStats();
-      }
-
-      // 4. Fade out transition portal
-      await new Promise(resolve => setTimeout(resolve, 150));
-      document.body.classList.remove('workspace-transitioning');
-      if (portal) portal.classList.remove('active');
     },
 
     // ─── STATIC LAYOUT GENERATOR ──────────────────────────────

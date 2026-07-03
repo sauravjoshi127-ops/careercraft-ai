@@ -701,3 +701,78 @@ select option {
   .hero h1 { font-size: 2.25rem; }
   .glass-card, .card { padding: var(--sp-3); border-radius: var(--r-lg); }
 }
+
+/* ─── WORKSPACE THEME VARIABLES OVERRIDES ─────────────────── */
+body.theme-manual-active {
+  --bg: #f8fafc !important;
+  --bg-soft: #f1f5f9 !important;
+  --bg-card: #ffffff !important;
+  --bg-input: #ffffff !important;
+  --border: #e2e8f0 !important;
+  --border-md: #cbd5e1 !important;
+  --border-focus: #7c3aed !important;
+  --text-1: #0f172a !important;
+  --text-2: #475569 !important;
+  --text-3: #94a3b8 !important;
+  --accent: #7c3aed !important;
+  --accent-2: #c084fc !important;
+  --cyan: #7c3aed !important;
+  --cyan-dim: rgba(124,58,237,0.06) !important;
+  --cyan-glow: rgba(124,58,237,0.08) !important;
+  --bg-color: #f8fafc !important;
+  --surface-color: #f1f5f9 !important;
+  --surface-glass: #ffffff !important;
+  --border-color: #e2e8f0 !important;
+  --text-primary: #0f172a !important;
+  --text-secondary: #475569 !important;
+  --text-tertiary: #94a3b8 !important;
+  --accent-cyan: #7c3aed !important;
+  --accent-glow: rgba(124,58,237,0.08) !important;
+  --accent-blue: #7c3aed !important;
+  --accent-primary: #7c3aed !important;
+  --primary: #7c3aed !important;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02) !important;
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02) !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+body.theme-manual-active input,
+body.theme-manual-active textarea,
+body.theme-manual-active select {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+body.theme-manual-active input::placeholder,
+body.theme-manual-active textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+body.theme-manual-active h1,
+body.theme-manual-active h2,
+body.theme-manual-active h3,
+body.theme-manual-active h4 {
+  color: #0f172a !important;
+}
+
+body.theme-manual-active .modal,
+body.theme-manual-active .modal-glass {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* GPU-Accelerated Transition Classes */
+body.workspace-transitioning {
+  will-change: filter, transform;
+  filter: blur(8px);
+  transform: scale(0.98);
+  transition: filter 0.4s ease, transform 0.4s ease;
+}
+
+.workspace-portal-overlay {
+  will-change: opacity;
+}
+
