@@ -169,3 +169,24 @@ WITH CHECK (EXISTS (
 ALTER TABLE resumes ADD COLUMN IF NOT EXISTS font_family VARCHAR DEFAULT 'Inter';
 ALTER TABLE resumes ADD COLUMN IF NOT EXISTS spacing VARCHAR DEFAULT 'normal';
 ALTER TABLE resumes ADD COLUMN IF NOT EXISTS accent_color VARCHAR DEFAULT '#6366f1';
+
+-- ── Portfolios Table ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS portfolios (
+    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id    UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    title      TEXT        DEFAULT 'My Professional Portfolio',
+    description TEXT       DEFAULT '',
+    projects   JSONB       DEFAULT '[]'::jsonb,
+    skills     TEXT[]      DEFAULT '{}'::text[],
+    contact    JSONB       DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE portfolios ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "auth_manage_portfolios"
+    ON portfolios FOR ALL
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+

@@ -369,14 +369,39 @@
     });
   }
 
+  // Helper to load stylesheet dynamically
+  function loadStylesheet(url) {
+    if (document.querySelector(`link[href="${url}"]`)) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = url;
+    document.head.appendChild(link);
+  }
+
   // Start initialization immediately
   appSdk.ready = (async function init() {
+    const activeWorkspace = localStorage.getItem('careercraft_workspace');
+    const page = window.location.pathname.split('/').pop() || 'index.html';
+    const isAppPage = page !== 'index.html' && page !== 'login.html' && page !== 'signup.html' && page !== 'reset-password.html' && page !== '';
+
+    if (isAppPage && activeWorkspace === 'manual') {
+      document.body.classList.add('manual-studio-active');
+    }
+
     if (!window.supabase) {
       try {
         await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
       } catch (err) {
         console.error('Failed to dynamically load Supabase CDN:', err);
       }
+    }
+
+    // Load Manual Studio assets dynamically for authenticated app pages
+    if (isAppPage) {
+      loadStylesheet('manual-studio.css');
+      loadScript('manual-studio.js').catch(err => {
+        console.error('Failed to load manual-studio.js dynamically:', err);
+      });
     }
 
     try {
