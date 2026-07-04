@@ -775,3 +775,46 @@ body.workspace-transitioning {
   will-change: opacity;
 }
 
+/* ─── RESPONSIVE HEADER & LOGO BRANDING SAFETY ────────────── */
+.logo {
+  flex-shrink: 0 !important;
+}
+
+@media (max-width: 992px) {
+  nav, .topnav {
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+    gap: 0.75rem 1rem !important;
+    height: auto !important;
+    min-height: 60px !important;
+  }
+  .logo {
+    order: 1 !important;
+  }
+  .user-menu {
+    order: 2 !important;
+  }
+  .nav-links {
+    order: 3 !important;
+    width: 100% !important;
+    justify-content: center !important;
+    border-top: 1px solid var(--border) !important;
+    padding-top: 0.5rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .user-menu .nav-btn-text {
+    display: none !important;
+  }
+  .user-menu {
+    gap: 0.35rem !important;
+  }
+  .switcher-text-long {
+    display: none !important;
+  }
+  .switcher-text-short {
+    display: inline !important;
+  }
+}
+
