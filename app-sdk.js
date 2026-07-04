@@ -9,14 +9,21 @@
     const savedWorkspace = localStorage.getItem('careercraft_workspace') || 'ai';
     const page = window.location.pathname.split('/').pop() || 'index.html';
     const isAppPage = page !== 'index.html' && page !== 'login.html' && page !== 'signup.html' && page !== 'reset-password.html' && page !== '';
+    const isDocPage = isAppPage && (page.startsWith('resume') || page.startsWith('cover-letter') || page.startsWith('cold-email') || page.startsWith('dashboard'));
 
     if (isAppPage) {
       if (savedWorkspace === 'manual') {
         document.documentElement.classList.add('theme-manual-active');
         document.documentElement.classList.remove('theme-ai-active');
+        if (isDocPage) {
+          document.documentElement.classList.add('manual-studio-active');
+        } else {
+          document.documentElement.classList.remove('manual-studio-active');
+        }
       } else {
         document.documentElement.classList.add('theme-ai-active');
         document.documentElement.classList.remove('theme-manual-active');
+        document.documentElement.classList.remove('manual-studio-active');
       }
     }
   })();
@@ -69,6 +76,11 @@
         // Apply theme to documentElement (html)
         document.documentElement.classList.remove(removeClass);
         document.documentElement.classList.add(targetClass);
+        if (this.workspace === 'manual' && isDocPage) {
+          document.documentElement.classList.add('manual-studio-active');
+        } else {
+          document.documentElement.classList.remove('manual-studio-active');
+        }
 
         // Apply theme to body (if body exists)
         if (document.body) {
@@ -86,12 +98,14 @@
     getButtonHtml() {
       const active = this.workspace === 'manual';
       const label = active ? 'Manual Studio' : 'AI Studio';
+      const shortLabel = active ? 'Manual' : 'AI';
       const dotColor = active ? '#10b981' : '#7c3aed';
       const dotGlow = active ? 'rgba(16,185,129,0.6)' : 'rgba(124,58,237,0.8)';
       return `
-        <button type="button" class="workspace-toggle-btn" id="global-workspace-switcher" onclick="window.WorkspaceManager.toggle()" style="margin-right:0.5rem;">
+        <button type="button" class="workspace-toggle-btn" id="global-workspace-switcher" onclick="window.WorkspaceManager.toggle()">
           <span class="badge-dot" style="background: ${dotColor}; box-shadow: 0 0 10px ${dotGlow}; width: 7px; height: 7px; border-radius: 50%; display: inline-block;"></span>
-          <span>${label}</span>
+          <span class="switcher-text-long">${label}</span>
+          <span class="switcher-text-short" style="display: none;">${shortLabel}</span>
           <span style="opacity: 0.5;">↔</span>
         </button>
       `;
@@ -158,12 +172,14 @@
       if (btn) {
         const active = target === 'manual';
         const label = active ? 'Manual Studio' : 'AI Studio';
+        const shortLabel = active ? 'Manual' : 'AI';
         const dotColor = active ? '#10b981' : '#7c3aed';
         const dotGlow = active ? 'rgba(16,185,129,0.6)' : 'rgba(124,58,237,0.8)';
         
         btn.innerHTML = `
           <span class="badge-dot" style="background: ${dotColor}; box-shadow: 0 0 10px ${dotGlow}; width: 7px; height: 7px; border-radius: 50%; display: inline-block;"></span>
-          <span>${label}</span>
+          <span class="switcher-text-long">${label}</span>
+          <span class="switcher-text-short" style="display: none;">${shortLabel}</span>
           <span style="opacity: 0.5;">↔</span>
         `;
       }
@@ -279,114 +295,129 @@
         return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
       },
 
-      async initLayout() {
+      initLayout() {
         const page = window.location.pathname.split('/').pop() || 'index.html';
-        const session = await appSdk.auth.getSession();
-        
-        // 1. Render Header Navigation
         const topnav = document.querySelector('.topnav') || document.querySelector('nav');
-        if (topnav) {
-          if (page === 'index.html' || page === '') {
-            // Landing page header
-            const rightButtons = session 
-              ? `<a href="dashboard.html" class="btn-primary">Dashboard</a>
-                 <div class="user-avatar" onclick="window.location.href='settings.html'" title="Go to settings" style="margin-left:0.5rem; display:inline-flex;">${(session.user.user_metadata?.full_name || session.user.email || 'U').charAt(0).toUpperCase()}</div>`
-              : `<a href="login.html" class="btn-signin">Sign In</a>
-                 <a href="signup.html" class="btn-primary">Get Started</a>`;
-                 
-            topnav.innerHTML = `
-              <a href="index.html" class="logo">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="url(#paint0_linear)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M2 17L12 22L22 17" stroke="url(#paint1_linear)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M2 12L12 17L22 12" stroke="url(#paint2_linear)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <defs>
-                          <linearGradient id="paint0_linear" x1="2" y1="2" x2="22" y2="12" gradientUnits="userSpaceOnUse">
-                              <stop stop-color="#7c3aed"/>
-                              <stop offset="1" stop-color="#a855f7"/>
-                          </linearGradient>
-                          <linearGradient id="paint1_linear" x1="2" y1="17" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-                              <stop stop-color="#7c3aed"/>
-                              <stop offset="1" stop-color="#a855f7"/>
-                          </linearGradient>
-                          <linearGradient id="paint2_linear" x1="2" y1="12" x2="22" y2="17" gradientUnits="userSpaceOnUse">
-                              <stop stop-color="#7c3aed"/>
-                              <stop offset="1" stop-color="#a855f7"/>
-                          </linearGradient>
-                      </defs>
-                  </svg>
-                  CareerCraft
-              </a>
-              <ul class="nav-links">
-                  <li><a href="#features">Features</a></li>
-                  <li><a href="#pricing">Pricing</a></li>
-                  <li><a href="#">Enterprise</a></li>
-              </ul>
-              <div class="nav-buttons" style="display:flex; align-items:center; gap:0.5rem;">
-                  ${rightButtons}
-              </div>
-            `;
-          } else if (page === 'login.html' || page === 'signup.html' || page === 'reset-password.html') {
-            // Simple back-to-home header
-            topnav.innerHTML = `
-              <a href="index.html" class="logo">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  CareerCraft AI
-              </a>
-              <a href="index.html" class="btn-primary" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.5rem 1rem; width: auto; font-size: 0.85rem;">← Back to Home</a>
-            `;
-          } else if (page === 'resume-share.html') {
-            // Public share header
-            topnav.innerHTML = `
-              <a href="index.html" class="logo">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  CareerCraft AI
-              </a>
-              <a href="signup.html" class="btn-accent" style="padding: 0.5rem 1.2rem; width: auto; font-size: 0.85rem;">Get Started for Free</a>
-            `;
-          } else {
-            // Authenticated App page header
+        if (!topnav) return;
+
+        // Render synchronous navbar shell first
+        if (page === 'index.html' || page === '') {
+          // Landing page header (simplified static shell)
+          topnav.innerHTML = `
+            <a href="index.html" class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="url(#paint0_linear)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="url(#paint1_linear)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="url(#paint2_linear)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <defs>
+                        <linearGradient id="paint0_linear" x1="2" y1="2" x2="22" y2="12" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#7c3aed"/>
+                            <stop offset="1" stop-color="#a855f7"/>
+                        </linearGradient>
+                        <linearGradient id="paint1_linear" x1="2" y1="17" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#7c3aed"/>
+                            <stop offset="1" stop-color="#a855f7"/>
+                        </linearGradient>
+                        <linearGradient id="paint2_linear" x1="2" y1="12" x2="22" y2="17" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#7c3aed"/>
+                            <stop offset="1" stop-color="#a855f7"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                CareerCraft
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#">Enterprise</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtonsPlaceholder" style="display:flex; align-items:center; gap:0.5rem;">
+                <a href="login.html" class="btn-signin">Sign In</a>
+                <a href="signup.html" class="btn-primary">Get Started</a>
+            </div>
+          `;
+          // Trigger async update for landing page nav buttons if logged in
+          appSdk.auth.getSession().then(session => {
+            if (session) {
+              const placeholder = document.getElementById('navButtonsPlaceholder');
+              if (placeholder) {
+                placeholder.innerHTML = `
+                  <a href="dashboard.html" class="btn-primary">Dashboard</a>
+                  <div class="user-avatar" onclick="window.location.href='settings.html'" title="Go to settings" style="margin-left:0.5rem; display:inline-flex;">${(session.user.user_metadata?.full_name || session.user.email || 'U').charAt(0).toUpperCase()}</div>
+                `;
+              }
+            }
+          });
+        } else if (page === 'login.html' || page === 'signup.html' || page === 'reset-password.html') {
+          topnav.innerHTML = `
+            <a href="index.html" class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                CareerCraft AI
+            </a>
+            <a href="index.html" class="btn-primary" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.5rem 1rem; width: auto; font-size: 0.85rem;">← Back to Home</a>
+          `;
+        } else if (page === 'resume-share.html') {
+          topnav.innerHTML = `
+            <a href="index.html" class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                CareerCraft AI
+            </a>
+            <a href="signup.html" class="btn-accent" style="padding: 0.5rem 1.2rem; width: auto; font-size: 0.85rem;">Get Started for Free</a>
+          `;
+        } else {
+          // Authenticated App Pages
+          const resumeActive = page.startsWith('resume') ? 'class="nav-btn active"' : 'class="nav-btn"';
+          const coverLetterActive = page.startsWith('cover-letter') ? 'class="nav-btn active"' : 'class="nav-btn"';
+          const coldEmailActive = page.startsWith('cold-email') ? 'class="nav-btn active"' : 'class="nav-btn"';
+          const interviewActive = (page.startsWith('interview') || page.startsWith('mock')) ? 'class="nav-btn active"' : 'class="nav-btn"';
+
+          // Sync layout shell immediately (zero pop-in/flicker)
+          topnav.innerHTML = `
+            <a href="dashboard.html" class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="premium-gradient-text">CareerCraft AI</span>
+            </a>
+            <div class="nav-links" style="display:flex;gap:0.5rem;">
+                <a href="resume.html" ${resumeActive}>Resume</a>
+                <a href="cover-letter.html" ${coverLetterActive}>Cover Letter</a>
+                <a href="cold-email.html" ${coldEmailActive}>Cold Email</a>
+                <a href="interview.html" ${interviewActive}>Interview</a>
+            </div>
+            <div class="user-menu" id="userMenuPlaceholder" style="display:flex; align-items:center; gap:0.75rem;">
+                <div style="width: 120px; height: 32px; background: rgba(255,255,255,0.03); border-radius: 9999px;"></div>
+                <div class="user-avatar" style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.05);"></div>
+            </div>
+          `;
+
+          // Trigger async user menu update
+          appSdk.auth.getSession().then(session => {
             const name = session ? (session.user.user_metadata?.full_name 
               || localStorage.getItem('userName') 
               || session.user.email.split('@')[0]) : 'User';
             const initial = name.charAt(0).toUpperCase();
 
-            const resumeActive = page.startsWith('resume') ? 'class="nav-btn active"' : 'class="nav-btn"';
-            const coverLetterActive = page.startsWith('cover-letter') ? 'class="nav-btn active"' : 'class="nav-btn"';
-            const coldEmailActive = page.startsWith('cold-email') ? 'class="nav-btn active"' : 'class="nav-btn"';
-            const interviewActive = (page.startsWith('interview') || page.startsWith('mock')) ? 'class="nav-btn active"' : 'class="nav-btn"';
-
-            topnav.innerHTML = `
-              <a href="dashboard.html" class="logo">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  <span class="premium-gradient-text">CareerCraft AI</span>
-              </a>
-              <div class="nav-links" style="display:flex;gap:0.5rem;">
-                  <a href="resume.html" ${resumeActive}>Resume</a>
-                  <a href="cover-letter.html" ${coverLetterActive}>Cover Letter</a>
-                  <a href="cold-email.html" ${coldEmailActive}>Cold Email</a>
-                  <a href="interview.html" ${interviewActive}>Interview</a>
-              </div>
-              <div class="user-menu" style="display:flex; align-items:center; gap:0.75rem;">
-                  ${window.WorkspaceManager ? window.WorkspaceManager.getButtonHtml() : ''}
-                  <div class="user-avatar" id="avatarInitial" onclick="window.location.href='settings.html'" title="Account" style="display:flex; align-items:center; justify-content:center; cursor:pointer;">${initial}</div>
-                  <a href="settings.html" class="nav-btn">Settings</a>
-                  <button class="nav-btn" onclick="window.appSdk.auth.logout()">Sign Out</button>
-              </div>
-            `;
-          }
+            const menu = document.getElementById('userMenuPlaceholder');
+            if (menu) {
+              menu.innerHTML = `
+                ${window.WorkspaceManager ? window.WorkspaceManager.getButtonHtml() : ''}
+                <div class="user-avatar" id="avatarInitial" onclick="window.location.href='settings.html'" title="Account" style="display:flex; align-items:center; justify-content:center; cursor:pointer;">${initial}</div>
+                <a href="settings.html" class="nav-btn" title="Settings">⚙️<span class="nav-btn-text"> Settings</span></a>
+                <button class="nav-btn" onclick="window.appSdk.auth.logout()" title="Sign Out">🚪<span class="nav-btn-text"> Sign Out</span></button>
+              `;
+            }
+          });
         }
 
         // 2. Render Footer
@@ -411,7 +442,6 @@
             </div>
           `;
         } else if (page !== 'index.html' && page !== 'login.html' && page !== 'signup.html' && page !== 'reset-password.html' && page !== '') {
-          // Sleek subtle copyright footer inside authorized pages container
           const container = document.querySelector('.container') || document.querySelector('.shell');
           if (container && !document.querySelector('.app-mini-footer')) {
             const miniFooter = document.createElement('div');

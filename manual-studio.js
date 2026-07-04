@@ -132,12 +132,23 @@
 
     handleWorkspaceChange() {
       const root = document.getElementById('manual-studio-root');
+      const page = window.location.pathname.split('/').pop() || 'index.html';
+      const isAppPage = page !== 'index.html' && page !== 'login.html' && page !== 'signup.html' && page !== 'reset-password.html' && page !== '';
+      const isDocPage = isAppPage && (page.startsWith('resume') || page.startsWith('cover-letter') || page.startsWith('cold-email') || page.startsWith('dashboard'));
+
       if (this.workspace === 'manual') {
-        document.body.classList.add('manual-studio-active');
+        if (isDocPage) {
+          document.documentElement.classList.add('manual-studio-active');
+          document.body.classList.add('manual-studio-active');
+        } else {
+          document.documentElement.classList.remove('manual-studio-active');
+          document.body.classList.remove('manual-studio-active');
+        }
         if (root) root.style.display = 'grid';
         this.syncStateFromOriginalPage();
         this.renderActiveDocument();
       } else {
+        document.documentElement.classList.remove('manual-studio-active');
         document.body.classList.remove('manual-studio-active');
         if (root) root.style.display = 'none';
         this.syncStateToOriginalPage();
