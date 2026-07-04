@@ -4,6 +4,23 @@
  */
 (function () {
 
+  // ─── Immediate Theme Restoration Guard (runs before first paint) ─────────────────
+  (function () {
+    const savedWorkspace = localStorage.getItem('careercraft_workspace') || 'ai';
+    const page = window.location.pathname.split('/').pop() || 'index.html';
+    const isAppPage = page !== 'index.html' && page !== 'login.html' && page !== 'signup.html' && page !== 'reset-password.html' && page !== '';
+
+    if (isAppPage) {
+      if (savedWorkspace === 'manual') {
+        document.documentElement.classList.add('theme-manual-active');
+        document.documentElement.classList.remove('theme-ai-active');
+      } else {
+        document.documentElement.classList.add('theme-ai-active');
+        document.documentElement.classList.remove('theme-manual-active');
+      }
+    }
+  })();
+
   let resolveAuthReady;
   const authReady = new Promise(resolve => {
     resolveAuthReady = resolve;
@@ -46,18 +63,22 @@
       const isDocPage = isAppPage && (page.startsWith('resume') || page.startsWith('cover-letter') || page.startsWith('cold-email') || page.startsWith('dashboard'));
 
       if (isAppPage) {
-        if (this.workspace === 'manual') {
-          document.body.classList.remove('theme-ai-active');
-          document.body.classList.add('theme-manual-active');
-          if (isDocPage) {
+        const targetClass = this.workspace === 'manual' ? 'theme-manual-active' : 'theme-ai-active';
+        const removeClass = this.workspace === 'manual' ? 'theme-ai-active' : 'theme-manual-active';
+
+        // Apply theme to documentElement (html)
+        document.documentElement.classList.remove(removeClass);
+        document.documentElement.classList.add(targetClass);
+
+        // Apply theme to body (if body exists)
+        if (document.body) {
+          document.body.classList.remove(removeClass);
+          document.body.classList.add(targetClass);
+          if (this.workspace === 'manual' && isDocPage) {
             document.body.classList.add('manual-studio-active');
           } else {
             document.body.classList.remove('manual-studio-active');
           }
-        } else {
-          document.body.classList.remove('theme-manual-active');
-          document.body.classList.remove('manual-studio-active');
-          document.body.classList.add('theme-ai-active');
         }
       }
     },
@@ -111,8 +132,8 @@
         portal.classList.add('active');
         document.body.classList.add('workspace-transitioning');
 
-        // Let the portal and scale animations run (350ms)
-        await new Promise(resolve => setTimeout(resolve, 350));
+        // Let the portal and scale animations run (200ms)
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
       this.workspace = target;
@@ -121,7 +142,7 @@
       const page = window.location.pathname.split('/').pop() || 'index.html';
       if (target === 'manual' && page.startsWith('interview')) {
         if (animate) {
-          await new Promise(resolve => setTimeout(resolve, 150));
+          await new Promise(resolve => setTimeout(resolve, 100));
           document.body.classList.remove('workspace-transitioning');
           const portal = document.getElementById('workspace-portal');
           if (portal) portal.classList.remove('active');
@@ -151,7 +172,7 @@
       window.dispatchEvent(new CustomEvent('workspaceChanged', { detail: { workspace: target } }));
 
       if (animate) {
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise(resolve => setTimeout(resolve, 100));
         document.body.classList.remove('workspace-transitioning');
         const portal = document.getElementById('workspace-portal');
         if (portal) portal.classList.remove('active');

@@ -124,12 +124,9 @@
         this.handleWorkspaceChange();
       });
 
-      // 8. If manual workspace is active, switch to it immediately
+      // 8. If manual workspace is active, switch to it immediately (synchronously to avoid FOUC)
       if (this.workspace === 'manual') {
-        // Wait for page initial load to sync state
-        setTimeout(() => {
-          this.handleWorkspaceChange();
-        }, 150);
+        this.handleWorkspaceChange();
       }
     },
 

@@ -703,7 +703,7 @@ select option {
 }
 
 /* ─── WORKSPACE THEME VARIABLES OVERRIDES ─────────────────── */
-body.theme-manual-active {
+.theme-manual-active, .theme-manual-active body {
   --bg: #f8fafc !important;
   --bg-soft: #f1f5f9 !important;
   --bg-card: #ffffff !important;
@@ -737,28 +737,28 @@ body.theme-manual-active {
   color: #0f172a !important;
 }
 
-body.theme-manual-active input,
-body.theme-manual-active textarea,
-body.theme-manual-active select {
+.theme-manual-active input,
+.theme-manual-active textarea,
+.theme-manual-active select {
   background: #ffffff !important;
   border-color: #cbd5e1 !important;
   color: #0f172a !important;
 }
 
-body.theme-manual-active input::placeholder,
-body.theme-manual-active textarea::placeholder {
+.theme-manual-active input::placeholder,
+.theme-manual-active textarea::placeholder {
   color: #94a3b8 !important;
 }
 
-body.theme-manual-active h1,
-body.theme-manual-active h2,
-body.theme-manual-active h3,
-body.theme-manual-active h4 {
+.theme-manual-active h1,
+.theme-manual-active h2,
+.theme-manual-active h3,
+.theme-manual-active h4 {
   color: #0f172a !important;
 }
 
-body.theme-manual-active .modal,
-body.theme-manual-active .modal-glass {
+.theme-manual-active .modal,
+.theme-manual-active .modal-glass {
   background: #ffffff !important;
   border-color: #e2e8f0 !important;
   color: #0f172a !important;
@@ -766,10 +766,9 @@ body.theme-manual-active .modal-glass {
 
 /* GPU-Accelerated Transition Classes */
 body.workspace-transitioning {
-  will-change: filter, transform;
-  filter: blur(8px);
-  transform: scale(0.98);
-  transition: filter 0.4s ease, transform 0.4s ease;
+  will-change: transform;
+  transform: scale(0.99);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .workspace-portal-overlay {
