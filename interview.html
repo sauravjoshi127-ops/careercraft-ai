@@ -4,49 +4,41 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Interview Coach - CareerCraft AI</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app-sdk.js"></script>
   <link rel="stylesheet" href="styles/premium.css">
   <style>
-    /* ── Interview Coach page styles ── */
-    .shell { max-width:1240px; margin:0 auto; padding:2rem 1.5rem 4rem; }
+    /* ─── INTERVIEW INTELLIGENCE SYSTEM STYLING ────────────── */
+    .shell { max-width:1180px; margin:0 auto; padding:2rem 1.5rem 4rem; }
 
-    /* Step progress indicator */
+    .is-hidden { display:none !important; }
+
+    /* Step Bar Optimization */
     .step-bar {
-      display:flex; align-items:center; gap:0; margin-bottom:2.5rem;
+      display:flex; align-items:center; gap:0.5rem; margin-bottom:2rem;
       background:var(--bg-card); border:1px solid var(--border);
-      border-radius:var(--r-lg); padding:0.875rem 1.5rem; overflow:hidden;
+      border-radius:var(--r-xl); padding:1rem 1.5rem; overflow-x:auto;
     }
     .step-item {
       display:flex; align-items:center; gap:0.6rem; flex:1;
-      font-size:0.8rem; font-weight:600; color:var(--text-3);
-      transition:color 0.3s;
+      font-size:0.8rem; font-weight:700; color:var(--text-3);
+      transition:color 0.3s; white-space:nowrap;
     }
     .step-item.active { color:var(--cyan); }
     .step-item.done   { color:var(--text-2); }
     .step-num {
-      width:24px; height:24px; border-radius:50%;
+      width:26px; height:26px; border-radius:50%;
       border:1.5px solid currentColor;
       display:flex; align-items:center; justify-content:center;
-      font-size:0.72rem; font-weight:700; flex-shrink:0;
+      font-size:0.75rem; font-weight:800; flex-shrink:0;
     }
     .step-item.active .step-num { background:var(--cyan); border-color:var(--cyan); color:#000; }
-    .step-item.done .step-num   { background:rgba(255,255,255,0.1); }
-    .step-sep { flex:1; height:1px; background:var(--border-md); margin:0 0.5rem; max-width:40px; }
+    .step-item.done .step-num   { background:rgba(255,255,255,0.08); }
+    .step-sep { flex:1; height:1px; background:var(--border-md); min-width:20px; max-width:40px; }
 
-    /* Layout */
-    .layout {
-      display:grid;
-      grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
-      gap:1.5rem;
-      align-items:start;
-    }
-
-    /* Page hero */
-    .page-hero {
-      margin-bottom:2rem;
-    }
+    /* Hero header */
+    .page-hero { margin-bottom:2.25rem; }
     .page-hero .eyebrow {
       display:inline-flex; align-items:center; gap:0.4rem;
       font-size:0.72rem; font-weight:700; letter-spacing:0.08em;
@@ -54,40 +46,33 @@
     }
     .page-hero h1 {
       font-family:'Outfit',sans-serif;
-      font-size:clamp(1.75rem, 3vw, 2.5rem);
-      font-weight:800; letter-spacing:-0.04em; margin-bottom:0.5rem;
+      font-size:clamp(1.75rem, 3.5vw, 2.5rem);
+      font-weight:800; letter-spacing:-0.04em; margin-bottom:0.6rem;
     }
-    .page-hero p { color:var(--text-2); font-size:0.95rem; max-width:56ch; line-height:1.7; }
+    .page-hero p { color:var(--text-2); font-size:0.95rem; max-width:64ch; line-height:1.7; }
 
-    /* Panels */
+    /* Form and panels layout */
     .panel {
       background:var(--bg-card);
       border:1px solid var(--border);
       border-radius:var(--r-xl);
-      padding:1.5rem;
+      padding:2rem;
       box-shadow:var(--shadow-card);
+      margin-bottom:1.5rem;
+      animation: fadeIn 0.3s var(--ease);
     }
     .panel-heading {
       font-family:'Outfit',sans-serif;
-      font-size:1rem; font-weight:700;
+      font-size:1.15rem; font-weight:700;
       color:var(--text-1); margin-bottom:0.25rem;
     }
-    .panel-sub { color:var(--text-2); font-size:0.85rem; margin-bottom:1.25rem; }
+    .panel-sub { color:var(--text-2); font-size:0.85rem; margin-bottom:1.75rem; }
 
-    /* Steps guide inside panel */
-    .steps { display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem; margin-bottom:1.25rem; }
-    .step {
-      background:var(--bg-input); border:1px solid var(--border);
-      border-radius:var(--r-md); padding:0.875rem;
-    }
-    .step strong { display:block; color:var(--text-1); font-size:0.85rem; margin-bottom:0.2rem; }
-    .step span   { display:block; color:var(--text-2); font-size:0.78rem; line-height:1.45; }
-
-    /* Form fields */
-    .form-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:0.875rem; }
-    .field { display:flex; flex-direction:column; gap:0.4rem; margin-bottom:0.25rem; }
+    .form-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .field { display:flex; flex-direction:column; gap:0.4rem; margin-bottom:0.5rem; }
     .field.full { grid-column:1/-1; }
     .field label { font-size:0.72rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-3); }
+    
     .field input, .field textarea, .field select {
       width:100%; min-height:44px; padding:0.7rem 0.875rem;
       background:var(--bg-input); border:1px solid var(--border-md);
@@ -106,101 +91,265 @@
     .field textarea { min-height:110px; resize:vertical; line-height:1.6; }
     .hint { color:var(--text-3); font-size:0.78rem; line-height:1.45; }
 
-    /* Upload */
-    .upload-row { display:flex; align-items:center; gap:0.65rem; flex-wrap:wrap; margin-top:0.5rem; }
-    .upload-row input[type="file"] { position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
-    .upload-row .hint { flex:1 1 200px; }
+    /* Persona selection grid */
+    .persona-grid {
+      display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+      gap:0.875rem; margin-top:0.5rem;
+    }
+    .persona-card {
+      display:flex; gap:0.875rem; padding:1.15rem;
+      background:var(--bg-input); border:1px solid var(--border-md);
+      border-radius:var(--r-lg); cursor:pointer;
+      transition:all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .persona-card:hover {
+      border-color:var(--cyan); background:rgba(6, 182, 212, 0.03);
+      transform:translateY(-1px);
+    }
+    .persona-card.active {
+      border-color:var(--cyan); background:rgba(6, 182, 212, 0.08);
+      box-shadow:0 0 15px rgba(6, 182, 212, 0.1);
+    }
+    .persona-avatar {
+      font-size:1.75rem; display:flex; align-items:center; justify-content:center;
+      width:46px; height:46px; background:rgba(255,255,255,0.04);
+      border-radius:50%; flex-shrink:0;
+    }
+    .persona-name { font-weight:700; font-size:0.88rem; color:var(--text-1); margin-bottom:0.2rem; }
+    .persona-desc { font-size:0.78rem; color:var(--text-2); line-height:1.4; }
 
-    /* More options */
-    .more-options { margin-top:1.25rem; border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; }
-    .more-options summary { list-style:none; cursor:pointer; padding:0.875rem 1rem; color:var(--text-2); font-weight:600; font-size:0.88rem; transition:color 0.15s; }
-    .more-options summary:hover { color:var(--text-1); }
-    .more-options summary::-webkit-details-marker { display:none; }
-    .more-options .more-body { padding:0 1rem 1rem; }
+    /* Strategy panel styling */
+    .strategy-layout { display:grid; grid-template-columns:1.8fr 1.2fr; gap:1.5rem; align-items:start; }
+    .strategy-card { background:rgba(255,255,255,0.02); border:1px solid var(--border-md); border-radius:var(--r-lg); padding:1.5rem; }
+    .strategy-card h3 { font-size:0.95rem; font-weight:700; color:var(--text-1); margin-bottom:0.75rem; border-bottom:1px solid var(--border-md); padding-bottom:0.5rem; }
+    .focus-list { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem; }
+    .focus-badge { display:inline-flex; align-items:center; padding:0.25rem 0.65rem; border-radius:999px; font-size:0.75rem; font-weight:600; background:rgba(6, 182, 212, 0.1); color:var(--cyan); border:1px solid rgba(6, 182, 212, 0.2); }
+    .strategy-text { font-size:0.88rem; line-height:1.7; color:var(--text-2); }
+    .strategy-text p { margin-bottom:0.75rem; }
+    .strategy-text ul { margin-left:1.15rem; margin-bottom:0.75rem; }
+    .strategy-text li { margin-bottom:0.35rem; }
 
-    /* Section actions */
+    /* Practice layout columns */
+    .practice-layout { display:grid; grid-template-columns:1fr 2fr; gap:1.5rem; align-items:start; }
+    
+    /* Left column question selector */
+    .q-sidebar { display:flex; flex-direction:column; gap:0.75rem; }
+    .q-sidebar-title { font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-3); margin-bottom:0.25rem; }
+    .q-list { display:grid; gap:0.6rem; }
+    .q-item {
+      width:100%; border:1px solid var(--border-md); border-radius:var(--r-md);
+      padding:0.875rem 1.15rem; background:var(--bg-input);
+      cursor:pointer; transition:all 0.2s ease; text-align:left;
+      color:var(--text-1); display:flex; gap:0.75rem; align-items:flex-start;
+    }
+    .q-item:hover { border-color:rgba(6, 182, 212, 0.4); background:rgba(6, 182, 212, 0.02); }
+    .q-item.active { border-color:var(--cyan); background:rgba(6, 182, 212, 0.05); }
+    .q-badge {
+      font-size:0.7rem; font-weight:700; color:var(--cyan);
+      background:rgba(6, 182, 212, 0.1); border:1px solid rgba(6, 182, 212, 0.2);
+      border-radius:4px; padding:0.1rem 0.35rem; flex-shrink:0; margin-top:1px;
+    }
+    .q-info { flex:1; }
+    .q-info-meta { display:flex; gap:0.5rem; margin-bottom:0.3rem; }
+    .q-info-meta span { font-size:0.7rem; color:var(--text-3); font-weight:600; }
+    .q-item-text { font-size:0.85rem; line-height:1.5; color:var(--text-2); }
+    .q-item.active .q-item-text { color:var(--text-1); }
+    .q-score-badge { margin-left:auto; font-size:0.75rem; font-weight:700; color:var(--cyan); background:rgba(6,182,212,0.1); border-radius:4px; padding:0.1rem 0.4rem; }
+
+    /* Active question container */
+    .active-question-card {
+      background:rgba(255,255,255,0.01); border:1px solid var(--border-md);
+      border-left:4px solid var(--cyan); border-radius:var(--r-md);
+      padding:1.5rem; margin-bottom:1.25rem;
+    }
+    .active-question-card h3 { font-size:1.05rem; font-weight:700; color:var(--text-1); margin-bottom:0.6rem; line-height:1.5; }
+    .active-question-card p { font-size:0.88rem; color:var(--text-2); line-height:1.6; margin-bottom:0.5rem; }
+    .active-question-card ul { margin-left:1.15rem; font-size:0.85rem; color:var(--text-2); line-height:1.6; }
+    .active-question-card li { margin-bottom:0.25rem; }
+
+    /* Persona feedback dialogue bubble */
+    .persona-speech {
+      display:flex; gap:1rem; padding:1.25rem;
+      background:rgba(255, 255, 255, 0.02); border:1px solid var(--border-md);
+      border-radius:var(--r-lg); margin-bottom:1.5rem; align-items:flex-start;
+      position:relative;
+    }
+    .persona-speech::after {
+      content:''; position:absolute; bottom:-8px; left:25px;
+      width:15px; height:15px; background:rgba(20,20,30,1);
+      border-right:1px solid var(--border-md); border-bottom:1px solid var(--border-md);
+      transform:rotate(45deg); z-index:1;
+    }
+    .speech-avatar { font-size:1.6rem; width:38px; height:38px; background:rgba(255,255,255,0.05); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .speech-body { flex:1; }
+    .speech-name { font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--cyan); margin-bottom:0.2rem; }
+    .speech-text { font-size:0.85rem; line-height:1.6; color:var(--text-2); font-style:italic; }
+
+    /* Real-time evaluation dashboard layout */
+    .eval-block { margin-top:1.5rem; border-top:1px solid var(--border-md); padding-top:1.5rem; }
+    .eval-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-top:1rem; }
+    
+    /* Radar chart container */
+    .chart-box {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      background:var(--bg-input); border:1px solid var(--border-md);
+      border-radius:var(--r-lg); padding:1rem; min-height:260px;
+    }
+    .chart-title { font-size:0.72rem; font-weight:700; text-transform:uppercase; color:var(--text-3); margin-bottom:0.5rem; }
+    .radar-chart { width:100%; max-width:240px; height:auto; }
+
+    /* Dimension progress bars */
+    .dimension-bars { display:flex; flex-direction:column; gap:0.6rem; }
+    .dimension-bar-row { display:grid; grid-template-columns:100px 1fr 35px; gap:0.75rem; align-items:center; font-size:0.78rem; color:var(--text-2); }
+    .dim-name { font-weight:600; text-align:right; white-space:nowrap; }
+    .dim-progress { height:6px; border-radius:999px; background:rgba(255,255,255,0.05); overflow:hidden; }
+    .dim-fill { height:100%; border-radius:inherit; background:var(--cyan); transition:width 0.6s ease; }
+    .dim-score { font-weight:700; color:var(--text-1); text-align:right; }
+
+    /* Bullet points */
+    .checklist-list { display:grid; gap:0.5rem; }
+    .checklist-item {
+      display:flex; gap:0.6rem; align-items:flex-start;
+      font-size:0.85rem; line-height:1.5; color:var(--text-2);
+    }
+    .checklist-bullet { color:var(--cyan); font-weight:700; flex-shrink:0; }
+
+    /* Model answers tabs styling */
+    .model-tabs {
+      display:flex; border-bottom:1px solid var(--border-md);
+      gap:0.25rem; margin-top:1.25rem; margin-bottom:0.75rem;
+    }
+    .model-tab-btn {
+      padding:0.6rem 1rem; font-size:0.8rem; font-weight:600;
+      color:var(--text-2); background:none; border:none;
+      border-bottom:2px solid transparent; cursor:pointer;
+      transition:all 0.15s ease;
+    }
+    .model-tab-btn:hover { color:var(--text-1); }
+    .model-tab-btn.active {
+      color:var(--cyan); border-bottom-color:var(--cyan); font-weight:700;
+    }
+    .model-content-box {
+      background:var(--bg-input); border:1px solid var(--border-md);
+      border-radius:var(--r-md); padding:1.15rem; font-size:0.88rem;
+      line-height:1.75; color:var(--text-1); white-space:pre-wrap;
+      max-height:280px; overflow-y:auto;
+    }
+
+    /* Final Completed Report styles */
+    .report-grid { display:grid; grid-template-columns:1.2fr 1.8fr; gap:1.5rem; align-items:start; }
+    .report-card { background:rgba(255,255,255,0.015); border:1px solid var(--border-md); border-radius:var(--r-xl); padding:1.5rem; }
+    .score-circle-box { display:flex; flex-direction:column; align-items:center; text-align:center; padding:1.5rem 0; }
+    .score-circle {
+      width:110px; height:110px; border-radius:50%;
+      border:4px solid var(--border-md); display:flex; align-items:center;
+      justify-content:center; font-size:2.25rem; font-weight:900;
+      color:var(--text-1); font-family:'Outfit',sans-serif; margin-bottom:1rem;
+      box-shadow:inset 0 0 15px rgba(255,255,255,0.02);
+    }
+    .recommendations-box { display:grid; gap:1.25rem; }
+    .rec-item { background:rgba(255,255,255,0.01); border:1px solid var(--border-md); border-radius:var(--r-lg); padding:1.15rem; }
+    .rec-title { font-size:0.88rem; font-weight:700; color:var(--text-1); margin-bottom:0.5rem; display:flex; gap:0.5rem; }
+
+    /* Button and status improvements */
     .section-actions { display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:1.25rem; }
-
-    /* Status */
-    .status { min-height:22px; margin-top:0.75rem; font-size:0.85rem; color:var(--text-2); }
+    .status { min-height:22px; margin-top:0.75rem; font-size:0.85rem; color:var(--text-2); font-weight:500; }
     .status.error   { color:#fca5a5; }
     .status.success { color:#86efac; }
     .status.loading { color:#fcd34d; }
 
-    /* Question list */
-    .question-list { display:grid; gap:0.6rem; margin-top:1rem; }
-    .question-item {
-      border:1px solid var(--border-md); border-radius:var(--r-md);
-      padding:0.875rem 1rem; background:var(--bg-input);
-      cursor:pointer; transition:border-color 0.15s, background 0.15s, transform 0.15s;
-      text-align:left; color:var(--text-1); display:flex; gap:0.75rem; align-items:flex-start;
-    }
-    .question-item:hover { border-color:var(--accent-soft-border-2); background:var(--accent-soft-bg); transform:translateX(2px); }
-    .question-item.active { border-color:var(--accent-soft-border-2); background:var(--accent-soft-bg); }
-    .q-num { font-size:0.72rem; font-weight:700; color:var(--cyan); background:var(--accent-soft-bg-2); border:1px solid var(--accent-soft-border); border-radius:4px; padding:0.1rem 0.4rem; flex-shrink:0; margin-top:2px; }
-    .question-meta { display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.3rem; }
-    .chip { display:inline-flex; align-items:center; padding:0.15rem 0.45rem; border-radius:999px; border:1px solid var(--border-md); background:rgba(255,255,255,0.03); font-size:0.7rem; color:var(--text-2); font-weight:600; }
-    .question-text { font-size:0.92rem; line-height:1.55; color:var(--text-1); }
+    /* Details styling */
+    .more-options { margin-top:1.25rem; border:1px solid var(--border); border-radius:var(--r-md); overflow:hidden; }
+    .more-options summary { list-style:none; cursor:pointer; padding:0.875rem 1rem; color:var(--text-2); font-weight:600; font-size:0.88rem; }
+    .more-options summary::-webkit-details-marker { display:none; }
+    .more-options .more-body { padding:0 1rem 1rem; }
 
-    /* Active question */
-    .active-question {
-      background:var(--bg-input); border:1px solid var(--border-md);
-      border-left:3px solid var(--cyan);
-      border-radius:var(--r-md); padding:1.25rem; margin-top:1rem;
-    }
-    .active-question h3 { font-size:0.95rem; margin-bottom:0.5rem; line-height:1.5; color:var(--text-1); }
-    .active-question p  { color:var(--text-2); font-size:0.88rem; line-height:1.6; margin-bottom:0.4rem; }
-    .active-question ul { margin-left:1rem; color:var(--text-2); line-height:1.6; font-size:0.85rem; }
-    .answer-box textarea { min-height:160px; }
-
-    /* Result cards */
-    .result-grid { display:grid; gap:0.875rem; margin-top:1.25rem; }
-    .result-card {
-      background:var(--bg-input); border:1px solid var(--border-md);
-      border-radius:var(--r-md); padding:1.125rem;
-    }
-    .result-card h3 { font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-3); margin-bottom:0.75rem; }
-    .score-row { display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; margin-bottom:0.875rem; flex-wrap:wrap; }
-    .score-number { font-size:2.5rem; font-weight:900; letter-spacing:-0.05em; color:var(--text-1); line-height:1; font-family:'Outfit',sans-serif; }
-    .score-desc { color:var(--text-2); font-size:0.85rem; line-height:1.55; max-width:30ch; }
-    .bar { width:100%; height:8px; border-radius:999px; background:rgba(255,255,255,0.07); overflow:hidden; margin-bottom:0.875rem; }
-    .bar-fill { height:100%; width:0%; border-radius:inherit; background:var(--cyan); transition:width 0.5s cubic-bezier(0.16,1,0.3,1); }
-    .list { display:grid; gap:0.5rem; }
-    .list-item { color:var(--text-2); line-height:1.55; font-size:0.88rem; padding-left:1rem; position:relative; }
-    .list-item::before { content:''; position:absolute; left:0; top:0.6em; width:0.3rem; height:0.3rem; border-radius:50%; background:var(--cyan); }
-    .better-answer { white-space:pre-wrap; line-height:1.75; color:var(--text-1); font-size:0.9rem; }
-    .breakdown { display:grid; gap:0.5rem; margin-top:0.75rem; }
-    .breakdown-row { display:grid; grid-template-columns:80px 1fr auto; gap:0.5rem; align-items:center; color:var(--text-2); font-size:0.8rem; }
-    .mini-bar { height:6px; border-radius:999px; background:rgba(255,255,255,0.07); overflow:hidden; }
-    .mini-bar span { display:block; height:100%; border-radius:inherit; background:var(--cyan); }
-    .progress-summary { border:1px solid var(--accent-soft-border); background:var(--accent-soft-bg); border-radius:var(--r-md); padding:0.875rem 1rem; color:var(--text-1); font-size:0.88rem; line-height:1.55; margin-top:1rem; }
-
-    /* History */
+    /* History widget */
     .history { margin-top:1rem; display:grid; gap:0.65rem; }
     .history-item { border:1px solid var(--border); border-radius:var(--r-md); background:var(--bg-input); padding:0.875rem 1rem; }
     .history-item strong { display:block; margin-bottom:0.2rem; font-size:0.88rem; color:var(--text-1); }
-    .history-item span   { color:var(--text-2); font-size:0.8rem; line-height:1.45; }
+    .history-item span   { color:var(--text-2); font-size:0.8rem; line-height:1.45; display:block; }
 
-    .footer-actions { display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:1rem; }
-    .simple-note { color:var(--text-3); font-size:0.8rem; line-height:1.5; margin-top:0.6rem; }
-    .is-hidden { display:none !important; }
-
-    @media(max-width:980px){ .layout { grid-template-columns:1fr; } }
-    @media(max-width:720px){
-      .shell { padding:1rem 0.875rem 3rem; }
-      .steps { grid-template-columns:1fr; }
-      .form-grid { grid-template-columns:1fr; }
-      .step-bar { padding:0.75rem 1rem; }
+    /* ─── MANUAL WORKSPACE STYLING OVERRIDES ─────────── */
+    .manual-studio-active {
+      background:#f8fafc !important;
+      color:#1e293b !important;
     }
-    @media(max-width:480px){ .breakdown-row { grid-template-columns:1fr; } }
+    .manual-studio-active .step-bar {
+      background:#ffffff !important;
+      border-color:#e2e8f0 !important;
+    }
+    .manual-studio-active .step-item.active { color:#6366f1 !important; }
+    .manual-studio-active .step-item.active .step-num { background:#6366f1 !important; border-color:#6366f1 !important; color:#ffffff !important; }
+    .manual-studio-active .step-sep { background-color:#cbd5e1 !important; }
+    .manual-studio-active .panel, .manual-studio-active .strategy-card, .manual-studio-active .report-card {
+      background:#ffffff !important;
+      border-color:#e2e8f0 !important;
+      box-shadow:0 1px 3px rgba(0,0,0,0.02) !important;
+      color:#1e293b !important;
+    }
+    .manual-studio-active .panel-heading { color:#0f172a !important; }
+    .manual-studio-active input, .manual-studio-active textarea, .manual-studio-active select {
+      background:#ffffff !important;
+      border-color:#cbd5e1 !important;
+      color:#0f172a !important;
+    }
+    .manual-studio-active select option { background:#ffffff; color:#0f172a; }
+    .manual-studio-active input:focus, .manual-studio-active textarea:focus, .manual-studio-active select:focus {
+      border-color:#6366f1 !important; box-shadow:0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+    }
+    .manual-studio-active .persona-card {
+      background:#ffffff !important; border-color:#cbd5e1 !important;
+    }
+    .manual-studio-active .persona-card:hover {
+      border-color:#6366f1 !important; background:rgba(99, 102, 241, 0.02) !important;
+    }
+    .manual-studio-active .persona-card.active {
+      border-color:#6366f1 !important; background:rgba(99, 102, 241, 0.06) !important;
+      box-shadow:0 0 15px rgba(99, 102, 241, 0.1) !important;
+    }
+    .manual-studio-active .persona-name, .manual-studio-active .q-item, .manual-studio-active .rec-title { color:#0f172a !important; }
+    .manual-studio-active .persona-desc, .manual-studio-active .strategy-text, .manual-studio-active .q-item-text { color:#475569 !important; }
+    .manual-studio-active .persona-avatar, .manual-studio-active .speech-avatar { background:rgba(0,0,0,0.04) !important; }
+    .manual-studio-active .focus-badge {
+      background:rgba(99,102,241,0.08) !important; color:#6366f1 !important; border-color:rgba(99,102,241,0.15) !important;
+    }
+    .manual-studio-active .q-item { background:#ffffff !important; border-color:#cbd5e1 !important; }
+    .manual-studio-active .q-item:hover { border-color:#6366f1 !important; background:rgba(99,102,241,0.02) !important; }
+    .manual-studio-active .q-item.active { border-color:#6366f1 !important; background:rgba(99,102,241,0.05) !important; }
+    .manual-studio-active .q-badge, .manual-studio-active .q-score-badge {
+      color:#6366f1 !important; background:rgba(99,102,241,0.08) !important; border-color:rgba(99,102,241,0.15) !important;
+    }
+    .manual-studio-active .active-question-card {
+      border-color:#cbd5e1 !important; border-left-color:#6366f1 !important; background:#ffffff !important;
+    }
+    .manual-studio-active .active-question-card h3 { color:#0f172a !important; }
+    .manual-studio-active .active-question-card p { color:#475569 !important; }
+    .manual-studio-active .persona-speech {
+      background:#f8fafc !important; border-color:#e2e8f0 !important;
+    }
+    .manual-studio-active .persona-speech::after {
+      background:#f8fafc !important; border-right-color:#e2e8f0 !important; border-bottom-color:#e2e8f0 !important;
+    }
+    .manual-studio-active .speech-name { color:#6366f1 !important; }
+    .manual-studio-active .chart-box, .manual-studio-active .model-content-box {
+      background:#ffffff !important; border-color:#e2e8f0 !important;
+    }
+    .manual-studio-active .dim-fill { background-color:#6366f1 !important; }
+    .manual-studio-active .dim-score { color:#0f172a !important; }
+    .manual-studio-active .checklist-bullet { color:#6366f1 !important; }
+    .manual-studio-active .model-tab-btn.active { color:#6366f1 !important; border-bottom-color:#6366f1 !important; }
+    .manual-studio-active .score-circle { border-color:#e2e8f0 !important; color:#0f172a !important; }
+    .manual-studio-active .btn-primary { background:#6366f1 !important; border-color:#6366f1 !important; }
+    .manual-studio-active .btn-primary:hover { background:#4f46e5 !important; }
+    .manual-studio-active .rec-item { background:#ffffff !important; border-color:#cbd5e1 !important; }
+    
+    @media (max-width: 980px) {
+      .strategy-layout, .practice-layout, .report-grid { grid-template-columns:1fr; }
+    }
   </style>
-  <link rel="stylesheet" href="styles/premium.css">
-
 </head>
-
 <body>
-
-
 
   <div class="topnav">
     <a href="dashboard.html" class="logo">
@@ -228,247 +377,449 @@
       </div>
       <div class="step-sep"></div>
       <div class="step-item" id="stepItem2">
-        <span class="step-num">2</span> Practice
+        <span class="step-num">2</span> Strategy
       </div>
       <div class="step-sep"></div>
       <div class="step-item" id="stepItem3">
-        <span class="step-num">3</span> Feedback
+        <span class="step-num">3</span> Practice
       </div>
       <div class="step-sep"></div>
       <div class="step-item" id="stepItem4">
-        <span class="step-num">4</span> Improve
+        <span class="step-num">4</span> Dashboard
       </div>
     </div>
 
     <!-- Page hero -->
-    <div class="page-hero">
+    <div class="page-hero" id="pageHero">
       <div class="eyebrow">AI Interview Coach</div>
-      <h1>Practice interviews without the clutter.</h1>
-      <p>Upload your resume, add the job, and practice one question at a time. Simple, focused, and resume-aware.</p>
-      <div id="pageStatus" class="status" aria-live="polite">Start with your role, company, and resume.</div>
+      <h1>Interactive AI Interview System</h1>
+      <p>Analyze your resume against job criteria, select specialized interviewer personas, receive adaptive questioning, and explore multi-level model answers with visual dimension mapping.</p>
+      <div id="pageStatus" class="status" aria-live="polite">Configure your targets and resume below to begin.</div>
     </div>
 
-    <section class="layout">
-      <div class="panel">
-        <div class="panel-heading">Interview Setup</div>
-        <div class="panel-sub">Add your resume, job role, and company — we'll generate focused questions.</div>
+    <!-- STAGE 1: Setup Panel -->
+    <div class="panel" id="panelSetup">
+      <div class="panel-heading">Interview Parameters</div>
+      <div class="panel-sub">Setup your targeting parameters and upload a resume so we can formulate the strategy.</div>
 
-        <div class="steps" aria-label="How it works">
-          <div class="step">
-            <strong>1. Add resume</strong>
-            <span>Upload or paste the experience you want to use.</span>
-          </div>
-          <div class="step">
-            <strong>2. Add job</strong>
-            <span>Role, company, and job details shape the questions.</span>
-          </div>
-          <div class="step">
-            <strong>3. Practice</strong>
-            <span>Speak or type an answer, then get focused feedback.</span>
+      <div class="form-grid">
+        <div class="field full">
+          <label for="resumeText">Your Resume Content</label>
+          <textarea id="resumeText" placeholder="Paste your resume details, or choose your PDF/DOCX resume file below."></textarea>
+          <div class="upload-row">
+            <input id="resumeFile" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+            <label class="btn" for="resumeFile">Choose Resume</label>
+            <span class="hint" id="resumeUploadHint">PDF or DOCX file. Extracted text will populate above.</span>
           </div>
         </div>
 
-
-          <div class="field full">
-            <label for="resumeText">Resume summary or upload a resume</label>
-            <textarea id="resumeText" placeholder="Paste a short resume summary, or choose your PDF/DOCX resume."></textarea>
-            <div class="upload-row">
-              <input id="resumeFile" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-              <label class="btn" for="resumeFile">Choose Resume</label>
-              <span class="hint" id="resumeUploadHint">PDF or DOCX. The text will appear here automatically.</span>
-            </div>
-          </div>
-          <div class="field">
-            <label for="jobTitle">Job title</label>
-            <input id="jobTitle" type="text" placeholder="Frontend Engineer" />
-          </div>
-          <div class="field">
-            <label for="companyName">Company</label>
-            <input id="companyName" type="text" placeholder="Acme Labs" />
-          </div>
-          <div class="field full">
-            <label for="jobDescription">Job description</label>
-            <textarea id="jobDescription" placeholder="Paste the job posting or a condensed version of it."></textarea>
-          </div>
+        <div class="field">
+          <label for="jobTitle">Job Title</label>
+          <input id="jobTitle" type="text" placeholder="e.g. Senior Frontend Architect" />
+        </div>
+        <div class="field">
+          <label for="companyName">Target Company</label>
+          <input id="companyName" type="text" placeholder="e.g. Stripe" />
+        </div>
+        <div class="field full">
+          <label for="jobDescription">Target Job Description</label>
+          <textarea id="jobDescription" placeholder="Paste the full job posting details here..."></textarea>
         </div>
 
-        <div class="section-actions">
-          <button class="btn btn-primary" id="generateBtnPanel" type="button">Build Practice Set</button>
-        </div>
-        <div id="setupStatus" class="status" aria-live="polite"></div>
-
-        <details class="more-options">
-          <summary>More options</summary>
-          <div class="more-body">
-            <div class="form-grid" style="margin-top:.75rem;">
-              <div class="field">
-                <label for="experienceLevel">Experience level</label>
-                <select id="experienceLevel">
-                  <option value="Student / Entry">Student / Entry</option>
-                  <option value="Junior">Junior</option>
-                  <option value="Mid" selected>Mid</option>
-                  <option value="Senior">Senior</option>
-                  <option value="Lead / Manager">Lead / Manager</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="interviewType">Interview type</label>
-                <select id="interviewType">
-                  <option value="Behavioral">Behavioral</option>
-                  <option value="Technical" selected>Technical</option>
-                  <option value="Mixed">Mixed</option>
-                  <option value="Leadership">Leadership</option>
-                  <option value="System Design">System Design</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="practiceMode">Practice mode</label>
-                <select id="practiceMode">
-                  <option value="Quick">Quick practice</option>
-                  <option value="Resume-based" selected>Resume-based</option>
-                  <option value="Voice">Voice practice</option>
-                  <option value="Mixed">Mixed</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="focusAreas">Focus areas</label>
-                <input id="focusAreas" type="text" placeholder="React, teamwork, metrics" />
+        <!-- Interviewer Persona Selector Grid -->
+        <div class="field full">
+          <label>Interviewer Persona</label>
+          <div class="persona-grid" id="personaGrid">
+            <div class="persona-card active" data-persona="HR Specialist">
+              <div class="persona-avatar">👩‍💼</div>
+              <div class="persona-info">
+                <div class="persona-name">Elena (HR Specialist)</div>
+                <div class="persona-desc">Friendly & culture-focused. Evaluates communication, motivation, and values fit.</div>
               </div>
             </div>
-            <div class="section-actions">
-              <button class="btn" id="speakQuestionBtn" type="button">Speak Question</button>
-              <button class="btn" id="saveDraftBtn" type="button">Save Draft</button>
-              <button class="btn" id="clearBtn" type="button">Clear Session</button>
-              <button class="btn" id="loadDemoBtn" type="button">Load Demo</button>
+            <div class="persona-card" data-persona="Hiring Manager">
+              <div class="persona-avatar">👨‍💼</div>
+              <div class="persona-info">
+                <div class="persona-name">Marcus (Hiring Manager)</div>
+                <div class="persona-desc">Outcome-oriented. Probes past achievements, execution speed, and ownership.</div>
+              </div>
             </div>
-          </div>
-        </details>
-
-        <div class="question-list" id="questionList" aria-live="polite">
-          <div class="history-item">
-            <strong>No questions yet</strong>
-            <span>Generate a set of questions to start practicing.</span>
+            <div class="persona-card" data-persona="Technical Lead">
+              <div class="persona-avatar">👨‍💻</div>
+              <div class="persona-info">
+                <div class="persona-name">Sanjay (Technical Lead)</div>
+                <div class="persona-desc">Rigorous & analytical. Questions architecture accuracy, coding standards, and scaling.</div>
+              </div>
+            </div>
+            <div class="persona-card" data-persona="Executive VP">
+              <div class="persona-avatar">👩‍💼</div>
+              <div class="persona-info">
+                <div class="persona-name">Victoria (Executive VP)</div>
+                <div class="persona-desc">Strategic alignment. Probes high-level roadmap, business ROI, and product value.</div>
+              </div>
+            </div>
+            <div class="persona-card" data-persona="Stress Interviewer">
+              <div class="persona-avatar">💂</div>
+              <div class="persona-info">
+                <div class="persona-name">Commander Vance (Stress Interviewer)</div>
+                <div class="persona-desc">High-pressure & critical. Challenges metrics, tests resilience, and questions decisions.</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="panel">
-        <h2>Practice</h2>
-        <p class="sub">Answer by typing or speaking. Then get quick feedback.</p>
-
-        <div class="active-question" id="activeQuestion">
-          <h3>Generate questions to begin.</h3>
-          <p>Your active question will appear here once you build a set.</p>
-        </div>
-
-        <div class="field full answer-box" style="margin-top:.9rem;">
-          <label for="answerText">Your answer</label>
-          <textarea id="answerText" placeholder="Type here, or use Speak Answer."></textarea>
-        </div>
-
-        <div class="section-actions">
-          <button class="btn" id="voiceAnswerBtn" type="button">Speak Answer</button>
-          <button class="btn btn-primary" id="evaluateBtnPanel" type="button">Evaluate Answer</button>
-          <button class="btn" id="nextBtn" type="button">Next Question</button>
-        </div>
-        <div class="simple-note" id="voiceHint">Voice input works in supported browsers and may ask for microphone permission.</div>
-
-        <div class="result-grid is-hidden" id="resultGrid">
-          <div class="result-card">
-            <h3>Score</h3>
-            <div class="score-row">
-              <div class="score-number" id="scoreValue">--</div>
-              <div class="score-desc" id="scoreSummary">Your answer score and summary will appear here.</div>
+      <details class="more-options">
+        <summary>Advanced Options</summary>
+        <div class="more-body">
+          <div class="form-grid" style="margin-top:.75rem;">
+            <div class="field">
+              <label for="experienceLevel">Experience Level</label>
+              <select id="experienceLevel">
+                <option value="Student / Entry">Student / Entry</option>
+                <option value="Junior">Junior</option>
+                <option value="Mid" selected>Mid</option>
+                <option value="Senior">Senior</option>
+                <option value="Lead / Manager">Lead / Manager</option>
+              </select>
             </div>
-            <div class="bar" aria-hidden="true"><div class="bar-fill" id="scoreFill"></div></div>
-            <div class="hint" id="scoreHint">Focus on concrete examples, measurable outcomes, and a cleaner structure.</div>
-            <div class="breakdown" id="scoreBreakdownList"></div>
-          </div>
-
-          <div class="result-card">
-            <h3>Strengths</h3>
-            <div class="list" id="strengthsList">
-              <div class="list-item">No feedback yet</div>
+            <div class="field">
+              <label for="interviewType">Interview Type</label>
+              <select id="interviewType">
+                <option value="Behavioral">Behavioral</option>
+                <option value="Technical" selected>Technical</option>
+                <option value="Mixed">Mixed</option>
+                <option value="Leadership">Leadership</option>
+                <option value="System Design">System Design</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="focusAreas">Focus Areas</label>
+              <input id="focusAreas" type="text" placeholder="React, systems scaling, teamwork" />
             </div>
           </div>
-
-          <div class="result-card">
-            <h3>Improvements</h3>
-            <div class="list" id="improvementsList">
-              <div class="list-item">No feedback yet</div>
-            </div>
-          </div>
-
-          <div class="result-card">
-            <h3>Better answer</h3>
-            <div class="better-answer" id="betterAnswer">Generate feedback to see a stronger version of your answer.</div>
-          </div>
-
-          <div class="result-card">
-            <h3>Follow-up question</h3>
-            <div class="better-answer" id="followUpQuestion">The coach will ask a deeper follow-up after your first pass.</div>
-          </div>
         </div>
+      </details>
 
-        <details class="more-options">
-          <summary>Saved sessions</summary>
-          <div class="more-body">
-            <div class="progress-summary" id="progressSummary">No progress tracked yet.</div>
-            <div class="section-actions">
-              <button class="btn" id="copyBetterBtn" type="button">Copy Better Answer</button>
-              <button class="btn" id="saveSessionBtn" type="button">Save Session</button>
-              <button class="btn" id="loadHistoryBtn" type="button">Refresh History</button>
-            </div>
-            <div class="history" id="historyList"></div>
-          </div>
-        </details>
+      <div class="section-actions">
+        <button class="btn btn-primary" id="btnBuildStrategy" type="button">Build Prep Strategy</button>
+        <button class="btn" id="loadDemoBtn" type="button">Load Demo Data</button>
       </div>
-    </section>
+      <div id="setupStatus" class="status" aria-live="polite"></div>
+    </div>
+
+    <!-- STAGE 2: Prep Strategy Panel -->
+    <div class="panel is-hidden" id="panelStrategy">
+      <div class="panel-heading" id="strategyTitle">Custom Strategy Generated</div>
+      <div class="panel-sub">Review likely focus areas and targeted candidate strategy before practicing.</div>
+
+      <div class="strategy-layout">
+        <div class="strategy-card">
+          <h3>Preparation Intelligence & Strategic Focal Points</h3>
+          <div class="strategy-text" id="strategyContent">
+            Generating customized strategy notes...
+          </div>
+        </div>
+
+        <div class="strategy-card" style="display:flex; flex-direction:column; gap:1.15rem;">
+          <div>
+            <h3 style="margin-bottom: 0.5rem;">Target Focus Topics</h3>
+            <div class="focus-list" id="strategyFocusList">
+              <span class="focus-badge">Topic 1</span>
+              <span class="focus-badge">Topic 2</span>
+            </div>
+          </div>
+          
+          <div style="border-top: 1px solid var(--border-md); padding-top: 1rem;">
+            <h3 style="margin-bottom: 0.5rem;">Selected Interviewer Profile</h3>
+            <div style="display:flex; gap:0.75rem; align-items:center;">
+              <div class="speech-avatar" id="strategyInterviewerAvatar" style="font-size:2.2rem; width:52px; height:52px;">👩‍💼</div>
+              <div>
+                <strong style="color:var(--text-1); font-size:0.95rem; display:block;" id="strategyInterviewerName">Elena</strong>
+                <span style="color:var(--text-3); font-size:0.78rem;" id="strategyInterviewerRole">HR Specialist</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-actions" style="margin-top: 2rem;">
+        <button class="btn btn-primary" id="btnStartPractice" type="button">Start Practice Session</button>
+        <button class="btn" id="btnBackToSetup" type="button">← Modify Setup</button>
+      </div>
+    </div>
+
+    <!-- STAGE 3: Practice Panel -->
+    <div class="layout practice-layout is-hidden" id="panelPractice">
+      <!-- Left sidebar: Question sequence tracker -->
+      <div class="q-sidebar">
+        <div class="q-sidebar-title">Practice Session Steps</div>
+        <div class="q-list" id="qList">
+          <div class="q-item active">
+            <span class="q-badge">Q1</span>
+            <div class="q-info">
+              <div class="q-info-meta"><span>Opening</span></div>
+              <div class="q-item-text">Tell me about yourself.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right panel: Active work zone -->
+      <div style="display:flex; flex-direction:column; gap:1rem;">
+        <div class="panel" style="margin-bottom:0;">
+          <!-- Interviewer verbal bubble response -->
+          <div class="persona-speech is-hidden" id="personaSpeechBubble">
+            <div class="speech-avatar" id="speechAvatar">👩‍💼</div>
+            <div class="speech-body">
+              <div class="speech-name" id="speechName">Elena (HR Specialist)</div>
+              <div class="speech-text" id="speechText">"Let's get started. Tell me about your background."</div>
+            </div>
+          </div>
+
+          <!-- Active Question Card -->
+          <div class="active-question-card" id="activeQuestionCard">
+            <h3 id="activeQuestionText">Active question text here</h3>
+            <p id="activeQuestionWhy" style="font-style:italic;">Why this question matters...</p>
+            <p id="activeQuestionGuide">Answer guide details...</p>
+            <div style="margin-top:0.75rem;">
+              <strong style="font-size:0.75rem; color:var(--text-3); text-transform:uppercase; display:block; margin-bottom:0.25rem;">Sample Points to Cover:</strong>
+              <ul id="activeQuestionSamplePoints">
+                <li>Point details</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="field full">
+            <label for="answerText">Your Response</label>
+            <textarea id="answerText" placeholder="Type your answer, or use voice practice to speak. Utilize the STAR structure."></textarea>
+          </div>
+
+          <div class="section-actions">
+            <button class="btn" id="btnVoiceAnswer" type="button">Speak Answer</button>
+            <button class="btn" id="btnSpeakQuestion" type="button">Read Question Aloud</button>
+            <button class="btn btn-primary" id="btnEvaluateAnswer" type="button">Submit & Evaluate</button>
+          </div>
+          <div class="status" id="practiceStatus"></div>
+          <div class="hint" id="voiceHint" style="margin-top:0.5rem;">Click Speak Answer to record. Browser permissions required.</div>
+
+          <!-- Live Score Evaluation Pane -->
+          <div class="eval-block is-hidden" id="evalBlock">
+            <h2 class="panel-heading" style="font-size:1.1rem; border-bottom:1px solid var(--border-md); padding-bottom:0.5rem; margin-bottom:0.75rem;">Round Performance Evaluation</h2>
+            
+            <div class="eval-grid">
+              <!-- Radar Chart SVG mapping -->
+              <div class="chart-box">
+                <span class="chart-title">Visual Performance Overlay</span>
+                <div id="radarChartContainer" style="width:100%; height:200px; display:flex; align-items:center; justify-content:center;">
+                  <!-- Dynamically rendered custom heptagon polygon -->
+                </div>
+              </div>
+
+              <!-- Dimension progress sliders -->
+              <div class="dimension-bars" id="dimensionBars">
+                <!-- Javascript populated dimension bars -->
+              </div>
+            </div>
+
+            <!-- Strengths and Weaknesses checklist grids -->
+            <div class="eval-grid" style="margin-top:1.5rem;">
+              <div>
+                <strong style="color:var(--text-1); font-size:0.82rem; text-transform:uppercase; display:block; margin-bottom:0.6rem;">Key Strengths</strong>
+                <div class="checklist-list" id="strengthsList">
+                  <!-- Strengths checklist -->
+                </div>
+              </div>
+              <div>
+                <strong style="color:var(--text-1); font-size:0.82rem; text-transform:uppercase; display:block; margin-bottom:0.6rem;">Suggested Adjustments</strong>
+                <div class="checklist-list" id="improvementsList">
+                  <!-- Improvements checklist -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Coaching Tip block -->
+            <div style="background:rgba(6, 182, 212, 0.03); border:1px solid rgba(6, 182, 212, 0.15); border-radius:var(--r-md); padding:1rem; margin-top:1.5rem;">
+              <strong style="color:var(--cyan); font-size:0.78rem; text-transform:uppercase; display:block; margin-bottom:0.25rem;">Real-time Coaching Tip</strong>
+              <div id="coachingTipText" style="font-size:0.85rem; line-height:1.5; color:var(--text-2);">Tip text goes here...</div>
+            </div>
+
+            <!-- Tabbed Model Answers -->
+            <div class="model-tabs" id="modelAnswerTabs">
+              <button type="button" class="model-tab-btn active" data-level="improved">Polished Version</button>
+              <button type="button" class="model-tab-btn" data-level="expert">Senior (STAR)</button>
+              <button type="button" class="model-tab-btn" data-level="executive">Executive VP Style</button>
+            </div>
+            <div class="model-content-box" id="modelContentBox">
+              Polished answer model copy content...
+            </div>
+            <div class="section-actions" style="margin-top: 0.75rem;">
+              <button class="btn" id="btnCopyModel" type="button">Copy Model Answer</button>
+            </div>
+
+            <div class="section-actions" style="margin-top:2rem; border-top:1px solid var(--border-md); padding-top:1.25rem;">
+              <button class="btn btn-primary" id="btnProceedNext" type="button">Proceed to Next Question</button>
+              <button class="btn" id="btnEndEarly" type="button">End Session & Get Analytics</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAGE 4: Intelligence Dashboard -->
+    <div class="panel is-hidden" id="panelCompleted">
+      <div class="panel-heading">Intelligence Dashboard & Performance Analysis</div>
+      <div class="panel-sub">Review overall dimension summary ratings, customized study tracks, and practice guides.</div>
+
+      <div class="report-grid">
+        <div class="report-card">
+          <div class="score-circle-box">
+            <span style="color:var(--text-3); font-size:0.72rem; text-transform:uppercase; font-weight:700; margin-bottom:0.5rem;">Averaged Round Score</span>
+            <div class="score-circle" id="overallReportScore">--</div>
+            <strong style="color:var(--text-1); font-size:1.1rem; display:block;" id="overallReportGrade">Good</strong>
+            <p style="color:var(--text-2); font-size:0.82rem; line-height:1.5; margin-top:0.5rem;" id="overallReportSummary">You showed strong structured logic but could frame database architectures with deeper metrics.</p>
+          </div>
+
+          <div style="margin-top:1.5rem; display:flex; justify-content:center;">
+            <div id="finalRadarChartContainer" style="width:100%; max-width:240px; height:240px;">
+              <!-- Overall radar chart heptagon SVG -->
+            </div>
+          </div>
+        </div>
+
+        <div class="recommendations-box">
+          <div class="rec-item">
+            <div class="rec-title">📋 <span>Personalized Improvement Plan</span></div>
+            <div class="checklist-list" id="reportPlanList">
+              <!-- Checklist goals -->
+            </div>
+          </div>
+
+          <div class="rec-item">
+            <div class="rec-title">💡 <span>Actionable Recommendations</span></div>
+            <div class="checklist-list" id="reportRecList">
+              <!-- Recommendations list -->
+            </div>
+          </div>
+
+          <div class="rec-item">
+            <strong style="font-size:0.8rem; color:var(--text-3); text-transform:uppercase; display:block; margin-bottom:0.75rem;">Feedback details by Dimension</strong>
+            <div class="checklist-list" id="reportDimensionsDetails">
+              <!-- Analysis dimensions -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-actions" style="margin-top: 2rem; border-top:1px solid var(--border-md); padding-top:1.5rem;">
+        <button class="btn btn-primary" id="btnRestartSession" type="button">Start New Session</button>
+        <button class="btn" id="btnSaveSessionHistory" type="button">Save to History</button>
+      </div>
+    </div>
+
+    <!-- Local History list collapsible -->
+    <details class="more-options" id="historyDetails">
+      <summary>Practice History (<span id="historyCount">0</span> Sessions)</summary>
+      <div class="more-body">
+        <div class="progress-summary" id="progressSummary">No sessions saved yet.</div>
+        <div class="history" id="historyList"></div>
+      </div>
+    </details>
   </main>
 
   <script>
+    // State Tracking
     const state = {
+      stage: 'setup', // 'setup' | 'strategy' | 'practice' | 'completed'
+      persona: 'HR Specialist',
       questions: [],
       selectedId: '',
+      history: [], // round-by-round evaluations { question, answer, score, evaluation }
+      lastStrategy: null,
       lastEvaluation: null,
-      lastGeneration: null
+      lastRecommendations: null
     };
 
     const els = {
-      jobTitle: document.getElementById('jobTitle'),
-      companyName: document.getElementById('companyName'),
-      experienceLevel: document.getElementById('experienceLevel'),
-      interviewType: document.getElementById('interviewType'),
-      practiceMode: document.getElementById('practiceMode'),
-      jobDescription: document.getElementById('jobDescription'),
+      stepBar: document.getElementById('stepBar'),
+      stepItem1: document.getElementById('stepItem1'),
+      stepItem2: document.getElementById('stepItem2'),
+      stepItem3: document.getElementById('stepItem3'),
+      stepItem4: document.getElementById('stepItem4'),
+      pageHero: document.getElementById('pageHero'),
+      pageStatus: document.getElementById('pageStatus'),
+      
+      // Panels
+      panelSetup: document.getElementById('panelSetup'),
+      panelStrategy: document.getElementById('panelStrategy'),
+      panelPractice: document.getElementById('panelPractice'),
+      panelCompleted: document.getElementById('panelCompleted'),
+
+      // Setup inputs
       resumeText: document.getElementById('resumeText'),
       resumeFile: document.getElementById('resumeFile'),
       resumeUploadHint: document.getElementById('resumeUploadHint'),
+      jobTitle: document.getElementById('jobTitle'),
+      companyName: document.getElementById('companyName'),
+      jobDescription: document.getElementById('jobDescription'),
       focusAreas: document.getElementById('focusAreas'),
-      answerText: document.getElementById('answerText'),
-      questionList: document.getElementById('questionList'),
-      activeQuestion: document.getElementById('activeQuestion'),
-      pageStatus: document.getElementById('pageStatus'),
+      experienceLevel: document.getElementById('experienceLevel'),
+      interviewType: document.getElementById('interviewType'),
+      personaGrid: document.getElementById('personaGrid'),
       setupStatus: document.getElementById('setupStatus'),
-      scoreValue: document.getElementById('scoreValue'),
-      scoreSummary: document.getElementById('scoreSummary'),
-      scoreFill: document.getElementById('scoreFill'),
-      scoreHint: document.getElementById('scoreHint'),
-      resultGrid: document.getElementById('resultGrid'),
-      scoreBreakdownList: document.getElementById('scoreBreakdownList'),
+
+      // Strategy fields
+      strategyTitle: document.getElementById('strategyTitle'),
+      strategyContent: document.getElementById('strategyContent'),
+      strategyFocusList: document.getElementById('strategyFocusList'),
+      strategyInterviewerAvatar: document.getElementById('strategyInterviewerAvatar'),
+      strategyInterviewerName: document.getElementById('strategyInterviewerName'),
+      strategyInterviewerRole: document.getElementById('strategyInterviewerRole'),
+
+      // Practice fields
+      qList: document.getElementById('qList'),
+      personaSpeechBubble: document.getElementById('personaSpeechBubble'),
+      speechAvatar: document.getElementById('speechAvatar'),
+      speechName: document.getElementById('speechName'),
+      speechText: document.getElementById('speechText'),
+      activeQuestionText: document.getElementById('activeQuestionText'),
+      activeQuestionWhy: document.getElementById('activeQuestionWhy'),
+      activeQuestionGuide: document.getElementById('activeQuestionGuide'),
+      activeQuestionSamplePoints: document.getElementById('activeQuestionSamplePoints'),
+      answerText: document.getElementById('answerText'),
+      btnVoiceAnswer: document.getElementById('btnVoiceAnswer'),
+      btnSpeakQuestion: document.getElementById('btnSpeakQuestion'),
+      btnEvaluateAnswer: document.getElementById('btnEvaluateAnswer'),
+      practiceStatus: document.getElementById('practiceStatus'),
+      voiceHint: document.getElementById('voiceHint'),
+      
+      // Eval fields
+      evalBlock: document.getElementById('evalBlock'),
+      radarChartContainer: document.getElementById('radarChartContainer'),
+      dimensionBars: document.getElementById('dimensionBars'),
       strengthsList: document.getElementById('strengthsList'),
       improvementsList: document.getElementById('improvementsList'),
-      betterAnswer: document.getElementById('betterAnswer'),
-      followUpQuestion: document.getElementById('followUpQuestion'),
-      historyList: document.getElementById('historyList'),
+      coachingTipText: document.getElementById('coachingTipText'),
+      modelAnswerTabs: document.getElementById('modelAnswerTabs'),
+      modelContentBox: document.getElementById('modelContentBox'),
+      btnCopyModel: document.getElementById('btnCopyModel'),
+      btnProceedNext: document.getElementById('btnProceedNext'),
+      btnEndEarly: document.getElementById('btnEndEarly'),
+
+      // Completed dashboard
+      overallReportScore: document.getElementById('overallReportScore'),
+      overallReportGrade: document.getElementById('overallReportGrade'),
+      overallReportSummary: document.getElementById('overallReportSummary'),
+      finalRadarChartContainer: document.getElementById('finalRadarChartContainer'),
+      reportPlanList: document.getElementById('reportPlanList'),
+      reportRecList: document.getElementById('reportRecList'),
+      reportDimensionsDetails: document.getElementById('reportDimensionsDetails'),
+
+      // History
+      historyDetails: document.getElementById('historyDetails'),
+      historyCount: document.getElementById('historyCount'),
       progressSummary: document.getElementById('progressSummary'),
-      voiceHint: document.getElementById('voiceHint'),
-      metricQuestions: document.getElementById('metricQuestions'),
-      metricScore: document.getElementById('metricScore'),
-      metricHistory: document.getElementById('metricHistory'),
-      metricMode: document.getElementById('metricMode'),
-      speakQuestionBtn: document.getElementById('speakQuestionBtn'),
-      voiceAnswerBtn: document.getElementById('voiceAnswerBtn')
+      historyList: document.getElementById('historyList')
     };
 
     const storageKey = 'careercraft-interview-history';
@@ -480,6 +831,7 @@
     }
 
     function setStatus(target, message, type = '') {
+      if (!target) return;
       target.textContent = message;
       target.className = `status ${type}`.trim();
     }
@@ -513,9 +865,8 @@
     }
 
     function saveDraft() {
-      const draft = readContext();
-      localStorage.setItem(draftKey, JSON.stringify(draft));
-      setStatus(els.setupStatus, 'Draft saved locally in this browser.', 'success');
+      const context = readContext();
+      localStorage.setItem(draftKey, JSON.stringify(context));
     }
 
     function readContext() {
@@ -524,176 +875,389 @@
         companyName: els.companyName.value.trim(),
         experienceLevel: els.experienceLevel.value.trim(),
         interviewType: els.interviewType.value.trim(),
-        practiceMode: els.practiceMode.value.trim(),
         jobDescription: els.jobDescription.value.trim(),
         resumeText: els.resumeText.value.trim(),
-        focusAreas: els.focusAreas.value.trim()
+        focusAreas: els.focusAreas.value.trim(),
+        persona: state.persona
       };
     }
 
-    function renderQuestionList() {
-      if (!state.questions.length) {
-        els.questionList.innerHTML = `
-          <div class="history-item">
-            <strong>No questions yet</strong>
-            <span>Generate a set of questions to start practicing.</span>
-          </div>`;
-        return;
-      }
+    // ─── STAGE ROUTER & VIEW SYNC ──────────────────────────────
+    function setStage(newStage) {
+      state.stage = newStage;
 
-      els.questionList.innerHTML = state.questions.map(q => `
-        <button type="button" class="question-item ${q.id === state.selectedId ? 'active' : ''}" data-id="${escapeHtml(q.id)}">
-          <div class="question-meta">
-            <span class="chip">${escapeHtml(q.category || 'general')}</span>
-            <span class="chip">${escapeHtml(q.difficulty || 'medium')}</span>
-            ${q.time_limit_seconds ? `<span class="chip">${Math.round(q.time_limit_seconds / 60)} min</span>` : ''}
-          </div>
-          <div class="question-text">${escapeHtml(q.question)}</div>
-        </button>
+      // Update step progress classes
+      [els.stepItem1, els.stepItem2, els.stepItem3, els.stepItem4].forEach(item => {
+        if (item) item.className = 'step-item';
+      });
+
+      // Hide all panels
+      els.panelSetup.classList.add('is-hidden');
+      els.panelStrategy.classList.add('is-hidden');
+      els.panelPractice.classList.add('is-hidden');
+      els.panelCompleted.classList.add('is-hidden');
+
+      if (newStage === 'setup') {
+        els.stepItem1.className = 'step-item active';
+        els.panelSetup.classList.remove('is-hidden');
+        els.pageHero.classList.remove('is-hidden');
+        setStatus(els.pageStatus, 'Start with your role, company, and resume.', '');
+      } 
+      else if (newStage === 'strategy') {
+        els.stepItem1.className = 'step-item done';
+        els.stepItem2.className = 'step-item active';
+        els.panelStrategy.classList.remove('is-hidden');
+        els.pageHero.classList.add('is-hidden');
+        renderStrategyView();
+      } 
+      else if (newStage === 'practice') {
+        els.stepItem1.className = 'step-item done';
+        els.stepItem2.className = 'step-item done';
+        els.stepItem3.className = 'step-item active';
+        els.panelPractice.classList.remove('is-hidden');
+        els.pageHero.classList.add('is-hidden');
+        renderQuestionList();
+        renderActiveQuestion();
+      } 
+      else if (newStage === 'completed') {
+        els.stepItem1.className = 'step-item done';
+        els.stepItem2.className = 'step-item done';
+        els.stepItem3.className = 'step-item done';
+        els.stepItem4.className = 'step-item active';
+        els.panelCompleted.classList.remove('is-hidden');
+        els.pageHero.classList.add('is-hidden');
+        renderCompletedDashboard();
+      }
+    }
+
+    // ─── STAGE 2 RENDER: Prep Strategy ─────────────────────────
+    function renderStrategyView() {
+      const data = state.lastStrategy;
+      if (!data) return;
+
+      els.strategyTitle.textContent = `${els.jobTitle.value.trim() || 'Job'} Strategy Overview`;
+      
+      // Clean strategy formatting
+      let mdHtml = '';
+      const paragraphs = (data.prep_strategy || '').split('\n').filter(Boolean);
+      paragraphs.forEach(p => {
+        if (p.startsWith('-') || p.startsWith('*')) {
+          mdHtml += `<li>${escapeHtml(p.replace(/^[-*]\s*/, ''))}</li>`;
+        } else {
+          mdHtml += `<p>${escapeHtml(p)}</p>`;
+        }
+      });
+      if (mdHtml.includes('<li>')) {
+        mdHtml = mdHtml.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+      }
+      els.strategyContent.innerHTML = mdHtml || '<p>Review the job requirements and align key metrics from your resume.</p>';
+
+      // Focus areas chips
+      els.strategyFocusList.innerHTML = (data.focus_areas || []).map(item => `
+        <span class="focus-badge">${escapeHtml(item)}</span>
       `).join('');
+
+      // Persona Profile Widget
+      const avatars = {
+        'HR Specialist': '👩‍💼',
+        'Hiring Manager': '👨‍💼',
+        'Technical Lead': '👨‍💻',
+        'Executive VP': '👩‍💼',
+        'Stress Interviewer': '💂'
+      };
+      els.strategyInterviewerAvatar.textContent = avatars[state.persona] || '👩‍💼';
+      els.strategyInterviewerName.textContent = state.persona === 'Stress Interviewer' ? 'Commander Vance' : state.persona === 'Technical Lead' ? 'Sanjay' : state.persona === 'Hiring Manager' ? 'Marcus' : state.persona === 'Executive VP' ? 'Victoria' : 'Elena';
+      els.strategyInterviewerRole.textContent = state.persona;
+    }
+
+    // ─── STAGE 3 RENDER: Practice Round ────────────────────────
+    function renderQuestionList() {
+      els.qList.innerHTML = state.questions.map((q, idx) => {
+        const histItem = state.history.find(h => h.question === q.question);
+        const scoreBadge = histItem ? `<span class="q-score-badge">${histItem.score}%</span>` : '';
+        return `
+          <button type="button" class="q-item ${q.id === state.selectedId ? 'active' : ''}" data-id="${escapeHtml(q.id)}">
+            <span class="q-badge">Q${idx + 1}</span>
+            <div class="q-info">
+              <div class="q-info-meta">
+                <span>${escapeHtml(q.category || 'Focus')}</span>
+              </div>
+              <div class="q-item-text">${escapeHtml(q.question)}</div>
+            </div>
+            ${scoreBadge}
+          </button>
+        `;
+      }).join('');
     }
 
     function renderActiveQuestion() {
       const q = state.questions.find(item => item.id === state.selectedId);
-      if (!q) {
-        els.activeQuestion.innerHTML = `
-          <h3>Generate questions to begin.</h3>
-          <p>Your active question will appear here.</p>`;
-        els.metricMode.textContent = els.practiceMode.value || 'Live';
-        return;
+      if (!q) return;
+
+      // Active Question Card Details
+      els.activeQuestionText.textContent = q.question;
+      els.activeQuestionWhy.textContent = q.why_it_matters || 'This question tests alignment to job targets.';
+      els.activeQuestionGuide.textContent = q.answer_guide || 'Use the STAR structure for this answer.';
+      els.activeQuestionSamplePoints.innerHTML = (q.sample_points || []).map(point => `
+        <li>${escapeHtml(point)}</li>
+      `).join('');
+
+      // Persona speech bubble setup
+      const avatars = {
+        'HR Specialist': '👩‍💼',
+        'Hiring Manager': '👨‍💼',
+        'Technical Lead': '👨‍💻',
+        'Executive VP': '👩‍💼',
+        'Stress Interviewer': '💂'
+      };
+      els.speechAvatar.textContent = avatars[state.persona] || '👩‍💼';
+      els.speechName.textContent = state.persona === 'Stress Interviewer' ? 'Commander Vance' : state.persona === 'Technical Lead' ? 'Sanjay' : state.persona === 'Hiring Manager' ? 'Marcus' : state.persona === 'Executive VP' ? 'Victoria' : 'Elena';
+      
+      const histItem = state.history.find(h => h.question === q.question);
+      if (histItem?.evaluation?.persona_response) {
+        els.speechText.textContent = `"${histItem.evaluation.persona_response}"`;
+        els.personaSpeechBubble.classList.remove('is-hidden');
+      } else {
+        els.personaSpeechBubble.classList.add('is-hidden');
       }
 
-      els.activeQuestion.innerHTML = `
-        <div class="question-meta">
-          <span class="chip">${escapeHtml(q.category || 'general')}</span>
-          <span class="chip">${escapeHtml(q.difficulty || 'medium')}</span>
-          ${q.time_limit_seconds ? `<span class="chip">${Math.round(q.time_limit_seconds / 60)} min answer</span>` : ''}
-        </div>
-        <h3>${escapeHtml(q.question)}</h3>
-        <p>${escapeHtml(q.why_it_matters || 'This question is important because it tests core interview readiness.')}</p>
-        ${q.answer_guide ? `<p>${escapeHtml(q.answer_guide)}</p>` : ''}
-        <p>Sample points to hit:</p>
-        <ul>${(q.sample_points || []).map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ul>
-        ${(q.scoring_criteria || []).length ? `<p>Scored on:</p><ul>${q.scoring_criteria.map(point => `<li>${escapeHtml(point)}</li>`).join('')}</ul>` : ''}`;
-      els.metricMode.textContent = els.practiceMode.value || q.category || 'Live';
+      // Check if this round is already evaluated
+      if (histItem) {
+        renderEvaluationView(histItem.evaluation);
+        els.answerText.value = histItem.answer;
+        els.btnEvaluateAnswer.disabled = true;
+      } else {
+        resetEvaluationView();
+        els.answerText.value = '';
+        els.btnEvaluateAnswer.disabled = false;
+      }
     }
 
-    function renderHistory() {
-      const history = loadHistory();
-      els.metricHistory.textContent = String(history.length);
-      renderProgressSummary(history);
+    function resetEvaluationView() {
+      els.evalBlock.classList.add('is-hidden');
+      els.practiceStatus.textContent = '';
+      els.practiceStatus.className = 'status';
+    }
 
-      if (!history.length) {
-        els.historyList.innerHTML = `
-          <div class="history-item">
-            <strong>No saved sessions</strong>
-            <span>Save a practice run to keep a local trail of your progress.</span>
-          </div>`;
-        return;
-      }
+    function renderEvaluationView(data) {
+      state.lastEvaluation = data;
+      els.evalBlock.classList.remove('is-hidden');
 
-      els.historyList.innerHTML = history.map(item => `
-        <div class="history-item">
-          <strong>${escapeHtml(item.title || 'Interview Session')}</strong>
-          <span>${escapeHtml(item.company || 'Unknown company')} | Score: ${item.score ?? '--'} (${escapeHtml(item.grade || 'Practice')}) | ${new Date(item.createdAt).toLocaleString()}</span>
-          <span>Strength: ${escapeHtml((item.strengths || [])[0] || 'Not tracked yet')}</span>
-          <span>Weakness: ${escapeHtml((item.weaknesses || item.improvements || [])[0] || 'Not tracked yet')}</span>
+      // Visual Heptagon Radar chart
+      drawRadarChart(data.dimensions || {});
+
+      // Dimension bars rendering
+      const dimLabels = {
+        technical_accuracy: 'Technical',
+        communication: 'Communication',
+        confidence: 'Confidence',
+        structure: 'Structure',
+        star_methodology: 'STAR method',
+        leadership: 'Leadership',
+        problem_solving: 'Problem solving'
+      };
+      els.dimensionBars.innerHTML = Object.keys(dimLabels).map(key => {
+        const val = Number(data.dimensions?.[key]) || 50;
+        return `
+          <div class="dimension-bar-row">
+            <span class="dim-name">${dimLabels[key]}</span>
+            <div class="dim-progress"><span class="dim-fill" style="width: ${val}%"></span></div>
+            <span class="dim-score">${val}%</span>
+          </div>
+        `;
+      }).join('');
+
+      // Strengths & Improvements checkboxes
+      els.strengthsList.innerHTML = (data.strengths || []).map(str => `
+        <div class="checklist-item">
+          <span class="checklist-bullet">✓</span>
+          <span>${escapeHtml(str)}</span>
         </div>
       `).join('');
+      els.improvementsList.innerHTML = (data.improvements || []).map(imp => `
+        <div class="checklist-item">
+          <span class="checklist-bullet">⚠</span>
+          <span>${escapeHtml(imp)}</span>
+        </div>
+      `).join('');
+
+      // Coaching tip
+      els.coachingTipText.textContent = data.coaching_tip || 'Structure your answer using specific task outcomes.';
+
+      // Model answer loader
+      const activeTabBtn = els.modelAnswerTabs.querySelector('.model-tab-btn.active');
+      const level = activeTabBtn ? activeTabBtn.getAttribute('data-level') : 'improved';
+      renderModelAnswerContent(level);
+
+      // Persona response display inside evaluation
+      if (data.persona_response) {
+        els.speechText.textContent = `"${data.persona_response}"`;
+        els.personaSpeechBubble.classList.remove('is-hidden');
+      }
     }
 
-    function renderProgressSummary(history = loadHistory()) {
-      if (!els.progressSummary) return;
-      if (!history.length) {
-        els.progressSummary.textContent = 'No progress tracked yet.';
-        return;
+    function renderModelAnswerContent(level) {
+      const data = state.lastEvaluation;
+      if (!data?.model_answers) return;
+      els.modelContentBox.textContent = data.model_answers[level] || 'No revised model answer returned.';
+    }
+
+    // ─── STAGE 4 RENDER: Completed Dashboard ───────────────
+    function renderCompletedDashboard() {
+      const data = state.lastRecommendations;
+      if (!data) return;
+
+      // Calculate final average score
+      const scores = state.history.map(item => Number(item.score)).filter(Number.isFinite);
+      const avgScore = scores.length ? Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length) : 70;
+      
+      els.overallReportScore.textContent = `${avgScore}%`;
+      els.overallReportGrade.textContent = avgScore >= 85 ? 'Excellent' : avgScore >= 70 ? 'Good' : avgScore >= 50 ? 'Needs practice' : 'Weak';
+      els.overallReportSummary.textContent = data.overall_summary || 'Practice session completed successfully.';
+
+      // Generate composite dimensions averages for SVG radar chart
+      const compositeDims = {};
+      const dimKeys = ['technical_accuracy', 'communication', 'confidence', 'structure', 'star_methodology', 'leadership', 'problem_solving'];
+      dimKeys.forEach(k => {
+        const sum = state.history.reduce((acc, curr) => acc + (Number(curr.evaluation?.dimensions?.[k]) || 50), 0);
+        compositeDims[k] = state.history.length ? Math.round(sum / state.history.length) : 60;
+      });
+
+      // Render composite SVG radar
+      drawRadarChartComposite(compositeDims);
+
+      // Improvement plan list rendering
+      els.reportPlanList.innerHTML = (data.improvement_plan || []).map(item => `
+        <div class="checklist-item">
+          <span class="checklist-bullet">☐</span>
+          <span>${escapeHtml(item)}</span>
+        </div>
+      `).join('');
+
+      // Practice recommendations list
+      els.reportRecList.innerHTML = (data.practice_recommendations || []).map(item => `
+        <div class="checklist-item">
+          <span class="checklist-bullet">✦</span>
+          <span>${escapeHtml(item)}</span>
+        </div>
+      `).join('');
+
+      // Dimension commentary
+      els.reportDimensionsDetails.innerHTML = Object.keys(data.dimension_analysis || {}).map(k => {
+        const name = k.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+        return `
+          <div style="margin-bottom:0.75rem;">
+            <strong style="color:var(--text-1); font-size:0.8rem; display:block;">${escapeHtml(name)}</strong>
+            <span style="font-size:0.82rem; color:var(--text-2); line-height:1.5;">${escapeHtml(data.dimension_analysis[k])}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ─── SVG RADAR CHART GENERATION ────────────────────────────
+    function drawRadarChart(dimensions) {
+      renderRadarSVG(dimensions, els.radarChartContainer);
+    }
+
+    function drawRadarChartComposite(dimensions) {
+      renderRadarSVG(dimensions, els.finalRadarChartContainer);
+    }
+
+    function renderRadarSVG(dimensions, containerNode) {
+      if (!containerNode) return;
+
+      const width = 300;
+      const height = 300;
+      const cx = width / 2;
+      const cy = height / 2;
+      const r = 90; // max radius
+
+      const keys = [
+        { key: 'technical_accuracy', label: 'Technical' },
+        { key: 'communication', label: 'Comm' },
+        { key: 'confidence', label: 'Confidence' },
+        { key: 'structure', label: 'Structure' },
+        { key: 'star_methodology', label: 'STAR' },
+        { key: 'leadership', label: 'Leadership' },
+        { key: 'problem_solving', label: 'Problem' }
+      ];
+
+      // Dynamic theme color selection
+      const isManual = document.documentElement.classList.contains('manual-studio-active');
+      const accentColor = isManual ? '#6366f1' : 'var(--cyan)';
+      const fillTheme = isManual ? 'rgba(99, 102, 241, 0.12)' : 'rgba(6, 182, 212, 0.12)';
+
+      let gridLines = '';
+      for (let level = 1; level <= 5; level++) {
+        const radius = (r / 5) * level;
+        const points = [];
+        for (let i = 0; i < 7; i++) {
+          const angle = (i * 2 * Math.PI) / 7 - Math.PI / 2;
+          const x = cx + radius * Math.cos(angle);
+          const y = cy + radius * Math.sin(angle);
+          points.push(`${x},${y}`);
+        }
+        gridLines += `<polygon points="${points.join(' ')}" fill="none" stroke="var(--border-md)" stroke-width="0.75" />`;
       }
 
-      const scores = history.map(item => Number(item.score)).filter(score => Number.isFinite(score));
-      const latest = scores[0] ?? '--';
-      const best = scores.length ? Math.max(...scores) : '--';
-      const average = scores.length ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : '--';
-      const previous = scores[1];
-      const trend = typeof previous === 'number'
-        ? latest > previous ? `up ${latest - previous}` : latest < previous ? `down ${previous - latest}` : 'steady'
-        : 'first session';
-      els.progressSummary.textContent = `Progress: latest ${latest}, best ${best}, average ${average}, trend ${trend}.`;
+      let axes = '';
+      let labels = '';
+      for (let i = 0; i < 7; i++) {
+        const angle = (i * 2 * Math.PI) / 7 - Math.PI / 2;
+        const x = cx + r * Math.cos(angle);
+        const y = cy + r * Math.sin(angle);
+        axes += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--border-md)" stroke-width="0.75" />`;
+
+        const labelDistance = r + 20;
+        const lx = cx + labelDistance * Math.cos(angle);
+        const ly = cy + labelDistance * Math.sin(angle) + 4;
+        const align = Math.cos(angle) > 0.1 ? 'start' : Math.cos(angle) < -0.1 ? 'end' : 'middle';
+        labels += `<text x="${lx}" y="${ly}" fill="var(--text-3)" font-size="9" font-weight="700" text-anchor="${align}">${keys[i].label}</text>`;
+      }
+
+      const scorePoints = [];
+      for (let i = 0; i < 7; i++) {
+        const angle = (i * 2 * Math.PI) / 7 - Math.PI / 2;
+        const scoreVal = dimensions[keys[i].key] || 50;
+        const radius = (r * scoreVal) / 100;
+        const x = cx + radius * Math.cos(angle);
+        const y = cy + radius * Math.sin(angle);
+        scorePoints.push(`${x},${y}`);
+      }
+
+      const polygonPath = `<polygon points="${scorePoints.join(' ')}" fill="${fillTheme}" stroke="${accentColor}" stroke-width="2" />`;
+
+      let dots = '';
+      for (let i = 0; i < 7; i++) {
+        const angle = (i * 2 * Math.PI) / 7 - Math.PI / 2;
+        const scoreVal = dimensions[keys[i].key] || 50;
+        const radius = (r * scoreVal) / 100;
+        const x = cx + radius * Math.cos(angle);
+        const y = cy + radius * Math.sin(angle);
+        dots += `<circle cx="${x}" cy="${y}" r="4" fill="${accentColor}" />`;
+      }
+
+      containerNode.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}">
+          ${gridLines}
+          ${axes}
+          ${labels}
+          ${polygonPath}
+          ${dots}
+        </svg>
+      `;
     }
 
-    function renderEvaluation(data) {
-      state.lastEvaluation = data;
-      els.resultGrid.classList.remove('is-hidden');
-      const score = Number(data.score) || 0;
-      els.metricScore.textContent = String(score);
-      els.scoreValue.textContent = String(score);
-      els.scoreSummary.textContent = data.summary || 'Feedback loaded.';
-      els.scoreFill.style.width = `${Math.max(0, Math.min(100, score))}%`;
-      els.scoreHint.textContent = score >= 85
-        ? 'Great answer. Now make it even tighter and more specific.'
-        : score >= 70
-          ? 'Good foundation. Add sharper proof, cleaner structure, and a stronger finish.'
-          : 'Build around a direct answer, one concrete example, and a result.';
-      renderScoreBreakdown(data.score_breakdown || {}, data.rubric || {});
-
-      els.strengthsList.innerHTML = (data.strengths || []).length
-        ? data.strengths.map(item => `<div class="list-item">${escapeHtml(item)}</div>`).join('')
-        : '<div class="list-item">No strengths returned</div>';
-      const weaknesses = data.weaknesses || data.improvements || [];
-      els.improvementsList.innerHTML = weaknesses.length
-        ? weaknesses.map(item => `<div class="list-item">${escapeHtml(item)}</div>`).join('')
-        : '<div class="list-item">No improvements returned</div>';
-      els.betterAnswer.textContent = data.better_answer || 'No revised answer returned.';
-      els.followUpQuestion.textContent = data.follow_up_question || 'No follow-up question returned.';
-    }
-
-    function renderScoreBreakdown(breakdown, rubric) {
-      const labels = {
-        clarity: 'Clarity',
-        relevance: 'Relevance',
-        evidence: 'Evidence',
-        structure: 'Structure',
-        impact: 'Impact'
-      };
-      const rows = Object.keys(labels).map(key => {
-        const value = Number(breakdown[key]) || 0;
-        const max = Number(rubric[key]) || 20;
-        const width = Math.max(0, Math.min(100, Math.round((value / max) * 100)));
-        return `
-          <div class="breakdown-row">
-            <span>${labels[key]}</span>
-            <div class="mini-bar" aria-hidden="true"><span style="width:${width}%"></span></div>
-            <span>${value}/${max}</span>
-          </div>`;
-      });
-      els.scoreBreakdownList.innerHTML = rows.join('');
-    }
-
-    function resetFeedbackView() {
-      state.lastEvaluation = null;
-      els.answerText.value = '';
-      els.scoreValue.textContent = '--';
-      els.scoreSummary.textContent = 'Your answer score and summary will appear here.';
-      els.scoreFill.style.width = '0%';
-      els.scoreHint.textContent = 'Focus on concrete examples, measurable outcomes, and a cleaner structure.';
-      els.scoreBreakdownList.innerHTML = '';
-      els.strengthsList.innerHTML = '<div class="list-item">No feedback yet</div>';
-      els.improvementsList.innerHTML = '<div class="list-item">No feedback yet</div>';
-      els.betterAnswer.textContent = 'Generate feedback to see a stronger version of your answer.';
-      els.followUpQuestion.textContent = 'The coach will ask a deeper follow-up after your first pass.';
-      els.metricScore.textContent = '--';
-      els.resultGrid.classList.add('is-hidden');
-      setStatus(els.setupStatus, 'Practice set ready when you are.', '');
-    }
-
-    async function generateQuestions() {
+    // ─── API WORKFLOW REQUEST HANDLERS ─────────────────────────
+    async function generateStrategy() {
       const context = readContext();
       if (!context.jobTitle || !context.companyName) {
-        setStatus(els.setupStatus, 'Please fill in job title and company.', 'error');
+        setStatus(els.setupStatus, 'Please specify job title and company.', 'error');
         return;
       }
 
-      setStatus(els.pageStatus, 'Building your practice set...', 'loading');
-      setStatus(els.setupStatus, 'Creating questions from your resume and job details...', 'loading');
+      setStatus(els.pageStatus, 'Formulating preparation strategy...', 'loading');
+      setStatus(els.setupStatus, 'Analyzing details with Gemini...', 'loading');
       toggleControls(true);
 
       try {
@@ -707,26 +1271,21 @@
           method: 'POST',
           headers: headers,
           body: JSON.stringify({
-            action: 'generate_questions',
+            action: 'generate_strategy',
             ...context
           })
         });
 
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Failed to generate questions.');
+        if (!response.ok) throw new Error(data.error || 'Failed to generate strategy.');
 
+        state.lastStrategy = data;
         state.questions = Array.isArray(data.questions) ? data.questions : [];
         state.selectedId = state.questions[0]?.id || '';
-        state.lastGeneration = data;
-        resetFeedbackView();
-        renderQuestionList();
-        renderActiveQuestion();
-        els.metricQuestions.textContent = String(state.questions.length || 5);
-        const prep = Array.isArray(data.prep_notes) && data.prep_notes.length
-          ? `Prep: ${data.prep_notes[0]}`
-          : 'Practice set ready.';
-        setStatus(els.pageStatus, data.interview_summary || prep, 'success');
-        setStatus(els.setupStatus, prep, 'success');
+        state.history = []; // Reset active round history
+
+        setStage('strategy');
+        setStatus(els.pageStatus, 'Prep strategy formulated successfully.', 'success');
       } catch (error) {
         setStatus(els.pageStatus, error.message, 'error');
         setStatus(els.setupStatus, error.message, 'error');
@@ -740,17 +1299,18 @@
       const question = state.questions.find(item => item.id === state.selectedId);
 
       if (!question) {
-        setStatus(els.setupStatus, 'Generate questions before evaluating an answer.', 'error');
+        setStatus(els.practiceStatus, 'Build question strategy first.', 'error');
         return;
       }
 
-      if (!els.answerText.value.trim()) {
-        setStatus(els.setupStatus, 'Type an answer before requesting feedback.', 'error');
+      const answer = els.answerText.value.trim();
+      if (!answer) {
+        setStatus(els.practiceStatus, 'Please type or speak an answer first.', 'error');
         return;
       }
 
-      setStatus(els.pageStatus, 'Evaluating answer...', 'loading');
-      setStatus(els.setupStatus, 'Scoring your answer...', 'loading');
+      setStatus(els.pageStatus, 'Evaluating response...', 'loading');
+      setStatus(els.practiceStatus, 'Gemini intelligence review in progress...', 'loading');
       toggleControls(true);
 
       try {
@@ -766,7 +1326,8 @@
           body: JSON.stringify({
             action: 'evaluate_answer',
             question: question.question,
-            answer: els.answerText.value.trim(),
+            answer: answer,
+            history: state.history.map(item => ({ q: item.question, a: item.answer, s: item.score })),
             ...context
           })
         });
@@ -774,13 +1335,78 @@
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Failed to evaluate answer.');
 
-        renderEvaluation(data);
-        setStatus(els.pageStatus, 'Answer feedback is ready.', 'success');
-        setStatus(els.setupStatus, 'Answer evaluated.', 'success');
-        saveSession(true);
+        // Save round to history
+        const roundData = {
+          question: question.question,
+          answer: answer,
+          score: data.score,
+          evaluation: data
+        };
+
+        const existingIdx = state.history.findIndex(h => h.question === question.question);
+        if (existingIdx >= 0) {
+          state.history[existingIdx] = roundData;
+        } else {
+          state.history.push(roundData);
+        }
+
+        renderQuestionList();
+        renderEvaluationView(data);
+        
+        setStatus(els.pageStatus, 'Round evaluation completed.', 'success');
+        setStatus(els.practiceStatus, 'Round evaluated successfully.', 'success');
       } catch (error) {
         setStatus(els.pageStatus, error.message, 'error');
-        setStatus(els.setupStatus, error.message, 'error');
+        setStatus(els.practiceStatus, error.message, 'error');
+      } finally {
+        toggleControls(false);
+      }
+    }
+
+    async function finishSession() {
+      if (state.history.length === 0) {
+        alert('Please evaluate at least one answer before finishing.');
+        return;
+      }
+
+      const context = readContext();
+      setStatus(els.pageStatus, 'Generating personalized recommendations...', 'loading');
+      setStatus(els.practiceStatus, 'Gemini review in progress...', 'loading');
+      toggleControls(true);
+
+      try {
+        const session = await window.appSdk.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        const response = await fetch(apiUrl('/api/interview-coach'), {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({
+            action: 'generate_recommendations',
+            history: state.history.map(item => ({
+              q: item.question,
+              a: item.answer,
+              score: item.score,
+              dimensions: item.evaluation?.dimensions
+            })),
+            ...context
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Failed to fetch recommendations.');
+
+        state.lastRecommendations = data;
+        setStage('completed');
+        
+        // Auto-save history item
+        saveSession();
+      } catch (error) {
+        setStatus(els.pageStatus, error.message, 'error');
+        setStatus(els.practiceStatus, error.message, 'error');
       } finally {
         toggleControls(false);
       }
@@ -788,15 +1414,12 @@
 
     async function uploadResume() {
       const file = els.resumeFile.files?.[0];
-      if (!file) {
-        setStatus(els.setupStatus, 'Choose a PDF or DOCX resume first.', 'error');
-        return;
-      }
+      if (!file) return;
 
       const formData = new FormData();
       formData.append('resume', file);
-      els.resumeUploadHint.textContent = 'Reading your resume...';
-      setStatus(els.setupStatus, 'Uploading resume...', 'loading');
+      els.resumeUploadHint.textContent = 'Reading resume...';
+      setStatus(els.setupStatus, 'Reading file content...', 'loading');
 
       try {
         const session = await window.appSdk.auth.getSession();
@@ -812,28 +1435,23 @@
         });
 
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Failed to upload resume.');
+        if (!response.ok) throw new Error(data.error || 'Failed to extract text.');
 
         els.resumeText.value = data.resumeText || '';
         els.resumeUploadHint.textContent = `Loaded ${file.name}.`;
-        setStatus(els.setupStatus, 'Resume loaded. You can now build your practice set.', 'success');
+        setStatus(els.setupStatus, 'Resume content loaded.', 'success');
+        saveDraft();
       } catch (error) {
-        els.resumeUploadHint.textContent = apiBase
-          ? 'Resume selected. Open http://127.0.0.1:3000/interview to extract it locally.'
-          : 'PDF or DOCX. The text will appear here automatically.';
-        setStatus(
-          els.setupStatus,
-          apiBase ? 'Resume parsing needs the local app URL, not the file preview URL.' : error.message,
-          'error'
-        );
+        els.resumeUploadHint.textContent = 'Failed to extract text.';
+        setStatus(els.setupStatus, error.message, 'error');
       }
     }
 
     function toggleControls(disabled) {
-      ['generateBtn', 'generateBtnPanel', 'evaluateBtn', 'evaluateBtnPanel', 'nextBtn', 'saveDraftBtn', 'clearBtn', 'saveSessionBtn', 'loadHistoryBtn', 'copyBetterBtn']
+      ['btnBuildStrategy', 'btnStartPractice', 'btnEvaluateAnswer', 'btnProceedNext', 'btnEndEarly', 'loadDemoBtn']
         .forEach(id => {
           const node = document.getElementById(id);
-          if (node) node.disabled = disabled && !['nextBtn', 'saveDraftBtn', 'clearBtn', 'loadHistoryBtn', 'copyBetterBtn'].includes(id);
+          if (node) node.disabled = disabled;
         });
     }
 
@@ -843,43 +1461,55 @@
       renderActiveQuestion();
     }
 
-    function nextQuestion() {
-      if (!state.questions.length) return;
-      const currentIndex = state.questions.findIndex(item => item.id === state.selectedId);
-      const nextIndex = currentIndex < 0 || currentIndex === state.questions.length - 1 ? 0 : currentIndex + 1;
-      selectQuestion(state.questions[nextIndex].id);
-      resetFeedbackView();
-      els.answerText.focus();
-      setStatus(els.setupStatus, 'Moved to the next question.', 'success');
+    function proceedNext() {
+      const data = state.lastEvaluation;
+      if (!data?.next_question) {
+        finishSession();
+        return;
+      }
+
+      // Check if next question is already added
+      const nextQ = data.next_question;
+      const alreadyExists = state.questions.some(q => q.question === nextQ.question);
+      
+      if (!alreadyExists) {
+        // Assign incremental id
+        nextQ.id = `q${state.questions.length + 1}`;
+        state.questions.push(nextQ);
+      }
+
+      const nextId = state.questions[state.questions.length - 1].id;
+      selectQuestion(nextId);
+      
+      // Scroll to active workpane
+      window.scrollTo({ top: els.stepBar.offsetTop, behavior: 'smooth' });
     }
 
     function speakCurrentQuestion() {
       const q = state.questions.find(item => item.id === state.selectedId);
       if (!q || !window.speechSynthesis) {
-        setStatus(els.setupStatus, 'Speech is not available in this browser.', 'error');
+        setStatus(els.practiceStatus, 'Speech synthesis not available.', 'error');
         return;
       }
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(q.question);
       utterance.rate = 0.95;
-      utterance.pitch = 1;
       window.speechSynthesis.speak(utterance);
-      setStatus(els.setupStatus, 'Question spoken aloud.', 'success');
+      setStatus(els.practiceStatus, 'Reading question text...', 'success');
     }
 
     let voiceRecognition = null;
-
     function startVoiceAnswer() {
       const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!Recognition) {
-        setStatus(els.setupStatus, 'Voice input is not supported in this browser.', 'error');
+        setStatus(els.practiceStatus, 'Voice recognition not supported in this browser.', 'error');
         return;
       }
 
       if (voiceRecognition) {
         voiceRecognition.stop();
         voiceRecognition = null;
-        setStatus(els.setupStatus, 'Voice capture stopped.', 'success');
+        els.btnVoiceAnswer.textContent = 'Speak Answer';
         return;
       }
 
@@ -888,171 +1518,181 @@
       voiceRecognition.interimResults = true;
       voiceRecognition.continuous = false;
 
-      const baseAnswer = els.answerText.value.trim();
-      let finalTranscript = '';
+      const baseText = els.answerText.value.trim();
+      let finalText = '';
+
       voiceRecognition.onresult = event => {
-        let interimTranscript = '';
+        let interimText = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript.trim();
-          if (!transcript) continue;
+          const val = event.results[i][0].transcript.trim();
           if (event.results[i].isFinal) {
-            const normalizedFinal = finalTranscript.toLowerCase();
-            if (!normalizedFinal.endsWith(transcript.toLowerCase())) {
-              finalTranscript = `${finalTranscript} ${transcript}`.trim();
-            }
+            finalText = `${finalText} ${val}`.trim();
           } else {
-            interimTranscript = `${interimTranscript} ${transcript}`.trim();
+            interimText = `${interimText} ${val}`.trim();
           }
         }
-        els.answerText.value = [baseAnswer, finalTranscript, interimTranscript]
-          .filter(Boolean)
-          .join(' ')
-          .replace(/\b(\w+)(\s+\1\b)+/gi, '$1')
-          .replace(/\s+/g, ' ')
-          .trim();
+        els.answerText.value = [baseText, finalText, interimText].filter(Boolean).join(' ').trim();
       };
 
       voiceRecognition.onerror = () => {
-        els.voiceAnswerBtn.textContent = 'Speak Answer';
-        els.voiceHint.textContent = 'Voice input was blocked or unavailable. You can still type your answer.';
-        setStatus(els.setupStatus, 'Voice capture could not start.', 'error');
+        els.btnVoiceAnswer.textContent = 'Speak Answer';
+        setStatus(els.practiceStatus, 'Voice capture failed.', 'error');
         voiceRecognition = null;
       };
 
       voiceRecognition.onend = () => {
         voiceRecognition = null;
-        els.voiceAnswerBtn.textContent = 'Speak Answer';
-        els.voiceHint.textContent = 'Voice answer captured. You can edit the text before evaluation.';
-        setStatus(els.setupStatus, 'Voice answer captured.', 'success');
+        els.btnVoiceAnswer.textContent = 'Speak Answer';
+        setStatus(els.practiceStatus, 'Voice answer captured.', 'success');
       };
 
       voiceRecognition.start();
-      els.voiceAnswerBtn.textContent = 'Stop Listening';
-      els.voiceHint.textContent = 'Listening. Speak naturally, then press Stop Listening or pause.';
-      setStatus(els.setupStatus, 'Listening for your answer...', 'loading');
+      els.btnVoiceAnswer.textContent = 'Stop Recording';
+      setStatus(els.practiceStatus, 'Recording answer. Speak clearly.', 'loading');
     }
 
-    function clearSession() {
-      if (!confirm('Clear the current form, question set, and answer text?')) return;
-      state.questions = [];
-      state.selectedId = '';
-      state.lastEvaluation = null;
-      state.lastGeneration = null;
-      els.jobTitle.value = '';
-      els.companyName.value = '';
-      els.practiceMode.value = 'Resume-based';
-      els.jobDescription.value = '';
-      els.resumeText.value = '';
-      els.resumeFile.value = '';
-      els.resumeUploadHint.textContent = 'PDF or DOCX. The text will appear here automatically.';
-      els.focusAreas.value = '';
-      els.answerText.value = '';
-      els.scoreValue.textContent = '--';
-      els.scoreSummary.textContent = 'Your answer score and summary will appear here.';
-      els.scoreFill.style.width = '0%';
-      els.scoreHint.textContent = 'Focus on concrete examples, measurable outcomes, and a cleaner structure.';
-      els.strengthsList.innerHTML = '<div class="list-item">No feedback yet</div>';
-      els.improvementsList.innerHTML = '<div class="list-item">No feedback yet</div>';
-      els.betterAnswer.textContent = 'Generate feedback to see a stronger version of your answer.';
-      els.followUpQuestion.textContent = 'The coach will ask a deeper follow-up after your first pass.';
-      setStatus(els.pageStatus, 'Session cleared.', 'success');
-      setStatus(els.setupStatus, 'Session cleared.', 'success');
-      renderQuestionList();
-      renderActiveQuestion();
+    function saveSession() {
+      const history = loadHistory();
+      const scores = state.history.map(item => Number(item.score)).filter(Number.isFinite);
+      const avgScore = scores.length ? Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length) : 70;
+
+      const item = {
+        title: `${els.jobTitle.value.trim() || 'Job'} Session`,
+        company: els.companyName.value.trim() || 'Unknown Company',
+        score: avgScore,
+        grade: avgScore >= 85 ? 'Excellent' : avgScore >= 70 ? 'Good' : 'Needs Practice',
+        strengths: state.history[0]?.evaluation?.strengths || [],
+        improvements: state.history[0]?.evaluation?.improvements || [],
+        createdAt: new Date().toISOString()
+      };
+
+      saveHistory([item, ...history]);
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const history = loadHistory();
+      els.historyCount.textContent = String(history.length);
+
+      if (!els.progressSummary) return;
+
+      if (!history.length) {
+        els.progressSummary.textContent = 'No sessions saved yet.';
+        els.historyList.innerHTML = `
+          <div class="history-item">
+            <strong>No session history found</strong>
+            <span>Completed intelligence reports will appear here.</span>
+          </div>`;
+        return;
+      }
+
+      const scores = history.map(h => h.score).filter(Number.isFinite);
+      const best = Math.max(...scores);
+      const avg = Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length);
+
+      els.progressSummary.textContent = `Progress metrics: average overall score ${avg}%, personal best ${best}%. Tracked over ${history.length} runs.`;
+
+      els.historyList.innerHTML = history.map(h => `
+        <div class="history-item">
+          <strong>${escapeHtml(h.title)} at ${escapeHtml(h.company)}</strong>
+          <span>Grade: ${escapeHtml(h.grade)} (${h.score}%) | ${new Date(h.createdAt).toLocaleDateString()}</span>
+          ${h.strengths.length ? `<span style="font-size:0.75rem; color:var(--text-3);">Strength: ${escapeHtml(h.strengths[0])}</span>` : ''}
+        </div>
+      `).join('');
+    }
+
+    async function copyModelAnswer() {
+      const txt = els.modelContentBox.textContent;
+      if (!txt) return;
+
+      try {
+        await navigator.clipboard.writeText(txt);
+        setStatus(els.practiceStatus, 'Model answer copied to clipboard.', 'success');
+      } catch (_err) {
+        setStatus(els.practiceStatus, 'Clipboard write blocked.', 'error');
+      }
     }
 
     function loadDemo() {
-      els.jobTitle.value = 'Frontend Engineer';
-      els.companyName.value = 'Northstar Labs';
-      els.experienceLevel.value = 'Mid';
-      els.interviewType.value = 'Technical';
-      els.practiceMode.value = 'Resume-based';
-      els.jobDescription.value = 'Build customer-facing product features, improve React performance, collaborate with design and backend teams, and own polished UI delivery.';
-      els.resumeText.value = 'Built reusable UI components, shipped product experiments, and worked closely with product and design on a fast-moving team.';
-      els.resumeFile.value = '';
-      els.resumeUploadHint.textContent = 'Demo loaded. You can also upload a resume if you prefer.';
-      els.focusAreas.value = 'React, performance, collaboration, product thinking, debugging';
-      setStatus(els.setupStatus, 'Demo data loaded. Generate a question set when ready.', 'success');
-    }
-
-    function saveSession(silent = false) {
-      const history = loadHistory();
-      const activeQuestion = state.questions.find(item => item.id === state.selectedId);
-      const item = {
-        title: state.lastGeneration?.interview_title || `${els.jobTitle.value.trim() || 'Interview'} Session`,
-        company: els.companyName.value.trim() || 'Unknown company',
-        question: activeQuestion?.question || '',
-        score: state.lastEvaluation?.score ?? null,
-        grade: state.lastEvaluation?.grade || null,
-        strengths: state.lastEvaluation?.strengths || [],
-        weaknesses: state.lastEvaluation?.weaknesses || state.lastEvaluation?.improvements || [],
-        scoreBreakdown: state.lastEvaluation?.score_breakdown || null,
-        createdAt: new Date().toISOString()
-      };
-      saveHistory([item, ...history]);
-      renderHistory();
-      if (!silent) {
-        setStatus(els.setupStatus, 'Session saved locally.', 'success');
-      }
-    }
-
-    async function copyBetterAnswer() {
-      const text = state.lastEvaluation?.better_answer || '';
-      if (!text) {
-        setStatus(els.setupStatus, 'Generate feedback first so there is something to copy.', 'error');
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(text);
-        setStatus(els.setupStatus, 'Better answer copied to clipboard.', 'success');
-      } catch (_err) {
-        setStatus(els.setupStatus, 'Clipboard access was blocked by the browser.', 'error');
-      }
-    }
-
-    function restoreDraft() {
-      const draft = loadDraft();
-      if (!draft) return;
-      els.jobTitle.value = draft.jobTitle || '';
-      els.companyName.value = draft.companyName || '';
-      els.experienceLevel.value = draft.experienceLevel || 'Mid';
-      els.interviewType.value = draft.interviewType || 'Technical';
-      els.practiceMode.value = draft.practiceMode || 'Resume-based';
-      els.jobDescription.value = draft.jobDescription || '';
-      els.resumeText.value = draft.resumeText || '';
-      els.resumeUploadHint.textContent = draft.resumeText ? 'Resume summary restored from your draft.' : 'PDF or DOCX. The text will appear here automatically.';
-      els.focusAreas.value = draft.focusAreas || '';
+      els.jobTitle.value = 'Frontend Architect';
+      els.companyName.value = 'Stripe';
+      els.experienceLevel.value = 'Senior';
+      els.interviewType.value = 'System Design';
+      els.jobDescription.value = 'Design high-scale dashboard platforms, optimize front-end runtime assets, build flexible component utilities, and guide core rendering performance initiatives.';
+      els.resumeText.value = 'Architected a unified design library for dashboard services, improved client paint latency by 35% through custom asset streaming, and led technical reviews.';
+      els.focusAreas.value = 'Client runtime rendering, system architecture, performance optimization';
+      
+      setStatus(els.setupStatus, 'Demo profile loaded. Build strategy when ready.', 'success');
+      saveDraft();
     }
 
     function bindEvents() {
-      document.getElementById('generateBtnPanel').addEventListener('click', generateQuestions);
-      document.getElementById('evaluateBtnPanel').addEventListener('click', evaluateAnswer);
-      document.getElementById('nextBtn').addEventListener('click', nextQuestion);
-      document.getElementById('speakQuestionBtn').addEventListener('click', speakCurrentQuestion);
-      document.getElementById('voiceAnswerBtn').addEventListener('click', startVoiceAnswer);
-      document.getElementById('saveDraftBtn').addEventListener('click', saveDraft);
-      document.getElementById('clearBtn').addEventListener('click', clearSession);
-      document.getElementById('saveSessionBtn').addEventListener('click', saveSession);
-      document.getElementById('loadHistoryBtn').addEventListener('click', renderHistory);
+      // Setup panel clicks
+      document.getElementById('btnBuildStrategy').addEventListener('click', generateStrategy);
       document.getElementById('loadDemoBtn').addEventListener('click', loadDemo);
-      document.getElementById('copyBetterBtn').addEventListener('click', copyBetterAnswer);
 
-      els.questionList.addEventListener('click', event => {
-        const button = event.target.closest('[data-id]');
-        if (!button) return;
-        selectQuestion(button.dataset.id);
+      // Strategy pane clicks
+      document.getElementById('btnStartPractice').addEventListener('click', () => setStage('practice'));
+      document.getElementById('btnBackToSetup').addEventListener('click', () => setStage('setup'));
+
+      // Practice pane clicks
+      els.btnEvaluateAnswer.addEventListener('click', evaluateAnswer);
+      els.btnProceedNext.addEventListener('click', proceedNext);
+      els.btnEndEarly.addEventListener('click', finishSession);
+      els.btnSpeakQuestion.addEventListener('click', speakCurrentQuestion);
+      els.btnVoiceAnswer.addEventListener('click', startVoiceAnswer);
+      els.btnCopyModel.addEventListener('click', copyModelAnswer);
+
+      // Final report restart
+      document.getElementById('btnRestartSession').addEventListener('click', () => {
+        state.questions = [];
+        state.history = [];
+        state.selectedId = '';
+        state.lastStrategy = null;
+        state.lastEvaluation = null;
+        state.lastRecommendations = null;
+        setStage('setup');
       });
 
-      [els.jobTitle, els.companyName, els.experienceLevel, els.interviewType, els.practiceMode, els.jobDescription, els.resumeText, els.focusAreas]
-        .forEach(node => node.addEventListener('input', () => {
-          localStorage.setItem(draftKey, JSON.stringify(readContext()));
-        }));
-
-      els.resumeFile.addEventListener('change', () => {
-        const file = els.resumeFile.files?.[0];
-        els.resumeUploadHint.textContent = file ? `Reading ${file.name}...` : 'PDF or DOCX. The text will appear here automatically.';
-        if (file) uploadResume();
+      // Save report trigger
+      document.getElementById('btnSaveSessionHistory').addEventListener('click', () => {
+        saveSession();
+        setStatus(els.setupStatus, 'Session saved in your browser history list.', 'success');
       });
+
+      // Persona Grid cards clicks
+      els.personaGrid.addEventListener('click', event => {
+        const card = event.target.closest('.persona-card');
+        if (!card) return;
+
+        els.personaGrid.querySelectorAll('.persona-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        state.persona = card.getAttribute('data-persona');
+        saveDraft();
+      });
+
+      // Tab switcher clicks
+      els.modelAnswerTabs.addEventListener('click', event => {
+        const btn = event.target.closest('.model-tab-btn');
+        if (!btn) return;
+
+        els.modelAnswerTabs.querySelectorAll('.model-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderModelAnswerContent(btn.getAttribute('data-level'));
+      });
+
+      // Question sidebar clicks
+      els.qList.addEventListener('click', event => {
+        const item = event.target.closest('.q-item');
+        if (!item) return;
+        selectQuestion(item.getAttribute('data-id'));
+      });
+
+      // Save input drafts
+      [els.jobTitle, els.companyName, els.jobDescription, els.resumeText, els.focusAreas, els.experienceLevel, els.interviewType]
+        .forEach(node => node.addEventListener('input', saveDraft));
+
+      els.resumeFile.addEventListener('change', uploadResume);
     }
 
     async function init() {
@@ -1061,27 +1701,31 @@
       if (!session) return;
 
       bindEvents();
-      restoreDraft();
+      
+      // Load drafts if any
+      const draft = loadDraft();
+      if (draft) {
+        els.jobTitle.value = draft.jobTitle || '';
+        els.companyName.value = draft.companyName || '';
+        els.experienceLevel.value = draft.experienceLevel || 'Mid';
+        els.interviewType.value = draft.interviewType || 'Technical';
+        els.jobDescription.value = draft.jobDescription || '';
+        els.resumeText.value = draft.resumeText || '';
+        els.focusAreas.value = draft.focusAreas || '';
+        if (draft.persona) {
+          state.persona = draft.persona;
+          els.personaGrid.querySelectorAll('.persona-card').forEach(c => {
+            if (c.getAttribute('data-persona') === draft.persona) c.classList.add('active');
+            else c.classList.remove('active');
+          });
+        }
+      }
+
       renderHistory();
-      renderQuestionList();
-      renderActiveQuestion();
-      els.metricHistory.textContent = String(loadHistory().length);
-      if (state.lastEvaluation?.score) {
-        els.metricScore.textContent = String(state.lastEvaluation.score);
-      }
-      if (apiBase) {
-        setStatus(els.pageStatus, 'For resume extraction, use http://127.0.0.1:3000/interview instead of the file preview.');
-      }
+      setStage('setup');
     }
 
     init();
   </script>
-
-
-
 </body>
 </html>
-
-
-
-
