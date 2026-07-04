@@ -12,10 +12,22 @@
   // ─── Centralized Workspace Manager ─────────────────────────
   const WorkspaceManager = {
     workspace: localStorage.getItem('careercraft_workspace') || 'ai',
+    initialized: false,
 
     init() {
+      if (this.initialized) return;
+      this.initialized = true;
+
       // Apply theme class early to avoid FOUC
       this.applyThemeClass();
+
+      // Initialize ManualStudio if already loaded
+      if (window.ManualStudio && typeof window.ManualStudio.init === 'function') {
+        window.ManualStudio.init();
+      }
+
+      // Broadcast initialized event
+      window.dispatchEvent(new CustomEvent('workspaceManagerInitialized'));
 
       // Listen to cross-tab storage changes
       window.addEventListener('storage', (e) => {
@@ -148,7 +160,6 @@
   };
 
   window.WorkspaceManager = WorkspaceManager;
-  WorkspaceManager.init();
 
   const appSdk = {
     client: null,
@@ -177,6 +188,12 @@
           window.location.href = target;
           return null;
         }
+
+        // Initialize Workspace Manager only after auth has resolved
+        if (window.WorkspaceManager && !window.WorkspaceManager.initialized) {
+          window.WorkspaceManager.init();
+        }
+
         return session;
       },
 

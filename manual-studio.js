@@ -4,6 +4,7 @@
  */
 (function () {
   const ManualStudio = {
+    initialized: false,
     workspace: 'ai', // 'ai' or 'manual'
     activeTab: 'resume', // 'resume', 'cover-letter', 'cold-email', 'portfolio', 'personal-info'
     undoStack: [],
@@ -84,6 +85,9 @@
     },
 
     async init() {
+      if (this.initialized) return;
+      this.initialized = true;
+
       // 1. Detect page type
       const page = window.location.pathname.split('/').pop() || 'index.html';
       if (page === 'index.html' || page === 'login.html' || page === 'signup.html' || page === 'reset-password.html' || page === '') {
@@ -1783,10 +1787,12 @@
   // Attach to window
   window.ManualStudio = ManualStudio;
 
-  // Auto-init when document is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => ManualStudio.init());
-  } else {
+  // Initialize only if WorkspaceManager has initialized (meaning auth is resolved)
+  if (window.WorkspaceManager && window.WorkspaceManager.initialized) {
     ManualStudio.init();
+  } else {
+    window.addEventListener('workspaceManagerInitialized', () => {
+      ManualStudio.init();
+    });
   }
 })();
