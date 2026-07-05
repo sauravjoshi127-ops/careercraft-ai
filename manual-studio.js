@@ -494,8 +494,8 @@
     async renderHomeDashboard(container) {
       container.innerHTML = `
         <div class="doc-header">
-          <div class="doc-title-input">Welcome to Manual Studio</div>
-          <div class="doc-subtitle-input">Your clean, minimalist manual writing environment.</div>
+          <div class="doc-title-input">Welcome to Creator Studio</div>
+          <div class="doc-subtitle-input">Your premium minimalist document creation environment.</div>
           <div class="doc-divider"></div>
         </div>
         
@@ -504,7 +504,7 @@
           <div class="profile-editor-grid" style="grid-template-columns: 1fr 1fr; display: grid; gap: 1.25rem;">
             <a href="resume.html" class="draggable-card" style="display:block; text-decoration:none;">
               <div class="card-title-field">📄 New Resume</div>
-              <div class="card-desc-field">Craft a professional structured CV manually.</div>
+              <div class="card-desc-field">Craft a professional structured CV with complete control.</div>
             </a>
             <a href="cover-letter.html" class="draggable-card" style="display:block; text-decoration:none;">
               <div class="card-title-field">📨 New Cover Letter</div>
