@@ -1,6 +1,6 @@
 /**
- * CareerCraft AI Unified Client SDK (v1.0.0)
- * Centralizes Supabase integration, user auth guards, and common API/payment helpers.
+ * CareerCraft AI Unified Client SDK (app-sdk.js)
+ * Centralizes Supabase initialization, user auth state queries, and API checkout payment interfaces.
  */
 (function () {
 
@@ -12,9 +12,12 @@
   const appSdk = {
     client: null,
 
-    // Auth modules
+    // Auth module (delegates to AuthManager if loaded for unified state)
     auth: {
       async getSession() {
+        if (window.AuthManager) {
+          return window.AuthManager.getSession();
+        }
         await appSdk.ready;
         if (!appSdk.client) return null;
         const restoredSession = await authReady;
@@ -23,11 +26,17 @@
       },
 
       async getUser() {
+        if (window.AuthManager) {
+          return window.AuthManager.getUser();
+        }
         const session = await this.getSession();
         return session ? session.user : null;
       },
 
       async requireAuth(redirectPath = 'login.html') {
+        if (window.AuthManager) {
+          return window.AuthManager.requireAuth(redirectPath);
+        }
         const session = await this.getSession();
         if (!session) {
           const currentPath = window.location.pathname.split('/').pop();
@@ -35,16 +44,13 @@
           window.location.href = target;
           return null;
         }
-
-        // Initialize Workspace Manager via LayoutManager only after auth has resolved
-        if (window.WorkspaceManager && !window.WorkspaceManager.initialized) {
-          window.WorkspaceManager.init();
-        }
-
         return session;
       },
 
       async logout() {
+        if (window.AuthManager) {
+          return window.AuthManager.logout();
+        }
         await appSdk.ready;
         if (appSdk.client) {
           await appSdk.client.auth.signOut();
@@ -57,7 +63,7 @@
       }
     },
 
-    // UI Proxy Modules (delegates style-free behaviors to active LayoutManager if loaded)
+    // UI proxy helpers (delegates style-free behaviors to active LayoutManager if loaded)
     ui: {
       showToast(message, typeOrIsError = 'success') {
         if (window.LayoutManager && typeof window.LayoutManager.showToast === 'function') {
@@ -86,7 +92,7 @@
       }
     },
 
-    // Billing Module (Razorpay integration)
+    // Billing Module (Razorpay Checkout)
     billing: {
       async initiateCheckout(planId, amount) {
         const session = await appSdk.auth.getSession();
@@ -106,13 +112,10 @@
         }
 
         try {
-          const session = await appSdk.auth.getSession();
           const headers = { 'Content-Type': 'application/json' };
-          if (session) {
-            headers['Authorization'] = `Bearer ${session.access_token}`;
-          }
+          headers['Authorization'] = `Bearer ${session.access_token}`;
 
-          // 1. Create Order on Server
+          // Create Order
           const response = await fetch('/api/create-order', {
             method: 'POST',
             headers: headers,
@@ -124,7 +127,7 @@
             throw new Error(orderData.error || 'Failed to create order');
           }
 
-          // 2. Initialize Razorpay Checkout
+          // Checkout options
           return new Promise((resolve, reject) => {
             const options = {
               key: orderData.key_id,
@@ -151,12 +154,10 @@
             };
 
             const rzp1 = new window.Razorpay(options);
-            
             rzp1.on('payment.failed', function (res) {
               appSdk.ui.showToast("Payment Failed: " + res.error.description, 'error');
               reject(new Error(res.error.description));
             });
-            
             rzp1.open();
           });
         } catch (err) {
@@ -168,10 +169,10 @@
 
       async verifyPayment(paymentDetails, planId) {
         const session = await appSdk.auth.getSession();
+        if (!session) return false;
+        
         const headers = { 'Content-Type': 'application/json' };
-        if (session) {
-          headers['Authorization'] = `Bearer ${session.access_token}`;
-        }
+        headers['Authorization'] = `Bearer ${session.access_token}`;
 
         try {
           const response = await fetch('/api/verify-payment', {
@@ -205,7 +206,7 @@
     }
   };
 
-  // Helper to load external scripts dynamically
+  // Helper to load script dynamically
   function loadScript(url) {
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
@@ -229,28 +230,26 @@
     try {
       const configRes = await fetch('/api/config');
       if (!configRes.ok) {
-        throw new Error(`Failed to load runtime configuration: ${configRes.status} ${configRes.statusText}`);
+        throw new Error(`Failed to load configuration: ${configRes.status}`);
       }
       const config = await configRes.json();
       if (!config.supabaseUrl || !config.supabaseKey) {
-        throw new Error('Missing required fields in runtime configuration: supabaseUrl and/or supabaseKey');
+        throw new Error('Missing required fields in configuration');
       }
       if (window.supabase && typeof window.supabase.createClient === 'function') {
         appSdk.client = window.supabase.createClient(config.supabaseUrl, config.supabaseKey);
-        
         appSdk.client.auth.onAuthStateChange((event, session) => {
           resolveAuthReady(session);
         });
       } else {
-        console.error('Supabase library is not available.');
+        console.error('Supabase library not available.');
         resolveAuthReady(null);
       }
     } catch (err) {
-      console.error('[SDK] Failed to initialize Supabase client from /api/config.', err);
+      console.error('[SDK] Failed to initialize Supabase client.', err);
       resolveAuthReady(null);
     }
   })();
 
-  // Bind to global window namespace
   window.appSdk = appSdk;
 })();
