@@ -1,202 +1,13 @@
 /**
  * CareerCraft AI Unified Client SDK (v1.0.0)
- * Centralizes Supabase integration, user auth guards, and common UI elements.
+ * Centralizes Supabase integration, user auth guards, and common API/payment helpers.
  */
 (function () {
-
-  // ─── Immediate Theme Restoration Guard (runs before first paint) ─────────────────
-  (function () {
-    const savedWorkspace = localStorage.getItem('careercraft_workspace') || 'ai';
-    const page = window.location.pathname.split('/').pop() || 'index.html';
-    const isAppPage = page !== 'index.html' && page !== 'login.html' && page !== 'signup.html' && page !== 'reset-password.html' && page !== '';
-    const isDocPage = isAppPage && (page.startsWith('resume') || page.startsWith('cover-letter') || page.startsWith('cold-email') || page.startsWith('dashboard'));
-
-    if (isAppPage) {
-      if (savedWorkspace === 'manual') {
-        document.documentElement.classList.add('theme-manual-active');
-        document.documentElement.classList.remove('theme-ai-active');
-        if (isDocPage) {
-          document.documentElement.classList.add('manual-studio-active');
-        } else {
-          document.documentElement.classList.remove('manual-studio-active');
-        }
-      } else {
-        document.documentElement.classList.add('theme-ai-active');
-        document.documentElement.classList.remove('theme-manual-active');
-        document.documentElement.classList.remove('manual-studio-active');
-      }
-    }
-  })();
 
   let resolveAuthReady;
   const authReady = new Promise(resolve => {
     resolveAuthReady = resolve;
   });
-
-  // ─── Centralized Workspace Manager ─────────────────────────
-  const WorkspaceManager = {
-    workspace: localStorage.getItem('careercraft_workspace') || 'ai',
-    initialized: false,
-
-    init() {
-      if (this.initialized) return;
-      this.initialized = true;
-
-      // Apply theme class early to avoid FOUC
-      this.applyThemeClass();
-
-      // Initialize ManualStudio if already loaded
-      if (window.ManualStudio && typeof window.ManualStudio.init === 'function') {
-        window.ManualStudio.init();
-      }
-
-      // Broadcast initialized event
-      window.dispatchEvent(new CustomEvent('workspaceManagerInitialized'));
-
-      // Listen to cross-tab storage changes
-      window.addEventListener('storage', (e) => {
-        if (e.key === 'careercraft_workspace') {
-          const val = e.newValue || 'ai';
-          if (val !== this.workspace) {
-            this.setWorkspace(val, false);
-          }
-        }
-      });
-    },
-
-    applyThemeClass() {
-      const page = window.location.pathname.split('/').pop() || 'index.html';
-      const isAppPage = page !== 'index.html' && page !== 'login.html' && page !== 'signup.html' && page !== 'reset-password.html' && page !== '';
-      const isDocPage = isAppPage && (page.startsWith('resume') || page.startsWith('cover-letter') || page.startsWith('cold-email') || page.startsWith('dashboard'));
-
-      if (isAppPage) {
-        const targetClass = this.workspace === 'manual' ? 'theme-manual-active' : 'theme-ai-active';
-        const removeClass = this.workspace === 'manual' ? 'theme-ai-active' : 'theme-manual-active';
-
-        // Apply theme to documentElement (html)
-        document.documentElement.classList.remove(removeClass);
-        document.documentElement.classList.add(targetClass);
-        if (this.workspace === 'manual' && isDocPage) {
-          document.documentElement.classList.add('manual-studio-active');
-        } else {
-          document.documentElement.classList.remove('manual-studio-active');
-        }
-
-        // Apply theme to body (if body exists)
-        if (document.body) {
-          document.body.classList.remove(removeClass);
-          document.body.classList.add(targetClass);
-          if (this.workspace === 'manual' && isDocPage) {
-            document.body.classList.add('manual-studio-active');
-          } else {
-            document.body.classList.remove('manual-studio-active');
-          }
-        }
-      }
-    },
-
-    getButtonHtml() {
-      const active = this.workspace === 'manual';
-      const label = active ? 'Manual Studio' : 'AI Studio';
-      const shortLabel = active ? 'Manual' : 'AI';
-      const dotColor = active ? '#10b981' : '#7c3aed';
-      const dotGlow = active ? 'rgba(16,185,129,0.6)' : 'rgba(124,58,237,0.8)';
-      return `
-        <button type="button" class="workspace-toggle-btn" id="global-workspace-switcher" onclick="window.WorkspaceManager.toggle()">
-          <span class="badge-dot" style="background: ${dotColor}; box-shadow: 0 0 10px ${dotGlow}; width: 7px; height: 7px; border-radius: 50%; display: inline-block;"></span>
-          <span class="switcher-text-long">${label}</span>
-          <span class="switcher-text-short" style="display: none;">${shortLabel}</span>
-          <span style="opacity: 0.5;">↔</span>
-        </button>
-      `;
-    },
-
-    async toggle() {
-      const target = this.workspace === 'ai' ? 'manual' : 'ai';
-      await this.setWorkspace(target, true);
-    },
-
-    async setWorkspace(target, animate = true) {
-      if (animate) {
-        // Show portal loader
-        let portal = document.getElementById('workspace-portal');
-        if (!portal) {
-          portal = document.createElement('div');
-          portal.id = 'workspace-portal';
-          portal.className = 'workspace-portal-overlay';
-          portal.innerHTML = `
-            <div class="workspace-portal-card">
-              <div class="workspace-portal-spinner"></div>
-              <div class="workspace-portal-title" id="portal-title">Aligning Workspace...</div>
-              <div class="workspace-portal-subtitle" id="portal-subtitle">Applying design system tokens</div>
-            </div>
-          `;
-          document.body.appendChild(portal);
-        }
-
-        const title = document.getElementById('portal-title');
-        const subtitle = document.getElementById('portal-subtitle');
-        if (title && subtitle) {
-          title.textContent = target === 'manual' ? 'Opening Manual Studio' : 'Launching AI Studio';
-          subtitle.textContent = target === 'manual' 
-            ? 'Entering elegant Apple/Notion environment...' 
-            : 'Powering up career copilot & ATS suggestions...';
-        }
-
-        portal.classList.add('active');
-        document.body.classList.add('workspace-transitioning');
-
-        // Let the portal and scale animations run (200ms)
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-
-      this.workspace = target;
-      localStorage.setItem('careercraft_workspace', target);
-
-      const page = window.location.pathname.split('/').pop() || 'index.html';
-      if (target === 'manual' && page.startsWith('interview')) {
-        if (animate) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          document.body.classList.remove('workspace-transitioning');
-          const portal = document.getElementById('workspace-portal');
-          if (portal) portal.classList.remove('active');
-        }
-        window.location.href = 'dashboard.html';
-        return;
-      }
-
-      this.applyThemeClass();
-
-      // Update button elements on page if they exist
-      const btn = document.getElementById('global-workspace-switcher');
-      if (btn) {
-        const active = target === 'manual';
-        const label = active ? 'Manual Studio' : 'AI Studio';
-        const shortLabel = active ? 'Manual' : 'AI';
-        const dotColor = active ? '#10b981' : '#7c3aed';
-        const dotGlow = active ? 'rgba(16,185,129,0.6)' : 'rgba(124,58,237,0.8)';
-        
-        btn.innerHTML = `
-          <span class="badge-dot" style="background: ${dotColor}; box-shadow: 0 0 10px ${dotGlow}; width: 7px; height: 7px; border-radius: 50%; display: inline-block;"></span>
-          <span class="switcher-text-long">${label}</span>
-          <span class="switcher-text-short" style="display: none;">${shortLabel}</span>
-          <span style="opacity: 0.5;">↔</span>
-        `;
-      }
-
-      // Broadcast event so other modules can react
-      window.dispatchEvent(new CustomEvent('workspaceChanged', { detail: { workspace: target } }));
-
-      if (animate) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        document.body.classList.remove('workspace-transitioning');
-        const portal = document.getElementById('workspace-portal');
-        if (portal) portal.classList.remove('active');
-      }
-    }
-  };
-
-  window.WorkspaceManager = WorkspaceManager;
 
   const appSdk = {
     client: null,
@@ -219,14 +30,13 @@
       async requireAuth(redirectPath = 'login.html') {
         const session = await this.getSession();
         if (!session) {
-          // Check if redirect has parameter
           const currentPath = window.location.pathname.split('/').pop();
           const target = currentPath ? `${redirectPath}?redirect=${encodeURIComponent(currentPath + window.location.search)}` : redirectPath;
           window.location.href = target;
           return null;
         }
 
-        // Initialize Workspace Manager only after auth has resolved
+        // Initialize Workspace Manager via LayoutManager only after auth has resolved
         if (window.WorkspaceManager && !window.WorkspaceManager.initialized) {
           window.WorkspaceManager.init();
         }
@@ -247,34 +57,14 @@
       }
     },
 
-    // UI Modules
+    // UI Proxy Modules (delegates style-free behaviors to active LayoutManager if loaded)
     ui: {
       showToast(message, typeOrIsError = 'success') {
-        const isError = typeOrIsError === 'error' || typeOrIsError === true;
-        const className = isError ? 'error' : 'success';
-
-        let toast = document.getElementById('toast');
-        if (!toast) {
-          toast = document.createElement('div');
-          toast.id = 'toast';
-          toast.className = 'toast';
-          document.body.appendChild(toast);
+        if (window.LayoutManager && typeof window.LayoutManager.showToast === 'function') {
+          window.LayoutManager.showToast(message, typeOrIsError);
+        } else {
+          console.log(`[Toast Fallback] ${typeOrIsError === 'error' ? '❌' : '✅'} ${message}`);
         }
-
-        toast.textContent = message;
-        toast.className = `toast ${className} show`;
-        toast.style.display = 'block';
-
-        // Keep displayed during transition, clear after 3 seconds
-        if (toast.timeoutId) clearTimeout(toast.timeoutId);
-        toast.timeoutId = setTimeout(() => {
-          toast.classList.remove('show');
-          setTimeout(() => {
-            if (!toast.classList.contains('show')) {
-              toast.style.display = 'none';
-            }
-          }, 400); // Wait for CSS transition (0.4s)
-        }, 3000);
       },
 
       escapeHtml(str) {
@@ -293,164 +83,6 @@
 
       isValidUUID(str) {
         return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-      },
-
-      initLayout() {
-        const page = window.location.pathname.split('/').pop() || 'index.html';
-        const topnav = document.querySelector('.topnav') || document.querySelector('nav');
-        if (!topnav) return;
-
-        // Render synchronous navbar shell first
-        if (page === 'index.html' || page === '') {
-          // Landing page header (simplified static shell)
-          topnav.innerHTML = `
-            <a href="index.html" class="logo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="url(#paint0_linear)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 17L12 22L22 17" stroke="url(#paint1_linear)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 12L12 17L22 12" stroke="url(#paint2_linear)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <defs>
-                        <linearGradient id="paint0_linear" x1="2" y1="2" x2="22" y2="12" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#7c3aed"/>
-                            <stop offset="1" stop-color="#a855f7"/>
-                        </linearGradient>
-                        <linearGradient id="paint1_linear" x1="2" y1="17" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#7c3aed"/>
-                            <stop offset="1" stop-color="#a855f7"/>
-                        </linearGradient>
-                        <linearGradient id="paint2_linear" x1="2" y1="12" x2="22" y2="17" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#7c3aed"/>
-                            <stop offset="1" stop-color="#a855f7"/>
-                        </linearGradient>
-                    </defs>
-                </svg>
-                CareerCraft
-            </a>
-            <ul class="nav-links">
-                <li><a href="#features">Features</a></li>
-                <li><a href="#pricing">Pricing</a></li>
-                <li><a href="#">Enterprise</a></li>
-            </ul>
-            <div class="nav-buttons" id="navButtonsPlaceholder" style="display:flex; align-items:center; gap:0.5rem;">
-                <a href="login.html" class="btn-signin">Sign In</a>
-                <a href="signup.html" class="btn-primary">Get Started</a>
-            </div>
-          `;
-          // Trigger async update for landing page nav buttons if logged in
-          appSdk.auth.getSession().then(session => {
-            if (session) {
-              const placeholder = document.getElementById('navButtonsPlaceholder');
-              if (placeholder) {
-                placeholder.innerHTML = `
-                  <a href="dashboard.html" class="btn-primary">Dashboard</a>
-                  <div class="user-avatar" onclick="window.location.href='settings.html'" title="Go to settings" style="margin-left:0.5rem; display:inline-flex;">${(session.user.user_metadata?.full_name || session.user.email || 'U').charAt(0).toUpperCase()}</div>
-                `;
-              }
-            }
-          });
-        } else if (page === 'login.html' || page === 'signup.html' || page === 'reset-password.html') {
-          topnav.innerHTML = `
-            <a href="index.html" class="logo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                CareerCraft AI
-            </a>
-            <a href="index.html" class="btn-primary" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.5rem 1rem; width: auto; font-size: 0.85rem;">← Back to Home</a>
-          `;
-        } else if (page === 'resume-share.html') {
-          topnav.innerHTML = `
-            <a href="index.html" class="logo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                CareerCraft AI
-            </a>
-            <a href="signup.html" class="btn-accent" style="padding: 0.5rem 1.2rem; width: auto; font-size: 0.85rem;">Get Started for Free</a>
-          `;
-        } else {
-          // Authenticated App Pages
-          const resumeActive = page.startsWith('resume') ? 'class="nav-btn active"' : 'class="nav-btn"';
-          const coverLetterActive = page.startsWith('cover-letter') ? 'class="nav-btn active"' : 'class="nav-btn"';
-          const coldEmailActive = page.startsWith('cold-email') ? 'class="nav-btn active"' : 'class="nav-btn"';
-          const interviewActive = (page.startsWith('interview') || page.startsWith('mock')) ? 'class="nav-btn active"' : 'class="nav-btn"';
-
-          // Sync layout shell immediately (zero pop-in/flicker)
-          topnav.innerHTML = `
-            <a href="dashboard.html" class="logo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span class="premium-gradient-text">CareerCraft AI</span>
-            </a>
-            <div class="nav-links" style="display:flex;gap:0.5rem;">
-                <a href="resume.html" ${resumeActive}>Resume</a>
-                <a href="cover-letter.html" ${coverLetterActive}>Cover Letter</a>
-                <a href="cold-email.html" ${coldEmailActive}>Cold Email</a>
-                <a href="interview.html" ${interviewActive}>Interview</a>
-            </div>
-            <div class="user-menu" id="userMenuPlaceholder" style="display:flex; align-items:center; gap:0.75rem;">
-                <div style="width: 120px; height: 32px; background: rgba(255,255,255,0.03); border-radius: 9999px;"></div>
-                <div class="user-avatar" style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.05);"></div>
-            </div>
-          `;
-
-          // Trigger async user menu update
-          appSdk.auth.getSession().then(session => {
-            const name = session ? (session.user.user_metadata?.full_name 
-              || localStorage.getItem('userName') 
-              || session.user.email.split('@')[0]) : 'User';
-            const initial = name.charAt(0).toUpperCase();
-
-            const menu = document.getElementById('userMenuPlaceholder');
-            if (menu) {
-              menu.innerHTML = `
-                ${window.WorkspaceManager ? window.WorkspaceManager.getButtonHtml() : ''}
-                <div class="user-avatar" id="avatarInitial" onclick="window.location.href='settings.html'" title="Account" style="display:flex; align-items:center; justify-content:center; cursor:pointer;">${initial}</div>
-                <a href="settings.html" class="nav-btn" title="Settings">⚙️<span class="nav-btn-text"> Settings</span></a>
-                <button class="nav-btn" onclick="window.appSdk.auth.logout()" title="Sign Out">🚪<span class="nav-btn-text"> Sign Out</span></button>
-              `;
-            }
-          });
-        }
-
-        // 2. Render Footer
-        const footer = document.querySelector('footer');
-        if (footer && (page === 'index.html' || page === '')) {
-          footer.innerHTML = `
-            <div class="footer-brand">
-                <div class="logo" style="margin-bottom: 0.5rem; font-size: 1.2rem;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    CareerCraft AI
-                </div>
-                <p>&copy; 2026 CareerCraft AI Inc.<br>All rights reserved.</p>
-            </div>
-            <div class="footer-links">
-                <a href="#">Privacy Policy</a>
-                <a href="#">Terms of Service</a>
-                <a href="#">Contact Support</a>
-            </div>
-          `;
-        } else if (page !== 'index.html' && page !== 'login.html' && page !== 'signup.html' && page !== 'reset-password.html' && page !== '') {
-          const container = document.querySelector('.container') || document.querySelector('.shell');
-          if (container && !document.querySelector('.app-mini-footer')) {
-            const miniFooter = document.createElement('div');
-            miniFooter.className = 'app-mini-footer';
-            miniFooter.style.cssText = 'text-align: center; color: var(--text-3); font-size: 0.8rem; margin: 4rem 0 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);';
-            miniFooter.innerHTML = `&copy; 2026 CareerCraft AI &bull; Premium AI Career Toolkit`;
-            container.appendChild(miniFooter);
-          }
-        }
       }
     },
 
@@ -463,7 +95,6 @@
           return;
         }
 
-        // Auto-load Razorpay checkout script if missing
         if (!window.Razorpay) {
           try {
             await loadScript('https://checkout.razorpay.com/v1/checkout.js');
@@ -585,34 +216,14 @@
     });
   }
 
-  // Helper to load stylesheet dynamically
-  function loadStylesheet(url) {
-    if (document.querySelector(`link[href="${url}"]`)) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = url;
-    document.head.appendChild(link);
-  }
-
   // Start initialization immediately
   appSdk.ready = (async function init() {
-    const page = window.location.pathname.split('/').pop() || 'index.html';
-    const isAppPage = page !== 'index.html' && page !== 'login.html' && page !== 'signup.html' && page !== 'reset-password.html' && page !== '';
-
     if (!window.supabase) {
       try {
         await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
       } catch (err) {
         console.error('Failed to dynamically load Supabase CDN:', err);
       }
-    }
-
-    // Load Manual Studio assets dynamically for authenticated app pages
-    if (isAppPage) {
-      loadStylesheet('manual-studio.css');
-      loadScript('manual-studio.js').catch(err => {
-        console.error('Failed to load manual-studio.js dynamically:', err);
-      });
     }
 
     try {
@@ -627,7 +238,6 @@
       if (window.supabase && typeof window.supabase.createClient === 'function') {
         appSdk.client = window.supabase.createClient(config.supabaseUrl, config.supabaseKey);
         
-        // Listen to the initial auth state to resolve the recovery check
         appSdk.client.auth.onAuthStateChange((event, session) => {
           resolveAuthReady(session);
         });
@@ -636,15 +246,8 @@
         resolveAuthReady(null);
       }
     } catch (err) {
-      console.error('[SDK] Failed to initialize Supabase client from /api/config. Check server SUPABASE_URL and SUPABASE_ANON_KEY setup in the README:', err);
+      console.error('[SDK] Failed to initialize Supabase client from /api/config.', err);
       resolveAuthReady(null);
-    }
-
-    // Auto-init navigation layouts when DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => appSdk.ui.initLayout());
-    } else {
-      appSdk.ui.initLayout();
     }
   })();
 
