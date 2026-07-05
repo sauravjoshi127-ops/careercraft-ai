@@ -493,111 +493,370 @@
     // 0. Home Dashboard Editor View
     async renderHomeDashboard(container) {
       container.innerHTML = `
-        <div class="doc-header">
-          <div class="doc-title-input">Welcome to Creator Studio</div>
-          <div class="doc-subtitle-input">Your premium minimalist document creation environment.</div>
-          <div class="doc-divider"></div>
-        </div>
-        
-        <div class="paper-section">
-          <div class="paper-section-title">Quick Actions</div>
-          <div class="profile-editor-grid" style="grid-template-columns: 1fr 1fr; display: grid; gap: 1.25rem;">
-            <a href="resume.html" class="draggable-card" style="display:block; text-decoration:none;">
-              <div class="card-title-field">📄 New Resume</div>
-              <div class="card-desc-field">Craft a professional structured CV with complete control.</div>
-            </a>
-            <a href="cover-letter.html" class="draggable-card" style="display:block; text-decoration:none;">
-              <div class="card-title-field">📨 New Cover Letter</div>
-              <div class="card-desc-field">Write a tailored cover letter with precision templates.</div>
-            </a>
-            <a href="cold-email.html" class="draggable-card" style="display:block; text-decoration:none;">
-              <div class="card-title-field">✉️ New Cold Email</div>
-              <div class="card-desc-field">Draft a clean, personalized outreach message.</div>
-            </a>
-            <div class="draggable-card" style="cursor:pointer;" onclick="document.querySelector('[data-tab=portfolio]').click()">
-              <div class="card-title-field">💼 Design Portfolio</div>
-              <div class="card-desc-field">Showcase projects and technical expertise.</div>
-            </div>
+        <div style="padding: 2.5rem 1.5rem; max-width: 1100px; margin: 0 auto;">
+          <!-- Dashboard Header -->
+          <div class="command-header" style="margin-bottom: 2.5rem;">
+              <h1 style="font-size: 2.25rem; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 0.25rem; color: #0f172a; font-family: 'Outfit', sans-serif;">
+                  <span id="manualGreetingSpan">Good Afternoon</span>, <span id="manualNameSpan">User</span>
+              </h1>
+              <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 1.5rem;">Continue building your career.</p>
+              
+              <!-- Compact Metrics Row -->
+              <div class="metrics-row" id="manualMetricsRow" style="display: flex; flex-wrap: wrap; gap: 2.5rem; border-top: 1px solid #e2e8f0; padding-top: 1.25rem; margin-top: 1.25rem;">
+                  <div class="workspace-portal-spinner" style="width:20px; height:20px;"></div>
+              </div>
           </div>
-        </div>
 
-        <div class="paper-section" style="margin-top:2.5rem;">
-          <div class="paper-section-title">My Recent Documents</div>
-          <div id="manual-recent-docs" style="font-size:0.9rem; color:#64748b;">
-            <div class="workspace-portal-spinner" style="width:20px; height:20px; margin: 1rem auto;"></div>
+          <!-- Tools Smart Grid -->
+          <div class="smart-grid" id="manualSmartGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 3.5rem;">
+              <!-- Dynamic smart cards -->
+          </div>
+
+          <!-- Secondary Bottom Panel -->
+          <div class="bottom-layout" style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 2rem; margin-bottom: 3.5rem;">
+              <!-- Left: Recent Activity -->
+              <div class="panel-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative;">
+                  <h3 class="panel-title" style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 1.25rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; font-family: 'Outfit', sans-serif;">Recent Activity</h3>
+                  <div id="manualRecentActivityList" class="activity-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                      <div style="font-size: 0.85rem; color: #94a3b8; text-align: center; padding: 1rem;">No recent activity.</div>
+                  </div>
+              </div>
+
+              <!-- Right: Quick Resume -->
+              <div class="panel-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: relative;">
+                  <h3 class="panel-title" style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 1.25rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; font-family: 'Outfit', sans-serif;">Quick Resume</h3>
+                  <div id="manualQuickResumeList" class="quick-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                      <div style="font-size: 0.85rem; color: #94a3b8; text-align: center; padding: 1rem;">No drafts.</div>
+                  </div>
+              </div>
           </div>
         </div>
       `;
 
-      // Load documents from Supabase to show in recent docs list
+      const formatTimeAgo = (date) => {
+          const seconds = Math.floor((new Date() - date) / 1000);
+          let interval = Math.floor(seconds / 31536000);
+          if (interval >= 1) return interval + " year" + (interval > 1 ? "s" : "") + " ago";
+          interval = Math.floor(seconds / 2592000);
+          if (interval >= 1) return interval + " month" + (interval > 1 ? "s" : "") + " ago";
+          interval = Math.floor(seconds / 86400);
+          if (interval >= 1) return interval + " day" + (interval > 1 ? "s" : "") + " ago";
+          interval = Math.floor(seconds / 3600);
+          if (interval >= 1) return interval + " hour" + (interval > 1 ? "s" : "") + " ago";
+          interval = Math.floor(seconds / 60);
+          if (interval >= 1) return interval + " minute" + (interval > 1 ? "s" : "") + " ago";
+          return "just now";
+      };
+
       const client = window.appSdk?.client;
-      if (!client) {
-        document.getElementById('manual-recent-docs').innerHTML = '<p style="font-size:0.85rem; color:#94a3b8;">Offline or database not connected.</p>';
-        return;
-      }
+      if (!client) return;
 
       try {
-        const { data: { session } } = await client.auth.getSession();
-        if (!session) {
-          document.getElementById('manual-recent-docs').innerHTML = '<p style="font-size:0.85rem; color:#94a3b8;">Please sign in to view documents.</p>';
-          return;
-        }
+          const { data: { session } } = await client.auth.getSession();
+          if (!session) return;
 
-        const userId = session.user.id;
+          const userId = session.user.id;
+          const name = session.user.user_metadata?.full_name
+              || localStorage.getItem('userName')
+              || session.user.email.split('@')[0];
 
-        // Fetch Resumes
-        const { data: resumes } = await client
-          .from('resumes')
-          .select('id, full_name, created_at')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(3);
+          const nameEl = document.getElementById('manualNameSpan');
+          if (nameEl) nameEl.textContent = name;
 
-        // Fetch Cover Letters
-        const { data: letters } = await client
-          .from('cover_letters')
-          .select('id, job_title, company_name, created_at')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(3);
+          const hour = new Date().getHours();
+          let greeting = 'Good Evening';
+          if (hour < 12) greeting = 'Good Morning';
+          else if (hour < 17) greeting = 'Good Afternoon';
+          const greetingSpan = document.getElementById('manualGreetingSpan');
+          if (greetingSpan) greetingSpan.textContent = greeting;
 
-        let listHtml = '';
+          const [resumesRes, coverLettersRes, emailsRes] = await Promise.all([
+              client.from('resumes').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+              client.from('cover_letters').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+              client.from('email_history').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+          ]);
 
-        if ((!resumes || resumes.length === 0) && (!letters || letters.length === 0)) {
-          listHtml = '<p style="font-size:0.85rem; color:#94a3b8;">No documents found. Start writing by choosing an action above!</p>';
-        } else {
-          listHtml = '<ul style="list-style:none; padding:0; display:flex; flex-direction:column; gap:0.5rem; width:100%;">';
-          
-          if (resumes) {
-            resumes.forEach(r => {
-              listHtml += `
-                <li style="border:1px solid #f1f5f9; padding:0.6rem 0.8rem; border-radius:6px; background:#fff; display:flex; justify-content:space-between; align-items:center;">
-                  <a href="resume.html" style="font-weight:600; color:#334155; text-decoration:none;">📄 ${r.full_name || 'Untitled Resume'}</a>
-                  <span style="font-size:0.75rem; color:#94a3b8;">Resume</span>
-                </li>
+          const resumes = resumesRes.data || [];
+          const coverLetters = coverLettersRes.data || [];
+          const emails = emailsRes.data || [];
+
+          const metricsRow = document.getElementById('manualMetricsRow');
+          if (metricsRow) {
+              let resumeProg = 0;
+              if (resumes.length > 0) {
+                  const r = resumes[0];
+                  if (r.full_name || r.email || r.phone) resumeProg += 20;
+                  if (r.professional_summary) resumeProg += 20;
+                  if (r.experience && r.experience.length > 0) resumeProg += 30;
+                  if (r.education && r.education.length > 0) resumeProg += 15;
+                  if (r.skills && r.skills.length > 0) resumeProg += 15;
+              }
+
+              metricsRow.innerHTML = `
+                  <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                      <div style="font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8;">Resume Progress</div>
+                      <div style="font-size: 1.35rem; font-weight: 800; color: #0f172a; font-family: 'Outfit', sans-serif;">${resumes.length > 0 ? resumeProg + '%' : '0%'}</div>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                      <div style="font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8;">Cover Letters</div>
+                      <div style="font-size: 1.35rem; font-weight: 800; color: #0f172a; font-family: 'Outfit', sans-serif;">${coverLetters.length}</div>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                      <div style="font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8;">Cold Emails</div>
+                      <div style="font-size: 1.35rem; font-weight: 800; color: #0f172a; font-family: 'Outfit', sans-serif;">${emails.length}</div>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                      <div style="font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8;">Applications Tracked</div>
+                      <div style="font-size: 1.1rem; font-weight: 800; color: #94a3b8; font-family: 'Outfit', sans-serif; padding-top: 0.25rem;">0 (Future)</div>
+                  </div>
               `;
-            });
           }
 
-          if (letters) {
-            letters.forEach(l => {
-              listHtml += `
-                <li style="border:1px solid #f1f5f9; padding:0.6rem 0.8rem; border-radius:6px; background:#fff; display:flex; justify-content:space-between; align-items:center;">
-                  <a href="cover-letter.html" style="font-weight:600; color:#334155; text-decoration:none;">📨 ${l.job_title || 'Untitled Cover Letter'} @ ${l.company_name || 'Acme'}</a>
-                  <span style="font-size:0.75rem; color:#94a3b8;">Cover Letter</span>
-                </li>
+          const smartGrid = document.getElementById('manualSmartGrid');
+          if (smartGrid) {
+              let gridHtml = '';
+
+              let resumeProgress = 0;
+              let resumeLastEdited = 'Never';
+              let resumeCount = resumes.length;
+              let atsScore = 'N/A';
+              
+              if (resumes.length > 0) {
+                  const latest = resumes[0];
+                  resumeLastEdited = formatTimeAgo(new Date(latest.created_at));
+                  if (latest.full_name || latest.email || latest.phone) resumeProgress += 20;
+                  if (latest.professional_summary) resumeProgress += 20;
+                  if (latest.experience && latest.experience.length > 0) resumeProgress += 30;
+                  if (latest.education && latest.education.length > 0) resumeProgress += 15;
+                  if (latest.skills && latest.skills.length > 0) resumeProgress += 15;
+                  atsScore = latest.professional_summary ? Math.min(100, 60 + Math.round(latest.professional_summary.length / 20)) + '/100' : 'N/A';
+              }
+
+              gridHtml += `
+                  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; min-height: 260px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                      <div style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 1.25rem; font-family: 'Outfit', sans-serif;">📝 Resume Builder</div>
+                      <div style="display: flex; flex-direction: column; gap: 0.6rem; flex-grow: 1; margin-bottom: 1.5rem;">
+                          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.4rem;">
+                              <span style="color: #64748b;">Resume Progress</span>
+                              <span style="color: #0f172a; font-weight: 600;">${resumeProgress}%</span>
+                          </div>
+                          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.4rem;">
+                              <span style="color: #64748b;">Last Edited</span>
+                              <span style="color: #0f172a; font-weight: 600;">${resumeLastEdited}</span>
+                          </div>
+                          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.4rem;">
+                              <span style="color: #64748b;">Saved Resumes</span>
+                              <span style="color: #0f172a; font-weight: 600;">${resumeCount}</span>
+                          </div>
+                          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.4rem;">
+                              <span style="color: #64748b;">ATS Score</span>
+                              <span style="color: #0f172a; font-weight: 600;">${atsScore}</span>
+                          </div>
+                      </div>
+                      <button class="creator-studio-btn-primary" onclick="document.querySelector('[data-tab=resume]').click()" style="width: 100%; border: none; background: #6366f1; color: #ffffff; padding: 0.5rem; border-radius: 6px; font-weight: 600; font-size: 0.8rem; cursor: pointer;">Continue Resume</button>
+                  </div>
               `;
-            });
+
+              let letterCount = coverLetters.length;
+              let letterLastEdited = 'Never';
+              let targetCompany = 'N/A';
+
+              if (coverLetters.length > 0) {
+                  const latest = coverLetters[0];
+                  letterLastEdited = formatTimeAgo(new Date(latest.created_at));
+                  targetCompany = latest.company_name || 'N/A';
+              }
+
+              gridHtml += `
+                  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; min-height: 260px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                      <div style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 1.25rem; font-family: 'Outfit', sans-serif;">📨 Cover Letter AI</div>
+                      <div style="display: flex; flex-direction: column; gap: 0.6rem; flex-grow: 1; margin-bottom: 1.5rem;">
+                          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.4rem;">
+                              <span style="color: #64748b;">Letters Created</span>
+                              <span style="color: #0f172a; font-weight: 600;">${letterCount}</span>
+                          </div>
+                          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.4rem;">
+                              <span style="color: #64748b;">Last Generated</span>
+                              <span style="color: #0f172a; font-weight: 600;">${letterLastEdited}</span>
+                          </div>
+                          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.4rem;">
+                              <span style="color: #64748b;">Target Company</span>
+                              <span style="color: #0f172a; font-weight: 600;">${window.appSdk.ui.escapeHtml(targetCompany)}</span>
+                          </div>
+                      </div>
+                      <button class="creator-studio-btn-primary" onclick="document.querySelector('[data-tab=cover-letter]').click()" style="width: 100%; border: none; background: #6366f1; color: #ffffff; padding: 0.5rem; border-radius: 6px; font-weight: 600; font-size: 0.8rem; cursor: pointer;">Continue Writing</button>
+                  </div>
+              `;
+
+              let emailCount = emails.length;
+              let emailLastEdited = 'Never';
+              let favoriteTemplate = 'N/A';
+
+              if (emails.length > 0) {
+                  const latest = emails[0];
+                  emailLastEdited = formatTimeAgo(new Date(latest.created_at));
+                  favoriteTemplate = latest.variant ? (latest.variant.charAt(0).toUpperCase() + latest.variant.slice(1)) : 'Custom';
+              }
+
+              gridHtml += `
+                  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; min-height: 260px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                      <div style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 1.25rem; font-family: 'Outfit', sans-serif;">✉️ Cold Email Writer</div>
+                      <div style="display: flex; flex-direction: column; gap: 0.6rem; flex-grow: 1; margin-bottom: 1.5rem;">
+                          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.4rem;">
+                              <span style="color: #64748b;">Draft Count</span>
+                              <span style="color: #0f172a; font-weight: 600;">${emailCount}</span>
+                          </div>
+                          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.4rem;">
+                              <span style="color: #64748b;">Last Edited</span>
+                              <span style="color: #0f172a; font-weight: 600;">${emailLastEdited}</span>
+                          </div>
+                          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.4rem;">
+                              <span style="color: #64748b;">Favorite Template</span>
+                              <span style="color: #0f172a; font-weight: 600;">${favoriteTemplate}</span>
+                          </div>
+                      </div>
+                      <button class="creator-studio-btn-primary" onclick="document.querySelector('[data-tab=cold-email]').click()" style="width: 100%; border: none; background: #6366f1; color: #ffffff; padding: 0.5rem; border-radius: 6px; font-weight: 600; font-size: 0.8rem; cursor: pointer;">Open Workspace</button>
+                  </div>
+              `;
+
+              let recentResumeText = 'No recent resume';
+              let recentLetterText = 'No recent letter';
+              let recentEmailText = 'No recent email';
+
+              if (resumes.length > 0) {
+                  const r = resumes[0];
+                  recentResumeText = r.full_name ? `${r.full_name}'s Resume` : 'Untitled Resume';
+              }
+              if (coverLetters.length > 0) {
+                  const l = coverLetters[0];
+                  recentLetterText = l.job_title ? `${l.job_title} at ${l.company_name || 'Acme'}` : 'Untitled Letter';
+              }
+              if (emails.length > 0) {
+                  const e = emails[0];
+                  recentEmailText = e.subject ? e.subject : (e.company ? `Intro to ${e.company}` : 'Untitled Email');
+              }
+
+              if (recentResumeText.length > 25) recentResumeText = recentResumeText.substring(0, 22) + '...';
+              if (recentLetterText.length > 25) recentLetterText = recentLetterText.substring(0, 22) + '...';
+              if (recentEmailText.length > 25) recentEmailText = recentEmailText.substring(0, 22) + '...';
+
+              gridHtml += `
+                  <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; min-height: 260px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                      <div style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 1.25rem; font-family: 'Outfit', sans-serif;">📁 Recent Workspace Docs</div>
+                      <div style="display: flex; flex-direction: column; gap: 0.4rem; flex-grow: 1; margin-bottom: 1.5rem; justify-content: center;">
+                          <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 0.2rem; letter-spacing: 0.05em;">Recent Drafts</div>
+                          <div onclick="document.querySelector('[data-tab=resume]').click()" style="display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.3rem 0; cursor: pointer; border-bottom: 1px solid #f1f5f9;">
+                              <span style="color: #0f172a; font-weight: 600;">📄 ${window.appSdk.ui.escapeHtml(recentResumeText)}</span>
+                              <span style="color: #6366f1; font-size: 0.75rem;">Open →</span>
+                          </div>
+                          <div onclick="document.querySelector('[data-tab=cover-letter]').click()" style="display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.3rem 0; cursor: pointer; border-bottom: 1px solid #f1f5f9;">
+                              <span style="color: #0f172a; font-weight: 600;">📨 ${window.appSdk.ui.escapeHtml(recentLetterText)}</span>
+                              <span style="color: #6366f1; font-size: 0.75rem;">Open →</span>
+                          </div>
+                          <div onclick="document.querySelector('[data-tab=cold-email]').click()" style="display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.3rem 0; cursor: pointer;">
+                              <span style="color: #0f172a; font-weight: 600;">✉️ ${window.appSdk.ui.escapeHtml(recentEmailText)}</span>
+                              <span style="color: #6366f1; font-size: 0.75rem;">Open →</span>
+                          </div>
+                      </div>
+                      <button class="creator-studio-btn-primary" onclick="document.querySelector('[data-tab=resume]').click()" style="width: 100%; border: none; background: #6366f1; color: #ffffff; padding: 0.5rem; border-radius: 6px; font-weight: 600; font-size: 0.8rem; cursor: pointer;">Open Documents</button>
+                  </div>
+              `;
+
+              smartGrid.innerHTML = gridHtml;
           }
 
-          listHtml += '</ul>';
-        }
+          const recentActivityList = document.getElementById('manualRecentActivityList');
+          if (recentActivityList) {
+              let activityItems = [];
 
-        const recentDocsContainer = document.getElementById('manual-recent-docs');
-        if (recentDocsContainer) recentDocsContainer.innerHTML = listHtml;
+              if (resumes.length > 0) {
+                  const r = resumes[0];
+                  activityItems.push({
+                      title: `Resume updated for ${r.full_name || 'profile'}`,
+                      time: formatTimeAgo(new Date(r.created_at)),
+                      rawTime: new Date(r.created_at).getTime(),
+                      tab: 'resume'
+                  });
+              }
+
+              if (coverLetters.length > 0) {
+                  const l = coverLetters[0];
+                  activityItems.push({
+                      title: `Cover letter generated for ${l.job_title || 'Role'} at ${l.company_name || 'Company'}`,
+                      time: formatTimeAgo(new Date(l.created_at)),
+                      rawTime: new Date(l.created_at).getTime(),
+                      tab: 'cover-letter'
+                  });
+              }
+
+              if (emails.length > 0) {
+                  const e = emails[0];
+                  activityItems.push({
+                      title: `Cold email saved for ${e.recipient_title || 'Contact'} at ${e.company || 'Company'}`,
+                      time: formatTimeAgo(new Date(e.created_at)),
+                      rawTime: new Date(e.created_at).getTime(),
+                      tab: 'cold-email'
+                  });
+              }
+
+              activityItems.sort((a, b) => b.rawTime - a.rawTime);
+
+              if (activityItems.length === 0) {
+                  recentActivityList.innerHTML = `<div style="font-size: 0.85rem; color: #94a3b8; text-align: center; padding: 1rem;">No recent activity recorded.</div>`;
+              } else {
+                  recentActivityList.innerHTML = activityItems.map(item => `
+                      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.8rem; background: #fafafa; border: 1px solid #f1f5f9; border-radius: 6px;">
+                          <div style="flex: 1; padding-right: 0.5rem;">
+                              <div style="font-size: 0.82rem; font-weight: 600; color: #334155;">${window.appSdk.ui.escapeHtml(item.title)}</div>
+                              <div style="font-size: 0.72rem; color: #94a3b8;">${item.time}</div>
+                          </div>
+                          <span onclick="document.querySelector('[data-tab=${item.tab}]').click()" style="font-size: 0.78rem; font-weight: 600; color: #6366f1; cursor: pointer; white-space: nowrap;">Open →</span>
+                      </div>
+                  `).join('');
+              }
+          }
+
+          const quickResumeList = document.getElementById('manualQuickResumeList');
+          if (quickResumeList) {
+              let quickHtml = '';
+
+              let resumeSubtitle = 'Create new resume';
+              if (resumes.length > 0) {
+                  resumeSubtitle = `Continue editing ${resumes[0].full_name || 'Resume'}`;
+              }
+              quickHtml += `
+                  <div onclick="document.querySelector('[data-tab=resume]').click()" style="display: flex; flex-direction: column; gap: 0.15rem; padding: 0.6rem 0.8rem; background: #fafafa; border-left: 3px solid #6366f1; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">
+                      <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Resume Builder</span>
+                      <span style="font-size: 0.8rem; font-weight: 600; color: #334155;">${window.appSdk.ui.escapeHtml(resumeSubtitle)}</span>
+                  </div>
+              `;
+
+              let letterSubtitle = 'Open latest draft';
+              if (coverLetters.length > 0) {
+                  letterSubtitle = `Open ${coverLetters[0].job_title || 'letter'} draft @ ${coverLetters[0].company_name || 'Acme'}`;
+              }
+              quickHtml += `
+                  <div onclick="document.querySelector('[data-tab=cover-letter]').click()" style="display: flex; flex-direction: column; gap: 0.15rem; padding: 0.6rem 0.8rem; background: #fafafa; border-left: 3px solid #6366f1; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">
+                      <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Cover Letter</span>
+                      <span style="font-size: 0.8rem; font-weight: 600; color: #334155;">${window.appSdk.ui.escapeHtml(letterSubtitle)}</span>
+                  </div>
+              `;
+
+              let emailSubtitle = 'Resume draft';
+              if (emails.length > 0) {
+                  emailSubtitle = `Open intro draft for ${emails[0].company || 'Acme'}`;
+              }
+              quickHtml += `
+                  <div onclick="document.querySelector('[data-tab=cold-email]').click()" style="display: flex; flex-direction: column; gap: 0.15rem; padding: 0.6rem 0.8rem; background: #fafafa; border-left: 3px solid #6366f1; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">
+                      <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Cold Email</span>
+                      <span style="font-size: 0.8rem; font-weight: 600; color: #334155;">${window.appSdk.ui.escapeHtml(emailSubtitle)}</span>
+                  </div>
+              `;
+
+              quickResumeList.innerHTML = quickHtml;
+          }
       } catch (err) {
-        const recentDocsContainer = document.getElementById('manual-recent-docs');
-        if (recentDocsContainer) recentDocsContainer.innerHTML = '<p style="font-size:0.85rem; color:#ef4444;">Failed to load documents.</p>';
+          console.error('Error loading Creator Studio home dashboard:', err);
       }
     },
 
