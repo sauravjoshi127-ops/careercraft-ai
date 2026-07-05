@@ -95,8 +95,8 @@
 
     getButtonHtml() {
       const active = this.workspace === 'manual';
-      const label = active ? 'Manual Studio' : 'AI Studio';
-      const shortLabel = active ? 'Manual' : 'AI';
+      const label = active ? 'Creator Studio' : 'AI Studio';
+      const shortLabel = active ? 'Creator' : 'AI';
       const dotColor = active ? '#10b981' : '#7c3aed';
       const dotGlow = active ? 'rgba(16,185,129,0.6)' : 'rgba(124,58,237,0.8)';
       return `
@@ -134,7 +134,7 @@
         const title = document.getElementById('portal-title');
         const subtitle = document.getElementById('portal-subtitle');
         if (title && subtitle) {
-          title.textContent = target === 'manual' ? 'Opening Manual Studio' : 'Launching AI Studio';
+          title.textContent = target === 'manual' ? 'Opening Creator Studio' : 'Launching AI Studio';
           subtitle.textContent = target === 'manual' 
             ? 'Entering elegant Apple/Notion environment...' 
             : 'Powering up career copilot & ATS suggestions...';
@@ -150,26 +150,14 @@
       this.workspace = target;
       localStorage.setItem('careercraft_workspace', target);
 
-      const page = window.location.pathname.split('/').pop() || 'index.html';
-      if (target === 'manual' && page.startsWith('interview')) {
-        if (animate) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          document.body.classList.remove('workspace-transitioning');
-          const portal = document.getElementById('workspace-portal');
-          if (portal) portal.classList.remove('active');
-        }
-        window.location.href = 'dashboard.html';
-        return;
-      }
-
       this.applyThemeClass();
 
       // Update button labels in navbar dynamically
       const btn = document.getElementById('global-workspace-switcher');
       if (btn) {
         const active = target === 'manual';
-        const label = active ? 'Manual Studio' : 'AI Studio';
-        const shortLabel = active ? 'Manual' : 'AI';
+        const label = active ? 'Creator Studio' : 'AI Studio';
+        const shortLabel = active ? 'Creator' : 'AI';
         const dotColor = active ? '#10b981' : '#7c3aed';
         const dotGlow = active ? 'rgba(16,185,129,0.6)' : 'rgba(124,58,237,0.8)';
         
@@ -204,6 +192,12 @@
       window.WorkspaceManager.init();
 
       this.initSharedComponents();
+
+      window.addEventListener('workspaceChanged', () => {
+        const page = window.location.pathname.split('/').pop() || 'index.html';
+        this.updateNavLinks(page);
+        this.checkInterviewAccess();
+      });
     },
 
     initSharedComponents() {
@@ -247,6 +241,8 @@
           container.appendChild(miniFooter);
         }
       }
+
+      this.checkInterviewAccess();
     },
 
     renderNavbarBase(topnav, page) {
@@ -314,11 +310,6 @@
         `;
       } else {
         // App Page Header
-        const resumeActive = page.startsWith('resume') ? 'class="nav-btn active"' : 'class="nav-btn"';
-        const coverLetterActive = page.startsWith('cover-letter') ? 'class="nav-btn active"' : 'class="nav-btn"';
-        const coldEmailActive = page.startsWith('cold-email') ? 'class="nav-btn active"' : 'class="nav-btn"';
-        const interviewActive = (page.startsWith('interview') || page.startsWith('mock')) ? 'class="nav-btn active"' : 'class="nav-btn"';
-
         topnav.innerHTML = `
           <a href="dashboard.html" class="logo">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -328,17 +319,14 @@
               </svg>
               <span class="premium-gradient-text">CareerCraft AI</span>
           </a>
-          <div class="nav-links" style="display:flex; gap:0.5rem;">
-              <a href="resume.html" ${resumeActive}>Resume</a>
-              <a href="cover-letter.html" ${coverLetterActive}>Cover Letter</a>
-              <a href="cold-email.html" ${coldEmailActive}>Cold Email</a>
-              <a href="interview.html" ${interviewActive}>Interview</a>
-          </div>
+          <div class="nav-links" id="navLinksContainer" style="display:flex; gap:0.5rem;"></div>
           <div class="user-menu" id="userMenuPlaceholder" style="display:flex; align-items:center; gap:0.75rem;">
               <div style="width: 120px; height: 32px; background: rgba(255,255,255,0.03); border-radius: 9999px;"></div>
               <div class="user-avatar" style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.05);"></div>
           </div>
         `;
+
+        this.updateNavLinks(page);
 
         // Update user state dynamic elements
         if (window.appSdk && window.appSdk.ready) {
@@ -358,6 +346,67 @@
               `;
             }
           });
+        }
+      }
+    },
+
+    updateNavLinks(page) {
+      const container = document.getElementById('navLinksContainer');
+      if (!container) return;
+
+      const ws = window.WorkspaceManager ? window.WorkspaceManager.workspace : 'ai';
+      const isManual = ws === 'manual';
+
+      const dashboardActive = page.startsWith('dashboard') ? 'class="nav-btn active"' : 'class="nav-btn"';
+      const resumeActive = page.startsWith('resume') ? 'class="nav-btn active"' : 'class="nav-btn"';
+      const coverLetterActive = page.startsWith('cover-letter') ? 'class="nav-btn active"' : 'class="nav-btn"';
+      const coldEmailActive = page.startsWith('cold-email') ? 'class="nav-btn active"' : 'class="nav-btn"';
+      const interviewActive = (page.startsWith('interview') || page.startsWith('mock')) ? 'class="nav-btn active"' : 'class="nav-btn"';
+
+      let linksHtml = `<a href="dashboard.html" ${dashboardActive}>Dashboard</a>`;
+      linksHtml += `<a href="resume.html" ${resumeActive}>Resume</a>`;
+      linksHtml += `<a href="cover-letter.html" ${coverLetterActive}>Cover Letter</a>`;
+      linksHtml += `<a href="cold-email.html" ${coldEmailActive}>Cold Email</a>`;
+
+      if (!isManual) {
+        linksHtml += `<a href="interview.html" ${interviewActive}>Interview Coach</a>`;
+      }
+
+      container.innerHTML = linksHtml;
+    },
+
+    checkInterviewAccess() {
+      const page = window.location.pathname.split('/').pop() || 'index.html';
+      const isInterviewPage = page.startsWith('interview') || page.startsWith('mock');
+      const ws = window.WorkspaceManager ? window.WorkspaceManager.workspace : 'ai';
+      
+      let overlay = document.getElementById('exclusive-interview-overlay');
+      
+      if (isInterviewPage && ws === 'manual') {
+        if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.id = 'exclusive-interview-overlay';
+          overlay.className = 'exclusive-feature-overlay';
+          overlay.innerHTML = `
+            <div class="exclusive-feature-card">
+              <div class="exclusive-feature-icon">✨</div>
+              <div class="exclusive-feature-title">Interview Coach is available exclusively in AI Studio.</div>
+              <div class="exclusive-feature-desc">
+                Switch to AI Studio to start an AI-powered mock interview, receive adaptive feedback, and improve your interview performance.
+              </div>
+              <button type="button" class="exclusive-feature-btn" id="btn-switch-to-ai-studio">Switch to AI Studio</button>
+            </div>
+          `;
+          document.body.appendChild(overlay);
+          
+          document.getElementById('btn-switch-to-ai-studio').onclick = async () => {
+            await window.WorkspaceManager.setWorkspace('ai');
+          };
+        }
+        overlay.style.display = 'flex';
+      } else {
+        if (overlay) {
+          overlay.style.display = 'none';
         }
       }
     },
