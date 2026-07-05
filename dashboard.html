@@ -38,6 +38,239 @@
     </script>
     <style>
         @keyframes auth-spin { to { transform: rotate(360deg); } }
+
+        /* Command Center Layout Override Styles */
+        .command-header {
+            margin-top: 3.5rem;
+            margin-bottom: 2.5rem;
+        }
+        .metrics-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3rem;
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .metric-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .metric-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-3);
+        }
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-1);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Smart Card Grid Styles */
+        .smart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .smart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--r-xl);
+            padding: 2rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 280px;
+            transition: all 0.3s var(--ease);
+        }
+
+        .smart-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+            pointer-events: none;
+            border-radius: var(--r-xl) var(--r-xl) 0 0;
+        }
+
+        .smart-card:hover {
+            border-color: rgba(99, 102, 241, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.08);
+        }
+
+        .smart-card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .smart-card-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            flex-grow: 1;
+            margin-bottom: 2rem;
+        }
+
+        .smart-stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            padding-bottom: 0.5rem;
+        }
+
+        .smart-stat-label {
+            color: var(--text-2);
+        }
+
+        .smart-stat-val {
+            color: var(--text-1);
+            font-weight: 600;
+        }
+
+        /* Bottom Layout Split */
+        .bottom-layout {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 2.5rem;
+            margin-bottom: 5rem;
+        }
+
+        .panel-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-card);
+            position: relative;
+        }
+
+        .panel-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+            pointer-events: none;
+            border-radius: var(--r-lg) var(--r-lg) 0 0;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-1);
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.75rem;
+        }
+
+        /* Recent Activity list */
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .activity-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
+            transition: all 0.2s ease;
+        }
+
+        .activity-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .activity-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            flex: 1;
+            padding-right: 1rem;
+        }
+
+        .activity-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-1);
+        }
+
+        .activity-time {
+            font-size: 0.75rem;
+            color: var(--text-3);
+        }
+
+        .activity-action {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--cyan);
+            white-space: nowrap;
+        }
+
+        /* Quick Resume list */
+        .quick-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.875rem;
+        }
+
+        .quick-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.01);
+            border-left: 3px solid var(--cyan);
+            border-top: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .quick-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            transform: translateX(2px);
+        }
+
+        .quick-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-3);
+            letter-spacing: 0.05em;
+        }
+
+        .quick-action-text {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-1);
+        }
+
+        @media (max-width: 900px) {
+            .bottom-layout {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 
 
@@ -61,62 +294,40 @@
 
     <!-- Main Container -->
     <div class="container">
-        <!-- Welcome Section -->
-        <div class="hero text-center" style="margin-top: 3rem; margin-bottom: 4rem;">
-            <h1 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem;">
-                <span class="premium-gradient-text">Welcome back,</span> <span id="welcomeNameSpan">User</span>
+        <!-- Dashboard Header -->
+        <div class="command-header">
+            <h1 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 0.25rem;">
+                <span id="welcomeGreetingSpan">Good Afternoon</span>, <span id="welcomeNameSpan">User</span>
             </h1>
-            <p id="welcomeEmail" style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 2rem;"></p>
-            <div style="display: flex; gap: 1rem; justify-content: center;">
-                <a href="#tools" class="btn-primary">Explore Tools</a>
-                <a href="#pricing" class="btn-accent">View Pro Plans</a>
+            <p style="color: var(--text-2); font-size: 1rem; margin-bottom: 1.5rem;">Continue building your career.</p>
+            
+            <!-- Compact Metrics Row -->
+            <div class="metrics-row" id="dashboardMetricsRow">
+                <!-- Metrics injected dynamically -->
             </div>
         </div>
 
-        <!-- My Resumes Section -->
-        <div class="glass-card mb-2" style="margin-bottom: 4rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                <h2 style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-                    My Resumes
-                </h2>
-                <a href="resume.html" class="btn-accent">+ Create New</a>
-            </div>
-            <div id="resumeList">
-                <div style="text-align: center; color: var(--text-tertiary); padding: 3rem; border: 1px dashed var(--border-color); border-radius: 1.5rem;">
-                    <div class="spinner" style="margin-bottom: 1rem;"></div>
-                    <p>Accessing secure resume vault...</p>
+        <!-- Tools Smart Grid -->
+        <div class="smart-grid" id="dashboardSmartGrid">
+            <!-- Dynamic smart cards injected here -->
+        </div>
+
+        <!-- Secondary Bottom Panel -->
+        <div class="bottom-layout">
+            <!-- Left: Recent Activity -->
+            <div class="panel-card">
+                <h3 class="panel-title">Recent Activity</h3>
+                <div id="recentActivityList" class="activity-list">
+                    <div style="font-size: 0.85rem; color: var(--text-3); text-align: center; padding: 2rem;">No recent activity recorded.</div>
                 </div>
             </div>
-        </div>
 
-        <!-- Tools Grid -->
-        <div id="tools" class="features-grid" style="margin-bottom: 6rem;">
-            <div class="feature-card">
-                <div class="feature-icon">📝</div>
-                <h3 style="margin-bottom: 0.75rem;">Resume Builder</h3>
-                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 2rem; flex-grow: 1;">Craft a high-impact, ATS-optimized resume using our intelligent structural engine.</p>
-                <a href="resume.html" class="btn-primary">Launch Tool</a>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">📨</div>
-                <h3 style="margin-bottom: 0.75rem;">Cover Letter AI</h3>
-                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 2rem; flex-grow: 1;">Generate hyper-tailored cover letters that speak directly to the job's core requirements.</p>
-                <a href="cover-letter.html" class="btn-primary">Launch Tool</a>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">✉️</div>
-                <h3 style="margin-bottom: 0.75rem;">Cold Email Writer</h3>
-                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 2rem; flex-grow: 1;">Architect professional outreach emails designed to break through the noise and get replies.</p>
-                <a href="cold-email.html" class="btn-primary">Launch Tool</a>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon">🎤</div>
-                <h3 style="margin-bottom: 0.75rem;">Interview Coach</h3>
-                <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 2rem; flex-grow: 1;">Practice in an immersive AI environment with real-time feedback on your performance.</p>
-                <a href="interview.html" class="btn-primary">Launch Tool</a>
+            <!-- Right: Quick Resume -->
+            <div class="panel-card">
+                <h3 class="panel-title">Quick Resume</h3>
+                <div id="quickResumeList" class="quick-list">
+                    <div style="font-size: 0.85rem; color: var(--text-3); text-align: center; padding: 2rem;">No drafts available.</div>
+                </div>
             </div>
         </div>
 
@@ -161,98 +372,460 @@
     <script>
         let currentUserId = null;
 
-        async function loadResumes() {
-            const listEl = document.getElementById('resumeList');
+        async function loadDashboardData() {
+            try {
+                // Get workspace state
+                const ws = window.WorkspaceManager ? window.WorkspaceManager.workspace : 'ai';
+                const isManual = ws === 'manual';
 
-            const { data, error } = await window.appSdk.client
-                .from('resumes')
-                .select('*')
-                .eq('user_id', currentUserId)
-                .order('created_at', { ascending: false });
+                // Setup greeting based on hour
+                const hour = new Date().getHours();
+                let greeting = 'Good Evening';
+                if (hour < 12) greeting = 'Good Morning';
+                else if (hour < 17) greeting = 'Good Afternoon';
+                
+                const greetingSpan = document.getElementById('welcomeGreetingSpan');
+                if (greetingSpan) greetingSpan.textContent = greeting;
 
-            if (error) {
-                listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Could not load resumes. Please refresh the page.</p></div>';
-                return;
-            }
+                // Load database items in parallel
+                const [resumesRes, coverLettersRes, emailsRes] = await Promise.all([
+                    window.appSdk.client.from('resumes').select('*').eq('user_id', currentUserId).order('created_at', { ascending: false }),
+                    window.appSdk.client.from('cover_letters').select('*').eq('user_id', currentUserId).order('created_at', { ascending: false }),
+                    window.appSdk.client.from('email_history').select('*').eq('user_id', currentUserId).order('created_at', { ascending: false })
+                ]);
 
-            if (!data || data.length === 0) {
-                listEl.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">📄</div>
-                        <p>No resumes yet. Create your first one!</p>
-                        <a href="resume.html" class="btn-new">+ Create Resume</a>
-                    </div>`;
-                return;
-            }
+                const resumes = resumesRes.data || [];
+                const coverLetters = coverLettersRes.data || [];
+                const emails = emailsRes.data || [];
 
-            // Fetch share info for view counts
-            const resumeIds = data.map(r => r.id);
-            const { data: sharesData } = await window.appSdk.client
-                .from('resume_shares')
-                .select('resume_id, share_token')
-                .in('resume_id', resumeIds)
-                .eq('is_active', true);
+                // Interview sessions
+                let interviewHistory = [];
+                try {
+                    interviewHistory = JSON.parse(localStorage.getItem('interview_history') || '[]');
+                } catch(_) {}
 
-            const shareMap = {};
-            (sharesData || []).forEach(s => { shareMap[s.resume_id] = s; });
+                // ─── Render Metrics Row ───
+                const metricsRow = document.getElementById('dashboardMetricsRow');
+                if (metricsRow) {
+                    // Calculate resume progress of latest
+                    let latestResumeProgress = 0;
+                    if (resumes.length > 0) {
+                        const r = resumes[0];
+                        if (r.full_name || r.email || r.phone) latestResumeProgress += 20;
+                        if (r.professional_summary) latestResumeProgress += 20;
+                        if (r.experience && r.experience.length > 0) latestResumeProgress += 30;
+                        if (r.education && r.education.length > 0) latestResumeProgress += 15;
+                        if (r.skills && r.skills.length > 0) latestResumeProgress += 15;
+                    }
 
-            listEl.innerHTML = data.map(resume => {
-                const id = window.appSdk.ui.isValidUUID(resume.id) ? resume.id : '';
-                const name = resume.full_name
-                    ? `${resume.full_name}'s Resume`
-                    : (resume.title || 'Untitled Resume');
-                const createdAt = window.appSdk.ui.formatDate(resume.created_at);
-                const template = resume.template_name || 'modern';
-                const hasShare = shareMap[resume.id];
+                    // Calculate average interview score
+                    let avgInterviewScore = 0;
+                    if (interviewHistory.length > 0) {
+                        const scores = interviewHistory.map(h => Number(h.score)).filter(Number.isFinite);
+                        avgInterviewScore = scores.length ? Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length) : 0;
+                    }
 
-                return `
-                    <div class="resume-item" id="resume-${id}">
-                        <div class="resume-info">
-                            <h4>${window.appSdk.ui.escapeHtml(name)}</h4>
-                            <div class="resume-meta">
-                                Created ${createdAt} &bull; Template: ${template}
-                            </div>
-                            <div class="resume-stats">
-                                ${hasShare ? `<span>Shared</span>` : '<span>Private</span>'}
-                            </div>
+                    let metricsHtml = `
+                        <div class="metric-item">
+                            <div class="metric-label">Resume Progress</div>
+                            <div class="metric-value">${resumes.length > 0 ? latestResumeProgress + '%' : '0%'}</div>
                         </div>
-                        <div class="resume-actions">
-                            <a href="resume.html?edit=${id}" class="btn-action">Edit</a>
-                            <button class="btn-action delete" onclick="deleteResume('${id}')">Delete</button>
+                        <div class="metric-item">
+                            <div class="metric-label">Cover Letters</div>
+                            <div class="metric-value">${coverLetters.length}</div>
                         </div>
-                    </div>`;
-            }).join('');
+                        <div class="metric-item">
+                            <div class="metric-label">Cold Emails</div>
+                            <div class="metric-value">${emails.length}</div>
+                        </div>
+                    `;
+
+                    if (!isManual) {
+                        metricsHtml += `
+                            <div class="metric-item">
+                                <div class="metric-label">Interview Score</div>
+                                <div class="metric-value">${interviewHistory.length > 0 ? avgInterviewScore + '%' : 'N/A'}</div>
+                            </div>
+                        `;
+                    }
+
+                    metricsHtml += `
+                        <div class="metric-item">
+                            <div class="metric-label">Applications Tracked</div>
+                            <div class="metric-value" style="opacity: 0.6; font-size: 1.1rem; padding-top: 0.3rem;">0 (Future)</div>
+                        </div>
+                    `;
+                    metricsRow.innerHTML = metricsHtml;
+                }
+
+                // ─── Render Smart Grid ───
+                const smartGrid = document.getElementById('dashboardSmartGrid');
+                if (smartGrid) {
+                    let gridHtml = '';
+
+                    // 1. Resume Card
+                    let resumeProgress = 0;
+                    let resumeLastEdited = 'Never';
+                    let resumeCount = resumes.length;
+                    let atsScore = 'N/A';
+                    let resumeBtnLink = 'resume.html';
+
+                    if (resumes.length > 0) {
+                        const latest = resumes[0];
+                        resumeBtnLink = `resume.html?edit=${latest.id}`;
+                        resumeLastEdited = window.appSdk.ui.formatDate(latest.created_at);
+                        
+                        // Calculate progress
+                        if (latest.full_name || latest.email || latest.phone) resumeProgress += 20;
+                        if (latest.professional_summary) resumeProgress += 20;
+                        if (latest.experience && latest.experience.length > 0) resumeProgress += 30;
+                        if (latest.education && latest.education.length > 0) resumeProgress += 15;
+                        if (latest.skills && latest.skills.length > 0) resumeProgress += 15;
+
+                        // Mock ATS score or calculate based on content length
+                        atsScore = latest.professional_summary ? Math.min(100, 60 + Math.round(latest.professional_summary.length / 20)) + '/100' : 'N/A';
+                    }
+
+                    gridHtml += `
+                        <div class="smart-card">
+                            <div class="smart-card-title">📝 Resume Builder</div>
+                            <div class="smart-card-stats">
+                                <div class="smart-stat-row">
+                                    <span class="smart-stat-label">Resume Progress</span>
+                                    <span class="smart-stat-val">${resumeProgress}%</span>
+                                </div>
+                                <div class="smart-stat-row">
+                                    <span class="smart-stat-label">Last Edited</span>
+                                    <span class="smart-stat-val">${resumeLastEdited}</span>
+                                </div>
+                                <div class="smart-stat-row">
+                                    <span class="smart-stat-label">Saved Resumes</span>
+                                    <span class="smart-stat-val">${resumeCount}</span>
+                                </div>
+                                <div class="smart-stat-row">
+                                    <span class="smart-stat-label">ATS Score</span>
+                                    <span class="smart-stat-val">${atsScore}</span>
+                                </div>
+                            </div>
+                            <a href="${resumeBtnLink}" class="btn-primary" style="margin-top: auto; text-align: center; width: 100%;">Continue Resume</a>
+                        </div>
+                    `;
+
+                    // 2. Cover Letter Card
+                    let letterCount = coverLetters.length;
+                    let letterLastEdited = 'Never';
+                    let targetCompany = 'N/A';
+                    let letterBtnLink = 'cover-letter.html';
+
+                    if (coverLetters.length > 0) {
+                        const latest = coverLetters[0];
+                        letterLastEdited = window.appSdk.ui.formatDate(latest.created_at || latest.updated_at);
+                        targetCompany = latest.company_name || 'N/A';
+                        letterBtnLink = `cover-letter.html`; 
+                    }
+
+                    gridHtml += `
+                        <div class="smart-card">
+                            <div class="smart-card-title">📨 Cover Letter AI</div>
+                            <div class="smart-card-stats">
+                                <div class="smart-stat-row">
+                                    <span class="smart-stat-label">Letters Created</span>
+                                    <span class="smart-stat-val">${letterCount}</span>
+                                </div>
+                                <div class="smart-stat-row">
+                                    <span class="smart-stat-label">Last Generated</span>
+                                    <span class="smart-stat-val">${letterLastEdited}</span>
+                                </div>
+                                <div class="smart-stat-row">
+                                    <span class="smart-stat-label">Target Company</span>
+                                    <span class="smart-stat-val">${window.appSdk.ui.escapeHtml(targetCompany)}</span>
+                                </div>
+                            </div>
+                            <a href="${letterBtnLink}" class="btn-primary" style="margin-top: auto; text-align: center; width: 100%;">Continue Writing</a>
+                        </div>
+                    `;
+
+                    // 3. Cold Email Card
+                    let emailCount = emails.length;
+                    let emailLastEdited = 'Never';
+                    let favoriteTemplate = 'N/A';
+                    let emailBtnLink = 'cold-email.html';
+
+                    if (emails.length > 0) {
+                        const latest = emails[0];
+                        emailLastEdited = window.appSdk.ui.formatDate(latest.created_at);
+                        favoriteTemplate = latest.variant ? (latest.variant.charAt(0).toUpperCase() + latest.variant.slice(1)) : 'Custom';
+                    }
+
+                    gridHtml += `
+                        <div class="smart-card">
+                            <div class="smart-card-title">✉️ Cold Email Writer</div>
+                            <div class="smart-card-stats">
+                                <div class="smart-stat-row">
+                                    <span class="smart-stat-label">Draft Count</span>
+                                    <span class="smart-stat-val">${emailCount}</span>
+                                </div>
+                                <div class="smart-stat-row">
+                                    <span class="smart-stat-label">Last Edited</span>
+                                    <span class="smart-stat-val">${emailLastEdited}</span>
+                                </div>
+                                <div class="smart-stat-row">
+                                    <span class="smart-stat-label">Favorite Template</span>
+                                    <span class="smart-stat-val">${favoriteTemplate}</span>
+                                </div>
+                            </div>
+                            <a href="${emailBtnLink}" class="btn-primary" style="margin-top: auto; text-align: center; width: 100%;">Open Workspace</a>
+                        </div>
+                    `;
+
+                    // 4. Fourth Card
+                    if (!isManual) {
+                        // AI Studio: Interview Coach
+                        let interviewSessionsCount = interviewHistory.length;
+                        let avgScore = 'N/A';
+                        let weakestSkill = 'N/A';
+
+                        if (interviewHistory.length > 0) {
+                            const scores = interviewHistory.map(h => Number(h.score)).filter(Number.isFinite);
+                            avgScore = scores.length ? Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length) + '%' : 'N/A';
+                            
+                            const improvements = interviewHistory.flatMap(h => h.improvements || []);
+                            if (improvements.length > 0) {
+                                weakestSkill = improvements[0];
+                            } else {
+                                weakestSkill = 'Communication';
+                            }
+                            if (weakestSkill.length > 25) weakestSkill = weakestSkill.substring(0, 22) + '...';
+                        }
+
+                        gridHtml += `
+                            <div class="smart-card">
+                                <div class="smart-card-title">🎤 Interview Coach</div>
+                                <div class="smart-card-stats">
+                                    <div class="smart-stat-row">
+                                        <span class="smart-stat-label">Practice Sessions</span>
+                                        <span class="smart-stat-val">${interviewSessionsCount}</span>
+                                    </div>
+                                    <div class="smart-stat-row">
+                                        <span class="smart-stat-label">Average Score</span>
+                                        <span class="smart-stat-val">${avgScore}</span>
+                                    </div>
+                                    <div class="smart-stat-row">
+                                        <span class="smart-stat-label">Weakest Skill</span>
+                                        <span class="smart-stat-val" title="${window.appSdk.ui.escapeHtml(weakestSkill)}">${window.appSdk.ui.escapeHtml(weakestSkill)}</span>
+                                    </div>
+                                </div>
+                                <a href="interview.html" class="btn-primary" style="margin-top: auto; text-align: center; width: 100%;">Continue Practice</a>
+                            </div>
+                        `;
+                    } else {
+                        // Creator Studio: Recent Workspace Documents
+                        let recentResumeText = 'No recent resume';
+                        let recentLetterText = 'No recent letter';
+                        let recentEmailText = 'No recent email';
+
+                        let resumeLink = 'resume.html';
+                        let letterLink = 'cover-letter.html';
+                        let emailLink = 'cold-email.html';
+
+                        if (resumes.length > 0) {
+                            const r = resumes[0];
+                            recentResumeText = r.full_name ? `${r.full_name}'s Resume` : 'Untitled Resume';
+                            resumeLink = `resume.html?edit=${r.id}`;
+                        }
+                        if (coverLetters.length > 0) {
+                            const l = coverLetters[0];
+                            recentLetterText = l.job_title ? `${l.job_title} at ${l.company_name || 'Acme'}` : 'Untitled Letter';
+                        }
+                        if (emails.length > 0) {
+                            const e = emails[0];
+                            recentEmailText = e.subject ? e.subject : (e.company ? `Intro to ${e.company}` : 'Untitled Email');
+                        }
+
+                        if (recentResumeText.length > 25) recentResumeText = recentResumeText.substring(0, 22) + '...';
+                        if (recentLetterText.length > 25) recentLetterText = recentLetterText.substring(0, 22) + '...';
+                        if (recentEmailText.length > 25) recentEmailText = recentEmailText.substring(0, 22) + '...';
+
+                        gridHtml += `
+                            <div class="smart-card">
+                                <div class="smart-card-title">📁 Recent Workspace Docs</div>
+                                <div class="smart-card-stats" style="gap: 0.5rem; justify-content: center;">
+                                    <div style="font-size: 0.82rem; margin-bottom: 0.5rem; color: var(--text-3); font-weight: 700; text-transform: uppercase;">Recent Drafts</div>
+                                    <a href="${resumeLink}" class="smart-stat-row" style="text-decoration: none; cursor: pointer; padding: 0.4rem 0;">
+                                        <span class="smart-stat-label" style="color: var(--text-1); font-weight: 600;">📄 ${window.appSdk.ui.escapeHtml(recentResumeText)}</span>
+                                        <span style="color: var(--cyan); font-size: 0.8rem;">Open →</span>
+                                    </a>
+                                    <a href="${letterLink}" class="smart-stat-row" style="text-decoration: none; cursor: pointer; padding: 0.4rem 0;">
+                                        <span class="smart-stat-label" style="color: var(--text-1); font-weight: 600;">📨 ${window.appSdk.ui.escapeHtml(recentLetterText)}</span>
+                                        <span style="color: var(--cyan); font-size: 0.8rem;">Open →</span>
+                                    </a>
+                                    <a href="${emailLink}" class="smart-stat-row" style="text-decoration: none; cursor: pointer; padding: 0.4rem 0;">
+                                        <span class="smart-stat-label" style="color: var(--text-1); font-weight: 600;">✉️ ${window.appSdk.ui.escapeHtml(recentEmailText)}</span>
+                                        <span style="color: var(--cyan); font-size: 0.8rem;">Open →</span>
+                                    </a>
+                                </div>
+                                <button type="button" class="btn-primary" onclick="document.querySelector('.sidebar-item-btn[data-tab=resume]')?.click() || (window.location.href='resume.html')" style="margin-top: auto; text-align: center; width: 100%;">Open Documents</button>
+                            </div>
+                        `;
+                    }
+
+                    smartGrid.innerHTML = gridHtml;
+                }
+
+                // ─── Render Recent Activity ───
+                const recentActivityList = document.getElementById('recentActivityList');
+                if (recentActivityList) {
+                    let activityItems = [];
+
+                    if (resumes.length > 0) {
+                        const r = resumes[0];
+                        const timeAgo = getTimeAgo(new Date(r.created_at));
+                        activityItems.push({
+                            title: `Resume updated for ${r.full_name || 'profile'}`,
+                            time: timeAgo,
+                            link: `resume.html?edit=${r.id}`,
+                            actionText: 'Resume Builder',
+                            rawTime: new Date(r.created_at).getTime()
+                        });
+                    }
+
+                    if (coverLetters.length > 0) {
+                        const l = coverLetters[0];
+                        const timeAgo = getTimeAgo(new Date(l.created_at || l.updated_at));
+                        activityItems.push({
+                            title: `Cover letter generated for ${l.job_title || 'Role'} at ${l.company_name || 'Company'}`,
+                            time: timeAgo,
+                            link: `cover-letter.html`,
+                            actionText: 'Cover Letter AI',
+                            rawTime: new Date(l.created_at || l.updated_at).getTime()
+                        });
+                    }
+
+                    if (emails.length > 0) {
+                        const e = emails[0];
+                        const timeAgo = getTimeAgo(new Date(e.created_at));
+                        activityItems.push({
+                            title: `Cold email saved for ${e.recipient_title || 'Contact'} at ${e.company || 'Company'}`,
+                            time: timeAgo,
+                            link: `cold-email.html`,
+                            actionText: 'Cold Email Writer',
+                            rawTime: new Date(e.created_at).getTime()
+                        });
+                    }
+
+                    if (!isManual && interviewHistory.length > 0) {
+                        const h = interviewHistory[0];
+                        const timeAgo = getTimeAgo(new Date(h.createdAt));
+                        activityItems.push({
+                            title: `Mock interview completed: ${h.title} (Score: ${h.score}%)`,
+                            time: timeAgo,
+                            link: `interview.html`,
+                            actionText: 'Interview Coach',
+                            rawTime: new Date(h.createdAt).getTime()
+                        });
+                    }
+
+                    activityItems.sort((a, b) => b.rawTime - a.rawTime);
+
+                    if (activityItems.length === 0) {
+                        recentActivityList.innerHTML = `<div style="font-size: 0.85rem; color: var(--text-3); text-align: center; padding: 2rem;">No recent activity recorded.</div>`;
+                    } else {
+                        recentActivityList.innerHTML = activityItems.map(item => `
+                            <div class="activity-item">
+                                <div class="activity-content">
+                                    <div class="activity-title">${window.appSdk.ui.escapeHtml(item.title)}</div>
+                                    <div class="activity-time">${item.time} &bull; ${item.actionText}</div>
+                                </div>
+                                <a href="${item.link}" class="activity-action">Open →</a>
+                            </div>
+                        `).join('');
+                    }
+                }
+
+                // ─── Render Quick Resume List ───
+                const quickResumeList = document.getElementById('quickResumeList');
+                if (quickResumeList) {
+                    let quickHtml = '';
+
+                    // Resume Item
+                    let resumeLink = 'resume.html';
+                    let resumeSubtitle = 'Create new resume';
+                    if (resumes.length > 0) {
+                        const r = resumes[0];
+                        resumeLink = `resume.html?edit=${r.id}`;
+                        resumeSubtitle = `Continue editing ${r.full_name || 'Resume'}`;
+                    }
+                    quickHtml += `
+                        <a href="${resumeLink}" class="quick-item">
+                            <span class="quick-label">Resume Builder</span>
+                            <span class="quick-action-text">${window.appSdk.ui.escapeHtml(resumeSubtitle)}</span>
+                        </a>
+                    `;
+
+                    // Cover Letter Item
+                    let letterLink = 'cover-letter.html';
+                    let letterSubtitle = 'Open latest draft';
+                    if (coverLetters.length > 0) {
+                        const l = coverLetters[0];
+                        letterSubtitle = `Open ${l.job_title || 'letter'} draft @ ${l.company_name || 'Acme'}`;
+                    }
+                    quickHtml += `
+                        <a href="${letterLink}" class="quick-item">
+                            <span class="quick-label">Cover Letter</span>
+                            <span class="quick-action-text">${window.appSdk.ui.escapeHtml(letterSubtitle)}</span>
+                        </a>
+                    `;
+
+                    // Cold Email Item
+                    let emailLink = 'cold-email.html';
+                    let emailSubtitle = 'Resume draft';
+                    if (emails.length > 0) {
+                        const e = emails[0];
+                        emailSubtitle = `Open intro draft for ${e.company || 'Acme'}`;
+                    }
+                    quickHtml += `
+                        <a href="${emailLink}" class="quick-item">
+                            <span class="quick-label">Cold Email</span>
+                            <span class="quick-action-text">${window.appSdk.ui.escapeHtml(emailSubtitle)}</span>
+                        </a>
+                    `;
+
+                    // Interview Item (AI Studio only)
+                    if (!isManual) {
+                        let interviewSubtitle = 'Start practice';
+                        if (interviewHistory.length > 0) {
+                            const h = interviewHistory[0];
+                            interviewSubtitle = `Resume ${h.title}`;
+                        }
+                        quickHtml += `
+                            <a href="interview.html" class="quick-item">
+                                <span class="quick-label">Interview Coach</span>
+                                <span class="quick-action-text">${window.appSdk.ui.escapeHtml(interviewSubtitle)}</span>
+                            </a>
+                        `;
+                    }
+
+                    quickResumeList.innerHTML = quickHtml;
+                }
+
+            } catch (err) {
+                console.error('Error loading command center stats:', err);
+            }
         }
 
-        async function deleteResume(resumeId) {
-            if (!window.appSdk.ui.isValidUUID(resumeId)) return;
-            if (!confirm('Are you sure you want to delete this resume? This cannot be undone.')) return;
-
-            const { error } = await window.appSdk.client
-                .from('resumes')
-                .delete()
-                .eq('id', resumeId)
-                .eq('user_id', currentUserId);
-
-            if (error) {
-                window.appSdk.ui.showToast('❌ Could not delete resume. Please try again.', 'error');
-                return;
-            }
-
-            const el = document.getElementById(`resume-${resumeId}`);
-            if (el) el.remove();
-
-            const listEl = document.getElementById('resumeList');
-            if (!listEl.querySelector('.resume-item')) {
-                listEl.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">📄</div>
-                        <p>No resumes yet. Create your first one!</p>
-                        <a href="resume.html" class="btn-new">+ Create Resume</a>
-                    </div>`;
-            }
-
-            window.appSdk.ui.showToast('✅ Resume deleted successfully.');
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            let interval = Math.floor(seconds / 31536000);
+            if (interval >= 1) return interval + " year" + (interval > 1 ? "s" : "") + " ago";
+            interval = Math.floor(seconds / 2592000);
+            if (interval >= 1) return interval + " month" + (interval > 1 ? "s" : "") + " ago";
+            interval = Math.floor(seconds / 86400);
+            if (interval >= 1) return interval + " day" + (interval > 1 ? "s" : "") + " ago";
+            interval = Math.floor(seconds / 3600);
+            if (interval >= 1) return interval + " hour" + (interval > 1 ? "s" : "") + " ago";
+            interval = Math.floor(seconds / 60);
+            if (interval >= 1) return interval + " minute" + (interval > 1 ? "s" : "") + " ago";
+            return "just now";
         }
 
         function logout() {
@@ -260,7 +833,6 @@
         }
 
         async function initPage() {
-            // Failsafe timeout to prevent infinite loader trap
             setTimeout(() => {
                 const curtain = document.getElementById('auth-guard-curtain');
                 if (curtain) {
@@ -287,22 +859,22 @@
                 const nameEl = document.getElementById('welcomeNameSpan');
                 if (nameEl) nameEl.textContent = name;
 
-                const emailEl = document.getElementById('welcomeEmail');
-                if (emailEl) emailEl.textContent = email;
-
-                // Keep localStorage in sync
                 localStorage.setItem('userEmail', email);
                 localStorage.setItem('userName', name);
                 localStorage.setItem('userId', currentUserId);
 
-                await loadResumes();
+                await loadDashboardData();
+
+                // Adaptive dashboard listener
+                window.addEventListener('workspaceChanged', () => {
+                    loadDashboardData();
+                });
             } catch (err) {
                 console.error('Initialization error:', err);
                 localStorage.clear();
                 window.location.href = 'login.html?error=true';
                 return;
             } finally {
-                // Ensure curtain is always removed on exit
                 const curtain = document.getElementById('auth-guard-curtain');
                 if (curtain) {
                     curtain.style.opacity = '0';
@@ -313,7 +885,6 @@
 
         window.addEventListener('load', initPage);
 
-        // --- Razorpay Integration Logic ---
         document.getElementById('btn-upgrade-pro').onclick = async function(e){
             e.preventDefault();
             try {
