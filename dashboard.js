@@ -414,7 +414,15 @@
       const avatarEl = document.getElementById('avatarInitial');
       if (avatarEl) avatarEl.textContent = name.charAt(0).toUpperCase();
 
-      await loadDashboardData();
+      // Release page curtain immediately to enable instant interactivity
+      const curtain = document.getElementById('auth-guard-curtain');
+      if (curtain) {
+        curtain.style.opacity = '0';
+        setTimeout(() => curtain.remove(), 400);
+      }
+
+      // Load secondary data asynchronously in background
+      loadDashboardData();
 
       window.addEventListener('workspaceChanged', () => {
         loadDashboardData();
@@ -422,12 +430,6 @@
     } catch (err) {
       console.error('Initialization error:', err);
       window.location.href = 'login.html?error=true';
-    } finally {
-      const curtain = document.getElementById('auth-guard-curtain');
-      if (curtain) {
-        curtain.style.opacity = '0';
-        setTimeout(() => curtain.remove(), 400);
-      }
     }
   }
 

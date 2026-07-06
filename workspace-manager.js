@@ -111,7 +111,7 @@
         portal.classList.add('active');
         document.body.classList.add('workspace-transitioning');
 
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 80)));
       }
 
       this.workspace = target;
@@ -141,7 +141,7 @@
       window.dispatchEvent(new CustomEvent('workspaceChanged', { detail: { workspace: target } }));
 
       if (animate) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 80)));
         document.body.classList.remove('workspace-transitioning');
         const portal = document.getElementById('workspace-portal');
         if (portal) portal.classList.remove('active');

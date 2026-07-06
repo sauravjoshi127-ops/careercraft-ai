@@ -806,17 +806,137 @@
     }
 
     let currentAIItemIndex = null;
+    let selectedWordLimit = 75;
+    let customLimitActive = false;
+    let selectedTone = 'Professional';
+    let selectedIndustry = '';
+    let selectedLanguage = 'English';
+
+    function setupAISettingsListeners() {
+        const selector = document.getElementById('aiWordLimitSelector');
+        const customInput = document.getElementById('customWordLimit');
+        const toneSelect = document.getElementById('aiTone');
+        const industryInput = document.getElementById('aiIndustry');
+        const languageSelect = document.getElementById('aiLanguage');
+        const box = document.getElementById('aiSuggestionsBox');
+
+        if (selector) {
+            selector.querySelectorAll('.pill-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selector.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    const words = btn.getAttribute('data-words');
+                    if (words === 'custom') {
+                        customLimitActive = true;
+                        if (customInput) {
+                            customInput.style.display = 'inline-block';
+                            selectedWordLimit = parseInt(customInput.value) || 75;
+                        }
+                    } else {
+                        customLimitActive = false;
+                        if (customInput) customInput.style.display = 'none';
+                        selectedWordLimit = parseInt(words) || 75;
+                    }
+                    updateAISuggestionsCounter();
+                });
+            });
+        }
+
+        if (customInput) {
+            customInput.addEventListener('input', () => {
+                if (customLimitActive) {
+                    selectedWordLimit = parseInt(customInput.value) || 75;
+                    updateAISuggestionsCounter();
+                }
+            });
+        }
+
+        if (toneSelect) {
+            toneSelect.addEventListener('change', () => {
+                selectedTone = toneSelect.value;
+            });
+        }
+
+        if (industryInput) {
+            industryInput.addEventListener('input', () => {
+                selectedIndustry = industryInput.value.trim();
+            });
+        }
+
+        if (languageSelect) {
+            languageSelect.addEventListener('change', () => {
+                selectedLanguage = languageSelect.value;
+            });
+        }
+
+        if (box) {
+            box.addEventListener('input', () => {
+                currentAISuggestion = box.innerText || box.textContent || '';
+                updateAISuggestionsCounter();
+            });
+        }
+    }
+
+    function updateAISuggestionsCounter() {
+        const box = document.getElementById('aiSuggestionsBox');
+        const counter = document.getElementById('aiLiveCounter');
+        if (!counter) return;
+
+        const text = box ? (box.innerText || box.textContent || '') : '';
+        const wordsUsed = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+        
+        let limitLabel = selectedWordLimit + ' words';
+        if (customLimitActive) {
+            limitLabel = selectedWordLimit + ' (Custom)';
+        }
+        
+        counter.textContent = `Words Used: ${wordsUsed} / ${limitLabel}`;
+    }
+
+    function triggerAIGeneration() {
+        const btn = document.getElementById('aiGenerateBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = '⏳ Generating...';
+        }
+        getAISuggestions(currentAISection, currentAIItemIndex).finally(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '✨ Regenerate';
+            }
+        });
+    }
 
     async function getAISuggestions(section, itemIndex = null) {
         currentAISection = section;
         currentAIItemIndex = itemIndex;
-        currentAISuggestion = '';
 
         const box = document.getElementById('aiSuggestionsBox');
         const acceptBtn = document.getElementById('aiAcceptBtn');
+        const configPanel = document.getElementById('aiConfigPanel');
+        const counterRow = document.getElementById('aiLiveCounterRow');
+        
+        if (section === 'summary') {
+            if (configPanel) configPanel.style.display = 'block';
+            if (counterRow) counterRow.style.display = 'flex';
+        } else {
+            if (configPanel) configPanel.style.display = 'none';
+            if (counterRow) counterRow.style.display = 'none';
+        }
+
+        currentAISuggestion = '';
         box.textContent = 'Getting AI suggestions...';
         acceptBtn.style.display = 'none';
         document.getElementById('aiModal').classList.add('active');
+
+        // Reset live counter
+        const counter = document.getElementById('aiLiveCounter');
+        if (counter) {
+            let limitLabel = selectedWordLimit + ' words';
+            if (customLimitActive) limitLabel = selectedWordLimit + ' (Custom)';
+            counter.textContent = `Words Used: 0 / ${limitLabel}`;
+        }
 
         const resumeData = collectFormData();
         let content = '';
@@ -841,10 +961,17 @@
                 headers['Authorization'] = `Bearer ${session.access_token}`;
             }
 
+            const options = {
+                wordLimit: selectedWordLimit,
+                tone: selectedTone,
+                targetIndustry: selectedIndustry,
+                selectedLanguage: selectedLanguage
+            };
+
             const response = await fetch('/api/ai-suggestions', {
                 method: 'POST',
                 headers: headers,
-                body: JSON.stringify({ section, content, resumeData }),
+                body: JSON.stringify({ section, content, resumeData, options }),
             });
 
             if (!response.ok) {
@@ -855,6 +982,8 @@
             const result = await response.json();
             currentAISuggestion = result.suggestions || '';
             box.textContent = currentAISuggestion || '(No suggestion returned)';
+
+            updateAISuggestionsCounter();
 
             if (currentAISuggestion && (section === 'summary' || section === 'skills' || (section === 'experience' && itemIndex !== null))) {
                 acceptBtn.style.display = 'inline-flex';
@@ -916,6 +1045,7 @@
     window.addEducation = () => addEducation();
     window.cancelEdit = cancelEdit;
     window.applyCustomization = applyCustomization;
+    window.triggerAIGeneration = triggerAIGeneration;
 
     // Bind save handler on DOM
     document.addEventListener('DOMContentLoaded', () => {
@@ -924,6 +1054,7 @@
             form.addEventListener('submit', handleSave);
         }
         setupSkillsListener();
+        setupAISettingsListeners();
 
         // Close delete modal on overlay click
         document.getElementById('deleteModal')?.addEventListener('click', function (e) {

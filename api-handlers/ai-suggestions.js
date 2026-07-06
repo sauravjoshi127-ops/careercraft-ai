@@ -36,7 +36,7 @@ module.exports = async function handler(req, res) {
         return res.status(authErr.status || 401).json({ error: authErr.message });
     }
 
-    const { section, content, resumeData } = req.body || {};
+    const { section, content, resumeData, options } = req.body || {};
 
     if (!section) {
         return res.status(400).json({ error: 'Missing required field: section' });
@@ -64,7 +64,37 @@ module.exports = async function handler(req, res) {
             'in the following text. Return only the corrected text with no additional commentary.',
     };
 
-    const systemPrompt = systemPrompts[section] || systemPrompts.grammar;
+    let systemPrompt = systemPrompts[section] || systemPrompts.grammar;
+
+    if (section === 'summary' && options) {
+        const { wordLimit, tone, targetIndustry, selectedLanguage } = options;
+        
+        let limitClause = 'Keep it under 4 sentences.';
+        if (wordLimit) {
+            limitClause = `The summary must be approximately ${wordLimit} words long. Naturally structure the content to fit this length constraint without padding or awkward truncation.`;
+        }
+        
+        let toneClause = 'highly impactful, keyword-rich, and tailored for senior recruiters. Focus on the candidate\'s core expertise, value proposition, and key strengths.';
+        if (tone) {
+            toneClause = `highly impactful, keyword-rich, and written in a ${tone} tone. Focus on the candidate\'s core expertise, value proposition, and key strengths.`;
+        }
+
+        let industryClause = '';
+        if (targetIndustry) {
+            industryClause = ` Tailor the summary specifically for the ${targetIndustry} industry.`;
+        }
+
+        let languageClause = '';
+        if (selectedLanguage && selectedLanguage !== 'English') {
+            languageClause = ` Return the summary written in the ${selectedLanguage} language.`;
+        }
+
+        systemPrompt = 
+            `You are an expert resume writer and ATS optimization coach. Rewrite the following professional summary ` +
+            `to make it ${toneClause} ${limitClause}${industryClause}${languageClause} ` +
+            `Return ONLY the improved summary text with no extra commentary, chat preambles, or formatting markup.`;
+    }
+
     const userContent =
         section === 'skills'
             ? JSON.stringify(resumeData || {})
