@@ -46,6 +46,20 @@
     </script>
     <style>
         @keyframes auth-spin { to { transform: rotate(360deg); } }
+        @keyframes skeleton-pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 0.3; }
+            100% { opacity: 0.6; }
+        }
+        .skeleton-text {
+            animation: skeleton-pulse 1.5s infinite ease-in-out;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .theme-manual-active .skeleton-text {
+            background: rgba(0, 0, 0, 0.05);
+        }
 
         /* Command Center Layout Override Styles */
         .command-header {
@@ -311,13 +325,103 @@
             
             <!-- Compact Metrics Row -->
             <div class="metrics-row" id="dashboardMetricsRow">
-                <!-- Metrics injected dynamically -->
+                <div class="metric-item">
+                    <div class="metric-label">Resume Progress</div>
+                    <div class="metric-value skeleton-text" style="width: 50px; height: 1.8rem;"></div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Cover Letters</div>
+                    <div class="metric-value skeleton-text" style="width: 30px; height: 1.8rem;"></div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Cold Emails</div>
+                    <div class="metric-value skeleton-text" style="width: 30px; height: 1.8rem;"></div>
+                </div>
             </div>
         </div>
 
         <!-- Tools Smart Grid -->
         <div class="smart-grid" id="dashboardSmartGrid">
-            <!-- Dynamic smart cards injected here -->
+            <!-- Card 1: Resume Builder -->
+            <div class="smart-card">
+                <div class="smart-card-title">📝 Resume Builder</div>
+                <div class="smart-card-stats">
+                    <div class="smart-stat-row">
+                        <span class="smart-stat-label">Resume Progress</span>
+                        <span class="smart-stat-val skeleton-text" style="width: 40px; height: 1rem;"></span>
+                    </div>
+                    <div class="smart-stat-row">
+                        <span class="smart-stat-label">Last Edited</span>
+                        <span class="smart-stat-val skeleton-text" style="width: 60px; height: 1rem;"></span>
+                    </div>
+                    <div class="smart-stat-row">
+                        <span class="smart-stat-label">Saved Resumes</span>
+                        <span class="smart-stat-val skeleton-text" style="width: 20px; height: 1rem;"></span>
+                    </div>
+                    <div class="smart-stat-row">
+                        <span class="smart-stat-label">ATS Score</span>
+                        <span class="smart-stat-val skeleton-text" style="width: 30px; height: 1rem;"></span>
+                    </div>
+                </div>
+                <a href="resume.html" class="btn-primary" style="margin-top: auto; text-align: center; width: 100%;">Continue Resume</a>
+            </div>
+            <!-- Card 2: Cover Letter -->
+            <div class="smart-card">
+                <div class="smart-card-title">📨 Cover Letter AI</div>
+                <div class="smart-card-stats">
+                    <div class="smart-stat-row">
+                        <span class="smart-stat-label">Letters Created</span>
+                        <span class="smart-stat-val skeleton-text" style="width: 20px; height: 1rem;"></span>
+                    </div>
+                    <div class="smart-stat-row">
+                        <span class="smart-stat-label">Last Generated</span>
+                        <span class="smart-stat-val skeleton-text" style="width: 60px; height: 1rem;"></span>
+                    </div>
+                    <div class="smart-stat-row">
+                        <span class="smart-stat-label">Target Company</span>
+                        <span class="smart-stat-val skeleton-text" style="width: 80px; height: 1rem;"></span>
+                    </div>
+                </div>
+                <a href="cover-letter.html" class="btn-primary" style="margin-top: auto; text-align: center; width: 100%;">Continue Writing</a>
+            </div>
+            <!-- Card 3: Cold Email -->
+            <div class="smart-card">
+                <div class="smart-card-title">✉️ Cold Email Writer</div>
+                <div class="smart-card-stats">
+                    <div class="smart-stat-row">
+                        <span class="smart-stat-label">Draft Count</span>
+                        <span class="smart-stat-val skeleton-text" style="width: 20px; height: 1rem;"></span>
+                    </div>
+                    <div class="smart-stat-row">
+                        <span class="smart-stat-label">Last Edited</span>
+                        <span class="smart-stat-val skeleton-text" style="width: 60px; height: 1rem;"></span>
+                    </div>
+                    <div class="smart-stat-row">
+                        <span class="smart-stat-label">Favorite Template</span>
+                        <span class="smart-stat-val skeleton-text" style="width: 70px; height: 1rem;"></span>
+                    </div>
+                </div>
+                <a href="cold-email.html" class="btn-primary" style="margin-top: auto; text-align: center; width: 100%;">Open Workspace</a>
+            </div>
+            <!-- Card 4: Interview Coach -->
+            <div class="smart-card" id="cardInterviewCoach">
+                <div class="smart-card-title">🎤 Interview Coach</div>
+                <div class="smart-card-stats">
+                    <div class="smart-stat-row">
+                        <span class="smart-stat-label">Practice Sessions</span>
+                        <span class="smart-stat-val skeleton-text" style="width: 20px; height: 1rem;"></span>
+                    </div>
+                    <div class="smart-stat-row">
+                        <span class="smart-stat-label">Average Score</span>
+                        <span class="smart-stat-val skeleton-text" style="width: 40px; height: 1rem;"></span>
+                    </div>
+                    <div class="smart-stat-row">
+                        <span class="smart-stat-label">Weakest Skill</span>
+                        <span class="smart-stat-val skeleton-text" style="width: 90px; height: 1rem;"></span>
+                    </div>
+                </div>
+                <a href="interview.html" class="btn-primary" style="margin-top: auto; text-align: center; width: 100%;">Continue Practice</a>
+            </div>
         </div>
 
         <!-- Secondary Bottom Panel -->

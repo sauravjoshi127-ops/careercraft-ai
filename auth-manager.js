@@ -8,6 +8,19 @@
 
     async getSession() {
       if (this.sessionCache) return this.sessionCache;
+
+      try {
+        const cached = sessionStorage.getItem('careercraft_session');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && parsed.expires_at && parsed.expires_at > (Date.now() / 1000)) {
+            this.sessionCache = parsed;
+            this.verifySessionBackground();
+            return parsed;
+          }
+        }
+      } catch (_) {}
+
       if (window.appSdk && window.appSdk.ready) {
         await window.appSdk.ready;
       }
@@ -15,10 +28,34 @@
         const { data: { session } } = await window.appSdk.client.auth.getSession();
         if (session) {
           this.sessionCache = session;
+          try {
+            sessionStorage.setItem('careercraft_session', JSON.stringify(session));
+          } catch (_) {}
           return session;
         }
       }
       return null;
+    },
+
+    async verifySessionBackground() {
+      if (window.appSdk && window.appSdk.ready) {
+        await window.appSdk.ready;
+      }
+      if (window.appSdk && window.appSdk.client) {
+        try {
+          const { data: { session } } = await window.appSdk.client.auth.getSession();
+          if (session) {
+            this.sessionCache = session;
+            sessionStorage.setItem('careercraft_session', JSON.stringify(session));
+          } else {
+            this.sessionCache = null;
+            sessionStorage.removeItem('careercraft_session');
+            window.location.href = 'login.html';
+          }
+        } catch (e) {
+          console.warn('[AuthManager] Background session verification failed:', e);
+        }
+      }
     },
 
     async getUser() {
@@ -44,6 +81,9 @@
 
     async logout() {
       this.sessionCache = null;
+      try {
+        sessionStorage.removeItem('careercraft_session');
+      } catch (_) {}
       if (window.appSdk && window.appSdk.client) {
         await window.appSdk.client.auth.signOut();
       }

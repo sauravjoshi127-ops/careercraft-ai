@@ -1490,6 +1490,7 @@
       document.querySelectorAll('.sidebar-item-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const targetTab = btn.getAttribute('data-tab');
+          if (this.activeTab === targetTab) return;
           
           // If we are on a specific page that corresponds to a tab, keep on same page
           // Otherwise redirect to the page

@@ -96,6 +96,9 @@
 .modal-large { max-width:680px; }
 .btn-ai { padding:0.3rem 0.7rem; font-size:0.72rem; font-weight:700; border:1px solid var(--accent-soft-border-2); background:var(--accent-soft-bg-2); color:var(--cyan); border-radius:999px; cursor:pointer; transition:background 0.15s; margin-left:auto; font-family:inherit; }
 .btn-ai:hover { background:var(--accent-soft-bg); }
+.pill-btn { background:var(--bg-input); border:1px solid var(--border); color:var(--text-2); padding:0.35rem 0.75rem; font-size:0.8rem; border-radius:var(--r-sm); cursor:pointer; transition:all 0.15s ease; font-family:inherit; }
+.pill-btn:hover { border-color:var(--cyan); color:var(--text-1); }
+.pill-btn.active { background:var(--cyan); border-color:var(--cyan); color:#ffffff; font-weight:600; }
 #livePreviewContent { font-family:'Inter',sans-serif; }
 .preview-contact { font-size:0.75rem; color:var(--text-2); margin-bottom:0.875rem; }
 .tpl-classic .preview-contact { text-align:center; }
@@ -310,7 +313,64 @@
         <div class="modal modal-large">
             <h3>AI Suggestions</h3>
             <p>Here are AI-powered suggestions to improve your resume section:</p>
-            <div class="ai-suggestions-box" id="aiSuggestionsBox">Getting suggestions...</div>
+
+            <!-- Compact Config / Settings Panel (Future ready) -->
+            <div class="ai-config-panel" id="aiConfigPanel" style="display: none; margin-bottom: 1.25rem; border: 1px solid var(--border); border-radius: var(--r-md); padding: 1.25rem; background: var(--bg-card);">
+                <!-- Word Limit Selector Row -->
+                <div class="config-row" style="margin-bottom: 1rem;">
+                    <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-2); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">Word Limit Control</label>
+                    <div class="word-limit-selector" id="aiWordLimitSelector" style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                        <button type="button" class="pill-btn" data-words="30">30 words</button>
+                        <button type="button" class="pill-btn" data-words="50">50 words</button>
+                        <button type="button" class="pill-btn active" data-words="75">75 words</button>
+                        <button type="button" class="pill-btn" data-words="100">100 words</button>
+                        <button type="button" class="pill-btn" data-words="150">150 words</button>
+                        <button type="button" class="pill-btn" data-words="custom">Custom</button>
+                        <input type="number" id="customWordLimit" min="10" max="500" value="75" style="display: none; width: 80px; padding: 0.35rem 0.5rem; font-size: 0.8rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;" placeholder="Qty">
+                    </div>
+                </div>
+                
+                <!-- Future-ready extra parameters (Tone, Industry, Language) -->
+                <div class="config-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Tone</label>
+                        <select id="aiTone" style="width: 100%; padding: 0.45rem; font-size: 0.82rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
+                            <option value="Professional" selected>Professional</option>
+                            <option value="Bold">Bold / Confident</option>
+                            <option value="Creative">Creative / Innovative</option>
+                            <option value="Casual">Casual</option>
+                            <option value="Executive">Executive / Strategic</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Target Industry</label>
+                        <input type="text" id="aiIndustry" placeholder="e.g. Technology" style="width: 100%; padding: 0.45rem; font-size: 0.82rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Language</label>
+                        <select id="aiLanguage" style="width: 100%; padding: 0.45rem; font-size: 0.82rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
+                            <option value="English" selected>English</option>
+                            <option value="Spanish">Spanish</option>
+                            <option value="French">French</option>
+                            <option value="German">German</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 1rem;">
+                    <button type="button" class="btn btn-primary" id="aiGenerateBtn" onclick="triggerAIGeneration()" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">✨ Regenerate</button>
+                </div>
+            </div>
+
+            <!-- Suggestion Content Box (now contenteditable) -->
+            <div class="ai-suggestions-box" id="aiSuggestionsBox" contenteditable="true" style="outline: none; margin-bottom: 0.75rem;">Getting suggestions...</div>
+            
+            <!-- Live Word Counter Badge -->
+            <div class="live-counter-row" id="aiLiveCounterRow" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; font-size: 0.8rem; color: var(--text-2);">
+                <span id="aiLiveCounter">Words Used: 0 / 75 words</span>
+                <span style="font-size: 0.72rem; opacity: 0.6;">💡 You can click the box above to edit the summary manually</span>
+            </div>
+
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeAIModal()">Close</button>
                 <button class="btn btn-primary" id="aiAcceptBtn" onclick="acceptAISuggestion()" style="display:none;">Accept</button>
