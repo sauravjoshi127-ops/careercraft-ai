@@ -1051,8 +1051,39 @@
     }
 
     function setupAIDocumentEditor() {
-        // Toolbar Bindings
-        document.getElementById('aiBtnInsert')?.addEventListener('click', handleInsertSummary);
+        // Accordion Trigger
+        const accordionTrigger = document.getElementById('aiAccordionTrigger');
+        const accordionContent = document.getElementById('aiAccordionContent');
+        if (accordionTrigger && accordionContent) {
+            accordionTrigger.addEventListener('click', () => {
+                const isActive = accordionContent.classList.contains('is-active');
+                if (isActive) {
+                    accordionContent.classList.remove('is-active');
+                    accordionTrigger.classList.remove('is-active');
+                    accordionTrigger.setAttribute('aria-expanded', 'false');
+                } else {
+                    accordionContent.classList.add('is-active');
+                    accordionTrigger.classList.add('is-active');
+                    accordionTrigger.setAttribute('aria-expanded', 'true');
+                }
+            });
+        }
+
+        // View Mode click to edit inline (Notion style)
+        document.getElementById('aiSuggestionsBox')?.addEventListener('click', () => {
+            if (!isEditorEditingMode && currentAISuggestion.trim() !== '') {
+                enterEditorEditMode();
+            }
+        });
+
+        // Action Bindings
+        document.getElementById('aiBtnInsert')?.addEventListener('click', () => {
+            if (currentAISection === 'summary') {
+                handleInsertSummary();
+            } else {
+                acceptAISuggestion();
+            }
+        });
         document.getElementById('aiBtnEdit')?.addEventListener('click', enterEditorEditMode);
         document.getElementById('aiBtnCopy')?.addEventListener('click', copyEditorText);
         document.getElementById('aiBtnClear')?.addEventListener('click', promptClearSummary);
@@ -1060,34 +1091,6 @@
 
         document.getElementById('aiBtnSave')?.addEventListener('click', saveEditorEdit);
         document.getElementById('aiBtnCancel')?.addEventListener('click', cancelEditorEdit);
-
-        // Mobile Overflow Bindings
-        document.getElementById('aiMobBtnInsert')?.addEventListener('click', () => {
-            document.getElementById('aiMobileMenu')?.classList.add('is-hidden');
-            handleInsertSummary();
-        });
-        document.getElementById('aiMobBtnEdit')?.addEventListener('click', () => {
-            document.getElementById('aiMobileMenu')?.classList.add('is-hidden');
-            enterEditorEditMode();
-        });
-        document.getElementById('aiMobBtnCopy')?.addEventListener('click', () => {
-            document.getElementById('aiMobileMenu')?.classList.add('is-hidden');
-            copyEditorText();
-        });
-        document.getElementById('aiMobBtnClear')?.addEventListener('click', () => {
-            document.getElementById('aiMobileMenu')?.classList.add('is-hidden');
-            promptClearSummary();
-        });
-        document.getElementById('aiMobBtnRegen')?.addEventListener('click', () => {
-            document.getElementById('aiMobileMenu')?.classList.add('is-hidden');
-            triggerAIGeneration();
-        });
-
-        // Overflow Trigger
-        document.getElementById('aiMobileTrigger')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.getElementById('aiMobileMenu')?.classList.toggle('is-hidden');
-        });
 
         // Confirmation Modal Buttons
         document.getElementById('btnCancelClear')?.addEventListener('click', () => {
@@ -1129,10 +1132,10 @@
             }
         });
 
-        // Global shortcuts when modal is active but not in edit fields
+        // Global shortcuts when drawer is active but not in edit fields
         document.addEventListener('keydown', (e) => {
-            const modal = document.getElementById('aiModal');
-            if (!modal || !modal.classList.contains('active')) return;
+            const drawer = document.getElementById('aiDrawer');
+            if (!drawer || !drawer.classList.contains('ai-copilot-active')) return;
 
             const tag = document.activeElement ? document.activeElement.tagName : '';
             if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement.contentEditable === 'true') {
@@ -1150,7 +1153,11 @@
                 triggerAIGeneration();
             } else if (e.key === 'i' || e.key === 'I') {
                 e.preventDefault();
-                handleInsertSummary();
+                if (currentAISection === 'summary') {
+                    handleInsertSummary();
+                } else {
+                    acceptAISuggestion();
+                }
             }
         });
 
@@ -1244,26 +1251,23 @@
     }
 
     function triggerAIGeneration() {
-        const btn = document.getElementById('aiGenerateBtn');
         const regenBtn = document.getElementById('aiBtnRegen');
-        const mobRegenBtn = document.getElementById('aiMobBtnRegen');
         const loader = document.getElementById('aiEditorLoader');
 
-        if (btn) {
-            btn.disabled = true;
-            btn.textContent = '⏳ Generating...';
+        if (regenBtn) {
+            regenBtn.disabled = true;
+            regenBtn.innerHTML = '⏳ Regen';
         }
-        if (regenBtn) regenBtn.disabled = true;
-        if (mobRegenBtn) mobRegenBtn.disabled = true;
         if (loader) loader.classList.remove('is-hidden');
 
         getAISuggestions(currentAISection, currentAIItemIndex).finally(() => {
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = '✨ Regenerate';
+            if (regenBtn) {
+                regenBtn.disabled = false;
+                regenBtn.innerHTML = `
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                    <span>Regen</span>
+                `;
             }
-            if (regenBtn) regenBtn.disabled = false;
-            if (mobRegenBtn) mobRegenBtn.disabled = false;
             if (loader) loader.classList.add('is-hidden');
             lastGeneratedTime = new Date();
             updateEditorMetrics();
@@ -1275,35 +1279,37 @@
         currentAIItemIndex = itemIndex;
 
         const box = document.getElementById('aiSuggestionsBox');
-        const acceptBtn = document.getElementById('aiAcceptBtn');
         const configPanel = document.getElementById('aiConfigPanel');
         const counterRow = document.getElementById('aiLiveCounterRow');
-        
         const insertBtn = document.getElementById('aiBtnInsert');
-        const mobInsertBtn = document.getElementById('aiMobBtnInsert');
+        
+        if (insertBtn) {
+            if (section === 'summary') {
+                insertBtn.textContent = 'Insert Summary';
+                insertBtn.style.display = 'block';
+            } else if (section === 'skills') {
+                insertBtn.textContent = 'Add Skills';
+                insertBtn.style.display = 'block';
+            } else if (section === 'experience') {
+                insertBtn.textContent = 'Insert Description';
+                insertBtn.style.display = 'block';
+            } else {
+                insertBtn.style.display = 'none';
+            }
+        }
 
         if (section === 'summary') {
-            if (configPanel) configPanel.style.display = 'block';
-            if (counterRow) counterRow.style.display = 'flex';
-            if (insertBtn) insertBtn.style.display = 'inline-flex';
-            if (mobInsertBtn) mobInsertBtn.style.display = 'block';
-            
             if (box.textContent && box.textContent !== 'Getting AI suggestions...' && box.textContent !== 'Getting suggestions...') {
                 lastRegeneratedSummary = box.textContent;
             } else {
                 box.textContent = 'Getting AI suggestions...';
             }
         } else {
-            if (configPanel) configPanel.style.display = 'none';
-            if (counterRow) counterRow.style.display = 'none';
-            if (insertBtn) insertBtn.style.display = 'none';
-            if (mobInsertBtn) mobInsertBtn.style.display = 'none';
             box.textContent = 'Getting AI suggestions...';
         }
 
         currentAISuggestion = '';
-        acceptBtn.style.display = 'none';
-        document.getElementById('aiModal').classList.add('active');
+        document.getElementById('aiDrawer')?.classList.add('ai-copilot-active');
 
         // Reset live counter
         const counter = document.getElementById('aiLiveCounter');
@@ -1373,10 +1379,6 @@
             box.textContent = currentAISuggestion || '(No suggestion returned)';
 
             updateAISuggestionsCounter();
-
-            if (currentAISuggestion && (section === 'summary' || section === 'skills' || (section === 'experience' && itemIndex !== null))) {
-                acceptBtn.style.display = 'inline-flex';
-            }
         } catch (err) {
             console.error('AI Suggestions Error:', err);
             if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('fetch')) {
@@ -1392,27 +1394,27 @@
         if (currentAISection === 'summary') {
             const summaryEl = document.getElementById('summary');
             if (summaryEl) summaryEl.value = currentAISuggestion;
-            showAlert('success', 'Summary updated with AI suggestion.');
+            window.LayoutManager.showToast('Summary updated with AI suggestion.', 'success');
         } else if (currentAISection === 'skills') {
             const newSkills = currentAISuggestion.split(',').map(s => s.trim()).filter(s => s);
             newSkills.forEach(s => addSkill(s));
-            showAlert('success', `Added ${newSkills.length} suggested skill(s).`);
+            window.LayoutManager.showToast(`Added ${newSkills.length} suggested skill(s).`, 'success');
         } else if (currentAISection === 'experience' && currentAIItemIndex !== null) {
             const textEl = document.getElementById(`expDesc-${currentAIItemIndex}`);
             if (textEl) {
                 textEl.value = currentAISuggestion;
-                showAlert('success', 'Experience description polished with AI suggestion.');
+                window.LayoutManager.showToast('Experience description polished with AI suggestion.', 'success');
             }
         }
         updatePreview();
-        closeAIModal();
+        closeAIDrawer();
     }
 
-    function closeAIModal() {
+    function closeAIDrawer() {
         if (isEditorEditingMode) {
             cancelEditorEdit();
         }
-        document.getElementById('aiModal').classList.remove('active');
+        document.getElementById('aiDrawer')?.classList.remove('ai-copilot-active');
         currentAISuggestion = '';
         currentAISection = '';
         currentAIItemIndex = null;
@@ -1444,7 +1446,7 @@
         if (summaryEl) {
             summaryEl.value = text;
             updatePreview();
-            closeAIModal();
+            closeAIDrawer();
 
             summaryEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setTimeout(() => {
@@ -1465,7 +1467,8 @@
     window.removeEntry = removeEntry;
     window.getAISuggestions = getAISuggestions;
     window.acceptAISuggestion = acceptAISuggestion;
-    window.closeAIModal = closeAIModal;
+    window.closeAIDrawer = closeAIDrawer;
+    window.closeAIModal = closeAIDrawer;
     window.handleInsertSummary = handleInsertSummary;
     window.closeShareModal = closeShareModal;
     window.copyShareLink = copyShareLink;
@@ -1496,9 +1499,14 @@
             if (e.target === this) closeShareModal();
         });
 
-        // Close AI modal on overlay click
-        document.getElementById('aiModal')?.addEventListener('click', function (e) {
-            if (e.target === this) closeAIModal();
+        // Close AI drawer on click outside
+        document.addEventListener('click', (e) => {
+            const drawer = document.getElementById('aiDrawer');
+            if (drawer && drawer.classList.contains('ai-copilot-active')) {
+                if (!drawer.contains(e.target) && !e.target.closest('.btn-ai')) {
+                    closeAIDrawer();
+                }
+            }
         });
     });
 

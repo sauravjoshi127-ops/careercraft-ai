@@ -308,172 +308,127 @@
         </div>
     </div>
 
-    <!-- AI Suggestions Modal -->
-    <div class="modal-overlay" id="aiModal">
-        <div class="modal modal-large">
-            <h3>AI Suggestions</h3>
-            <p>Here are AI-powered suggestions to improve your resume section:</p>
-
-            <!-- Compact Config / Settings Panel (Future ready) -->
-            <div class="ai-config-panel" id="aiConfigPanel" style="display: none; margin-bottom: 1.25rem; border: 1px solid var(--border); border-radius: var(--r-md); padding: 1.25rem; background: var(--bg-card);">
-                <!-- Word Limit Selector Row -->
-                <div class="config-row" style="margin-bottom: 1rem;">
-                    <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-2); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">Word Limit Control</label>
-                    <div class="word-limit-selector" id="aiWordLimitSelector" style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
-                        <button type="button" class="pill-btn" data-words="30">30 words</button>
-                        <button type="button" class="pill-btn" data-words="50">50 words</button>
-                        <button type="button" class="pill-btn active" data-words="75">75 words</button>
-                        <button type="button" class="pill-btn" data-words="100">100 words</button>
-                        <button type="button" class="pill-btn" data-words="150">150 words</button>
-                        <button type="button" class="pill-btn" data-words="custom">Custom</button>
-                        <input type="number" id="customWordLimit" min="10" max="500" value="75" style="display: none; width: 80px; padding: 0.35rem 0.5rem; font-size: 0.8rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;" placeholder="Qty">
-                    </div>
-                </div>
-                
-                <!-- Future-ready extra parameters (Tone, Industry, Language) -->
-                <div class="config-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
-                    <div>
-                        <label style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Tone</label>
-                        <select id="aiTone" style="width: 100%; padding: 0.45rem; font-size: 0.82rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
-                            <option value="Professional" selected>Professional</option>
-                            <option value="Bold">Bold / Confident</option>
-                            <option value="Creative">Creative / Innovative</option>
-                            <option value="Casual">Casual</option>
-                            <option value="Executive">Executive / Strategic</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Target Industry</label>
-                        <input type="text" id="aiIndustry" placeholder="e.g. Technology" style="width: 100%; padding: 0.45rem; font-size: 0.82rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Language</label>
-                        <select id="aiLanguage" style="width: 100%; padding: 0.45rem; font-size: 0.82rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
-                            <option value="English" selected>English</option>
-                            <option value="Spanish">Spanish</option>
-                            <option value="French">French</option>
-                            <option value="German">German</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 1rem;">
-                    <button type="button" class="btn btn-primary" id="aiGenerateBtn" onclick="triggerAIGeneration()" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">✨ Regenerate</button>
-                </div>
-            </div>
-
-            <!-- Redesigned AI Document Editor Card -->
-            <div class="ai-editor-card">
-                <div class="ai-editor-header">
-                    <span class="ai-editor-title">AI Suggested Summary</span>
-                    <div class="ai-editor-toolbar" id="aiEditorToolbar">
-                        <!-- Normal Mode Buttons -->
-                        <div class="toolbar-group inline-actions" id="aiToolbarInline">
-                            <button type="button" class="toolbar-btn btn-primary" id="aiBtnInsert" aria-label="Insert summary into resume" title="Insert Summary (I)">
-                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-                                <span>Insert Summary</span>
-                                <span class="tooltip">Insert (I)</span>
-                            </button>
-                            <button type="button" class="toolbar-btn" id="aiBtnEdit" aria-label="Edit summary" title="Edit Summary (E)">
-                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                <span>Edit</span>
-                                <span class="tooltip">Edit (E)</span>
-                            </button>
-                            <button type="button" class="toolbar-btn" id="aiBtnCopy" aria-label="Copy to clipboard" title="Copy to Clipboard (C)">
-                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                <span>Copy</span>
-                                <span class="tooltip">Copy (C)</span>
-                            </button>
-                            <button type="button" class="toolbar-btn" id="aiBtnClear" aria-label="Clear summary" title="Clear Summary">
-                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                <span>Clear</span>
-                                <span class="tooltip">Clear</span>
-                            </button>
-                            <button type="button" class="toolbar-btn" id="aiBtnRegen" aria-label="Regenerate summary" title="Regenerate Summary (R)">
-                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
-                                <span>Regenerate</span>
-                                <span class="tooltip">Regenerate (R)</span>
-                            </button>
-                        </div>
-                        
-                        <!-- Edit Mode Buttons (Initially hidden) -->
-                        <div class="toolbar-group edit-actions is-hidden" id="aiToolbarEdit">
-                            <button type="button" class="toolbar-btn primary-ghost" id="aiBtnSave" aria-label="Save changes" title="Save (Ctrl+Enter)">
-                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span>Save</span>
-                                <span class="tooltip">Save (Ctrl+Enter)</span>
-                            </button>
-                            <button type="button" class="toolbar-btn danger-ghost" id="aiBtnCancel" aria-label="Cancel editing" title="Cancel (Esc)">
-                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                <span>Cancel</span>
-                                <span class="tooltip">Cancel (Esc)</span>
-                            </button>
-                        </div>
-
-                        <!-- Mobile Overflow Menu Trigger -->
-                        <button type="button" class="toolbar-btn mobile-overflow-trigger" id="aiMobileTrigger" aria-label="More actions" aria-haspopup="true">
-                            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
-                        </button>
-                        
-                        <!-- Mobile Overflow Menu Dropdown -->
-                        <div class="mobile-overflow-menu is-hidden" id="aiMobileMenu">
-                            <button type="button" class="menu-item primary" id="aiMobBtnInsert" style="background: rgba(34, 211, 238, 0.1); color: var(--cyan); font-weight: 700;">
-                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-                                <span>Insert Summary</span>
-                            </button>
-                            <button type="button" class="menu-item" id="aiMobBtnEdit">
-                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                <span>Edit</span>
-                            </button>
-                            <button type="button" class="menu-item" id="aiMobBtnCopy">
-                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                <span>Copy</span>
-                            </button>
-                            <button type="button" class="menu-item" id="aiMobBtnClear">
-                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                <span>Clear</span>
-                            </button>
-                            <button type="button" class="menu-item" id="aiMobBtnRegen">
-                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
-                                <span>Regenerate</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
+    <!-- AI Copilot Side Drawer -->
+    <div class="ai-copilot-drawer" id="aiDrawer">
+        <div class="ai-drawer-header">
+            <span class="ai-drawer-title">
+                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--cyan); width: 16px; height: 16px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                AI Suggestions Copilot
+            </span>
+            <button type="button" class="ai-drawer-close" onclick="closeAIDrawer()" aria-label="Close AI Drawer">
+                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+ 
+        <div class="ai-drawer-content">
+            <p style="color: var(--text-2); font-size: 0.85rem; line-height: 1.5; margin: 0;">Review or edit AI-powered summary suggestions inline to fit your professional background.</p>
+ 
+            <!-- Premium AI Suggestions Workspace Card -->
+            <div class="ai-editor-card" style="margin-bottom: 0;">
                 <div class="ai-editor-body">
-                    <!-- View Mode: Content block (styled like a clean document) -->
+                    <!-- View Mode -->
                     <div class="ai-text-view" id="aiSuggestionsBox" tabindex="0" aria-label="AI summary text preview">Getting suggestions...</div>
                     
-                    <!-- Edit Mode: Textarea (preserves text formatting) -->
+                    <!-- Edit Mode -->
                     <textarea class="ai-text-edit is-hidden" id="aiTextEdit" aria-label="AI summary document editor" placeholder="Write your professional summary here..."></textarea>
                     
-                    <!-- Loading state overlay -->
+                    <!-- Loader overlay -->
                     <div class="ai-editor-loader is-hidden" id="aiEditorLoader">
                         <div class="loader-spinner"></div>
-                        <span>Refining summary...</span>
+                        <span style="font-size: 0.8rem; font-weight: 500;">Generating suggestion...</span>
                     </div>
                 </div>
                 
-                <div class="ai-editor-footer" id="aiLiveCounterRow">
-                    <div class="status-metrics">
-                        <span class="status-metric-item" id="aiMetricWords">0 words</span>
-                        <span class="status-metric-divider">·</span>
-                        <span class="status-metric-item" id="aiMetricChars">0 chars</span>
-                        <span class="status-metric-divider">·</span>
-                        <span class="status-metric-item" id="aiMetricReadTime">0 min read</span>
-                        <span class="status-metric-divider">·</span>
-                        <span class="status-metric-item" id="aiMetricLastGen">Last generated: Never</span>
+                <div class="ai-editor-footer" id="aiLiveCounterRow" style="padding: 0.75rem 1.25rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.08);">
+                    <div class="status-metrics" style="font-size: 0.72rem; color: var(--text-3); display: flex; gap: 0.5rem;">
+                        <span id="aiMetricWords">0 words</span>
+                        <span>·</span>
+                        <span id="aiMetricReadTime">0 min read</span>
                     </div>
-                    <div class="word-limit-indicator" id="aiWordLimitIndicator">
+                    <div class="word-limit-indicator" id="aiWordLimitIndicator" style="font-size: 0.72rem;">
                         <span id="aiLiveCounter">0 / 75 words</span>
                     </div>
                 </div>
             </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeAIModal()">Close</button>
-                <button class="btn btn-primary" id="aiAcceptBtn" onclick="acceptAISuggestion()" style="display:none;">Accept</button>
+ 
+            <!-- Accordion Refine Trigger -->
+            <button type="button" class="ai-accordion-trigger" id="aiAccordionTrigger" aria-expanded="false" aria-controls="aiAccordionContent">
+                <span>Refinement Parameters</span>
+                <svg class="chevron-icon icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+ 
+            <!-- Accordion Refine Content -->
+            <div class="ai-accordion-content" id="aiAccordionContent">
+                <div class="ai-config-panel" id="aiConfigPanel" style="display: flex; flex-direction: column; gap: 1rem; border: none; padding: 0; background: transparent; margin: 0;">
+                    <!-- Limit selectors -->
+                    <div>
+                        <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-3); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">Target Length</label>
+                        <div class="word-limit-selector" id="aiWordLimitSelector" style="display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;">
+                            <button type="button" class="pill-btn" data-words="30">30w</button>
+                            <button type="button" class="pill-btn" data-words="50">50w</button>
+                            <button type="button" class="pill-btn active" data-words="75">75w</button>
+                            <button type="button" class="pill-btn" data-words="100">100w</button>
+                            <input type="number" id="customWordLimit" min="10" max="500" value="75" style="display: none; width: 65px; padding: 0.25rem 0.4rem; font-size: 0.75rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;" placeholder="Qty">
+                        </div>
+                    </div>
+ 
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Tone</label>
+                            <select id="aiTone" style="width: 100%; padding: 0.35rem; font-size: 0.78rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
+                                <option value="Professional" selected>Professional</option>
+                                <option value="Bold">Confident</option>
+                                <option value="Creative">Creative</option>
+                                <option value="Casual">Casual</option>
+                                <option value="Executive">Executive</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Language</label>
+                            <select id="aiLanguage" style="width: 100%; padding: 0.35rem; font-size: 0.78rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
+                                <option value="English" selected>English</option>
+                                <option value="Spanish">Spanish</option>
+                                <option value="French">French</option>
+                                <option value="German">German</option>
+                            </select>
+                        </div>
+                    </div>
+ 
+                    <div>
+                        <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Target Industry</label>
+                        <input type="text" id="aiIndustry" placeholder="e.g. Technology" style="width: 100%; padding: 0.35rem; font-size: 0.78rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
+                    </div>
+                </div>
+            </div>
+        </div>
+ 
+        <div class="ai-drawer-actions">
+            <div class="ai-drawer-primary-row">
+                <button type="button" class="btn btn-primary" id="aiBtnInsert" style="font-size: 0.82rem; font-weight: 700;">Insert Summary</button>
+            </div>
+            <div class="ai-drawer-tools-row">
+                <button type="button" class="btn btn-secondary" id="aiBtnEdit" style="padding: 0.35rem 0.625rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    <span>Edit inline</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="aiBtnCopy" style="padding: 0.35rem 0.625rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="aiBtnRegen" style="padding: 0.35rem 0.625rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                    <span>Regen</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="aiBtnClear" style="padding: 0.35rem 0.625rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <span>Clear</span>
+                </button>
+            </div>
+            
+            <!-- Save/Cancel row when in editing state (initially hidden) -->
+            <div class="ai-drawer-primary-row is-hidden" id="aiToolbarEdit" style="gap: 0.5rem; border-top: 1px solid var(--border-md); padding-top: 0.75rem;">
+                <button type="button" class="btn btn-primary" id="aiBtnSave" style="font-size: 0.78rem; min-height: 36px;">Save Changes</button>
+                <button type="button" class="btn btn-secondary" id="aiBtnCancel" style="font-size: 0.78rem; min-height: 36px;">Cancel</button>
             </div>
         </div>
     </div>
