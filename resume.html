@@ -369,6 +369,11 @@
                     <div class="ai-editor-toolbar" id="aiEditorToolbar">
                         <!-- Normal Mode Buttons -->
                         <div class="toolbar-group inline-actions" id="aiToolbarInline">
+                            <button type="button" class="toolbar-btn btn-primary" id="aiBtnInsert" aria-label="Insert summary into resume" title="Insert Summary (I)">
+                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                                <span>Insert Summary</span>
+                                <span class="tooltip">Insert (I)</span>
+                            </button>
                             <button type="button" class="toolbar-btn" id="aiBtnEdit" aria-label="Edit summary" title="Edit Summary (E)">
                                 <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                 <span>Edit</span>
@@ -412,6 +417,10 @@
                         
                         <!-- Mobile Overflow Menu Dropdown -->
                         <div class="mobile-overflow-menu is-hidden" id="aiMobileMenu">
+                            <button type="button" class="menu-item primary" id="aiMobBtnInsert" style="background: rgba(34, 211, 238, 0.1); color: var(--cyan); font-weight: 700;">
+                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                                <span>Insert Summary</span>
+                            </button>
                             <button type="button" class="menu-item" id="aiMobBtnEdit">
                                 <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                 <span>Edit</span>
@@ -493,5 +502,17 @@
         </div>
     </div>
 
+    <!-- Overwrite Summary Confirmation Modal -->
+    <div class="modal-overlay" id="insertSummaryConfirmModal" style="z-index: 9500;">
+        <div class="modal">
+            <h3>Overwrite Summary?</h3>
+            <p>This action will replace your current Resume Summary with the generated suggestion. Do you want to proceed?</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="btnCancelInsertConfirm">Cancel</button>
+                <button class="btn btn-primary" id="btnConfirmInsert">Overwrite</button>
+            </div>
+        </div>
+    </div>
+ 
     <!-- Page logic loaded via resume.js -->
 </body></html>

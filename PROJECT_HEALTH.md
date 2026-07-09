@@ -228,6 +228,13 @@ The project uses a hybrid client-server model optimized for serverless deploymen
 
 ## 15. Change Log
  
+### July 9, 2026 (AI Resume Summary UX Fixes Phase)
+- **Files Modified**: `styles/premium.css`, `resume.html`, `resume.js`, `PROJECT_HEALTH.md`.
+- **Features Affected**: AI Suggestions document editor interface.
+- **Bugs Fixed**: Resolved scroll clipping issues inside the suggestions modal by enforcing flex layout and independent vertical scroll viewport containers. Added primary CTA "Insert Summary" button to replace summary contents with overwrite protection alerts and keyboard key triggers (`I` / `i`).
+- **New Technical Debt Introduced**: None.
+- **Verification Completed**: Unit and integration test suites pass at 100% (30/30).
+ 
 ### July 9, 2026 (AI Resume Summary Redesign & Iconography Phase)
 - **Files Modified**: `styles/premium.css`, `resume.html`, `resume.js`, `cover-letter.html`, `cover-letter.js`, `cold-email.html`, `interview.html`, `interview.js`, `settings.html`, `signup.html`, `reset-password.html`, `resume-share.html`, `dashboard.html`, `dashboard.js`, `index.html`, `ENGINEERING_STANDARDS.md`, `PROJECT_HEALTH.md`.
 - **Features Affected**: AI Resume Suggestions (redesigned into professional editor with toolbar actions, word limits, undo recovery), Top navigation, forms, modals, alerts, and dynamic dashboards (strictly banned emojis and replaced them with vector SVGs).

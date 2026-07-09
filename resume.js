@@ -1052,6 +1052,7 @@
 
     function setupAIDocumentEditor() {
         // Toolbar Bindings
+        document.getElementById('aiBtnInsert')?.addEventListener('click', handleInsertSummary);
         document.getElementById('aiBtnEdit')?.addEventListener('click', enterEditorEditMode);
         document.getElementById('aiBtnCopy')?.addEventListener('click', copyEditorText);
         document.getElementById('aiBtnClear')?.addEventListener('click', promptClearSummary);
@@ -1061,6 +1062,10 @@
         document.getElementById('aiBtnCancel')?.addEventListener('click', cancelEditorEdit);
 
         // Mobile Overflow Bindings
+        document.getElementById('aiMobBtnInsert')?.addEventListener('click', () => {
+            document.getElementById('aiMobileMenu')?.classList.add('is-hidden');
+            handleInsertSummary();
+        });
         document.getElementById('aiMobBtnEdit')?.addEventListener('click', () => {
             document.getElementById('aiMobileMenu')?.classList.add('is-hidden');
             enterEditorEditMode();
@@ -1099,6 +1104,17 @@
             if (textEdit) commitEditorSave(textEdit.value);
         });
 
+        document.getElementById('btnCancelInsertConfirm')?.addEventListener('click', () => {
+            document.getElementById('insertSummaryConfirmModal')?.classList.remove('active');
+        });
+        document.getElementById('btnConfirmInsert')?.addEventListener('click', () => {
+            document.getElementById('insertSummaryConfirmModal')?.classList.remove('active');
+            const textView = document.getElementById('aiSuggestionsBox');
+            const textEdit = document.getElementById('aiTextEdit');
+            const textToInsert = isEditorEditingMode ? (textEdit?.value || '') : (textView?.innerText || textView?.textContent || '');
+            performInsertSummary(textToInsert);
+        });
+
         // Input monitoring on textarea
         document.getElementById('aiTextEdit')?.addEventListener('input', updateEditorMetrics);
 
@@ -1132,6 +1148,9 @@
             } else if (e.key === 'r' || e.key === 'R') {
                 e.preventDefault();
                 triggerAIGeneration();
+            } else if (e.key === 'i' || e.key === 'I') {
+                e.preventDefault();
+                handleInsertSummary();
             }
         });
 
@@ -1260,9 +1279,14 @@
         const configPanel = document.getElementById('aiConfigPanel');
         const counterRow = document.getElementById('aiLiveCounterRow');
         
+        const insertBtn = document.getElementById('aiBtnInsert');
+        const mobInsertBtn = document.getElementById('aiMobBtnInsert');
+
         if (section === 'summary') {
             if (configPanel) configPanel.style.display = 'block';
             if (counterRow) counterRow.style.display = 'flex';
+            if (insertBtn) insertBtn.style.display = 'inline-flex';
+            if (mobInsertBtn) mobInsertBtn.style.display = 'block';
             
             if (box.textContent && box.textContent !== 'Getting AI suggestions...' && box.textContent !== 'Getting suggestions...') {
                 lastRegeneratedSummary = box.textContent;
@@ -1272,6 +1296,8 @@
         } else {
             if (configPanel) configPanel.style.display = 'none';
             if (counterRow) counterRow.style.display = 'none';
+            if (insertBtn) insertBtn.style.display = 'none';
+            if (mobInsertBtn) mobInsertBtn.style.display = 'none';
             box.textContent = 'Getting AI suggestions...';
         }
 
@@ -1392,6 +1418,43 @@
         currentAIItemIndex = null;
     }
 
+    function handleInsertSummary() {
+        const textView = document.getElementById('aiSuggestionsBox');
+        const textEdit = document.getElementById('aiTextEdit');
+        const textToInsert = isEditorEditingMode ? (textEdit?.value || '') : (textView?.innerText || textView?.textContent || '');
+
+        if (!textToInsert.trim()) {
+            window.LayoutManager.showToast('No text to insert.', 'error');
+            return;
+        }
+
+        const summaryEl = document.getElementById('summary');
+        const existingText = summaryEl ? (summaryEl.value || '').trim() : '';
+
+        if (existingText !== '') {
+            const modal = document.getElementById('insertSummaryConfirmModal');
+            if (modal) modal.classList.add('active');
+        } else {
+            performInsertSummary(textToInsert);
+        }
+    }
+
+    function performInsertSummary(text) {
+        const summaryEl = document.getElementById('summary');
+        if (summaryEl) {
+            summaryEl.value = text;
+            updatePreview();
+            closeAIModal();
+
+            summaryEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => {
+                summaryEl.focus();
+            }, 300);
+
+            window.LayoutManager.showToast('Summary inserted successfully.', 'success');
+        }
+    }
+
     // Attach to global window space for HTML onclick bindings
     window.editResume = editResume;
     window.downloadPDF = downloadPDF;
@@ -1403,6 +1466,7 @@
     window.getAISuggestions = getAISuggestions;
     window.acceptAISuggestion = acceptAISuggestion;
     window.closeAIModal = closeAIModal;
+    window.handleInsertSummary = handleInsertSummary;
     window.closeShareModal = closeShareModal;
     window.copyShareLink = copyShareLink;
     window.switchTemplate = switchTemplate;
