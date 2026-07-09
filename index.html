@@ -276,52 +276,181 @@
     </section>
 
     <section class="pricing" id="pricing">
-        <div class="section-header">
-            <h2>Invest in your career.</h2>
-            <p>Simple, transparent pricing to help you land your dream job.</p>
-        </div>
-        <div class="pricing-grid">
-            <!-- Free Tier -->
-            <div class="pricing-card">
-                <h3 class="plan-name">Free</h3>
-                <div class="plan-price">₹0<span>/forever</span></div>
-                <p class="plan-desc">Perfect to try out the AI capabilities.</p>
-                <ul class="plan-features">
-                    <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> 2 Resume downloads</li>
-                    <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> 3 Cover letters generated</li>
-                    <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> 3 Cold email variants</li>
-                    <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Standard templates</li>
-                </ul>
-                <a href="signup.html" class="btn-primary">Get Started</a>
+        <div class="pricing-bg-gradient"></div>
+        <div class="pricing-container animate-fade-up">
+            <!-- 1. Section Heading -->
+            <div class="pricing-header">
+                <h2 class="pricing-title">Invest in your career.</h2>
+                <p class="pricing-subtitle">Simple pricing that grows with your career.</p>
             </div>
 
-            <!-- Pro Tier -->
-            <div class="pricing-card premium">
-                <h3 class="plan-name">Pro</h3>
-                <div class="plan-price">₹299<span>/mo</span></div>
-                <p class="plan-desc">Everything you need for a serious job hunt.</p>
-                <ul class="plan-features">
-                    <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> <strong>Unlimited</strong> downloads</li>
-                    <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> <strong>Unlimited</strong> AI generations</li>
-                    <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Premium ATS templates</li>
-                    <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Deep PDF resume imports</li>
-                    <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Priority AI generation queue</li>
-                </ul>
-                <button id="rzp-button1" class="btn-accent">Upgrade to Pro</button>
+            <!-- 2. Why Upgrade Section -->
+            <div class="why-upgrade">
+                <h3 class="why-upgrade-heading">Why thousands choose Career Hub</h3>
+                <div class="why-upgrade-grid">
+                    <div class="upgrade-card">
+                        <div class="upgrade-icon">🚀</div>
+                        <h4 class="upgrade-card-title">10× Faster Resume Building</h4>
+                        <p class="upgrade-card-text">Generate professional ATS-friendly resumes in minutes instead of hours.</p>
+                    </div>
+                    <div class="upgrade-card">
+                        <div class="upgrade-icon">🎯</div>
+                        <h4 class="upgrade-card-title">Higher Interview Success</h4>
+                        <p class="upgrade-card-text">Tailor every resume and cover letter to each job description using AI.</p>
+                    </div>
+                    <div class="upgrade-card">
+                        <div class="upgrade-icon">🤖</div>
+                        <h4 class="upgrade-card-title">Unlimited AI Career Tools</h4>
+                        <p class="upgrade-card-text">Access resume generation, cover letters, ATS analysis, AI suggestions and all future premium features.</p>
+                    </div>
+                </div>
             </div>
 
-            <!-- Enterprise Tier -->
-            <div class="pricing-card">
-                <h3 class="plan-name">Lifetime</h3>
-                <div class="plan-price">₹2,999<span>/once</span></div>
-                <p class="plan-desc">Pay once, use forever.</p>
-                <ul class="plan-features">
-                    <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> All Pro features included</li>
-                    <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Lifetime access</li>
-                    <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Early access to new features</li>
-                    <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> 1-on-1 career consultation</li>
-                </ul>
-                <button id="rzp-button2" class="btn-primary">Get Lifetime Access</button>
+            <!-- 3. Social Proof -->
+            <div class="social-proof-center">
+                <div class="rating-stars">★★★★★ <span class="rating-num">4.9/5 Average Rating</span></div>
+                <p class="social-proof-text">Trusted by students and professionals building their dream careers.</p>
+                <p class="social-proof-sub">Thousands of resumes generated successfully.</p>
+            </div>
+
+            <!-- 4. Billing Toggle -->
+            <div class="billing-toggle-container">
+                <div class="billing-toggle-wrapper">
+                    <button class="toggle-btn active" id="toggle-monthly">Monthly</button>
+                    <div class="toggle-divider"></div>
+                    <button class="toggle-btn disabled" id="toggle-yearly" disabled>
+                        Yearly <span class="coming-soon-badge">Coming Soon</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 5. Pricing Cards -->
+            <div class="pricing-grid-two">
+                <!-- Free Plan -->
+                <div class="pricing-card-v2">
+                    <div class="plan-badge-space">
+                        <span class="plan-type-label">FREE</span>
+                    </div>
+                    <div class="price-row">
+                        <span class="price-val">₹0</span>
+                        <span class="price-label">Forever</span>
+                    </div>
+                    <p class="plan-value-statement">Best for exploring Career Hub.</p>
+                    <p class="plan-desc-text">Perfect for trying AI-powered career tools.</p>
+                    
+                    <div class="plan-features-v2">
+                        <div class="feature-item">
+                            <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>2 Resume Downloads</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>3 Cover Letters</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>Resume Templates</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>Basic AI Assistance</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>Limited AI Suggestions</span>
+                        </div>
+                    </div>
+                    
+                    <div class="plan-btn-wrapper">
+                        <a href="signup.html" class="btn-outline-v2">Start Free</a>
+                    </div>
+                </div>
+
+                <!-- Pro Plan -->
+                <div class="pricing-card-v2 pro">
+                    <div class="plan-badge-space">
+                        <span class="popular-pill">MOST POPULAR</span>
+                    </div>
+                    <div class="price-row">
+                        <span class="price-val">₹299</span>
+                        <span class="price-label">/mo</span>
+                    </div>
+                    <p class="plan-value-statement">Land interviews faster with unlimited AI-powered career tools.</p>
+                    <p class="plan-desc-text">Everything you need for a serious job hunt.</p>
+                    
+                    <div class="plan-features-v2">
+                        <div class="feature-item">
+                            <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>Unlimited Resume Downloads</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>Unlimited Cover Letters</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>Unlimited AI Generations</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>Premium Templates</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>ATS Resume Analysis</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>Resume Score Checker</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>AI Resume Suggestions</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>AI Cover Letter Generator</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>Future Premium Features</span>
+                        </div>
+                        <div class="feature-item">
+                            <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>Priority Support</span>
+                        </div>
+                    </div>
+                    
+                    <div class="plan-btn-wrapper">
+                        <button id="rzp-button1" class="btn-gradient-v2">Upgrade Now</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Trust Section -->
+            <div class="trust-section">
+                <p class="trust-text">Trusted by students and professionals building their dream careers.</p>
+                <div class="trust-stars">★★★★★ <span class="trust-rating">4.9/5 Average Rating</span></div>
+                <div class="trust-badges">
+                    <div class="trust-badge">
+                        <svg class="trust-check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>Secure Payments</span>
+                    </div>
+                    <div class="trust-badge">
+                        <svg class="trust-check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>Cancel Anytime</span>
+                    </div>
+                    <div class="trust-badge">
+                        <svg class="trust-check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>Instant Upgrade</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. Final CTA -->
+            <div class="final-cta-section">
+                <h3 class="final-cta-title">Ready to accelerate your career?</h3>
+                <a href="signup.html" class="btn-subtle-cta">Get Started Today</a>
             </div>
         </div>
     </section>

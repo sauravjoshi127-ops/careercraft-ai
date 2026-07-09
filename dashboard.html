@@ -445,35 +445,113 @@
 
         <!-- Pricing Section -->
         <section class="pricing" id="pricing" style="padding-bottom: 4rem;">
-            <div style="text-align: center; margin-bottom: 4rem;">
-                <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">Simple, powerful pricing</h2>
-                <p style="color: var(--text-secondary); font-size: 1.1rem;">Choose the plan that fits your career ambitions.</p>
-            </div>
-            
-            <div class="pricing-grid">
-                <div class="pricing-card glass-card">
-                    <div style="color: var(--text-tertiary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem; margin-bottom: 1rem;">Basic</div>
-                    <div style="font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem;">Free</div>
-                    <p style="color: var(--text-secondary); margin-bottom: 2.5rem; font-size: 0.9rem;">Core features to get you started on your journey.</p>
-                    <ul style="list-style: none; padding: 0; margin-bottom: 3rem; flex-grow: 1;">
-                        <li style="display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);"><span style="color: var(--accent-cyan);">✓</span> 3 Resume Templates</li>
-                        <li style="display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);"><span style="color: var(--accent-cyan);">✓</span> 5 AI Generations / mo</li>
-                        <li style="display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);"><span style="color: var(--accent-cyan);">✓</span> Standard Support</li>
-                    </ul>
-                    <button class="btn-accent" disabled style="opacity: 0.5;">Current Plan</button>
+            <div class="pricing-bg-gradient"></div>
+            <div class="pricing-container">
+                <div class="pricing-header">
+                    <h2 class="pricing-title" style="font-size: 2.5rem; margin-bottom: 1rem;">Simple, powerful pricing</h2>
+                    <p class="pricing-subtitle" style="color: var(--text-secondary); font-size: 1.1rem;">Choose the plan that fits your career ambitions.</p>
                 </div>
+                
+                <div class="pricing-grid-two">
+                    <!-- Free Plan -->
+                    <div class="pricing-card-v2">
+                        <div class="plan-badge-space">
+                            <span class="plan-type-label">FREE</span>
+                        </div>
+                        <div class="price-row">
+                            <span class="price-val">₹0</span>
+                            <span class="price-label">Forever</span>
+                        </div>
+                        <p class="plan-value-statement">Best for exploring Career Hub.</p>
+                        <p class="plan-desc-text">Perfect for trying AI-powered career tools.</p>
+                        
+                        <div class="plan-features-v2">
+                            <div class="feature-item">
+                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>2 Resume Downloads</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>3 Cover Letters</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>Resume Templates</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>Basic AI Assistance</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>Limited AI Suggestions</span>
+                            </div>
+                        </div>
+                        
+                        <div class="plan-btn-wrapper">
+                            <button class="btn-outline-v2" disabled style="opacity: 0.5; cursor: not-allowed;">Current Plan</button>
+                        </div>
+                    </div>
 
-                <div class="pricing-card glass-card premium">
-                    <div style="color: var(--accent-cyan); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem; margin-bottom: 1rem;">Professional</div>
-                    <div style="font-size: 3rem; font-weight: 800; margin-bottom: 0.5rem;">₹299<span style="font-size: 1rem; font-weight: 500; color: var(--text-tertiary);">/mo</span></div>
-                    <p style="color: var(--text-secondary); margin-bottom: 2.5rem; font-size: 0.9rem;">Unlock the full power of AI for your career growth.</p>
-                    <ul style="list-style: none; padding: 0; margin-bottom: 3rem; flex-grow: 1;">
-                        <li style="display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem;"><span style="color: var(--accent-cyan);">✦</span> Unlimited AI Generation</li>
-                        <li style="display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem;"><span style="color: var(--accent-cyan);">✦</span> All Premium Templates</li>
-                        <li style="display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem;"><span style="color: var(--accent-cyan);">✦</span> PAS & AIDA Frameworks</li>
-                        <li style="display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem;"><span style="color: var(--accent-cyan);">✦</span> Advanced Analytics</li>
-                    </ul>
-                    <button class="btn-primary" id="btn-upgrade-pro">Upgrade Now</button>
+                    <!-- Pro Plan -->
+                    <div class="pricing-card-v2 pro">
+                        <div class="plan-badge-space">
+                            <span class="popular-pill">MOST POPULAR</span>
+                        </div>
+                        <div class="price-row">
+                            <span class="price-val">₹299</span>
+                            <span class="price-label">/mo</span>
+                        </div>
+                        <p class="plan-value-statement">Land interviews faster with unlimited AI-powered career tools.</p>
+                        <p class="plan-desc-text">Everything you need for a serious job hunt.</p>
+                        
+                        <div class="plan-features-v2">
+                            <div class="feature-item">
+                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>Unlimited Resume Downloads</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>Unlimited Cover Letters</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>Unlimited AI Generations</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>Premium Templates</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>ATS Resume Analysis</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>Resume Score Checker</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>AI Resume Suggestions</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>AI Cover Letter Generator</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>Future Premium Features</span>
+                            </div>
+                            <div class="feature-item">
+                                <svg class="check-svg" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>Priority Support</span>
+                            </div>
+                        </div>
+                        
+                        <div class="plan-btn-wrapper">
+                            <button class="btn-gradient-v2" id="btn-upgrade-pro">Upgrade Now</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
