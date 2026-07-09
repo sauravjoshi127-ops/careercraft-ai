@@ -132,9 +132,9 @@
             CareerCraft AI
         </a>
         <div class="nav-links" style="display:flex;gap:1rem;">
-            <a href="cover-letter.html" class="nav-btn">📨 Cover Letter</a>
-            <a href="cold-email.html" class="nav-btn">✉️ Cold Email</a>
-            <a href="interview.html" class="nav-btn">🎤 Interview Coach</a>
+            <a href="cover-letter.html" class="nav-btn">Cover Letter</a>
+            <a href="cold-email.html" class="nav-btn">Cold Email</a>
+            <a href="interview.html" class="nav-btn">Interview Coach</a>
             <a href="dashboard.html" class="btn-primary">← Dashboard</a>
         </div>
     </div>
@@ -362,18 +362,133 @@
                 </div>
             </div>
 
-            <!-- Suggestion Content Box (now contenteditable) -->
-            <div class="ai-suggestions-box" id="aiSuggestionsBox" contenteditable="true" style="outline: none; margin-bottom: 0.75rem;">Getting suggestions...</div>
-            
-            <!-- Live Word Counter Badge -->
-            <div class="live-counter-row" id="aiLiveCounterRow" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; font-size: 0.8rem; color: var(--text-2);">
-                <span id="aiLiveCounter">Words Used: 0 / 75 words</span>
-                <span style="font-size: 0.72rem; opacity: 0.6;">💡 You can click the box above to edit the summary manually</span>
+            <!-- Redesigned AI Document Editor Card -->
+            <div class="ai-editor-card">
+                <div class="ai-editor-header">
+                    <span class="ai-editor-title">AI Suggested Summary</span>
+                    <div class="ai-editor-toolbar" id="aiEditorToolbar">
+                        <!-- Normal Mode Buttons -->
+                        <div class="toolbar-group inline-actions" id="aiToolbarInline">
+                            <button type="button" class="toolbar-btn" id="aiBtnEdit" aria-label="Edit summary" title="Edit Summary (E)">
+                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                <span>Edit</span>
+                                <span class="tooltip">Edit (E)</span>
+                            </button>
+                            <button type="button" class="toolbar-btn" id="aiBtnCopy" aria-label="Copy to clipboard" title="Copy to Clipboard (C)">
+                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                <span>Copy</span>
+                                <span class="tooltip">Copy (C)</span>
+                            </button>
+                            <button type="button" class="toolbar-btn" id="aiBtnClear" aria-label="Clear summary" title="Clear Summary">
+                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                <span>Clear</span>
+                                <span class="tooltip">Clear</span>
+                            </button>
+                            <button type="button" class="toolbar-btn" id="aiBtnRegen" aria-label="Regenerate summary" title="Regenerate Summary (R)">
+                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                                <span>Regenerate</span>
+                                <span class="tooltip">Regenerate (R)</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Edit Mode Buttons (Initially hidden) -->
+                        <div class="toolbar-group edit-actions is-hidden" id="aiToolbarEdit">
+                            <button type="button" class="toolbar-btn primary-ghost" id="aiBtnSave" aria-label="Save changes" title="Save (Ctrl+Enter)">
+                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <span>Save</span>
+                                <span class="tooltip">Save (Ctrl+Enter)</span>
+                            </button>
+                            <button type="button" class="toolbar-btn danger-ghost" id="aiBtnCancel" aria-label="Cancel editing" title="Cancel (Esc)">
+                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                <span>Cancel</span>
+                                <span class="tooltip">Cancel (Esc)</span>
+                            </button>
+                        </div>
+
+                        <!-- Mobile Overflow Menu Trigger -->
+                        <button type="button" class="toolbar-btn mobile-overflow-trigger" id="aiMobileTrigger" aria-label="More actions" aria-haspopup="true">
+                            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                        </button>
+                        
+                        <!-- Mobile Overflow Menu Dropdown -->
+                        <div class="mobile-overflow-menu is-hidden" id="aiMobileMenu">
+                            <button type="button" class="menu-item" id="aiMobBtnEdit">
+                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                <span>Edit</span>
+                            </button>
+                            <button type="button" class="menu-item" id="aiMobBtnCopy">
+                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                <span>Copy</span>
+                            </button>
+                            <button type="button" class="menu-item" id="aiMobBtnClear">
+                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                <span>Clear</span>
+                            </button>
+                            <button type="button" class="menu-item" id="aiMobBtnRegen">
+                                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                                <span>Regenerate</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ai-editor-body">
+                    <!-- View Mode: Content block (styled like a clean document) -->
+                    <div class="ai-text-view" id="aiSuggestionsBox" tabindex="0" aria-label="AI summary text preview">Getting suggestions...</div>
+                    
+                    <!-- Edit Mode: Textarea (preserves text formatting) -->
+                    <textarea class="ai-text-edit is-hidden" id="aiTextEdit" aria-label="AI summary document editor" placeholder="Write your professional summary here..."></textarea>
+                    
+                    <!-- Loading state overlay -->
+                    <div class="ai-editor-loader is-hidden" id="aiEditorLoader">
+                        <div class="loader-spinner"></div>
+                        <span>Refining summary...</span>
+                    </div>
+                </div>
+                
+                <div class="ai-editor-footer" id="aiLiveCounterRow">
+                    <div class="status-metrics">
+                        <span class="status-metric-item" id="aiMetricWords">0 words</span>
+                        <span class="status-metric-divider">·</span>
+                        <span class="status-metric-item" id="aiMetricChars">0 chars</span>
+                        <span class="status-metric-divider">·</span>
+                        <span class="status-metric-item" id="aiMetricReadTime">0 min read</span>
+                        <span class="status-metric-divider">·</span>
+                        <span class="status-metric-item" id="aiMetricLastGen">Last generated: Never</span>
+                    </div>
+                    <div class="word-limit-indicator" id="aiWordLimitIndicator">
+                        <span id="aiLiveCounter">0 / 75 words</span>
+                    </div>
+                </div>
             </div>
 
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeAIModal()">Close</button>
                 <button class="btn btn-primary" id="aiAcceptBtn" onclick="acceptAISuggestion()" style="display:none;">Accept</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clear Summary Confirmation Modal -->
+    <div class="modal-overlay" id="clearSummaryModal" style="z-index: 9500;">
+        <div class="modal">
+            <h3>Clear Summary?</h3>
+            <p>This action will remove the generated summary.</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="btnCancelClear">Cancel</button>
+                <button class="btn btn-danger" id="btnConfirmClear">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Word Limit Overrun Confirmation Modal -->
+    <div class="modal-overlay" id="wordLimitWarningModal" style="z-index: 9500;">
+        <div class="modal">
+            <h3>Word Limit Exceeded</h3>
+            <p>The current text exceeds the target word limit. Do you want to save anyway?</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="btnCancelWordWarning">Cancel</button>
+                <button class="btn btn-primary" id="btnConfirmWordWarning">Save Anyway</button>
             </div>
         </div>
     </div>

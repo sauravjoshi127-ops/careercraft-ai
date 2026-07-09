@@ -150,7 +150,7 @@
         document.body.appendChild(toast);
       }
 
-      toast.textContent = message;
+      toast.innerHTML = message;
       toast.className = `toast ${className} show`;
       toast.style.display = 'block';
 

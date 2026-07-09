@@ -176,7 +176,7 @@
 
             } catch (error) {
                 console.error('Load user info error:', error);
-                showToast('❌ Failed to load user info', 'error');
+                showToast('Failed to load user info', 'error');
             } finally {
                 // Smoothly remove secure auth curtain
                 const curtain = document.getElementById('auth-guard-curtain');
@@ -194,7 +194,7 @@
             const btn = document.getElementById('profileBtn');
 
             if (!fullName) {
-                showAlert('profileError', '❌ Full name cannot be empty.', 'error');
+                showAlert('profileError', 'Full name cannot be empty.', 'error');
                 return;
             }
 

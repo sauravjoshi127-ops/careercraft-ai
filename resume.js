@@ -204,9 +204,16 @@
         }
 
         const html = window.ResumeRenderer.render(resumeState, resumeState.template_name);
-        doc.open();
-        doc.write(html);
-        doc.close();
+        
+        // Fast-path: Update innerHTML directly to reuse parsed CSS stylesheets and fonts,
+        // avoiding flash-of-unstyled-content (FOUC) and frame rendering stutter.
+        if (doc.body && doc.head && doc.head.children.length > 0) {
+            doc.documentElement.innerHTML = html;
+        } else {
+            doc.open();
+            doc.write(html);
+            doc.close();
+        }
     }
     function selectTemplate(name) { const t=document.querySelector('.template-tab[onclick*="'+name+'"]'); if(t) switchTemplate(name,t); }
     function showTemplateScreen() {}
@@ -518,7 +525,7 @@
         const errors = validateForm(data);
 
         if (errors.length > 0) {
-            showAlert('error', '⚠️ ' + errors.join(' '));
+            showAlert('error', errors.join(' '));
             return;
         }
 
@@ -619,9 +626,9 @@
         btn.textContent = 'Delete';
 
         if (error) {
-            showAlert('error', '❌ Failed to delete resume: ' + error.message);
+            showAlert('error', 'Failed to delete resume: ' + error.message);
         } else {
-            showAlert('success', '✅ Resume deleted successfully.');
+            showAlert('success', 'Resume deleted successfully.');
             await loadResumes();
         }
     }
@@ -709,7 +716,7 @@
                 .single();
 
             if (error || !data) {
-                showAlert('error', '❌ Could not fetch resume data for PDF.');
+                showAlert('error', 'Could not fetch resume data for PDF.');
                 return;
             }
 
@@ -718,7 +725,7 @@
 
             const printWindow = window.open('', '_blank');
             if (!printWindow) {
-                showAlert('error', '❌ Popup blocked. Please allow popups to export PDF.');
+                showAlert('error', 'Popup blocked. Please allow popups to export PDF.');
                 return;
             }
 
@@ -738,10 +745,10 @@
             `;
             printWindow.document.body.appendChild(printScript);
 
-            showAlert('success', '✅ PDF Generator opened. Select "Save as PDF" to save a vector, ATS-friendly copy!');
+            showAlert('success', 'PDF Generator opened. Select "Save as PDF" to save a vector, ATS-friendly copy!');
         } catch (err) {
-            console.error('❌ PDF Error:', err);
-            showAlert('error', '❌ Failed to generate PDF: ' + err.message);
+            console.error('PDF Error:', err);
+            showAlert('error', 'Failed to generate PDF: ' + err.message);
         }
     }
 
@@ -772,7 +779,7 @@
             document.getElementById('shareModal').classList.add('active');
         } catch (err) {
             console.error('Share error:', err);
-            showAlert('error', '❌ Failed to create share link: ' + err.message);
+            showAlert('error', 'Failed to create share link: ' + err.message);
         }
     }
 
@@ -812,13 +819,340 @@
     let selectedIndustry = '';
     let selectedLanguage = 'English';
 
+    // AI Document Editor states
+    let lastClearedSummary = '';
+    let lastRegeneratedSummary = '';
+    let isEditorEditingMode = false;
+    let lastGeneratedTime = null;
+    let tempTextBeforeEdit = '';
+
+    function updateEditorMetrics() {
+        const textView = document.getElementById('aiSuggestionsBox');
+        const textEdit = document.getElementById('aiTextEdit');
+        const wordsMetric = document.getElementById('aiMetricWords');
+        const charsMetric = document.getElementById('aiMetricChars');
+        const readTimeMetric = document.getElementById('aiMetricReadTime');
+        const lastGenMetric = document.getElementById('aiMetricLastGen');
+        const indicator = document.getElementById('aiWordLimitIndicator');
+        const counter = document.getElementById('aiLiveCounter');
+
+        const currentText = isEditorEditingMode ? (textEdit ? textEdit.value : '') : (textView ? (textView.innerText || textView.textContent || '') : '');
+        const trimmed = currentText.trim();
+        const wordCount = trimmed === '' ? 0 : trimmed.split(/\s+/).length;
+        const charCount = currentText.length;
+        const readMin = Math.max(1, Math.round(wordCount / 200));
+
+        // Update status metrics
+        if (wordsMetric) wordsMetric.textContent = `${wordCount} words`;
+        if (charsMetric) charsMetric.textContent = `${charCount} chars`;
+        if (readTimeMetric) readTimeMetric.textContent = `${readMin} min read`;
+        if (lastGenMetric) {
+            if (lastGeneratedTime) {
+                const timeStr = lastGeneratedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                lastGenMetric.textContent = `Last generated: ${timeStr}`;
+            } else {
+                lastGenMetric.textContent = `Last generated: Never`;
+            }
+        }
+
+        // Update live counter limit indicator
+        let limitLabel = selectedWordLimit + ' words';
+        if (customLimitActive) limitLabel = selectedWordLimit + ' (Custom)';
+        if (counter) counter.textContent = `${wordCount} / ${limitLabel}`;
+
+        // Validate and style indicator based on limits
+        if (indicator) {
+            indicator.classList.remove('warning', 'danger');
+            if (wordCount > selectedWordLimit) {
+                indicator.classList.add('danger');
+            } else if (wordCount > selectedWordLimit * 0.85) {
+                indicator.classList.add('warning');
+            }
+        }
+    }
+
+    function enterEditorEditMode() {
+        const textView = document.getElementById('aiSuggestionsBox');
+        const textEdit = document.getElementById('aiTextEdit');
+        const inlineToolbar = document.getElementById('aiToolbarInline');
+        const editToolbar = document.getElementById('aiToolbarEdit');
+        
+        if (!textView || !textEdit) return;
+
+        textEdit.value = textView.innerText || textView.textContent || '';
+        tempTextBeforeEdit = textEdit.value;
+        
+        textView.classList.add('is-hidden');
+        textEdit.classList.remove('is-hidden');
+        
+        if (inlineToolbar) inlineToolbar.classList.add('is-hidden');
+        if (editToolbar) editToolbar.classList.remove('is-hidden');
+
+        isEditorEditingMode = true;
+        updateEditorMetrics();
+
+        textEdit.focus();
+        textEdit.selectionStart = textEdit.selectionEnd = textEdit.value.length;
+    }
+
+    function saveEditorEdit() {
+        const textEdit = document.getElementById('aiTextEdit');
+        const textView = document.getElementById('aiSuggestionsBox');
+        if (!textEdit || !textView) return;
+
+        const newText = textEdit.value;
+        const wordCount = newText.trim() === '' ? 0 : newText.trim().split(/\s+/).length;
+
+        if (wordCount > selectedWordLimit) {
+            const warningModal = document.getElementById('wordLimitWarningModal');
+            if (warningModal) {
+                warningModal.classList.add('active');
+            }
+            return;
+        }
+
+        commitEditorSave(newText);
+    }
+
+    function commitEditorSave(text) {
+        const textEdit = document.getElementById('aiTextEdit');
+        const textView = document.getElementById('aiSuggestionsBox');
+        const inlineToolbar = document.getElementById('aiToolbarInline');
+        const editToolbar = document.getElementById('aiToolbarEdit');
+
+        if (textView) textView.textContent = text;
+        currentAISuggestion = text;
+
+        if (textEdit) textEdit.classList.add('is-hidden');
+        if (textView) textView.classList.remove('is-hidden');
+        if (inlineToolbar) inlineToolbar.classList.remove('is-hidden');
+        if (editToolbar) editToolbar.classList.add('is-hidden');
+
+        isEditorEditingMode = false;
+        updateEditorMetrics();
+
+        const acceptBtn = document.getElementById('aiAcceptBtn');
+        if (acceptBtn) {
+            if (text.trim() !== '') {
+                acceptBtn.style.display = 'inline-flex';
+            } else {
+                acceptBtn.style.display = 'none';
+            }
+        }
+
+        window.LayoutManager.showToast('Changes saved.', 'success');
+    }
+
+    function cancelEditorEdit() {
+        const textEdit = document.getElementById('aiTextEdit');
+        const textView = document.getElementById('aiSuggestionsBox');
+        const inlineToolbar = document.getElementById('aiToolbarInline');
+        const editToolbar = document.getElementById('aiToolbarEdit');
+
+        if (textEdit) textEdit.value = tempTextBeforeEdit;
+
+        if (textEdit) textEdit.classList.add('is-hidden');
+        if (textView) textView.classList.remove('is-hidden');
+        if (inlineToolbar) inlineToolbar.classList.remove('is-hidden');
+        if (editToolbar) editToolbar.classList.add('is-hidden');
+
+        isEditorEditingMode = false;
+        updateEditorMetrics();
+    }
+
+    function copyEditorText() {
+        const textView = document.getElementById('aiSuggestionsBox');
+        const text = textView ? (textView.innerText || textView.textContent || '') : '';
+        if (!text) return;
+
+        navigator.clipboard.writeText(text).then(() => {
+            window.LayoutManager.showToast('Copied to clipboard.', 'success');
+        }).catch(() => {
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            window.LayoutManager.showToast('Copied to clipboard.', 'success');
+        });
+    }
+
+    function promptClearSummary() {
+        const modal = document.getElementById('clearSummaryModal');
+        if (modal) modal.classList.add('active');
+    }
+
+    function confirmClearSummary() {
+        const textView = document.getElementById('aiSuggestionsBox');
+        const textEdit = document.getElementById('aiTextEdit');
+        if (textView) {
+            lastClearedSummary = textView.innerText || textView.textContent || '';
+            textView.textContent = '';
+        }
+        if (textEdit) textEdit.value = '';
+        currentAISuggestion = '';
+
+        const acceptBtn = document.getElementById('aiAcceptBtn');
+        if (acceptBtn) acceptBtn.style.display = 'none';
+
+        updateEditorMetrics();
+
+        const modal = document.getElementById('clearSummaryModal');
+        if (modal) modal.classList.remove('active');
+
+        window.LayoutManager.showToast('Summary cleared. <a href="#" id="aiUndoClearAction" style="color:var(--cyan); margin-left:8px; font-weight:600; text-decoration:underline;">Undo</a>', 'success');
+        
+        setTimeout(() => {
+            const undoAnchor = document.getElementById('aiUndoClearAction');
+            if (undoAnchor) {
+                undoAnchor.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    undoClearSummary();
+                });
+            }
+        }, 100);
+    }
+
+    function undoClearSummary() {
+        if (!lastClearedSummary) return;
+        const textView = document.getElementById('aiSuggestionsBox');
+        const textEdit = document.getElementById('aiTextEdit');
+        if (textView) textView.textContent = lastClearedSummary;
+        if (textEdit) textEdit.value = lastClearedSummary;
+        currentAISuggestion = lastClearedSummary;
+
+        const acceptBtn = document.getElementById('aiAcceptBtn');
+        if (acceptBtn && lastClearedSummary.trim() !== '') {
+            acceptBtn.style.display = 'inline-flex';
+        }
+
+        updateEditorMetrics();
+        lastClearedSummary = '';
+        window.LayoutManager.showToast('Summary restored.', 'success');
+    }
+
+    function undoRegenerateSummary() {
+        if (!lastRegeneratedSummary) return;
+        const textView = document.getElementById('aiSuggestionsBox');
+        const textEdit = document.getElementById('aiTextEdit');
+        if (textView) textView.textContent = lastRegeneratedSummary;
+        if (textEdit) textEdit.value = lastRegeneratedSummary;
+        currentAISuggestion = lastRegeneratedSummary;
+
+        const acceptBtn = document.getElementById('aiAcceptBtn');
+        if (acceptBtn && lastRegeneratedSummary.trim() !== '') {
+            acceptBtn.style.display = 'inline-flex';
+        }
+
+        updateEditorMetrics();
+        lastRegeneratedSummary = '';
+        window.LayoutManager.showToast('Previous summary restored.', 'success');
+    }
+
+    function setupAIDocumentEditor() {
+        // Toolbar Bindings
+        document.getElementById('aiBtnEdit')?.addEventListener('click', enterEditorEditMode);
+        document.getElementById('aiBtnCopy')?.addEventListener('click', copyEditorText);
+        document.getElementById('aiBtnClear')?.addEventListener('click', promptClearSummary);
+        document.getElementById('aiBtnRegen')?.addEventListener('click', triggerAIGeneration);
+
+        document.getElementById('aiBtnSave')?.addEventListener('click', saveEditorEdit);
+        document.getElementById('aiBtnCancel')?.addEventListener('click', cancelEditorEdit);
+
+        // Mobile Overflow Bindings
+        document.getElementById('aiMobBtnEdit')?.addEventListener('click', () => {
+            document.getElementById('aiMobileMenu')?.classList.add('is-hidden');
+            enterEditorEditMode();
+        });
+        document.getElementById('aiMobBtnCopy')?.addEventListener('click', () => {
+            document.getElementById('aiMobileMenu')?.classList.add('is-hidden');
+            copyEditorText();
+        });
+        document.getElementById('aiMobBtnClear')?.addEventListener('click', () => {
+            document.getElementById('aiMobileMenu')?.classList.add('is-hidden');
+            promptClearSummary();
+        });
+        document.getElementById('aiMobBtnRegen')?.addEventListener('click', () => {
+            document.getElementById('aiMobileMenu')?.classList.add('is-hidden');
+            triggerAIGeneration();
+        });
+
+        // Overflow Trigger
+        document.getElementById('aiMobileTrigger')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('aiMobileMenu')?.classList.toggle('is-hidden');
+        });
+
+        // Confirmation Modal Buttons
+        document.getElementById('btnCancelClear')?.addEventListener('click', () => {
+            document.getElementById('clearSummaryModal')?.classList.remove('active');
+        });
+        document.getElementById('btnConfirmClear')?.addEventListener('click', confirmClearSummary);
+
+        document.getElementById('btnCancelWordWarning')?.addEventListener('click', () => {
+            document.getElementById('wordLimitWarningModal')?.classList.remove('active');
+        });
+        document.getElementById('btnConfirmWordWarning')?.addEventListener('click', () => {
+            document.getElementById('wordLimitWarningModal')?.classList.remove('active');
+            const textEdit = document.getElementById('aiTextEdit');
+            if (textEdit) commitEditorSave(textEdit.value);
+        });
+
+        // Input monitoring on textarea
+        document.getElementById('aiTextEdit')?.addEventListener('input', updateEditorMetrics);
+
+        // Key shortcuts in textarea
+        document.getElementById('aiTextEdit')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                saveEditorEdit();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelEditorEdit();
+            }
+        });
+
+        // Global shortcuts when modal is active but not in edit fields
+        document.addEventListener('keydown', (e) => {
+            const modal = document.getElementById('aiModal');
+            if (!modal || !modal.classList.contains('active')) return;
+
+            const tag = document.activeElement ? document.activeElement.tagName : '';
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement.contentEditable === 'true') {
+                return;
+            }
+
+            if (e.key === 'e' || e.key === 'E') {
+                e.preventDefault();
+                enterEditorEditMode();
+            } else if (e.key === 'c' || e.key === 'C') {
+                e.preventDefault();
+                copyEditorText();
+            } else if (e.key === 'r' || e.key === 'R') {
+                e.preventDefault();
+                triggerAIGeneration();
+            }
+        });
+
+        // Close mobile overflow menu on click outside
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('aiMobileMenu');
+            const trigger = document.getElementById('aiMobileTrigger');
+            if (menu && !menu.classList.contains('is-hidden')) {
+                if (!menu.contains(e.target) && !trigger.contains(e.target)) {
+                    menu.classList.add('is-hidden');
+                }
+            }
+        });
+    }
+
     function setupAISettingsListeners() {
         const selector = document.getElementById('aiWordLimitSelector');
         const customInput = document.getElementById('customWordLimit');
         const toneSelect = document.getElementById('aiTone');
         const industryInput = document.getElementById('aiIndustry');
         const languageSelect = document.getElementById('aiLanguage');
-        const box = document.getElementById('aiSuggestionsBox');
 
         if (selector) {
             selector.querySelectorAll('.pill-btn').forEach(btn => {
@@ -870,12 +1204,7 @@
             });
         }
 
-        if (box) {
-            box.addEventListener('input', () => {
-                currentAISuggestion = box.innerText || box.textContent || '';
-                updateAISuggestionsCounter();
-            });
-        }
+        setupAIDocumentEditor();
     }
 
     function updateAISuggestionsCounter() {
@@ -891,20 +1220,34 @@
             limitLabel = selectedWordLimit + ' (Custom)';
         }
         
-        counter.textContent = `Words Used: ${wordsUsed} / ${limitLabel}`;
+        counter.textContent = `${wordsUsed} / ${limitLabel}`;
+        updateEditorMetrics();
     }
 
     function triggerAIGeneration() {
         const btn = document.getElementById('aiGenerateBtn');
+        const regenBtn = document.getElementById('aiBtnRegen');
+        const mobRegenBtn = document.getElementById('aiMobBtnRegen');
+        const loader = document.getElementById('aiEditorLoader');
+
         if (btn) {
             btn.disabled = true;
             btn.textContent = '⏳ Generating...';
         }
+        if (regenBtn) regenBtn.disabled = true;
+        if (mobRegenBtn) mobRegenBtn.disabled = true;
+        if (loader) loader.classList.remove('is-hidden');
+
         getAISuggestions(currentAISection, currentAIItemIndex).finally(() => {
             if (btn) {
                 btn.disabled = false;
                 btn.textContent = '✨ Regenerate';
             }
+            if (regenBtn) regenBtn.disabled = false;
+            if (mobRegenBtn) mobRegenBtn.disabled = false;
+            if (loader) loader.classList.add('is-hidden');
+            lastGeneratedTime = new Date();
+            updateEditorMetrics();
         });
     }
 
@@ -920,13 +1263,19 @@
         if (section === 'summary') {
             if (configPanel) configPanel.style.display = 'block';
             if (counterRow) counterRow.style.display = 'flex';
+            
+            if (box.textContent && box.textContent !== 'Getting AI suggestions...' && box.textContent !== 'Getting suggestions...') {
+                lastRegeneratedSummary = box.textContent;
+            } else {
+                box.textContent = 'Getting AI suggestions...';
+            }
         } else {
             if (configPanel) configPanel.style.display = 'none';
             if (counterRow) counterRow.style.display = 'none';
+            box.textContent = 'Getting AI suggestions...';
         }
 
         currentAISuggestion = '';
-        box.textContent = 'Getting AI suggestions...';
         acceptBtn.style.display = 'none';
         document.getElementById('aiModal').classList.add('active');
 
@@ -935,7 +1284,7 @@
         if (counter) {
             let limitLabel = selectedWordLimit + ' words';
             if (customLimitActive) limitLabel = selectedWordLimit + ' (Custom)';
-            counter.textContent = `Words Used: 0 / ${limitLabel}`;
+            counter.textContent = `0 / ${limitLabel}`;
         }
 
         const resumeData = collectFormData();
@@ -980,6 +1329,20 @@
             }
 
             const result = await response.json();
+            
+            if (section === 'summary' && lastRegeneratedSummary) {
+                window.LayoutManager.showToast('Summary regenerated. <a href="#" id="aiUndoRegenAction" style="color:var(--cyan); margin-left:8px; font-weight:600; text-decoration:underline;">Undo</a>', 'success');
+                setTimeout(() => {
+                    const undoAnchor = document.getElementById('aiUndoRegenAction');
+                    if (undoAnchor) {
+                        undoAnchor.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            undoRegenerateSummary();
+                        });
+                    }
+                }, 100);
+            }
+
             currentAISuggestion = result.suggestions || '';
             box.textContent = currentAISuggestion || '(No suggestion returned)';
 
@@ -1020,6 +1383,9 @@
     }
 
     function closeAIModal() {
+        if (isEditorEditingMode) {
+            cancelEditorEdit();
+        }
         document.getElementById('aiModal').classList.remove('active');
         currentAISuggestion = '';
         currentAISection = '';

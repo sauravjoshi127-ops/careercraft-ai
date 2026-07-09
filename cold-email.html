@@ -1045,9 +1045,9 @@
       CareerCraft AI
     </a>
     <div class="nav-links" style="display:flex;gap:1rem;">
-      <a href="resume.html" class="nav-btn">📝 Resume</a>
-      <a href="cover-letter.html" class="nav-btn">📨 Cover Letter</a>
-      <a href="interview.html" class="nav-btn">🎤 Interview</a>
+      <a href="resume.html" class="nav-btn">Resume</a>
+      <a href="cover-letter.html" class="nav-btn">Cover Letter</a>
+      <a href="interview.html" class="nav-btn">Interview</a>
       <a href="dashboard.html" class="btn-primary" style="padding:0.4rem 0.8rem; font-size:0.85rem;">← Dashboard</a>
     </div>
   </div>
@@ -1059,7 +1059,7 @@
     </div>
 
     <div class="alert" id="errAlert">
-      <h4>⚠️ Error</h4>
+      <h4>Error</h4>
       <p id="errMsg">Something went wrong.</p>
     </div>
 
@@ -1072,7 +1072,7 @@
         <!-- Nexus Import Card -->
         <div class="nexus">
           <div>
-            <h3>✨ Context Nexus</h3>
+            <h3>Context Nexus</h3>
             <p>Load background summary directly from a saved resume or upload a PDF.</p>
           </div>
           <div class="nexus-actions">
@@ -1087,7 +1087,7 @@
           
           <!-- STEP 1: Select Email Goal -->
           <div class="card" style="animation-delay:.05s">
-            <div class="card-head">🎯 Step 1 — Select Email Goal</div>
+            <div class="card-head">Step 1 — Select Email Goal</div>
             <div class="fg">
               <label for="emailGoal">What is the objective of this cold email? <span class="req">*</span></label>
               <select id="emailGoal" required>
@@ -1106,7 +1106,7 @@
 
           <!-- STEP 2: Enter Recipient Details -->
           <div class="card" style="animation-delay:.1s">
-            <div class="card-head">👥 Step 2 — Enter Recipient Details</div>
+            <div class="card-head">Step 2 — Enter Recipient Details</div>
             <div class="grid2">
               <div class="fg">
                 <label for="recipientName">Recipient Name (optional)</label>
@@ -1133,7 +1133,7 @@
 
           <!-- STEP 3: Enter User Context -->
           <div class="card" style="animation-delay:.15s">
-            <div class="card-head">👤 Step 3 — Enter Your Context</div>
+            <div class="card-head">Step 3 — Enter Your Context</div>
             <div class="grid2">
               <div class="fg full">
                 <label for="userName">Your Name <span class="req">*</span></label>
@@ -1161,7 +1161,7 @@
 
           <!-- STEP 4: AI Length Config -->
           <div class="card" style="animation-delay:.2s">
-            <div class="card-head">⚙️ Step 4 — AI Length Config</div>
+            <div class="card-head">Step 4 — AI Length Config</div>
             <div class="fg">
               <label style="margin-bottom: 0.25rem;">Target Length</label>
               <div class="length-options-grid">
@@ -1223,10 +1223,10 @@
         
         <!-- Live Email Preview Card -->
         <div class="card" id="previewCard" style="animation-delay:.05s">
-          <div class="card-head" id="previewTitle">📝 Live Email Preview</div>
+          <div class="card-head" id="previewTitle">Live Email Preview</div>
           
           <div class="spam-alert" id="spamAlert">
-            ⚠️ <strong>Spam Trigger Warning:</strong> The current variant contains spam-associated words (<span id="spamWordsText"></span>) which may affect deliverability. Consider replacing them.
+            <strong>Spam Trigger Warning:</strong> The current variant contains spam-associated words (<span id="spamWordsText"></span>) which may affect deliverability. Consider replacing them.
           </div>
 
           <!-- Preview Header -->
@@ -1277,16 +1277,16 @@
 
           <!-- Export Actions -->
           <div class="preview-actions-row">
-            <button type="button" class="abtn primary" id="btnCopyEmail">📋 Copy Email</button>
-            <button type="button" class="abtn" id="btnCopySubject">📋 Copy Subject</button>
-            <button type="button" class="abtn" id="btnExportTxt">📄 Export TXT</button>
-            <button type="button" class="abtn" id="btnExportPdf">📕 Export PDF</button>
-            <button type="button" class="abtn" id="btnSaveDraft">💾 Save Draft</button>
+            <button type="button" class="abtn primary" id="btnCopyEmail">Copy Email</button>
+            <button type="button" class="abtn" id="btnCopySubject">Copy Subject</button>
+            <button type="button" class="abtn" id="btnExportTxt">Export TXT</button>
+            <button type="button" class="abtn" id="btnExportPdf">Export PDF</button>
+            <button type="button" class="abtn" id="btnSaveDraft">Save Draft</button>
           </div>
 
           <!-- Email Optimizer Panel -->
           <div class="optimizer-box" id="optimizerBox" style="display:none;">
-            <div class="optimizer-head">⚡ AI Email Optimizer</div>
+            <div class="optimizer-head">AI Email Optimizer</div>
             <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem">Provide feedback to instantly rewrite and refine this specific variant (e.g. "make it punchier", "focus on cloud migration skills").</p>
             <div class="optimizer-row">
               <input type="text" id="optimizerFeedback" placeholder="e.g. Make it shorter and add a link hook...">
@@ -1297,8 +1297,8 @@
           <!-- Subject Line Generator Panel -->
           <div class="subjects-box" id="subjectsBox" style="display:none;">
             <div class="subjects-title-row">
-              <h4>🎯 Alternative Subject Lines</h4>
-              <button type="button" class="draft-btn" id="btnRegenSubjects" style="padding:0.25rem 0.5rem">🔄 Regenerate</button>
+              <h4>Alternative Subject Lines</h4>
+              <button type="button" class="draft-btn" id="btnRegenSubjects" style="padding:0.25rem 0.5rem">Regenerate</button>
             </div>
             <div class="subjects-list" id="subjectsList">
               <!-- Subject items will go here -->
@@ -1308,7 +1308,7 @@
           <!-- Quality Engine Panel -->
           <div class="quality-box" id="qualityBox" style="display:none;">
             <div class="quality-title">
-              <span>📊 AI Quality Evaluation</span>
+              <span>AI Quality Evaluation</span>
               <span class="score-badge score-high" id="overallScoreBadge">90% Reply Probability</span>
             </div>
             
@@ -1381,18 +1381,18 @@
 
             <!-- Dynamic Interactive Suggestions List -->
             <div id="suggestionsWrapper" style="border-top:1px solid var(--border); padding-top:1rem; margin-top:1rem;">
-              <h4 style="font-size:0.85rem; font-weight:700; margin-bottom:0.75rem; color:#fff;">✨ Interactive Outreach Improvements</h4>
+              <h4 style="font-size:0.85rem; font-weight:700; margin-bottom:0.75rem; color:#fff;">Interactive Outreach Improvements</h4>
               <div id="suggestionsInteractiveList" style="display:flex; flex-direction:column; gap:0.75rem;"></div>
             </div>
 
             <!-- Strengths and Weaknesses -->
             <div class="quality-list" style="margin-top:1.25rem;">
               <div class="quality-item">
-                <span class="quality-icon">✅</span>
+                <span class="quality-icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg" style="color:#10b981; display:inline-block; vertical-align:middle;"><polyline points="20 6 9 17 4 12"/></svg></span>
                 <span id="strengthsText"></span>
               </div>
               <div class="quality-item">
-                <span class="quality-icon">⚠️</span>
+                <span class="quality-icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg" style="color:#fbbf24; display:inline-block; vertical-align:middle;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
                 <span id="weaknessesText"></span>
               </div>
             </div>
@@ -1456,7 +1456,7 @@
   <!-- Saved Resume Nexus Modal -->
   <div class="modal-bg" id="nexusModal">
     <div class="modal">
-      <h2>✨ Select a Saved Resume</h2>
+      <h2>Select a Saved Resume</h2>
       <div id="rlist" class="rlist"><p style="color:var(--text-muted);text-align:center">Loading…</p></div>
       <button type="button" class="mcl" id="closeModal">Cancel</button>
     </div>

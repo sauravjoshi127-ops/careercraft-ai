@@ -59,9 +59,13 @@
     }
   }
 
+  let draftTimer = null;
   function saveDraft() {
-    const context = readContext();
-    localStorage.setItem(draftKey, JSON.stringify(context));
+    if (draftTimer) clearTimeout(draftTimer);
+    draftTimer = setTimeout(() => {
+      const context = readContext();
+      localStorage.setItem(draftKey, JSON.stringify(context));
+    }, 400);
   }
 
   function readContext() {
@@ -147,13 +151,13 @@
     `).join('');
 
     const avatars = {
-      'HR Specialist': '👩‍💼',
-      'Hiring Manager': '👨‍💼',
-      'Technical Lead': '👨‍💻',
-      'Executive VP': '👩‍💼',
-      'Stress Interviewer': '💂'
+      'HR Specialist': '<svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      'Hiring Manager': '<svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      'Technical Lead': '<svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+      'Executive VP': '<svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>',
+      'Stress Interviewer': '<svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
     };
-    els.strategyInterviewerAvatar.textContent = avatars[state.persona] || '👩‍💼';
+    els.strategyInterviewerAvatar.innerHTML = avatars[state.persona] || '';
     els.strategyInterviewerName.textContent = state.persona === 'Stress Interviewer' ? 'Commander Vance' : state.persona === 'Technical Lead' ? 'Sanjay' : state.persona === 'Hiring Manager' ? 'Marcus' : state.persona === 'Executive VP' ? 'Victoria' : 'Elena';
     els.strategyInterviewerRole.textContent = state.persona;
   }
@@ -189,13 +193,13 @@
     `).join('');
 
     const avatars = {
-      'HR Specialist': '👩‍💼',
-      'Hiring Manager': '👨‍💼',
-      'Technical Lead': '👨‍💻',
-      'Executive VP': '👩‍💼',
-      'Stress Interviewer': '💂'
+      'HR Specialist': '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      'Hiring Manager': '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      'Technical Lead': '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+      'Executive VP': '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>',
+      'Stress Interviewer': '<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
     };
-    els.speechAvatar.textContent = avatars[state.persona] || '👩‍💼';
+    els.speechAvatar.innerHTML = avatars[state.persona] || '';
     els.speechName.textContent = state.persona === 'Stress Interviewer' ? 'Commander Vance' : state.persona === 'Technical Lead' ? 'Sanjay' : state.persona === 'Hiring Manager' ? 'Marcus' : state.persona === 'Executive VP' ? 'Victoria' : 'Elena';
     
     const histItem = state.history.find(h => h.question === q.question);
