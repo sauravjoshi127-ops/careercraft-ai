@@ -160,3 +160,40 @@ A redesigned minimalist section implemented inside `index.html`, `dashboard.html
 - **Regression Tests**: Verified `npm test` checks continue passing cleanly.
 - **Accessibility Validation**: Verified contrast ratios and aria structures.
 - **Manual QA**: Responsive scaling checked on Desktop, Tablet, and Mobile devices.
+
+---
+
+# ADR-005: Global Iconography Standard & AI Suggestions Editor Redesign
+
+**Date**: July 9, 2026  
+**Status**: Implemented  
+
+### Decision
+Establish a strict visual iconography standard banning emojis across the application in favor of vector outline SVGs and clean typography. Simultaneously, redesign the AI Suggestions panel into a professional, keyboard-accessible Document Editor with inline actions, confirmation modals, word overrun guards, and dynamic character metrics.
+
+### Context
+- **Why Necessary**: Emojis degraded the visual professionalism of the SaaS platform. The legacy AI suggestions box only had a "Regenerate" trigger, adding friction for users wanting to tweak the text.
+- **Constraints**: Editor must support live editing, undo capabilities, text preserving, limit checks, and fit within the responsive layout (collapsing to mobile viewports). Emojis must be cleanly stripped from static markup and dynamic scripts.
+
+### Alternatives Considered
+1. **Keeping Emojis as Accents**:
+   - *Advantages*: Visual indicators are already set up.
+   - *Disadvantages*: Dilutes the minimalist SaaS aesthetic (feels like a prototype).
+   - *Reason for Rejection*: Fails to deliver a cohesive, premium feel.
+2. **Third-party WYSIWYG Editor Integration**:
+   - *Advantages*: Pre-built rich text editing.
+   - *Disadvantages*: Heavy footprint, configuration complexity, and does not align with the custom minimal theme.
+   - *Reason for Rejection*: Custom textarea overlays are fast, lightweight (~1KB CSS/JS overhead), and completely responsive.
+
+### Chosen Solution
+- **Visuals**: Replaced emojis with outline SVGs based on Lucide styling (16px inline, 18px toolbars, 20px navs, 24px cards).
+- **Editor**: Swappable `#aiSuggestionsBox` container with `#aiTextEdit` textarea, toolbar triggers, Metrics Footer, and confirmation modals (`Clear`, `Word Overrun Warning`).
+
+### Consequences
+- **Advantages**: Sleek modern aesthetic matching Vercel/Notion, enhanced editing productivity, keyboard accessibility, and robust error/overflow prevention.
+- **Disadvantages**: Minor JS complexity to handle keyboard shortcuts and dynamic character limit modals.
+
+### Testing Required
+- **Functional Tests**: Run regression suite `npm test` to ensure API routes are unaffected.
+- **Shortcut Verification**: Test Ctrl+Enter, Esc, and character validations manually.
+- **Manual Visual Review**: Verify all emojis are removed from the DOM.

@@ -766,9 +766,9 @@
       CareerCraft AI
     </a>
     <div style="display:flex;gap:0.5rem;align-items:center;">
-      <a href="resume.html" class="nav-btn">📝 Resume</a>
-      <a href="cold-email.html" class="nav-btn">✉️ Cold Email</a>
-      <a href="interview.html" class="nav-btn">🎤 Interview Coach</a>
+      <a href="resume.html" class="nav-btn">Resume</a>
+      <a href="cold-email.html" class="nav-btn">Cold Email</a>
+      <a href="interview.html" class="nav-btn">Interview Coach</a>
       <a href="dashboard.html" class="btn-secondary" style="min-height:34px; padding:0.4rem 0.8rem; font-size:0.8rem;">← Dashboard</a>
     </div>
   </div>
@@ -784,10 +784,10 @@
       <!-- ── LEFT SIDE: THE BUILDER WIZARD ── -->
       <div class="glass-card">
         <div class="tab-header" id="wizardTabs">
-          <button class="tab-btn active" data-wizard-tab="jobInfo">💼 Job Info</button>
-          <button class="tab-btn" data-wizard-tab="resumeTab">📄 Resume &amp; Highlights</button>
-          <button class="tab-btn" data-wizard-tab="writerSettings">✨ Style Settings</button>
-          <button class="tab-btn" data-wizard-tab="optimizerTab">🎯 Score Optimizer</button>
+          <button class="tab-btn active" data-wizard-tab="jobInfo">Job Info</button>
+          <button class="tab-btn" data-wizard-tab="resumeTab">Resume &amp; Highlights</button>
+          <button class="tab-btn" data-wizard-tab="writerSettings">Style Settings</button>
+          <button class="tab-btn" data-wizard-tab="optimizerTab">Score Optimizer</button>
         </div>
 
         <!-- Wizard Progress Indicator -->
@@ -848,13 +848,13 @@
             <label>Provide Resume profile context</label>
             <div style="margin-bottom:0.75rem;">
               <select id="savedResumeSelect" class="history-select" style="width:100%;">
-                <option value="">✨ — Select from your Saved Resumes —</option>
+                <option value="">— Select from your Saved Resumes —</option>
               </select>
             </div>
 
             <div class="upload-area" id="uploadArea">
               <input type="file" id="resumeFile" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-              <div class="upload-icon">📁</div>
+              <div class="upload-icon"><svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg" style="color:var(--text-3); margin:0 auto;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
               <div class="upload-text">Drag &amp; drop or click to upload PDF/DOCX</div>
               <div class="upload-hint">Supports up to 5 MB</div>
             </div>
@@ -997,7 +997,7 @@
 
           <div style="display:flex; justify-content:space-between; margin-top:1rem;">
             <button class="btn btn-secondary wizard-nav-btn" data-wizard-tab="writerSettings">← Back</button>
-            <button id="generateBtn" class="btn btn-primary">🚀 Generate Cover Letter</button>
+            <button id="generateBtn" class="btn btn-primary">Generate Cover Letter</button>
           </div>
         </div>
 
@@ -1006,24 +1006,24 @@
       <!-- ── RIGHT SIDE: THE EDITOR & WORKSPACE ── -->
       <div class="editor-container">
         <div class="tab-header" id="editorTabs">
-          <button class="tab-btn active" data-editor-tab="editPane">📝 Live Editor</button>
-          <button class="tab-btn" data-editor-tab="suggestionsPane">🎯 AI Suggestions <span id="suggestionsCount"></span></button>
-          <button class="tab-btn" data-editor-tab="atsPane">📊 ATS Analysis</button>
-          <button class="tab-btn" data-editor-tab="variantsPane">✨ Variants</button>
+          <button class="tab-btn active" data-editor-tab="editPane">Live Editor</button>
+          <button class="tab-btn" data-editor-tab="suggestionsPane">AI Suggestions <span id="suggestionsCount"></span></button>
+          <button class="tab-btn" data-editor-tab="atsPane">ATS Analysis</button>
+          <button class="tab-btn" data-editor-tab="variantsPane">Variants</button>
         </div>
 
         <!-- Editor Pane -->
         <div class="tab-pane active" id="pane-editPane">
           <div class="editor-toolbar">
-            <button class="toolbar-btn" data-command="undo" title="Undo (Ctrl+Z)">↩️</button>
-            <button class="toolbar-btn" data-command="redo" title="Redo (Ctrl+Y)">↪️</button>
+            <button class="toolbar-btn" data-command="undo" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg></button>
+            <button class="toolbar-btn" data-command="redo" title="Redo (Ctrl+Y)"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg></button>
             <div class="toolbar-divider"></div>
             <button class="toolbar-btn" data-command="bold" title="Bold (Ctrl+B)"><b>B</b></button>
             <button class="toolbar-btn" data-command="italic" title="Italic (Ctrl+I)"><i>I</i></button>
-            <button class="toolbar-btn" data-command="insertUnorderedList" title="Bullet List">📋</button>
+            <button class="toolbar-btn" data-command="insertUnorderedList" title="Bullet List"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
             <div class="toolbar-divider"></div>
-            <button class="toolbar-btn" data-command="justifyLeft" title="Align Left">⬅️</button>
-            <button class="toolbar-btn" data-command="justifyFull" title="Align Justify">↔️</button>
+            <button class="toolbar-btn" data-command="justifyLeft" title="Align Left"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
+            <button class="toolbar-btn" data-command="justifyFull" title="Align Justify"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg></button>
           </div>
 
           <div class="editor-sheet-container">

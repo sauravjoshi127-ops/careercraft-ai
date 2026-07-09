@@ -91,7 +91,7 @@
     <div class="page-content">
         <div id="statusContainer">
             <div class="status-card">
-                <div class="status-icon">⏳</div>
+                <div class="status-icon"><svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg" style="color:var(--cyan); margin: 0 auto;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
                 <h2>Loading Resume…</h2>
                 <p>Fetching resume data, please wait.</p>
             </div>
@@ -127,7 +127,7 @@
         function showError(title, message) {
             document.getElementById('statusContainer').innerHTML = `
                 <div class="status-card">
-                    <div class="status-icon">⚠️</div>
+                    <div class="status-icon"><svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg" style="color:var(--danger); margin: 0 auto;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
                     <h2>${escapeHtml(title)}</h2>
                     <p>${escapeHtml(message)}</p>
                 </div>`;
@@ -197,7 +197,7 @@
         async function triggerPDF() {
             if (!resumeDataGlobal) return;
             const btn = document.getElementById('downloadBtn');
-            btn.textContent = '⏳ Generating…';
+            btn.textContent = 'Generating…';
             btn.disabled = true;
 
             try {

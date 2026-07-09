@@ -368,9 +368,20 @@
     const subject = `inquiry regarding ${company.toLowerCase()} — ${goal.toLowerCase()}`;
     const body = `Hi ${recipient},\n\nI’m reaching out because I saw you work as the ${position} at ${company}.\n\nMy name is ${userName}, and I have a background in ${background}, with specialized skills in ${keySkills}.\n\nGiven my experience in ${experience}, I'm connecting to discuss ${whyContacting}.\n\nWould you be open to a brief 2-minute chat next week to see if my background aligns with your team's needs?\n\nBest,\n${userName}`;
 
-    document.getElementById('previewSubject').textContent = `Subject: ${subject}`;
-    document.getElementById('previewBody').textContent = body;
-    document.getElementById('previewMeta').textContent = `To: ${recipient} (${company})`;
+    const updateDOM = () => {
+      const subjectEl = document.getElementById('previewSubject');
+      const bodyEl = document.getElementById('previewBody');
+      const metaEl = document.getElementById('previewMeta');
+      if (subjectEl) subjectEl.textContent = `Subject: ${subject}`;
+      if (bodyEl) bodyEl.textContent = body;
+      if (metaEl) metaEl.textContent = `To: ${recipient} (${company})`;
+    };
+
+    if (window.PerformanceManager) {
+      window.PerformanceManager.scheduleUpdate(updateDOM);
+    } else {
+      updateDOM();
+    }
   }
 
   function validateForm() {

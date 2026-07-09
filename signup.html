@@ -204,7 +204,7 @@
             const successMsg = document.getElementById('successMsg');
             successMsg.innerHTML = `
                 <div style="text-align: center; padding: 1rem 0;">
-                    <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">✉️</span>
+                    <svg class="icon-svg" viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:block; margin: 0 auto 1rem; color:var(--cyan);"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><polyline points="22,6 12,13 2,6"></polyline></svg>
                     <h3 style="color: #6ee7b7; margin-bottom: 0.5rem; font-size: 1.1rem; font-weight: 700;">Check Your Inbox</h3>
                     <p style="color: var(--text-2); font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.5;">
                         We've sent a verification link to <strong>${email}</strong>.<br>Please click the link to activate your account.
@@ -298,13 +298,13 @@
 
             // Validate passwords match
             if (password !== confirmPassword) {
-                errorMsg.textContent = '❌ Passwords do not match!';
+                errorMsg.textContent = 'Passwords do not match!';
                 errorMsg.style.display = 'block';
                 return;
             }
 
             if (!client) {
-                errorMsg.textContent = '❌ Authentication service is offline. Please try again.';
+                errorMsg.textContent = 'Authentication service is offline. Please try again.';
                 errorMsg.style.display = 'block';
                 return;
             }
@@ -370,7 +370,7 @@
                 }
 
                 // Case B: Auto-login session established
-                successMsg.textContent = '✅ Account created successfully! Redirecting to dashboard...';
+                successMsg.textContent = 'Account created successfully! Redirecting to dashboard...';
                 successMsg.style.display = 'block';
 
                 // Keep localStorage in sync for dashboard fallback
@@ -386,7 +386,7 @@
 
             } catch (error) {
                 console.error('Signup error:', error);
-                errorMsg.textContent = `❌ Error: ${getFriendlySignUpError(error)}`;
+                errorMsg.textContent = `Error: ${getFriendlySignUpError(error)}`;
                 errorMsg.style.display = 'block';
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Create Account';
@@ -394,8 +394,6 @@
         }
     </script>
 </body>
-</html>
-
 
 
 

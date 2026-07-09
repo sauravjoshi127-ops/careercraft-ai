@@ -122,7 +122,30 @@ All UI elements must align with Career Hub's premium minimalist design language:
 
 ---
 
-## 11. Code Review Checklist
+## 11. Iconography Standards
+
+To maintain a clean, enterprise-grade, cohesive visual identity comparable to Linear, Stripe, and Figma, all components must enforce strict iconography rules:
+
+- **Strict Emoji Ban**: Emojis are strictly banned from all parts of the application's user interface. This includes buttons, navigation links, modals, cards, tooltips, toast notifications, empty states, and status badges. The only exception is user-generated content (e.g., text typed directly by the user).
+- **Approved Icon Library**: Use Lucide Icons (or consistent, custom inline SVGs matching the Lucide styling) exclusively. Do not mix other icon libraries (e.g., FontAwesome, Material, Heroicons).
+- **Icon Style**: Enforce outline style by default. Filled icons should only be used when there is a strong, context-specific UX requirement.
+- **Consistent Sizing Scale**:
+  - Inline Actions: `16px`
+  - Toolbar Actions: `18px`
+  - Primary Navigation: `20px`
+  - Feature Illustrations: `24px`
+- **Spacing Guidelines**:
+  - Icon-to-Text: `8px`
+  - Toolbar Spacing: `12px – 16px`
+  - Navigation: `16px`
+  - Card layouts must maintain equal padding around icons.
+- **Accessibility**:
+  - Every icon-only button must have an explicit `aria-label` and `title` tooltip.
+  - Interactive icons must be keyboard-accessible and feature visible focus states (`:focus-visible`).
+
+---
+
+## 12. Code Review Checklist
 
 Before approving any pull request or merge, verify compliance against this checklist:
 - [ ] **No Regressions**: Local test suite (`npm test`) passes with 100% success.
@@ -135,6 +158,6 @@ Before approving any pull request or merge, verify compliance against this check
 
 ---
 
-## 12. Final Rule
+## 13. Final Rule
 
 If any proposed implementation violates the guidelines outlined in `PROJECT_HEALTH.md`, `ARCHITECTURE_DECISIONS.md`, or `ENGINEERING_STANDARDS.md`, **stop development immediately**. Document the violation, recommend a compliant solution, and proceed only once the implementation fully aligns with these engineering standards.

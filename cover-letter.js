@@ -249,7 +249,7 @@
       if (!container) return;
       const toast = document.createElement('div');
       toast.className = `toast-alert toast-${type}`;
-      toast.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span><span>${message}</span>`;
+      toast.innerHTML = `<span>${type === 'success' ? '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg" style="color:#10b981; display:inline-block; vertical-align:middle; margin-right:6px;"><polyline points="20 6 9 17 4 12"/></svg>' : '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg" style="color:#ef4444; display:inline-block; vertical-align:middle; margin-right:6px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'}</span><span>${message}</span>`;
       container.appendChild(toast);
       
       setTimeout(() => {
@@ -308,9 +308,20 @@
     const words = text.trim().split(/\s+/).filter(Boolean).length;
     const readMin = Math.max(1, Math.round(words / 200));
 
-    document.getElementById('charCount').textContent = `${chars} characters`;
-    document.getElementById('wordCount').textContent = `${words} words`;
-    document.getElementById('readTime').textContent = `${readMin} min read`;
+    const updateDOM = () => {
+      const charEl = document.getElementById('charCount');
+      const wordEl = document.getElementById('wordCount');
+      const readEl = document.getElementById('readTime');
+      if (charEl) charEl.textContent = `${chars} characters`;
+      if (wordEl) wordEl.textContent = `${words} words`;
+      if (readEl) readEl.textContent = `${readMin} min read`;
+    };
+
+    if (window.PerformanceManager) {
+      window.PerformanceManager.scheduleUpdate(updateDOM);
+    } else {
+      updateDOM();
+    }
   }
 
   async function triggerAutosave() {
@@ -426,7 +437,7 @@
         select.disabled = true;
         return;
       }
-      select.innerHTML = '<option value="">✨ — Select from your Saved Resumes —</option>';
+      select.innerHTML = '<option value="">— Select from your Saved Resumes —</option>';
       data.forEach(r => {
         savedResumesData[r.id] = r;
         const opt = document.createElement('option');
@@ -853,13 +864,13 @@
       return;
     }
 
-    const shortlistEmoji = summary.recruiterLikelihood === 'High' ? '🔥 High Likelihood' : summary.recruiterLikelihood === 'Medium' ? '⚡ Medium Likelihood' : '⚠️ Low Likelihood';
-    const confidenceEmoji = summary.confidenceLevel === 'High' ? '🔒 High Confidence' : summary.confidenceLevel === 'Medium' ? '✓ Medium Confidence' : '⚠️ Low Confidence';
-
+    const shortlistEmoji = summary.recruiterLikelihood === 'High' ? 'High Likelihood' : summary.recruiterLikelihood === 'Medium' ? 'Medium Likelihood' : 'Low Likelihood';
+    const confidenceEmoji = summary.confidenceLevel === 'High' ? 'High Confidence' : summary.confidenceLevel === 'Medium' ? 'Medium Confidence' : 'Low Confidence';
+ 
     container.innerHTML = `
       <div class="summary-card">
         <div class="summary-title">
-          <span>📊 ATS Executive Summary</span>
+          <span>ATS Executive Summary</span>
           <span class="suggestion-gain-badge" style="font-size:0.75rem; background:rgba(139, 92, 246, 0.15); color:#a78bfa; border:1px solid rgba(139, 92, 246, 0.3)">Target: ${summary.estimatedATSAfterApplying}% after optimizations</span>
         </div>
         <div class="summary-stats">
@@ -888,11 +899,11 @@
     const keywordsSection = document.getElementById('atsKeywordsSection');
 
     keywordsSection.innerHTML = `
-      <h4 style="margin-bottom:0.5rem; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.04em;">✅ Matched Job Terms (${matched.length})</h4>
+      <h4 style="margin-bottom:0.5rem; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.04em;">Matched Job Terms (${matched.length})</h4>
       <div style="margin-bottom:1rem;">
         ${matched.length ? matched.map(k => `<span class="tag tag-matched">${k}</span>`).join('') : '<span style="font-size:0.8rem; color:var(--text-3);">None matched yet.</span>'}
       </div>
-      <h4 style="margin-bottom:0.5rem; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.04em;">❌ Missing / Recommended Terms (${missing.length})</h4>
+      <h4 style="margin-bottom:0.5rem; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.04em;">Missing / Recommended Terms (${missing.length})</h4>
       <div>
         ${missing.length ? missing.map(k => `<span class="tag tag-missing">${k}</span>`).join('') : '<span style="font-size:0.8rem; color:var(--text-3);">Perfect match! No keywords missing.</span>'}
       </div>
@@ -1065,11 +1076,11 @@
             </div>
           </div>
           <div class="history-item-actions">
-            <button class="history-action-btn" onclick="previewSavedLetter('${c.id}')">📂 Edit</button>
-            <button class="history-action-btn" onclick="renameSavedLetter('${c.id}')">✏️ Rename</button>
-            <button class="history-action-btn" onclick="duplicateSavedLetter('${c.id}')">👥 Clone</button>
-            <button class="history-action-btn" onclick="archiveSavedLetter('${c.id}', ${!isArchived})">${isArchived ? '📥 Restore' : '📦 Archive'}</button>
-            <button class="history-action-btn delete" onclick="deleteSavedLetter('${c.id}')">🗑️ Delete</button>
+            <button class="history-action-btn" onclick="previewSavedLetter('${c.id}')">Edit</button>
+            <button class="history-action-btn" onclick="renameSavedLetter('${c.id}')">Rename</button>
+            <button class="history-action-btn" onclick="duplicateSavedLetter('${c.id}')">Clone</button>
+            <button class="history-action-btn" onclick="archiveSavedLetter('${c.id}', ${!isArchived})">${isArchived ? 'Restore' : 'Archive'}</button>
+            <button class="history-action-btn delete" onclick="deleteSavedLetter('${c.id}')">Delete</button>
           </div>
         </div>
       `;
