@@ -59,7 +59,7 @@
     initSharedComponents() {
       const page = window.location.pathname.split('/').pop() || 'index.html';
       // Target the new semantic nav element first, then legacy fallbacks
-      const topnav = document.querySelector('.cc-nav')
+      const topnav = document.querySelector('.ch-nav')
                   || document.querySelector('.topnav')
                   || document.querySelector('nav');
       
