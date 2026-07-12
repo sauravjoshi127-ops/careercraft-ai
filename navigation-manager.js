@@ -1,12 +1,12 @@
 /**
  * navigation-manager.js
- * CareerCraft AI — Unified Navigation System v2.0
+ * Career Hub — Unified Navigation System v3.0
  *
  * Renders and controls the application navigation across all pages.
  * Components: logo, primary links, workspace toggle, upgrade CTA,
  * profile dropdown, mobile drawer, scroll glass effect, keyboard nav.
  *
- * CSS: styles/premium.css — cc-nav__* namespace
+ * CSS: styles/premium.css — ch-nav__* namespace
  * Entry: layout-manager.js → NavigationManager.renderNavbarBase(nav, page)
  */
 (function () {
@@ -14,7 +14,7 @@
 
   /* ── SVG icon helpers ──────────────────────────────────── */
   const ICONS = {
-    logo: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    logo: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -49,6 +49,14 @@
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
     </svg>`,
 
+    keyboard: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="2" y="4" width="20" height="16" rx="2" ry="2"/>
+      <line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/>
+      <line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/>
+      <line x1="8" y1="12" x2="8.01" y2="12"/><line x1="12" y1="12" x2="12.01" y2="12"/>
+      <line x1="16" y1="12" x2="16.01" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/>
+    </svg>`,
+
     signout: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
       <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
@@ -73,6 +81,10 @@
     arrowLeft: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
     </svg>`,
+
+    arrowLeftRight: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ch-nav__ws-icon">
+      <path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>
+    </svg>`,
   };
 
   /* ── Internal state ────────────────────────────────────── */
@@ -82,6 +94,7 @@
   let _clickOutsideListener = null;
   let _keyboardListener = null;
   let _currentNav = null;
+  let _resizeObserver = null;
 
   /* ── Page matcher helpers ──────────────────────────────── */
   function _isPage(page, prefix) {
@@ -89,20 +102,22 @@
   }
 
   function _activeClass(page, prefix) {
-    return _isPage(page, prefix) ? ' cc-nav__link--active' : '';
+    return _isPage(page, prefix) ? ' ch-nav__link--active' : '';
   }
 
   function _activeDrawerClass(page, prefix) {
-    return _isPage(page, prefix) ? ' cc-drawer__link--active' : '';
+    return _isPage(page, prefix) ? ' ch-drawer__link--active' : '';
   }
 
   /* ── Build: Logo ───────────────────────────────────────── */
   function _buildLogo(href) {
     return `
-      <a href="${href}" class="cc-nav__logo" aria-label="CareerCraft AI — Home">
-        ${ICONS.logo}
-        <span class="cc-nav__logo-word">CareerCraft AI</span>
-      </a>`;
+      <div class="ch-nav__logo-zone">
+        <a href="${href}" class="ch-nav__logo" aria-label="Career Hub — Home">
+          ${ICONS.logo}
+          <span>Career Hub</span>
+        </a>
+      </div>`;
   }
 
   /* ── Build: Primary nav links ──────────────────────────── */
@@ -114,38 +129,40 @@
       { href: 'cover-letter.html',label: 'Cover Letter',    prefix: 'cover-letter' },
       { href: 'cold-email.html',  label: 'Cold Email',      prefix: 'cold-email'   },
     ];
+    // Interview Coach only in AI mode
     if (!isManual) {
       links.push({ href: 'interview.html', label: 'Interview Coach', prefix: 'interview' });
     }
 
     const items = links.map(l =>
-      `<a href="${l.href}" class="cc-nav__link${_activeClass(page, l.prefix)}"
+      `<a href="${l.href}" class="ch-nav__link${_activeClass(page, l.prefix)}"
           ${_isPage(page, l.prefix) ? 'aria-current="page"' : ''}>${l.label}</a>`
     ).join('');
 
-    return `<nav class="cc-nav__links" aria-label="Primary navigation">${items}</nav>`;
+    return `
+      <div class="ch-nav__link-zone">
+        <nav class="ch-nav__links" id="ch-nav-links-container" aria-label="Primary navigation">${items}</nav>
+      </div>`;
   }
 
   /* ── Build: Workspace pill ─────────────────────────────── */
   function _buildWorkspacePill(ws) {
     const isManual = (ws === 'manual');
     const label    = isManual ? 'Creator Studio' : 'AI Studio';
-    const dotClass = isManual ? 'cc-nav__ws-dot--creator' : 'cc-nav__ws-dot--ai';
     return `
-      <button type="button" class="cc-nav__workspace" id="cc-workspace-toggle"
+      <button type="button" class="ch-nav__workspace" id="ch-workspace-toggle"
               onclick="window.WorkspaceManager && window.WorkspaceManager.toggle()"
               title="Switch workspace" aria-label="Switch workspace: currently ${label}">
-        <span class="cc-nav__ws-dot ${dotClass}"></span>
-        <span>${label}</span>
-        <span class="cc-nav__ws-swap" aria-hidden="true">⇄</span>
+        <span class="ch-nav__ws-label">${label}</span>
+        ${ICONS.arrowLeftRight}
       </button>`;
   }
 
   /* ── Build: Upgrade CTA ────────────────────────────────── */
   function _buildUpgradeBtn() {
     return `
-      <a href="dashboard.html#pricing" class="cc-nav__upgrade" id="cc-upgrade-btn"
-         title="Upgrade to Pro" aria-label="Upgrade to CareerCraft Pro">
+      <a href="dashboard.html#pricing" class="ch-nav__upgrade" id="ch-upgrade-btn"
+         title="Upgrade to Pro" aria-label="Upgrade to Career Hub Pro">
         ${ICONS.upgrade}
         Upgrade
       </a>`;
@@ -154,51 +171,55 @@
   /* ── Build: Command palette trigger ────────────────────── */
   function _buildCmdBtn() {
     return `
-      <button type="button" class="cc-nav__cmd-btn" id="cc-cmd-btn"
+      <button type="button" class="ch-nav__cmd-btn" id="ch-cmd-btn"
               title="Open command palette" aria-label="Open command palette (Ctrl+K)">
         ${ICONS.cmd}
-        <span>Search</span>
-        <span class="cc-nav__cmd-kbd">⌘K</span>
+        <span class="ch-nav__cmd-kbd">⌘K</span>
       </button>`;
   }
 
   /* ── Build: Avatar + Dropdown ──────────────────────────── */
   function _buildAvatarZone(initial, name, email, isPro) {
     const planLabel = isPro ? 'Pro' : 'Free';
-    const planClass = isPro ? 'cc-dropdown__plan cc-dropdown__plan--pro' : 'cc-dropdown__plan';
+    const planClass = isPro ? 'ch-dropdown__plan ch-dropdown__plan--pro' : 'ch-dropdown__plan';
 
     return `
-      <div class="cc-nav__avatar-wrap">
+      <div class="ch-nav__avatar-wrap">
         <button type="button"
-                class="cc-nav__avatar"
-                id="cc-avatar-btn"
+                class="ch-nav__avatar"
+                id="ch-avatar-btn"
                 aria-haspopup="true"
                 aria-expanded="false"
-                aria-controls="cc-dropdown"
+                aria-controls="ch-dropdown"
                 title="Open account menu">
-          <span class="cc-nav__avatar-inner" aria-hidden="true">${initial}</span>
+          <span class="ch-nav__avatar-inner" aria-hidden="true" id="ch-avatar-initial">${initial}</span>
         </button>
 
-        <div class="cc-dropdown"
-             id="cc-dropdown"
+        <div class="ch-dropdown"
+             id="ch-dropdown"
              role="menu"
-             aria-labelledby="cc-avatar-btn"
+             aria-labelledby="ch-avatar-btn"
              aria-hidden="true">
 
-          <div class="cc-dropdown__header">
-            <div class="cc-dropdown__name">${name}</div>
-            <div class="cc-dropdown__email">${email}</div>
-            <span class="${planClass}">${planLabel} Plan</span>
+          <div class="ch-dropdown__header">
+            <div class="ch-dropdown__name" id="ch-dropdown-name">${name}</div>
+            <div class="ch-dropdown__email" id="ch-dropdown-email">${email}</div>
+            <span class="${planClass}" id="ch-dropdown-plan">${planLabel} Plan</span>
           </div>
 
-          <div class="cc-dropdown__section">
-            <a href="settings.html" class="cc-dropdown__item" role="menuitem">
+          <div class="ch-dropdown__section">
+            <a href="settings.html" class="ch-dropdown__item" role="menuitem">
               ${ICONS.user}
-              Profile &amp; Settings
+              Settings
             </a>
-            <div class="cc-dropdown__divider" role="separator"></div>
-            <button type="button" class="cc-dropdown__item cc-dropdown__item--danger"
-                    id="cc-signout-btn" role="menuitem">
+            <button type="button" class="ch-dropdown__item" role="menuitem" onclick="window.dispatchEvent(new KeyboardEvent('keydown', {key:'k', metaKey:true}))">
+              ${ICONS.keyboard}
+              Keyboard Shortcuts
+              <span class="ch-dropdown__kbd">⌘K</span>
+            </button>
+            <div class="ch-dropdown__divider" role="separator"></div>
+            <button type="button" class="ch-dropdown__item ch-dropdown__item--danger"
+                    id="ch-signout-btn" role="menuitem">
               ${ICONS.signout}
               Sign Out
             </button>
@@ -211,14 +232,14 @@
   function _buildHamburger() {
     return `
       <button type="button"
-              class="cc-hamburger"
-              id="cc-hamburger"
+              class="ch-hamburger"
+              id="ch-hamburger"
               aria-label="Open navigation menu"
               aria-expanded="false"
-              aria-controls="cc-drawer">
-        <span class="cc-hamburger__bar"></span>
-        <span class="cc-hamburger__bar"></span>
-        <span class="cc-hamburger__bar"></span>
+              aria-controls="ch-drawer">
+        <span class="ch-hamburger__bar"></span>
+        <span class="ch-hamburger__bar"></span>
+        <span class="ch-hamburger__bar"></span>
       </button>`;
   }
 
@@ -226,7 +247,6 @@
   function _buildDrawer(page, ws, initial, name, email) {
     const isManual = (ws === 'manual');
     const wsLabel  = isManual ? 'Creator Studio' : 'AI Studio';
-    const wsDotCls = isManual ? 'cc-nav__ws-dot--creator' : 'cc-nav__ws-dot--ai';
 
     const tools = [
       { href: 'dashboard.html',   label: 'Dashboard',       icon: ICONS.dashboard,   prefix: 'dashboard'    },
@@ -239,51 +259,56 @@
     }
 
     const toolLinks = tools.map(t =>
-      `<a href="${t.href}" class="cc-drawer__link${_activeDrawerClass(page, t.prefix)}"
+      `<a href="${t.href}" class="ch-drawer__link${_activeDrawerClass(page, t.prefix)}"
           ${_isPage(page, t.prefix) ? 'aria-current="page"' : ''}>
         ${t.icon}${t.label}
       </a>`
     ).join('');
 
     return `
-      <div class="cc-drawer__backdrop" id="cc-drawer-backdrop" aria-hidden="true"></div>
-      <div class="cc-drawer" id="cc-drawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
-        <div class="cc-drawer__header">
+      <div class="ch-drawer__backdrop" id="ch-drawer-backdrop" aria-hidden="true"></div>
+      <div class="ch-drawer" id="ch-drawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
+        <div class="ch-drawer__header">
           ${_buildLogo('dashboard.html')}
-          <button type="button" class="cc-drawer__close" id="cc-drawer-close"
+          <button type="button" class="ch-drawer__close" id="ch-drawer-close"
                   aria-label="Close navigation menu">
             ${ICONS.close}
           </button>
         </div>
-        <div class="cc-drawer__body">
-          <div class="cc-drawer__section-label">Tools</div>
+        <div class="ch-drawer__body">
+          <div class="ch-drawer__section-label">Navigation</div>
           ${toolLinks}
 
-          <div class="cc-drawer__divider"></div>
+          <div class="ch-drawer__divider"></div>
 
-          <button type="button" class="cc-drawer__workspace" id="cc-drawer-workspace"
+          <div class="ch-drawer__section-label">Workspace</div>
+          <button type="button" class="ch-drawer__workspace" id="ch-drawer-workspace"
                   onclick="window.WorkspaceManager && window.WorkspaceManager.toggle()"
                   aria-label="Switch workspace: currently ${wsLabel}">
-            <span class="cc-nav__ws-dot ${wsDotCls}"></span>
-            <span>${wsLabel}</span>
-            <span class="cc-nav__ws-swap" aria-hidden="true">⇄</span>
+            <span class="ch-nav__ws-label">${wsLabel}</span>
+            <div style="margin-left: auto;">${ICONS.arrowLeftRight}</div>
           </button>
 
-          <div class="cc-drawer__divider"></div>
+          <div class="ch-drawer__divider"></div>
 
-          <a href="dashboard.html#pricing" class="cc-drawer__upgrade" id="cc-drawer-upgrade">
+          <a href="dashboard.html#pricing" class="ch-drawer__upgrade" id="ch-drawer-upgrade">
             ${ICONS.upgrade}
             Upgrade to Pro
           </a>
 
-          <div class="cc-drawer__divider"></div>
+          <div class="ch-drawer__divider"></div>
 
-          <a href="settings.html" class="cc-drawer__link">
+          <div class="ch-drawer__section-label">Account</div>
+          <div class="ch-drawer__account">
+            <div class="ch-drawer__name" id="ch-drawer-name">${name}</div>
+            <div class="ch-drawer__email" id="ch-drawer-email">${email}</div>
+          </div>
+          <a href="settings.html" class="ch-drawer__link">
             ${ICONS.settings}
             Settings
           </a>
-          <button type="button" class="cc-drawer__link cc-drawer__link--danger"
-                  id="cc-drawer-signout">
+          <button type="button" class="ch-drawer__link ch-drawer__link--danger"
+                  id="ch-drawer-signout">
             ${ICONS.signout}
             Sign Out
           </button>
@@ -294,22 +319,24 @@
   /* ── Render variants ───────────────────────────────────── */
 
   function _renderLanding(topnav) {
-    topnav.className = 'cc-nav cc-nav--opaque';
+    topnav.className = 'ch-nav ch-nav--opaque';
     topnav.setAttribute('aria-label', 'Main navigation');
 
     topnav.innerHTML = `
-      <div class="cc-nav__inner">
+      <div class="ch-nav__inner">
         ${_buildLogo('index.html')}
 
-        <nav class="cc-nav__landing-links" aria-label="Primary navigation">
-          <a href="#features" class="cc-nav__landing-link">Features</a>
-          <a href="#pricing"  class="cc-nav__landing-link">Pricing</a>
-          <a href="#"         class="cc-nav__landing-link">Enterprise</a>
-        </nav>
+        <div class="ch-nav__link-zone">
+          <nav class="ch-nav__landing-links" aria-label="Primary navigation">
+            <a href="#features" class="ch-nav__landing-link">Features</a>
+            <a href="#pricing"  class="ch-nav__landing-link">Pricing</a>
+            <a href="#"         class="ch-nav__landing-link">Enterprise</a>
+          </nav>
+        </div>
 
-        <div class="cc-nav__right" id="cc-landing-actions">
-          <a href="login.html"  class="cc-nav__signin">Sign In</a>
-          <a href="signup.html" class="cc-nav__cta">Get Started</a>
+        <div class="ch-nav__util-zone" id="ch-landing-actions">
+          <a href="login.html"  class="ch-nav__signin">Sign In</a>
+          <a href="signup.html" class="ch-nav__cta">Get Started &rarr;</a>
         </div>
         ${_buildHamburger()}
       </div>
@@ -320,16 +347,16 @@
     if (window.AuthManager) {
       window.AuthManager.getSession().then(session => {
         if (!session) return;
-        const actions = document.getElementById('cc-landing-actions');
+        const actions = document.getElementById('ch-landing-actions');
         if (!actions) return;
         const name = session.user.user_metadata?.full_name
           || localStorage.getItem('userName')
           || session.user.email.split('@')[0];
         const initial = name.charAt(0).toUpperCase();
         actions.innerHTML = `
-          <a href="dashboard.html" class="cc-nav__cta">Dashboard</a>
-          <a href="settings.html"  class="cc-nav__avatar" style="display:inline-flex;width:34px;height:34px;border-radius:50%;border:none;padding:0;">
-            <span class="cc-nav__avatar-inner">${initial}</span>
+          <a href="dashboard.html" class="ch-nav__cta">Dashboard</a>
+          <a href="settings.html"  class="ch-nav__avatar" style="display:inline-flex;width:32px;height:32px;border-radius:50%;border:none;padding:0;">
+            <span class="ch-nav__avatar-inner">${initial}</span>
           </a>`;
       });
     }
@@ -339,33 +366,34 @@
 
   function _buildDrawerLanding() {
     return `
-      <div class="cc-drawer__backdrop" id="cc-drawer-backdrop" aria-hidden="true"></div>
-      <div class="cc-drawer" id="cc-drawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
-        <div class="cc-drawer__header">
+      <div class="ch-drawer__backdrop" id="ch-drawer-backdrop" aria-hidden="true"></div>
+      <div class="ch-drawer" id="ch-drawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
+        <div class="ch-drawer__header">
           ${_buildLogo('index.html')}
-          <button type="button" class="cc-drawer__close" id="cc-drawer-close" aria-label="Close navigation menu">
+          <button type="button" class="ch-drawer__close" id="ch-drawer-close" aria-label="Close navigation menu">
             ${ICONS.close}
           </button>
         </div>
-        <div class="cc-drawer__body">
-          <a href="#features" class="cc-drawer__link">${ICONS.cmd} Features</a>
-          <a href="#pricing"  class="cc-drawer__link">${ICONS.upgrade} Pricing</a>
-          <div class="cc-drawer__divider"></div>
-          <a href="login.html"  class="cc-drawer__link">${ICONS.user} Sign In</a>
-          <a href="signup.html" class="cc-drawer__upgrade">Get Started Free</a>
+        <div class="ch-drawer__body">
+          <a href="#features" class="ch-drawer__link">${ICONS.cmd} Features</a>
+          <a href="#pricing"  class="ch-drawer__link">${ICONS.upgrade} Pricing</a>
+          <div class="ch-drawer__divider"></div>
+          <a href="login.html"  class="ch-drawer__link">${ICONS.user} Sign In</a>
+          <a href="signup.html" class="ch-drawer__upgrade">Get Started Free</a>
         </div>
       </div>`;
   }
 
   function _renderAuth(topnav, page) {
-    topnav.className = 'cc-nav cc-nav--opaque';
+    topnav.className = 'ch-nav ch-nav--opaque';
     topnav.setAttribute('aria-label', 'Main navigation');
 
     topnav.innerHTML = `
-      <div class="cc-nav__inner">
+      <div class="ch-nav__inner">
         ${_buildLogo('index.html')}
-        <div class="cc-nav__right">
-          <a href="index.html" class="cc-nav__back">
+        <div class="ch-nav__link-zone"></div>
+        <div class="ch-nav__util-zone">
+          <a href="index.html" class="ch-nav__back">
             ${ICONS.arrowLeft}
             Back to Home
           </a>
@@ -374,42 +402,50 @@
   }
 
   function _renderShare(topnav) {
-    topnav.className = 'cc-nav cc-nav--opaque';
+    topnav.className = 'ch-nav ch-nav--opaque';
     topnav.setAttribute('aria-label', 'Main navigation');
 
     topnav.innerHTML = `
-      <div class="cc-nav__inner">
+      <div class="ch-nav__inner">
         ${_buildLogo('index.html')}
-        <div class="cc-nav__right">
-          <a href="signup.html" class="cc-nav__cta">Get Started Free</a>
+        <div class="ch-nav__link-zone"></div>
+        <div class="ch-nav__util-zone">
+          <a href="signup.html" class="ch-nav__cta">Get Started Free</a>
         </div>
       </div>`;
   }
 
   function _renderApp(topnav, page) {
-    topnav.className = 'cc-nav';
+    topnav.className = 'ch-nav';
     topnav.setAttribute('aria-label', 'Main navigation');
 
     const ws = window.WorkspaceManager ? window.WorkspaceManager.workspace : 'ai';
 
-    // Skeleton right zone while auth resolves
+    // Build entire structure synchronously
+    // We insert empty placeholder strings for dynamic data until auth resolves
     topnav.innerHTML = `
-      <div class="cc-nav__inner">
+      <div class="ch-nav__inner">
         ${_buildLogo('dashboard.html')}
         ${_buildNavLinks(page, ws)}
-        <div class="cc-nav__right" id="cc-right-zone">
+        <div class="ch-nav__util-zone" id="ch-right-zone">
           ${_buildCmdBtn()}
           ${_buildWorkspacePill(ws)}
-          <div style="width:80px;height:28px;background:rgba(255,255,255,0.03);border-radius:999px;"></div>
-          <div style="width:34px;height:34px;background:rgba(255,255,255,0.04);border-radius:50%;"></div>
+          ${_buildUpgradeBtn()}
+          ${_buildAvatarZone('', '', '', false)}
         </div>
         ${_buildHamburger()}
-      </div>`;
+      </div>
+      ${_buildDrawer(page, ws, '', '', '')}
+    `;
 
     _initScrollBehavior(topnav);
     _initCmdPalette();
+    _initDropdown();
+    _initMobileDrawer(topnav);
+    _initKeyboard(topnav);
+    _initOverflowMenu();
 
-    // Async: resolve auth then rebuild right zone fully
+    // Async: resolve auth then populate user data
     if (window.AuthManager) {
       window.AuthManager.getSession().then(session => {
         const name  = session
@@ -419,40 +455,50 @@
         const initial = name.charAt(0).toUpperCase();
         const isPro   = !!(session && session.user.user_metadata?.is_pro);
 
-        const rightZone = document.getElementById('cc-right-zone');
-        if (!rightZone) return;
+        // Update Avatar Initial
+        const avatarInitial = document.getElementById('ch-avatar-initial');
+        if (avatarInitial) avatarInitial.textContent = initial;
 
-        rightZone.innerHTML =
-          _buildCmdBtn() +
-          _buildWorkspacePill(ws) +
-          (isPro ? '' : _buildUpgradeBtn()) +
-          _buildAvatarZone(initial, name, email, isPro);
+        // Update Dropdown Data
+        const dropdownName = document.getElementById('ch-dropdown-name');
+        if (dropdownName) dropdownName.textContent = name;
+        const dropdownEmail = document.getElementById('ch-dropdown-email');
+        if (dropdownEmail) dropdownEmail.textContent = email;
+        const dropdownPlan = document.getElementById('ch-dropdown-plan');
+        if (dropdownPlan) {
+          dropdownPlan.textContent = isPro ? 'Pro Plan' : 'Free Plan';
+          dropdownPlan.className = isPro ? 'ch-dropdown__plan ch-dropdown__plan--pro' : 'ch-dropdown__plan';
+        }
 
-        // Append mobile drawer (now we have user data)
-        const drawerHtml = _buildDrawer(page, ws, initial, name, email);
-        const drawerFrag = document.createRange().createContextualFragment(drawerHtml);
-        document.body.appendChild(drawerFrag);
+        // Update Drawer Data
+        const drawerName = document.getElementById('ch-drawer-name');
+        if (drawerName) drawerName.textContent = name;
+        const drawerEmail = document.getElementById('ch-drawer-email');
+        if (drawerEmail) drawerEmail.textContent = email;
 
-        _initDropdown();
-        _initMobileDrawer(topnav);
-        _initKeyboard(topnav);
-        _initCmdPalette();
+        // Handle Upgrade Button Visibility
+        if (isPro) {
+          const navUpgrade = document.getElementById('ch-upgrade-btn');
+          if (navUpgrade) navUpgrade.style.display = 'none';
+          const drawerUpgrade = document.getElementById('ch-drawer-upgrade');
+          if (drawerUpgrade) drawerUpgrade.style.display = 'none';
+        }
 
         // Sign out wiring
-        const signoutBtn = document.getElementById('cc-signout-btn');
+        const signoutBtn = document.getElementById('ch-signout-btn');
         if (signoutBtn) {
           signoutBtn.addEventListener('click', () => {
             if (window.AuthManager) window.AuthManager.logout();
           });
         }
-        const drawerSignout = document.getElementById('cc-drawer-signout');
+        const drawerSignout = document.getElementById('ch-drawer-signout');
         if (drawerSignout) {
           drawerSignout.addEventListener('click', () => {
             if (window.AuthManager) window.AuthManager.logout();
           });
         }
       }).catch(() => {
-        // Auth failed silently — leave skeleton
+        // Auth failed silently
       });
     }
 
@@ -465,10 +511,10 @@
       window.removeEventListener('scroll', _scrollListener, { passive: true });
     }
     _scrollListener = function () {
-      if (window.scrollY > 10) {
-        nav.classList.add('cc-nav--scrolled');
+      if (window.scrollY > 24) {
+        nav.classList.add('ch-nav--scrolled');
       } else {
-        nav.classList.remove('cc-nav--scrolled');
+        nav.classList.remove('ch-nav--scrolled');
       }
     };
     window.addEventListener('scroll', _scrollListener, { passive: true });
@@ -478,8 +524,8 @@
 
   /* ── Dropdown ──────────────────────────────────────────── */
   function _initDropdown() {
-    const avatarBtn = document.getElementById('cc-avatar-btn');
-    const dropdown  = document.getElementById('cc-dropdown');
+    const avatarBtn = document.getElementById('ch-avatar-btn');
+    const dropdown  = document.getElementById('ch-dropdown');
     if (!avatarBtn || !dropdown) return;
 
     avatarBtn.addEventListener('click', (e) => {
@@ -492,7 +538,7 @@
       document.removeEventListener('click', _clickOutsideListener);
     }
     _clickOutsideListener = function (e) {
-      const wrap = document.querySelector('.cc-nav__avatar-wrap');
+      const wrap = document.querySelector('.ch-nav__avatar-wrap');
       if (wrap && !wrap.contains(e.target)) {
         _closeDropdown();
       }
@@ -501,70 +547,73 @@
   }
 
   function _openDropdown() {
-    const avatarBtn = document.getElementById('cc-avatar-btn');
-    const dropdown  = document.getElementById('cc-dropdown');
+    const avatarBtn = document.getElementById('ch-avatar-btn');
+    const dropdown  = document.getElementById('ch-dropdown');
     if (!avatarBtn || !dropdown) return;
     _dropdownOpen = true;
-    dropdown.classList.add('cc-dropdown--open');
+    dropdown.classList.add('ch-dropdown--open');
     dropdown.setAttribute('aria-hidden', 'false');
     avatarBtn.setAttribute('aria-expanded', 'true');
-    avatarBtn.classList.add('cc-nav__avatar--open');
+    avatarBtn.classList.add('ch-nav__avatar--open');
     // Focus first item
     const first = dropdown.querySelector('[role="menuitem"]');
     if (first) setTimeout(() => first.focus(), 20);
   }
 
   function _closeDropdown() {
-    const avatarBtn = document.getElementById('cc-avatar-btn');
-    const dropdown  = document.getElementById('cc-dropdown');
+    const avatarBtn = document.getElementById('ch-avatar-btn');
+    const dropdown  = document.getElementById('ch-dropdown');
     if (!avatarBtn || !dropdown) return;
     _dropdownOpen = false;
-    dropdown.classList.remove('cc-dropdown--open');
+    dropdown.classList.remove('ch-dropdown--open');
     dropdown.setAttribute('aria-hidden', 'true');
     avatarBtn.setAttribute('aria-expanded', 'false');
-    avatarBtn.classList.remove('cc-nav__avatar--open');
+    avatarBtn.classList.remove('ch-nav__avatar--open');
   }
 
   /* ── Mobile drawer ─────────────────────────────────────── */
   function _openMobileDrawer() {
-    const drawer   = document.getElementById('cc-drawer');
-    const backdrop = document.getElementById('cc-drawer-backdrop');
-    const hamburger= document.getElementById('cc-hamburger');
+    const drawer   = document.getElementById('ch-drawer');
+    const backdrop = document.getElementById('ch-drawer-backdrop');
+    const hamburger= document.getElementById('ch-hamburger');
     if (!drawer) return;
     _drawerOpen = true;
-    drawer.classList.add('cc-drawer--open');
-    if (backdrop) backdrop.classList.add('cc-drawer__backdrop--open');
+    drawer.classList.add('ch-drawer--open');
+    if (backdrop) backdrop.classList.add('ch-drawer__backdrop--open');
     if (hamburger) {
-      hamburger.classList.add('cc-hamburger--open');
+      hamburger.classList.add('ch-hamburger--open');
       hamburger.setAttribute('aria-expanded', 'true');
       hamburger.setAttribute('aria-label', 'Close navigation menu');
     }
     document.body.style.overflow = 'hidden';
+    if (_currentNav) _currentNav.classList.add('ch-nav--no-glass');
+
     // Focus first focusable item in drawer
     const firstFocusable = drawer.querySelector('a, button');
     if (firstFocusable) setTimeout(() => firstFocusable.focus(), 50);
   }
 
   function _closeMobileDrawer() {
-    const drawer   = document.getElementById('cc-drawer');
-    const backdrop = document.getElementById('cc-drawer-backdrop');
-    const hamburger= document.getElementById('cc-hamburger');
+    const drawer   = document.getElementById('ch-drawer');
+    const backdrop = document.getElementById('ch-drawer-backdrop');
+    const hamburger= document.getElementById('ch-hamburger');
     if (!drawer) return;
     _drawerOpen = false;
-    drawer.classList.remove('cc-drawer--open');
-    if (backdrop) backdrop.classList.remove('cc-drawer__backdrop--open');
+    drawer.classList.remove('ch-drawer--open');
+    if (backdrop) backdrop.classList.remove('ch-drawer__backdrop--open');
     if (hamburger) {
-      hamburger.classList.remove('cc-hamburger--open');
+      hamburger.classList.remove('ch-hamburger--open');
       hamburger.setAttribute('aria-expanded', 'false');
       hamburger.setAttribute('aria-label', 'Open navigation menu');
       hamburger.focus();
     }
     document.body.style.overflow = '';
+    if (_currentNav) _currentNav.classList.remove('ch-nav--no-glass');
   }
 
   function _initMobileDrawer(nav) {
     // Hamburger toggle — may already be in DOM
-    const hamburger = document.getElementById('cc-hamburger');
+    const hamburger = document.getElementById('ch-hamburger');
     if (hamburger) {
       // Remove any prior listener by cloning
       const fresh = hamburger.cloneNode(true);
@@ -575,21 +624,21 @@
     }
 
     // Backdrop click
-    const backdrop = document.getElementById('cc-drawer-backdrop');
+    const backdrop = document.getElementById('ch-drawer-backdrop');
     if (backdrop) {
       backdrop.addEventListener('click', _closeMobileDrawer);
     }
 
     // Close button
-    const closeBtn = document.getElementById('cc-drawer-close');
+    const closeBtn = document.getElementById('ch-drawer-close');
     if (closeBtn) {
       closeBtn.addEventListener('click', _closeMobileDrawer);
     }
 
     // Close on link click (navigation)
-    const drawer = document.getElementById('cc-drawer');
+    const drawer = document.getElementById('ch-drawer');
     if (drawer) {
-      drawer.querySelectorAll('a.cc-drawer__link').forEach(link => {
+      drawer.querySelectorAll('a.ch-drawer__link, a.ch-drawer__upgrade').forEach(link => {
         link.addEventListener('click', () => _closeMobileDrawer());
       });
     }
@@ -609,7 +658,7 @@
 
       // Arrow keys inside dropdown
       if (_dropdownOpen) {
-        const dropdown = document.getElementById('cc-dropdown');
+        const dropdown = document.getElementById('ch-dropdown');
         if (!dropdown) return;
         const items = Array.from(dropdown.querySelectorAll('[role="menuitem"]'));
         const idx   = items.indexOf(document.activeElement);
@@ -633,7 +682,7 @@
 
   /* ── Command Palette (Phase 1: placeholder) ────────────── */
   function _initCmdPalette() {
-    const cmdBtn = document.getElementById('cc-cmd-btn');
+    const cmdBtn = document.getElementById('ch-cmd-btn');
     if (cmdBtn) {
       cmdBtn.addEventListener('click', _triggerCommandPalette);
     }
@@ -648,10 +697,25 @@
     }
   }
 
+  /* ── Overflow Menu (Resize Observer) ───────────────────── */
+  function _initOverflowMenu() {
+    const container = document.getElementById('ch-nav-links-container');
+    const linkZone = document.querySelector('.ch-nav__link-zone');
+    if (!container || !linkZone || typeof ResizeObserver === 'undefined') return;
+
+    if (_resizeObserver) _resizeObserver.disconnect();
+    
+    // Simplistic overflow handling for future-proofing:
+    // When 7 links are present, this will detect if it overflows
+    // For now we don't strictly hide items as it requires more robust DOM updates
+    // but the grid naturally bounds the center area. If needed in the future,
+    // we will implement a "More" dropdown here.
+  }
+
   /* ── Update nav links (workspace change) ───────────────── */
   function _updateNavLinks(page) {
     // Update desktop links
-    const linksEl = document.querySelector('.cc-nav__links');
+    const linksEl = document.querySelector('.ch-nav__links');
     if (linksEl) {
       const ws = window.WorkspaceManager ? window.WorkspaceManager.workspace : 'ai';
       const isManual = ws === 'manual';
@@ -663,9 +727,16 @@
       ];
       if (!isManual) links.push({ href: 'interview.html', label: 'Interview Coach', prefix: 'interview' });
       linksEl.innerHTML = links.map(l =>
-        `<a href="${l.href}" class="cc-nav__link${_activeClass(page, l.prefix)}"
+        `<a href="${l.href}" class="ch-nav__link${_activeClass(page, l.prefix)}"
             ${_isPage(page, l.prefix) ? 'aria-current="page"' : ''}>${l.label}</a>`
       ).join('');
+    }
+    
+    // Update drawer links
+    const drawerLinksEl = document.querySelector('.ch-drawer__body');
+    if (drawerLinksEl && window.WorkspaceManager) {
+       // Future: dynamically rebuild drawer tools if workspace changes dynamically
+       // Currently it's fine since we usually reload or navigate.
     }
 
     // Update workspace pill label + dot
@@ -676,24 +747,19 @@
     const ws = window.WorkspaceManager ? window.WorkspaceManager.workspace : 'ai';
     const isManual = ws === 'manual';
     const label  = isManual ? 'Creator Studio' : 'AI Studio';
-    const dotCls = isManual ? 'cc-nav__ws-dot--creator' : 'cc-nav__ws-dot--ai';
 
     // Desktop pill
-    const pillBtn = document.getElementById('cc-workspace-toggle');
+    const pillBtn = document.getElementById('ch-workspace-toggle');
     if (pillBtn) {
       pillBtn.setAttribute('aria-label', `Switch workspace: currently ${label}`);
-      const dot  = pillBtn.querySelector('.cc-nav__ws-dot');
-      const text = pillBtn.querySelector('span:not(.cc-nav__ws-dot):not(.cc-nav__ws-swap)');
-      if (dot)  { dot.className  = `cc-nav__ws-dot ${dotCls}`; }
+      const text = pillBtn.querySelector('.ch-nav__ws-label');
       if (text) { text.textContent = label; }
     }
 
     // Drawer workspace button
-    const drawerWs = document.getElementById('cc-drawer-workspace');
+    const drawerWs = document.getElementById('ch-drawer-workspace');
     if (drawerWs) {
-      const dot  = drawerWs.querySelector('.cc-nav__ws-dot');
-      const text = drawerWs.querySelector('span:not(.cc-nav__ws-dot):not(.cc-nav__ws-swap)');
-      if (dot)  { dot.className  = `cc-nav__ws-dot ${dotCls}`; }
+      const text = drawerWs.querySelector('.ch-nav__ws-label');
       if (text) { text.textContent = label; }
     }
   }
