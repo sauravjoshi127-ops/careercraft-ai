@@ -58,7 +58,10 @@
 
     initSharedComponents() {
       const page = window.location.pathname.split('/').pop() || 'index.html';
-      const topnav = document.querySelector('.topnav') || document.querySelector('nav');
+      // Target the new semantic nav element first, then legacy fallbacks
+      const topnav = document.querySelector('.cc-nav')
+                  || document.querySelector('.topnav')
+                  || document.querySelector('nav');
       
       if (topnav && window.NavigationManager) {
         window.NavigationManager.renderNavbarBase(topnav, page);
