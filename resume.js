@@ -162,7 +162,7 @@
         debounceTimer = setTimeout(() => {
             syncStateFromUI();
             renderPreviewIframe();
-        }, 200);
+        }, 100);
     }
 
     function renderPreviewIframe() {
@@ -229,10 +229,12 @@
     }
 
     function setupIframeClickSync(iframe, doc) {
-        if (!doc.body) return;
+        if (!doc.body || doc.body.dataset.syncAttached === 'true') return;
+        doc.body.dataset.syncAttached = 'true';
 
         // Visual pointer feedback: add hover cursor style to elements inside iframe body
         const style = doc.createElement('style');
+        style.id = 'sync-styles';
         style.textContent = `
             body * { cursor: pointer !important; }
             body *:hover { outline: 1px dashed rgba(99, 102, 241, 0.5); }
@@ -1579,13 +1581,14 @@
         const form = document.getElementById('resumeForm');
         if (form) {
             form.addEventListener('submit', handleSave);
+            form.addEventListener('input', updatePreview);
         }
         setupSkillsListener();
         setupAISettingsListeners();
 
         // Progressive Accordion Form Section Toggles
         document.querySelectorAll('.form-section-heading').forEach(header => {
-            header.addEventListener('click', (e) => {
+            const toggleAccordion = (e) => {
                 // Ignore clicks that target button controls inside headers (like AI suggest)
                 if (e.target.closest('button')) return;
 
@@ -1600,17 +1603,27 @@
                 });
                 document.querySelectorAll('.form-section-heading').forEach(head => {
                     head.classList.add('collapsed');
+                    head.setAttribute('aria-expanded', 'false');
                 });
 
                 // Expand clicked section block
                 if (isCollapsed) {
                     content.classList.remove('collapsed');
                     header.classList.remove('collapsed');
+                    header.setAttribute('aria-expanded', 'true');
                     // Automatically focus the first input inside the open section
                     const firstInput = content.querySelector('input, textarea, select');
                     if (firstInput) {
                         setTimeout(() => firstInput.focus(), 150);
                     }
+                }
+            };
+
+            header.addEventListener('click', toggleAccordion);
+            header.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleAccordion(e);
                 }
             });
         });
