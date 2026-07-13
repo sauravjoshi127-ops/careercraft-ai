@@ -53,7 +53,11 @@
 .form-group textarea { resize:vertical; min-height:100px; line-height:1.65; }
 .form-group select { appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 7L11 1' stroke='%239898a8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 1rem center; padding-right:2.5rem; }
 .form-group select option { background:#1a1a24; color:#f0f0f5; }
-.form-section-heading { font-size:0.88rem; font-weight:700; color:var(--text-1); margin:2rem 0 1rem; padding-bottom:0.65rem; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:0.5rem; }
+.form-section-heading { font-size:0.88rem; font-weight:700; color:var(--text-1); margin:2rem 0 1rem; padding-bottom:0.65rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none; }
+.form-section-heading::after { content:""; display:inline-block; width:6px; height:6px; border-right:1.5px solid var(--text-3); border-bottom:1.5px solid var(--text-3); transform:rotate(45deg); transition:transform 0.25s var(--ease); margin-right:0.25rem; }
+.form-section-heading.collapsed::after { transform:rotate(-135deg); }
+.form-section-content { max-height:2000px; opacity:1; overflow:hidden; transition:max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, margin-bottom 0.3s ease; }
+.form-section-content.collapsed { max-height:0 !important; opacity:0 !important; margin-bottom:0 !important; pointer-events:none; }
 .entry-card { background:var(--bg-input); border:1px solid var(--border); border-radius:var(--r-md); padding:1.5rem; margin-bottom:1rem; position:relative; transition:border-color 0.2s; }
 .entry-card:hover { border-color:var(--border-hover); }
 .entry-card .remove-btn { position:absolute; top:1rem; right:1rem; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); color:#fca5a5; border-radius:var(--r-sm); padding:0.3rem 0.65rem; font-size:0.72rem; font-weight:700; cursor:pointer; transition:background 0.15s; }
@@ -114,6 +118,17 @@
 .preview-exp-meta { font-size:0.75rem; color:var(--text-3); margin-bottom:0.25rem; }
 .preview-skills { display:flex; flex-wrap:wrap; gap:0.3rem; margin-top:0.25rem; }
 .preview-skill { background:rgba(255,255,255,0.07); border:1px solid var(--border); border-radius:999px; padding:0.15rem 0.55rem; font-size:0.7rem; color:var(--text-2); }
+/* Visual template cards styles */
+.template-cards-container { display:flex; gap:0.6rem; margin-top:0.4rem; width:100%; }
+.template-card-option { flex:1; background:var(--bg-input); border:1px solid var(--border); border-radius:var(--r-md); padding:0.6rem; cursor:pointer; transition:all 0.25s var(--ease); display:flex; flex-direction:column; gap:0.4rem; align-items:center; text-align:center; min-width:80px; box-sizing:border-box; }
+.template-card-option:hover { border-color:rgba(99,102,241,0.4); background:rgba(255,255,255,0.02); }
+.template-card-option.active { border-color:var(--cyan); background:rgba(99,102,241,0.05); }
+.template-card-visual { width:100%; height:36px; background:rgba(255,255,255,0.03); border-radius:4px; border:1px dashed var(--border-md); display:flex; flex-direction:column; gap:3px; padding:5px; box-sizing:border-box; justify-content:center; }
+.template-card-option.active .template-card-visual { border-color:var(--cyan); }
+.template-card-line { height:3px; background:var(--border-md); border-radius:1.5px; }
+.template-card-line.accent { background:var(--cyan); width:60%; }
+.template-card-name { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-3); }
+.template-card-option.active .template-card-name { color:var(--cyan); }
 </style>
     <link rel="stylesheet" href="styles/premium.css">
     <link rel="stylesheet" href="manual-studio.css">
@@ -160,59 +175,71 @@
         <input type="hidden" id="templateName" value="modern">
 
         <!-- Personal Info -->
-        <div class="form-section-heading" style="margin-top:0;">Personal Information</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Full Name *</label>
-            <input type="text" id="fullName" placeholder="Jane Doe" required>
+        <div class="form-section-heading" id="head-personal" style="margin-top:0;">Personal Information</div>
+        <div class="form-section-content" id="sect-personal">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Full Name *</label>
+              <input type="text" id="fullName" placeholder="Jane Doe" required>
+            </div>
+            <div class="form-group">
+              <label>Email *</label>
+              <input type="email" id="email" placeholder="jane@example.com" required>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Email *</label>
-            <input type="email" id="email" placeholder="jane@example.com" required>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Phone</label>
-            <input type="tel" id="phone" placeholder="+1 (555) 000-0000">
-          </div>
-          <div class="form-group">
-            <label>Location</label>
-            <input type="text" id="location" placeholder="New York, NY">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="tel" id="phone" placeholder="+1 (555) 000-0000">
+            </div>
+            <div class="form-group">
+              <label>Location</label>
+              <input type="text" id="location" placeholder="New York, NY">
+            </div>
           </div>
         </div>
 
         <!-- Summary -->
-        <div class="form-section-heading">Professional Summary <button type="button" class="btn-ai" onclick="getAISuggestions('summary')">AI Suggest</button></div>
-        <div class="form-group">
-          <label>Summary</label>
-          <textarea id="summary" placeholder="A brief overview of your background, skills, and career goals..." rows="4"></textarea>
+        <div class="form-section-heading" id="head-summary">Professional Summary <button type="button" class="btn-ai" onclick="getAISuggestions('summary')">AI Suggest</button></div>
+        <div class="form-section-content collapsed" id="sect-summary">
+          <div class="form-group">
+            <label>Summary</label>
+            <textarea id="summary" placeholder="A brief overview of your background, skills, and career goals..." rows="4"></textarea>
+          </div>
         </div>
 
         <!-- Experience -->
-        <div class="form-section-heading">Work Experience</div>
-        <div id="experienceContainer"></div>
-        <button type="button" class="btn-add-entry" onclick="addExperience()">+ Add Work Experience</button>
+        <div class="form-section-heading" id="head-experience">Work Experience</div>
+        <div class="form-section-content collapsed" id="sect-experience">
+          <div id="experienceContainer"></div>
+          <button type="button" class="btn-add-entry" onclick="addExperience()">+ Add Work Experience</button>
+        </div>
 
         <!-- Education -->
-        <div class="form-section-heading">Education</div>
-        <div id="educationContainer"></div>
-        <button type="button" class="btn-add-entry" onclick="addEducation()">+ Add Education</button>
+        <div class="form-section-heading" id="head-education">Education</div>
+        <div class="form-section-content collapsed" id="sect-education">
+          <div id="educationContainer"></div>
+          <button type="button" class="btn-add-entry" onclick="addEducation()">+ Add Education</button>
+        </div>
 
         <!-- Skills -->
-        <div class="form-section-heading">Skills <button type="button" class="btn-ai" onclick="getAISuggestions('skills')">AI Suggest</button></div>
-        <div class="form-group">
-          <label>Add Skills (press Enter or comma to add)</label>
-          <div class="skills-container" id="skillsContainer" onclick="document.getElementById('skillInput').focus()">
-            <input type="text" id="skillInput" class="skill-input" placeholder="e.g. JavaScript, Python, Project Management...">
+        <div class="form-section-heading" id="head-skills">Skills <button type="button" class="btn-ai" onclick="getAISuggestions('skills')">AI Suggest</button></div>
+        <div class="form-section-content collapsed" id="sect-skills">
+          <div class="form-group">
+            <label>Add Skills (press Enter or comma to add)</label>
+            <div class="skills-container" id="skillsContainer" onclick="document.getElementById('skillInput').focus()">
+              <input type="text" id="skillInput" class="skill-input" placeholder="e.g. JavaScript, Python, Project Management...">
+            </div>
           </div>
         </div>
 
         <!-- Certifications -->
-        <div class="form-section-heading">Certifications</div>
-        <div class="form-group">
-          <label>Certifications</label>
-          <textarea id="certifications" placeholder="e.g. AWS Certified Solutions Architect (2023), PMP Certification (2022)..." rows="3"></textarea>
+        <div class="form-section-heading" id="head-certifications">Certifications</div>
+        <div class="form-section-content collapsed" id="sect-certifications">
+          <div class="form-group">
+            <label>Certifications</label>
+            <textarea id="certifications" placeholder="e.g. AWS Certified Solutions Architect (2023), PMP Certification (2022)..." rows="3"></textarea>
+          </div>
         </div>
 
         <!-- Save Bar -->
@@ -226,17 +253,43 @@
     <div class="preview-panel">
       <div class="preview-panel-header">
         <span class="preview-panel-title">Live Preview</span>
-        <div class="template-tabs" id="templateTabs">
-          <button class="template-tab active" onclick="switchTemplate('modern', this)">Modern</button>
-          <button class="template-tab" onclick="switchTemplate('classic', this)">Classic</button>
-          <button class="template-tab" onclick="switchTemplate('creative', this)">Creative</button>
-        </div>
       </div>
       <div class="preview-body" id="previewBody" style="padding:0; background:#ffffff;">
         <iframe id="previewIframe" style="width:100%; height:100%; min-height:480px; border:none; background:#ffffff; display:block;"></iframe>
       </div>
       <!-- Customization bar -->
       <div class="customizer">
+        <!-- Visual Template Cards -->
+        <div class="customizer-group" style="flex-basis: 100%; margin-bottom: 0.5rem; display: flex; flex-direction: column;">
+          <span class="customizer-label">Resume Template</span>
+          <div class="template-cards-container" id="templateCards">
+            <div class="template-card-option active" data-template="modern" onclick="switchTemplateCard('modern', this)">
+              <div class="template-card-visual">
+                <div class="template-card-line accent"></div>
+                <div class="template-card-line"></div>
+                <div class="template-card-line"></div>
+              </div>
+              <span class="template-card-name">Modern</span>
+            </div>
+            <div class="template-card-option" data-template="classic" onclick="switchTemplateCard('classic', this)">
+              <div class="template-card-visual" style="align-items: center;">
+                <div class="template-card-line" style="width: 50%;"></div>
+                <div class="template-card-line" style="width: 80%;"></div>
+                <div class="template-card-line" style="width: 80%;"></div>
+              </div>
+              <span class="template-card-name">Classic</span>
+            </div>
+            <div class="template-card-option" data-template="creative" onclick="switchTemplateCard('creative', this)">
+              <div class="template-card-visual">
+                <div class="template-card-line accent" style="background: var(--cyan); width: 40%;"></div>
+                <div class="template-card-line"></div>
+                <div class="template-card-line"></div>
+              </div>
+              <span class="template-card-name">Creative</span>
+            </div>
+          </div>
+        </div>
+
         <div class="customizer-group">
           <span class="customizer-label">Font</span>
           <select class="customizer-select" id="custFont" onchange="applyCustomization()">
