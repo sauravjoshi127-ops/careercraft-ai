@@ -16,8 +16,6 @@
     let shareViewMap = {};
     let currentAISuggestion = '';
     let currentAISection = '';
-    let currentTemplate = 'modern';
-    let accentColor = '#6366f1';
 
     let resumeState = {
         full_name: '',
@@ -45,7 +43,10 @@
         resumeState.template_name = document.getElementById('templateName')?.value || 'modern';
         resumeState.font_family = document.getElementById('custFont')?.value || 'Inter';
         resumeState.spacing = document.getElementById('custSpacing')?.value || 'normal';
-        resumeState.accent_color = accentColor;
+        const activeSwatch = document.querySelector('.color-swatch.active');
+        if (activeSwatch) {
+            resumeState.accent_color = activeSwatch.dataset.color;
+        }
         
         // Experience
         resumeState.experience = [];
@@ -104,14 +105,12 @@
             const isMatch = tab.getAttribute('onclick').includes(`'${resumeState.template_name}'`);
             tab.classList.toggle('active', isMatch);
         });
-        currentTemplate = resumeState.template_name;
 
         document.getElementById('custFont').value = resumeState.font_family;
         document.getElementById('custSpacing').value = resumeState.spacing;
-        accentColor = resumeState.accent_color;
 
         document.querySelectorAll('.color-swatch').forEach(s => {
-            s.classList.toggle('active', s.dataset.color === accentColor);
+            s.classList.toggle('active', s.dataset.color === resumeState.accent_color);
         });
 
         const expContainer = document.getElementById('experienceContainer');
@@ -140,15 +139,15 @@
 
     // ── Live Preview ──
     function switchTemplate(name, btn) {
-        currentTemplate = name;
+        resumeState.template_name = name;
         document.getElementById('templateName').value = name;
         document.querySelectorAll('.template-tab').forEach(t => t.classList.remove('active'));
         btn.classList.add('active');
         updatePreview();
     }
     function setAccentColor(el) {
-        accentColor = el.dataset.color;
-        document.querySelectorAll('.color-swatch').forEach(s => s.remove('active') || s.classList.remove('active'));
+        resumeState.accent_color = el.dataset.color;
+        document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
         el.classList.add('active');
         updatePreview();
     }
@@ -658,7 +657,6 @@
             spacing: 'normal',
             accent_color: '#6366f1'
         };
-        accentColor = '#6366f1';
         
         document.getElementById('custFont').value = 'Inter';
         document.getElementById('custSpacing').value = 'normal';
