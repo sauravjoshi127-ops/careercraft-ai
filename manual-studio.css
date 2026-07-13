@@ -42,8 +42,15 @@
   border: 3px solid rgba(255, 255, 255, 0.08);
   border-top-color: #a855f7;
   border-radius: 50%;
+  /* H2: Pause animation when overlay is hidden to avoid compositing a
+     spinning element at 60fps even when it is invisible. */
   animation: portal-spin 0.8s linear infinite;
+  animation-play-state: paused;
   margin: 0 auto 1.5rem;
+}
+
+.workspace-portal-overlay.active .workspace-portal-spinner {
+  animation-play-state: running;
 }
 
 @keyframes portal-spin {
@@ -68,8 +75,10 @@
 
 /* Page body workspace transition state */
 body.workspace-transitioning {
-  will-change: transform;
-  transform: scale(0.99);
+  /* M1: Removed `will-change: transform` from body. Promoting the entire
+     page body to a GPU compositor layer wastes significant VRAM and can
+     cause memory pressure. Use contain instead for a lighter hint. */
+  contain: layout;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -86,7 +95,10 @@ body.workspace-transitioning {
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  /* H1: Replace `transition: all` — browser was watching every property.
+     Only background and border-color visually change on hover. */
+  transition: background 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   outline: none;
   font-family: 'Inter', sans-serif;
 }
@@ -249,7 +261,8 @@ body.workspace-transitioning {
   font-weight: 500;
   cursor: pointer;
   text-align: left;
-  transition: all 0.2s ease;
+  /* H1: Replace `transition: all` with explicit properties. */
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .sidebar-item-btn:hover {
@@ -288,7 +301,10 @@ body.workspace-transitioning {
   border-radius: 12px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.015), 0 1px 3px rgba(0,0,0,0.01);
   position: relative;
-  transition: all 0.3s ease;
+  /* H1: Replace `transition: all` — `all` causes the browser to watch and
+     interpolate every property including layout-triggering ones like width
+     and padding. Only box-shadow visually animates on state changes. */
+  transition: box-shadow 0.3s ease;
 }
 
 /* Customizer Accent Colors applied to manual paper */
@@ -510,7 +526,8 @@ body.workspace-transitioning {
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.85rem;
-  transition: all 0.15s ease;
+  /* H1: Replace `transition: all`. Only background and color animate. */
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .format-btn:hover {
@@ -608,7 +625,8 @@ body.workspace-transitioning {
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.2s;
+  /* H1: Replace `transition: all`. Only background changes. */
+  transition: background 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -629,7 +647,8 @@ body.workspace-transitioning {
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.2s;
+  /* H1: Replace `transition: all`. Only background, border-color and color. */
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -739,7 +758,8 @@ body.workspace-transitioning {
   color: #0f172a;
   outline: none;
   font-family: inherit;
-  transition: all 0.2s;
+  /* H1: Replace `transition: all`. border-color, background, box-shadow change on focus. */
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .profile-input:focus {
@@ -766,7 +786,8 @@ body.workspace-transitioning {
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  /* H1: Replace `transition: all`. border-color, color and background change. */
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
   margin-top: 0.5rem;
 }
 

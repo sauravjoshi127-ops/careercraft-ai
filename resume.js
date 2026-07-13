@@ -207,7 +207,17 @@
         // Fast-path: Update innerHTML directly to reuse parsed CSS stylesheets and fonts,
         // avoiding flash-of-unstyled-content (FOUC) and frame rendering stutter.
         if (doc.body && doc.head && doc.head.children.length > 0) {
-            doc.documentElement.innerHTML = html;
+            const parser = new DOMParser();
+            const newDoc = parser.parseFromString(html, 'text/html');
+            doc.body.innerHTML = newDoc.body.innerHTML;
+            
+            const oldStyle = doc.head.querySelector('style');
+            const newStyle = newDoc.head.querySelector('style');
+            if (oldStyle && newStyle) {
+                oldStyle.textContent = newStyle.textContent;
+            } else {
+                doc.head.innerHTML = newDoc.head.innerHTML;
+            }
         } else {
             doc.open();
             doc.write(html);

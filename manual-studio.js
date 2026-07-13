@@ -1267,47 +1267,66 @@
     // ─── EVENT BINDING & DRAG & DROP ────────────────────────────
     bindInlineEditEvents() {
       const activeTab = this.activeTab;
+      // B4: Use event delegation on the editor container instead of
+      // attaching individual listeners to every contenteditable element.
+      // Previously, calling bindInlineEditEvents() on every re-render
+      // stacked fresh listeners on top of old ones (leaked listeners).
+      // With delegation, a SINGLE listener on the stable parent container
+      // handles all contenteditable events via event bubbling.
+      const container = document.getElementById('document-canvas-content');
+      if (!container) return;
 
-      // Handle standard inputs
-      document.querySelectorAll('[contenteditable="true"]').forEach(el => {
-        el.addEventListener('input', (e) => {
-          this.triggerAutoSave();
-          
-          const id = el.id;
-          const text = el.innerText.trim();
+      // Remove any previously delegated handlers before re-attaching.
+      if (container._inlineInputHandler) {
+        container.removeEventListener('input', container._inlineInputHandler);
+      }
+      if (container._inlineBlurHandler) {
+        container.removeEventListener('blur', container._inlineBlurHandler, true);
+      }
 
-          if (activeTab === 'resume') {
-            if (id === 'res-full-name') this.state.resume.full_name = text;
-            else if (id === 'res-email') this.state.resume.email = text;
-            else if (id === 'res-phone') this.state.resume.phone = text;
-            else if (id === 'res-location') this.state.resume.location = text;
-            else if (id === 'res-summary') this.state.resume.professional_summary = text;
-            else if (id === 'res-certifications') this.state.resume.certifications = text;
-          } 
-          else if (activeTab === 'cover-letter') {
-            if (id === 'cl-body') this.state.coverLetter.generated_letter = el.innerText;
-          } 
-          else if (activeTab === 'cold-email') {
-            if (id === 'ce-subject') this.state.coldEmail.subject = text;
-            else if (id === 'ce-body') this.state.coldEmail.body = el.innerText;
-          }
-          else if (activeTab === 'portfolio') {
-            if (id === 'port-title') this.state.portfolio.title = text;
-            else if (id === 'port-desc') this.state.portfolio.description = text;
-          }
-        });
+      container._inlineInputHandler = (e) => {
+        const el = e.target;
+        if (el.getAttribute('contenteditable') !== 'true') return;
 
-        // Specific fields inside cards/grids
-        el.addEventListener('blur', (e) => {
-          const card = el.closest('.draggable-card');
-          if (!card) return;
+        this.triggerAutoSave();
 
-          const type = card.dataset.type;
-          const idx = parseInt(card.dataset.index, 10);
-          const field = el.dataset.field;
-          const text = el.innerText.trim();
+        const id = el.id;
+        const text = el.innerText.trim();
 
-          this.saveUndoSnapshot();
+        if (activeTab === 'resume') {
+          if (id === 'res-full-name') this.state.resume.full_name = text;
+          else if (id === 'res-email') this.state.resume.email = text;
+          else if (id === 'res-phone') this.state.resume.phone = text;
+          else if (id === 'res-location') this.state.resume.location = text;
+          else if (id === 'res-summary') this.state.resume.professional_summary = text;
+          else if (id === 'res-certifications') this.state.resume.certifications = text;
+        }
+        else if (activeTab === 'cover-letter') {
+          if (id === 'cl-body') this.state.coverLetter.generated_letter = el.innerText;
+        }
+        else if (activeTab === 'cold-email') {
+          if (id === 'ce-subject') this.state.coldEmail.subject = text;
+          else if (id === 'ce-body') this.state.coldEmail.body = el.innerText;
+        }
+        else if (activeTab === 'portfolio') {
+          if (id === 'port-title') this.state.portfolio.title = text;
+          else if (id === 'port-desc') this.state.portfolio.description = text;
+        }
+      };
+
+      container._inlineBlurHandler = (e) => {
+        const el = e.target;
+        if (el.getAttribute('contenteditable') !== 'true') return;
+
+        const card = el.closest('.draggable-card');
+        if (!card) return;
+
+        const type = card.dataset.type;
+        const idx = parseInt(card.dataset.index, 10);
+        const field = el.dataset.field;
+        const text = el.innerText.trim();
+
+        this.saveUndoSnapshot();
 
           if (type === 'experience') {
             const exp = this.state.resume.experience[idx];
@@ -1335,9 +1354,13 @@
           }
 
           this.triggerAutoSave();
-        });
-      });
-    },
+        };
+
+        // Attach both delegated handlers to the stable parent container.
+        // 'input' bubbles naturally. 'blur' does not bubble, so use capture mode.
+        container.addEventListener('input', container._inlineInputHandler);
+        container.addEventListener('blur', container._inlineBlurHandler, true);
+      },
 
     bindDragEvents() {
       const cards = document.querySelectorAll('.draggable-card');
@@ -1347,18 +1370,34 @@
         document.getElementById('port-projects-list')
       ].filter(Boolean);
 
+      // C2: Cache card rects once at dragstart so dragover never calls
+      // getBoundingClientRect() — eliminating forced layout reflows at 60Hz.
+      let _cachedCardRects = null;
+      let _dragOverRafPending = false;
+
       cards.forEach(card => {
         card.addEventListener('dragstart', (e) => {
           this.isDragging = true;
           this.draggedElement = card;
           card.classList.add('dragging');
           e.dataTransfer.effectAllowed = 'move';
+
+          // Pre-cache all sibling card rects now, before any dragover fires.
+          // Rects are stable during a drag since cards don't resize mid-drag.
+          _cachedCardRects = new Map();
+          lists.forEach(list => {
+            list.querySelectorAll('.draggable-card').forEach(c => {
+              _cachedCardRects.set(c, c.getBoundingClientRect());
+            });
+          });
         });
 
         card.addEventListener('dragend', () => {
           this.isDragging = false;
           this.draggedElement.classList.remove('dragging');
           this.draggedElement = null;
+          _cachedCardRects = null;
+          _dragOverRafPending = false;
         });
       });
 
@@ -1367,12 +1406,22 @@
           e.preventDefault();
           if (!this.draggedElement) return;
 
-          const afterElement = this.getDragAfterElement(list, e.clientY);
-          if (afterElement == null) {
-            list.appendChild(this.draggedElement);
-          } else {
-            list.insertBefore(this.draggedElement, afterElement);
-          }
+          // C2: rAF guard — skip if a frame is already scheduled.
+          // This caps the DOM mutation rate to 60fps regardless of event rate.
+          if (_dragOverRafPending) return;
+          _dragOverRafPending = true;
+
+          const clientY = e.clientY;
+          requestAnimationFrame(() => {
+            _dragOverRafPending = false;
+            if (!this.draggedElement) return;
+            const afterElement = this.getDragAfterElement(list, clientY, _cachedCardRects);
+            if (afterElement == null) {
+              list.appendChild(this.draggedElement);
+            } else {
+              list.insertBefore(this.draggedElement, afterElement);
+            }
+          });
         });
 
         list.addEventListener('drop', (e) => {
@@ -1382,11 +1431,13 @@
       });
     },
 
-    getDragAfterElement(container, y) {
+    // C2: Accept optional pre-cached rects map. Falls back to live
+    // getBoundingClientRect() when called outside drag context (safety net).
+    getDragAfterElement(container, y, cachedRects) {
       const draggableElements = [...container.querySelectorAll('.draggable-card:not(.dragging)')];
 
       return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
+        const box = (cachedRects && cachedRects.get(child)) || child.getBoundingClientRect();
         const offset = y - box.top - box.height / 2;
         if (offset < 0 && offset > closest.offset) {
           return { offset: offset, element: child };
@@ -1464,7 +1515,11 @@
       }
 
       // Accent swatch clicks
-      document.querySelectorAll('.manual-swatch').forEach(swatch => {
+      // B4: Capture NodeList once. The click handler reuses the same reference
+      // instead of calling querySelectorAll again inside the handler to clear
+      // active states — eliminating a redundant DOM query per swatch click.
+      const swatches = document.querySelectorAll('.manual-swatch');
+      swatches.forEach(swatch => {
         swatch.addEventListener('click', () => {
           const color = swatch.getAttribute('data-color');
           
@@ -1480,14 +1535,18 @@
           }
 
           document.getElementById('manual-paper').setAttribute('data-accent', color);
-          document.querySelectorAll('.manual-swatch').forEach(s => s.classList.remove('active'));
+          // Reuse already-captured NodeList — no second querySelectorAll needed.
+          swatches.forEach(s => s.classList.remove('active'));
           swatch.classList.add('active');
           this.triggerAutoSave();
         });
       });
 
       // Left sidebar item clicks
-      document.querySelectorAll('.sidebar-item-btn').forEach(btn => {
+      // B4: Capture NodeList once. The click handler reuses the same reference
+      // instead of calling querySelectorAll again to clear active states.
+      const sidebarBtns = document.querySelectorAll('.sidebar-item-btn');
+      sidebarBtns.forEach(btn => {
         btn.addEventListener('click', () => {
           const targetTab = btn.getAttribute('data-tab');
           if (this.activeTab === targetTab) return;
@@ -1513,37 +1572,49 @@
             return;
           }
 
-          document.querySelectorAll('.sidebar-item-btn').forEach(b => b.classList.remove('active'));
+          // Reuse already-captured NodeList — no second querySelectorAll needed.
+          sidebarBtns.forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           this.activeTab = targetTab;
           this.renderActiveDocument();
         });
       });
 
-      // Format actions toolbar trigger
+      // C1: rAF-throttle the selectionchange handler.
+      // selectionchange fires on every cursor move and every keystroke.
+      // Without throttling, each fire calls getBoundingClientRect() and
+      // writes style.top/left — a guaranteed layout thrash at typing speed.
+      let _selectionRafPending = false;
       document.addEventListener('selectionchange', () => {
-        const toolbar = document.getElementById('formatting-toolbar');
-        if (!toolbar) return;
+        if (_selectionRafPending) return;
+        _selectionRafPending = true;
 
-        const selection = window.getSelection();
-        if (selection.isCollapsed || selection.rangeCount === 0) {
-          toolbar.classList.remove('show');
-          return;
-        }
+        requestAnimationFrame(() => {
+          _selectionRafPending = false;
 
-        // Only show formatting toolbar if selection is inside contenteditable
-        const anchor = selection.anchorNode.parentElement;
-        if (!anchor.closest('[contenteditable="true"]')) {
-          toolbar.classList.remove('show');
-          return;
-        }
+          const toolbar = document.getElementById('formatting-toolbar');
+          if (!toolbar) return;
 
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
+          const selection = window.getSelection();
+          if (selection.isCollapsed || selection.rangeCount === 0) {
+            toolbar.classList.remove('show');
+            return;
+          }
 
-        toolbar.style.top = `${rect.top + window.scrollY - 44}px`;
-        toolbar.style.left = `${rect.left + window.scrollX + rect.width / 2 - 80}px`;
-        toolbar.classList.add('show');
+          // Only show formatting toolbar if selection is inside contenteditable
+          const anchor = selection.anchorNode.parentElement;
+          if (!anchor.closest('[contenteditable="true"]')) {
+            toolbar.classList.remove('show');
+            return;
+          }
+
+          const range = selection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+
+          toolbar.style.top = `${rect.top + window.scrollY - 44}px`;
+          toolbar.style.left = `${rect.left + window.scrollX + rect.width / 2 - 80}px`;
+          toolbar.classList.add('show');
+        });
       });
 
       // Format button clicks
@@ -1646,6 +1717,19 @@
 
     // ─── AUTO-SAVE ENGINE & STATUS INDICATOR ───────────────────
     triggerAutoSave() {
+      // M3: Scope dirty-check to the active tab's state slice only.
+      // Previously JSON.stringify(this.state) serialized ALL tabs on every
+      // keystroke. Now we only serialize the document the user is editing.
+      const activeKey = this.getNormalizedTabKey();
+      const activeStateString = JSON.stringify(this.state[activeKey]);
+
+      if (!this._lastSavedStateString) {
+        this._lastSavedStateString = activeStateString;
+      }
+      if (activeStateString === this._lastSavedStateString) {
+        return; // No changes in active document
+      }
+
       this.showSavingIndicator();
 
       if (this.saveTimeout) clearTimeout(this.saveTimeout);
@@ -1701,6 +1785,7 @@
         }
 
         if (success) {
+          this._lastSavedStateString = JSON.stringify(this.state[this.getNormalizedTabKey()]);
           this.showSavedIndicator();
           this.recordVersionHistory();
         } else {
