@@ -1646,6 +1646,14 @@
 
     // ─── AUTO-SAVE ENGINE & STATUS INDICATOR ───────────────────
     triggerAutoSave() {
+      if (!this._lastSavedStateString) {
+        this._lastSavedStateString = JSON.stringify(this.state);
+      }
+      const currentStateString = JSON.stringify(this.state);
+      if (currentStateString === this._lastSavedStateString) {
+        return; // No changes
+      }
+
       this.showSavingIndicator();
 
       if (this.saveTimeout) clearTimeout(this.saveTimeout);
@@ -1701,6 +1709,7 @@
         }
 
         if (success) {
+          this._lastSavedStateString = JSON.stringify(this.state);
           this.showSavedIndicator();
           this.recordVersionHistory();
         } else {
