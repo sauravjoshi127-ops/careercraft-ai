@@ -211,14 +211,63 @@
         if (doc.body && doc.head && doc.head.children.length > 0) {
             const parser = new DOMParser();
             const newDoc = parser.parseFromString(html, 'text/html');
-            doc.body.innerHTML = newDoc.body.innerHTML;
             
-            const oldStyle = doc.head.querySelector('style');
+            // Lightweight DOM Diffing to prevent scroll jumps, selection loss, and layout thrashing
+            function updateDOM(oldNode, newNode) {
+                if (!oldNode || !newNode) return;
+                if (oldNode.isEqualNode(newNode)) return;
+
+                if (oldNode.nodeName !== newNode.nodeName) {
+                    oldNode.replaceWith(newNode.cloneNode(true));
+                    return;
+                }
+
+                if (oldNode.nodeType === Node.TEXT_NODE) {
+                    if (oldNode.nodeValue !== newNode.nodeValue) {
+                        oldNode.nodeValue = newNode.nodeValue;
+                    }
+                    return;
+                }
+
+                const oldAttrs = oldNode.attributes;
+                const newAttrs = newNode.attributes;
+                if (oldAttrs && newAttrs) {
+                    for (let i = oldAttrs.length - 1; i >= 0; i--) {
+                        const attr = oldAttrs[i].name;
+                        if (!newNode.hasAttribute(attr) && attr !== 'data-sync-attached') oldNode.removeAttribute(attr);
+                    }
+                    for (let i = 0; i < newAttrs.length; i++) {
+                        const attr = newAttrs[i].name;
+                        const val = newAttrs[i].value;
+                        if (oldNode.getAttribute(attr) !== val && attr !== 'data-sync-attached') oldNode.setAttribute(attr, val);
+                    }
+                }
+
+                const oldChildren = Array.from(oldNode.childNodes);
+                const newChildren = Array.from(newNode.childNodes);
+                const max = Math.max(oldChildren.length, newChildren.length);
+                for (let i = 0; i < max; i++) {
+                    if (!oldChildren[i]) {
+                        oldNode.appendChild(newChildren[i].cloneNode(true));
+                    } else if (!newChildren[i]) {
+                        oldNode.removeChild(oldChildren[i]);
+                    } else {
+                        updateDOM(oldChildren[i], newChildren[i]);
+                    }
+                }
+            }
+
+            updateDOM(doc.body, newDoc.body);
+            doc.body.style.zoom = currentZoom;
+            
+            const oldStyle = doc.head.querySelector('style:not(#sync-styles)');
             const newStyle = newDoc.head.querySelector('style');
             if (oldStyle && newStyle) {
-                oldStyle.textContent = newStyle.textContent;
-            } else {
-                doc.head.innerHTML = newDoc.head.innerHTML;
+                if (oldStyle.textContent !== newStyle.textContent) {
+                    oldStyle.textContent = newStyle.textContent;
+                }
+            } else if (newStyle) {
+                doc.head.appendChild(newStyle.cloneNode(true));
             }
         } else {
             doc.open();
@@ -1575,6 +1624,18 @@
     window.cancelEdit = cancelEdit;
     window.applyCustomization = applyCustomization;
     window.triggerAIGeneration = triggerAIGeneration;
+
+    let currentZoom = 1;
+    window.zoomPreview = function(delta) {
+        currentZoom = Math.max(0.5, Math.min(2.0, currentZoom + delta));
+        const display = document.getElementById('zoomLevelDisplay');
+        if (display) display.innerText = Math.round(currentZoom * 100) + '%';
+        
+        const iframe = document.getElementById('previewIframe');
+        if (iframe && iframe.contentDocument && iframe.contentDocument.body) {
+            iframe.contentDocument.body.style.zoom = currentZoom;
+        }
+    };
 
     // Bind save handler on DOM
     document.addEventListener('DOMContentLoaded', () => {
