@@ -448,14 +448,12 @@
     </footer>
 
     <script>
-        document.getElementById('rzp-button1').onclick = function(e){
-            e.preventDefault();
-            window.appSdk.billing.initiateCheckout('pro_monthly', 299).catch(() => {});
-        }
-        
-        document.getElementById('rzp-button2').onclick = function(e){
-            e.preventDefault();
-            window.appSdk.billing.initiateCheckout('pro_lifetime', 2999).catch(() => {});
+        const rzpBtn1 = document.getElementById('rzp-button1');
+        if (rzpBtn1) {
+            rzpBtn1.onclick = function(e){
+                e.preventDefault();
+                window.appSdk.billing.initiateCheckout('pro_monthly', 299).catch(() => {});
+            }
         }
     </script>
 </body>
