@@ -312,16 +312,36 @@
         activityItems.sort((a, b) => b.rawTime - a.rawTime);
  
         if (activityItems.length === 0) {
-          activityHtml = `<div style="font-size: 0.85rem; color: var(--text-3); text-align: center; padding: 2rem;">No recent activity recorded.</div>`;
+          activityHtml = `
+            <div class="onboarding-checklist" style="display: flex; flex-direction: column; gap: 0.75rem; padding: 0.5rem;">
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-3); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">Get Started with CareerCraft</div>
+                <div class="checklist-item" style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem;">
+                    <svg class="check-svg" style="width: 14px; height: 14px; color: var(--cyan);" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span style="color: var(--text-2); text-decoration: line-through; opacity: 0.6;">Create your profile account</span>
+                </div>
+                <div class="checklist-item" style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem;">
+                    <div style="width: 14px; height: 14px; border: 1.5px solid var(--border); border-radius: 50%; box-sizing: border-box;"></div>
+                    <a href="resume.html" style="color: var(--text-1); text-decoration: none; font-weight: 500;">Build your first ATS resume <span style="color: var(--cyan); margin-left: 0.25rem;">→</span></a>
+                </div>
+                <div class="checklist-item" style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem;">
+                    <div style="width: 14px; height: 14px; border: 1.5px solid var(--border); border-radius: 50%; box-sizing: border-box;"></div>
+                    <a href="cover-letter.html" style="color: var(--text-1); text-decoration: none; font-weight: 500;">Generate a tailored cover letter <span style="color: var(--cyan); margin-left: 0.25rem;">→</span></a>
+                </div>
+                <div class="checklist-item" style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem;">
+                    <div style="width: 14px; height: 14px; border: 1.5px solid var(--border); border-radius: 50%; box-sizing: border-box;"></div>
+                    <a href="interview.html" style="color: var(--text-1); text-decoration: none; font-weight: 500;">Practice with mock interview coach <span style="color: var(--cyan); margin-left: 0.25rem;">→</span></a>
+                </div>
+            </div>
+          `;
         } else {
           activityHtml = activityItems.map(item => `
-            <div class="activity-item">
+            <a href="${item.link}" class="activity-item" style="text-decoration:none;">
                 <div class="activity-content">
                     <div class="activity-title">${window.appSdk.ui.escapeHtml(item.title)}</div>
                     <div class="activity-time">${item.time} &bull; ${item.actionText}</div>
                 </div>
-                <a href="${item.link}" class="activity-action">Open →</a>
-            </div>
+                <span class="activity-action">Open →</span>
+            </a>
           `).join('');
         }
       }

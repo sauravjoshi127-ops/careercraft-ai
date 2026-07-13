@@ -101,9 +101,9 @@
         document.getElementById('certifications').value = resumeState.certifications;
         document.getElementById('templateName').value = resumeState.template_name;
 
-        document.querySelectorAll('.template-tab').forEach(tab => {
-            const isMatch = tab.getAttribute('onclick').includes(`'${resumeState.template_name}'`);
-            tab.classList.toggle('active', isMatch);
+        document.querySelectorAll('.template-card-option').forEach(card => {
+            const isMatch = card.getAttribute('data-template') === resumeState.template_name;
+            card.classList.toggle('active', isMatch);
         });
 
         document.getElementById('custFont').value = resumeState.font_family;
@@ -138,11 +138,13 @@
     }
 
     // ── Live Preview ──
-    function switchTemplate(name, btn) {
+    function switchTemplateCard(name, cardEl) {
         resumeState.template_name = name;
         document.getElementById('templateName').value = name;
-        document.querySelectorAll('.template-tab').forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
+        document.querySelectorAll('.template-card-option').forEach(c => c.classList.remove('active'));
+        if (cardEl) {
+            cardEl.classList.add('active');
+        }
         updatePreview();
     }
     function setAccentColor(el) {
@@ -223,8 +225,92 @@
             doc.write(html);
             doc.close();
         }
+        setupIframeClickSync(iframe, doc);
     }
-    function selectTemplate(name) { const t=document.querySelector('.template-tab[onclick*="'+name+'"]'); if(t) switchTemplate(name,t); }
+
+    function setupIframeClickSync(iframe, doc) {
+        if (!doc.body) return;
+
+        // Visual pointer feedback: add hover cursor style to elements inside iframe body
+        const style = doc.createElement('style');
+        style.textContent = `
+            body * { cursor: pointer !important; }
+            body *:hover { outline: 1px dashed rgba(99, 102, 241, 0.5); }
+        `;
+        doc.head.appendChild(style);
+
+        doc.body.addEventListener('click', (e) => {
+            const target = e.target;
+            let sectionId = null;
+            let focusInputId = null;
+
+            if (target.closest('h1')) {
+                sectionId = 'personal';
+                focusInputId = 'fullName';
+            } else if (target.closest('.contact') || target.closest('.sidebar div:nth-child(2)')) {
+                sectionId = 'personal';
+                focusInputId = 'email';
+            } else {
+                // Determine section based on nearest h2 text content
+                const h2Elements = Array.from(doc.querySelectorAll('h2'));
+                if (h2Elements.length > 0) {
+                    const clickedY = e.clientY;
+                    let closestH2 = null;
+                    let minDistance = Infinity;
+
+                    h2Elements.forEach(h2 => {
+                        const rect = h2.getBoundingClientRect();
+                        const distance = Math.abs(clickedY - rect.top);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            closestH2 = h2;
+                        }
+                    });
+
+                    const sectionText = closestH2 ? closestH2.textContent.toLowerCase() : '';
+                    if (sectionText.includes('summary') || sectionText.includes('about')) {
+                        sectionId = 'summary';
+                        focusInputId = 'summary';
+                    } else if (sectionText.includes('experience') || sectionText.includes('work')) {
+                        sectionId = 'experience';
+                    } else if (sectionText.includes('education')) {
+                        sectionId = 'education';
+                    } else if (sectionText.includes('skills')) {
+                        sectionId = 'skills';
+                        focusInputId = 'skillInput';
+                    } else if (sectionText.includes('certification')) {
+                        sectionId = 'certifications';
+                        focusInputId = 'certifications';
+                    }
+                }
+            }
+
+            if (sectionId) {
+                const header = document.getElementById(`head-${sectionId}`);
+                const content = document.getElementById(`sect-${sectionId}`);
+                if (content && content.classList.contains('collapsed')) {
+                    document.querySelectorAll('.form-section-content').forEach(sect => sect.classList.add('collapsed'));
+                    document.querySelectorAll('.form-section-heading').forEach(head => head.classList.add('collapsed'));
+                    content.classList.remove('collapsed');
+                    if (header) header.classList.remove('collapsed');
+                }
+                if (header) {
+                    header.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                if (focusInputId) {
+                    const inputEl = document.getElementById(focusInputId);
+                    if (inputEl) {
+                        setTimeout(() => inputEl.focus(), 200);
+                    }
+                }
+            }
+        });
+    }
+
+    function selectTemplate(name) { 
+        const card = document.querySelector(`.template-card-option[data-template="${name}"]`);
+        if (card) switchTemplateCard(name, card);
+    }
     function showTemplateScreen() {}
 
     // ── Auth Check ──
@@ -1480,7 +1566,7 @@
     window.handleInsertSummary = handleInsertSummary;
     window.closeShareModal = closeShareModal;
     window.copyShareLink = copyShareLink;
-    window.switchTemplate = switchTemplate;
+    window.switchTemplateCard = switchTemplateCard;
     window.setAccentColor = setAccentColor;
     window.addExperience = () => addExperience();
     window.addEducation = () => addEducation();
@@ -1496,6 +1582,38 @@
         }
         setupSkillsListener();
         setupAISettingsListeners();
+
+        // Progressive Accordion Form Section Toggles
+        document.querySelectorAll('.form-section-heading').forEach(header => {
+            header.addEventListener('click', (e) => {
+                // Ignore clicks that target button controls inside headers (like AI suggest)
+                if (e.target.closest('button')) return;
+
+                const content = header.nextElementSibling;
+                if (!content || !content.classList.contains('form-section-content')) return;
+
+                const isCollapsed = content.classList.contains('collapsed');
+
+                // Collapse all sibling section blocks
+                document.querySelectorAll('.form-section-content').forEach(sect => {
+                    sect.classList.add('collapsed');
+                });
+                document.querySelectorAll('.form-section-heading').forEach(head => {
+                    head.classList.add('collapsed');
+                });
+
+                // Expand clicked section block
+                if (isCollapsed) {
+                    content.classList.remove('collapsed');
+                    header.classList.remove('collapsed');
+                    // Automatically focus the first input inside the open section
+                    const firstInput = content.querySelector('input, textarea, select');
+                    if (firstInput) {
+                        setTimeout(() => firstInput.focus(), 150);
+                    }
+                }
+            });
+        });
 
         // Close delete modal on overlay click
         document.getElementById('deleteModal')?.addEventListener('click', function (e) {
