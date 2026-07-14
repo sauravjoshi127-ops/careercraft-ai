@@ -301,49 +301,36 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
 
     if (!r.ok) {
       const errText = await r.text();
-      console.error('=== [cover-letter] Gemini API Error Response Start ===');
-      console.error('Status:', r.status);
-      console.error('Status Text:', r.statusText);
-      console.error('Headers:', JSON.stringify(Object.fromEntries(r.headers.entries()), null, 2));
-      console.error('Body:', errText);
-      console.error('=== [cover-letter] Gemini API Error Response End ===');
+      // Full error details logged server-side for debugging only
+      console.error('[cover-letter] Generation API error:', r.status, r.statusText, errText.substring(0, 500));
 
-      // Try to parse the exact Google API error message
-      let googleErrorMessage = errText;
-      try {
-        const parsed = JSON.parse(errText);
-        if (parsed.error && parsed.error.message) {
-          googleErrorMessage = parsed.error.message;
-        }
-      } catch (_) {}
-
-      // Replace generic "AI service error: 503" with descriptive JSON errors that include the real cause
       const responseStatus = r.status || 502;
+      // Map status codes to user-facing messages
+      const statusMessages = {
+        429: 'Generation is temporarily busy. Please wait a moment and try again.',
+        503: 'Generation is temporarily unavailable. Please retry in a moment.',
+        502: 'Generation is temporarily unavailable. Please retry in a moment.',
+        401: 'Authentication required. Please refresh and try again.',
+        403: 'Access denied. Please check your account and try again.'
+      };
+      const userMsg = statusMessages[responseStatus] || 'We couldn\'t generate your cover letter right now. Please try again.';
+
       return res.status(responseStatus).json({
         success: false,
-        error: `AI service error: ${responseStatus}. ${googleErrorMessage}`,
-        details: {
-          source: 'gemini_http_error',
-          status: responseStatus,
-          message: googleErrorMessage,
-          raw: errText
-        }
+        error: userMsg
       });
     }
 
     const result = await r.json();
-    console.log('=== [cover-letter] Gemini API Successful Response Start ===');
-    console.log('Status:', r.status);
-    console.log('Body:', JSON.stringify(result, null, 2));
-    console.log('=== [cover-letter] Gemini API Successful Response End ===');
+    console.log('[cover-letter] Generation API response received. Status:', r.status);
 
     if (!result?.candidates?.[0]?.content?.parts?.[0]) {
-      console.error('Unexpected Gemini response structure:', JSON.stringify(result));
+      console.error('[cover-letter] Unexpected generation response structure:', JSON.stringify(result).substring(0, 300));
       return res.status(502).json({ error: 'Unexpected response from AI service. Please try again.' });
     }
 
     const rawText = result.candidates[0].content.parts[0].text || '';
-    console.log('Gemini raw response snippet:', rawText.substring(0, 200));
+    console.log('[cover-letter] Content generated successfully. Length:', rawText.length);
 
     const data = parseGeminiResponse(rawText);
 
@@ -368,36 +355,26 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
 
     return res.status(200).json(data);
   } catch (err) {
-    console.error('=== [cover-letter] Original Handler Exception Start ===');
-    console.error('Original Exception:', err);
-    console.error('Stack Trace:', err.stack);
-    console.error('=== [cover-letter] Original Handler Exception End ===');
-    
-    // Check if the error originates from Supabase / Database
-    const isSupabaseError = err.code || err.details || err.hint || (err.message && err.message.includes('Supabase'));
-    let msg = err.message || 'Failed to generate cover letter. Please try again.';
-    if (isSupabaseError) {
-      msg = `Supabase DB Error: [${err.code || 'UNKNOWN_CODE'}] ${err.message}. Details: ${err.details || 'None'}. Hint: ${err.hint || 'None'}`;
-      console.error('[cover-letter] Supabase Database Error:', msg);
-    }
+    // Always log the full error internally for debugging
+    console.error('[cover-letter] Handler exception (internal):', err.message);
+    console.error('[cover-letter] Stack trace:', err.stack);
+    if (err.code) console.error('[cover-letter] DB error code:', err.code, '| Details:', err.details, '| Hint:', err.hint);
 
     const status = err.status || 500;
+
+    // Map to user-facing messages — never expose provider names or stack traces
+    let userMsg = 'We couldn\'t generate your cover letter right now. Please try again in a moment.';
+    if (err.message === 'GEMINI_API_KEY missing' || (err.message || '').toLowerCase().includes('api key')) {
+      userMsg = 'Content generation is not configured on this server.';
+    } else if (status === 429) {
+      userMsg = 'Generation is temporarily busy. Please wait a moment and try again.';
+    } else if (status === 503) {
+      userMsg = 'Generation is temporarily unavailable. Please retry in a moment.';
+    }
+
     return res.status(status).json({
       success: false,
-      error: msg === 'GEMINI_API_KEY missing' || msg.includes('Gemini API key is not configured')
-        ? 'Gemini API key is not configured on this server. Set GEMINI_API_KEY in your environment.'
-        : msg,
-      details: {
-        source: isSupabaseError ? 'supabase' : 'server_handler',
-        status,
-        message: msg,
-        stack: err.stack,
-        raw: {
-          code: err.code,
-          details: err.details,
-          hint: err.hint
-        }
-      }
+      error: userMsg
     });
   }
 };

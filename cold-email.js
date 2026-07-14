@@ -662,23 +662,36 @@
       }
 
     } catch (err) {
+      // Always log the full error internally for debugging
+      console.error('[CareerCraft] Cold email generation error (internal):', err);
+
       if (err.name === 'AbortError') {
         const reason = controller.abortReason || controller.signal.reason || 'unknown';
         if (reason === 'stale') return;
-        
-        let errorMsg = 'AI request timed out. Please try again or use local fallbacks.';
+
         const alert = document.getElementById('errAlert');
-        document.getElementById('errMsg').textContent = errorMsg;
+        document.getElementById('errMsg').textContent = 'Generation timed out. Please try again or reduce your input length.';
         alert.classList.add('show');
         alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        showToast('Email generation failed: ' + errorMsg, true);
+        showToast('Generation timed out. Please try again.', true);
       } else {
-        let errorMsg = err.message;
+        const isNetwork = err.message?.includes('fetch') || err.message?.includes('NetworkError');
+        const isRateLimit = err.message?.includes('429') || err.message?.toLowerCase().includes('rate');
+
+        let userMsg;
+        if (isNetwork) {
+          userMsg = 'No connection detected. Please check your internet and try again.';
+        } else if (isRateLimit) {
+          userMsg = 'Generation is temporarily busy. Please wait a moment and try again.';
+        } else {
+          userMsg = 'We couldn\u2019t generate your email right now. Please try again in a moment.';
+        }
+
         const alert = document.getElementById('errAlert');
-        document.getElementById('errMsg').textContent = errorMsg;
+        document.getElementById('errMsg').textContent = userMsg;
         alert.classList.add('show');
         alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        showToast('Email generation failed: ' + errorMsg, true);
+        showToast(userMsg, true);
       }
     } finally {
       if (activeGenerationController === controller) {

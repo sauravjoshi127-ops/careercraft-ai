@@ -428,8 +428,8 @@
       return;
     }
 
-    setStatus(els.pageStatus, 'Formulating preparation strategy...', 'loading');
-    setStatus(els.setupStatus, 'Analyzing details with Gemini...', 'loading');
+    setStatus(els.pageStatus, 'Formulating preparation strategy…', 'loading');
+    setStatus(els.setupStatus, 'Analyzing your details…', 'loading');
     toggleControls(true);
 
     try {
@@ -459,8 +459,11 @@
       setStage('strategy');
       setStatus(els.pageStatus, 'Prep strategy formulated successfully.', 'success');
     } catch (error) {
-      setStatus(els.pageStatus, error.message, 'error');
-      setStatus(els.setupStatus, error.message, 'error');
+      // Log full error internally — never expose to users
+      console.error('[CareerCraft] Strategy generation error (internal):', error);
+      const userMsg = 'We couldn\u2019t generate your strategy right now. Please try again.';
+      setStatus(els.pageStatus, userMsg, 'error');
+      setStatus(els.setupStatus, userMsg, 'error');
     } finally {
       toggleControls(false);
     }
@@ -481,8 +484,8 @@
       return;
     }
 
-    setStatus(els.pageStatus, 'Evaluating response...', 'loading');
-    setStatus(els.practiceStatus, 'Gemini intelligence review in progress...', 'loading');
+    setStatus(els.pageStatus, 'Evaluating response…', 'loading');
+    setStatus(els.practiceStatus, 'Reviewing your answer…', 'loading');
     toggleControls(true);
 
     try {
@@ -527,8 +530,11 @@
       setStatus(els.pageStatus, 'Round evaluation completed.', 'success');
       setStatus(els.practiceStatus, 'Round evaluated successfully.', 'success');
     } catch (error) {
-      setStatus(els.pageStatus, error.message, 'error');
-      setStatus(els.practiceStatus, error.message, 'error');
+      // Log full error internally — never expose to users
+      console.error('[CareerCraft] Answer evaluation error (internal):', error);
+      const userMsg = 'We couldn\u2019t evaluate your answer right now. Please try again.';
+      setStatus(els.pageStatus, userMsg, 'error');
+      setStatus(els.practiceStatus, userMsg, 'error');
     } finally {
       toggleControls(false);
     }
@@ -541,8 +547,8 @@
     }
 
     const context = readContext();
-    setStatus(els.pageStatus, 'Generating personalized recommendations...', 'loading');
-    setStatus(els.practiceStatus, 'Gemini review in progress...', 'loading');
+    setStatus(els.pageStatus, 'Generating personalized recommendations…', 'loading');
+    setStatus(els.practiceStatus, 'Analyzing session results…', 'loading');
     toggleControls(true);
 
     try {
@@ -575,8 +581,11 @@
       
       saveSession();
     } catch (error) {
-      setStatus(els.pageStatus, error.message, 'error');
-      setStatus(els.practiceStatus, error.message, 'error');
+      // Log full error internally — never expose to users
+      console.error('[CareerCraft] Recommendations generation error (internal):', error);
+      const userMsg = 'We couldn\u2019t generate your recommendations right now. Please try again.';
+      setStatus(els.pageStatus, userMsg, 'error');
+      setStatus(els.practiceStatus, userMsg, 'error');
     } finally {
       toggleControls(false);
     }

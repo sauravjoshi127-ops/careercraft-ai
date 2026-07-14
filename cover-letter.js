@@ -231,14 +231,24 @@
     });
   }
 
+  // Use RAF to prevent forced synchronous reflow on every keystroke.
+  // requestAnimationFrame batches the height read+write into the browser's
+  // next paint cycle, eliminating layout thrashing in the wizard form.
+  let _resizeRafPending = false;
   function autoResizeTextarea(textarea) {
-    textarea.style.height = 'auto';
-    textarea.style.height = textarea.scrollHeight + 'px';
-    
-    if (textarea.id === 'jobDescription') {
-      const words = textarea.value.trim().split(/\s+/).filter(Boolean).length;
-      document.getElementById('jdWordCount').textContent = `${words} words`;
-    }
+    if (_resizeRafPending) return;
+    _resizeRafPending = true;
+    requestAnimationFrame(() => {
+      _resizeRafPending = false;
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+
+      if (textarea.id === 'jobDescription') {
+        const words = textarea.value.trim().split(/\s+/).filter(Boolean).length;
+        const el = document.getElementById('jdWordCount');
+        if (el) el.textContent = `${words} words`;
+      }
+    });
   }
 
   function showToast(type, message) {
@@ -267,7 +277,7 @@
     autosaveTimer = setTimeout(() => {
       saveEditorState();
       triggerAutosave();
-    }, 1000);
+    }, 1500); // 1.5s debounce — prevents rapid saves while typing
   }
 
   function saveEditorState() {
@@ -571,8 +581,32 @@
 
       runAtsAnalysisOnText(letterText);
     } catch (err) {
-      showToast('error', 'Generation error: ' + err.message);
-      document.getElementById('editorSheet').textContent = 'Error writing cover letter. Please fix your settings and try again.';
+      // Log full error internally for debugging — never expose to users
+      console.error('[CareerCraft] Cover letter generation error (internal):', err);
+
+      const isNetwork = err.message?.includes('fetch') || err.message?.includes('NetworkError') || err.message?.includes('Failed to fetch');
+      const isTimeout = err.message?.toLowerCase().includes('timeout');
+      const isRateLimit = err.message?.includes('429') || err.message?.toLowerCase().includes('rate');
+
+      let userMsg;
+      if (isNetwork) {
+        userMsg = 'No connection detected. Please check your internet and try again.';
+      } else if (isTimeout) {
+        userMsg = 'Generation timed out. Please try again — complex requests may take a moment.';
+      } else if (isRateLimit) {
+        userMsg = 'Generation is temporarily busy. Please wait a moment and try again.';
+      } else {
+        userMsg = 'We couldn\u2019t generate your cover letter right now. Please try again in a moment.';
+      }
+
+      showToast('error', userMsg);
+      document.getElementById('editorSheet').innerHTML = `
+        <div style="text-align:center; padding: 2.5rem 1rem; color: #64748b;">
+          <div style="font-size:1.1rem; font-weight:600; color:#ef4444; margin-bottom:0.75rem;">&#9888;&#65039; Generation Unavailable</div>
+          <div style="font-size:0.9rem; margin-bottom:1.5rem;">${userMsg}</div>
+          <button onclick="document.getElementById('generateBtn').click()" style="background:#6366f1; color:#fff; border:none; padding:0.5rem 1.5rem; border-radius:8px; font-weight:600; font-size:0.9rem; cursor:pointer;">&#8635; Try Again</button>
+        </div>
+      `;
     } finally {
       isGenerating = false;
       generateBtn.textContent = originalText;
