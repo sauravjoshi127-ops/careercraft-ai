@@ -699,16 +699,24 @@ module.exports = async function handler(req, res) {
 
       if (!r.ok) {
         const errText = await r.text();
-        console.error('[cold-email] Gemini HTTP error:', r.status, errText);
-        validationErrorMsg = `HTTP Error ${r.status}`;
+        // Log internally only — never expose generation API details to client
+        console.error('[cold-email] Generation API error:', r.status, errText.substring(0, 300));
+        const httpStatus = r.status;
+        if (httpStatus === 429) {
+          validationErrorMsg = 'rate_limit';
+        } else if (httpStatus >= 500) {
+          validationErrorMsg = 'service_error';
+        } else {
+          validationErrorMsg = `HTTP_${httpStatus}`;
+        }
         validationAttempt++;
         continue;
       }
 
       const result = await r.json();
       if (!result?.candidates?.[0]?.content?.parts?.[0]) {
-        console.error('[cold-email] Empty candidate response');
-        validationErrorMsg = 'Empty candidates response from Gemini API';
+        console.error('[cold-email] Empty candidates response from generation API');
+        validationErrorMsg = 'empty_response';
         validationAttempt++;
         continue;
       }
@@ -743,8 +751,9 @@ module.exports = async function handler(req, res) {
         validationAttempt++;
       }
     } catch (err) {
-      console.error('[cold-email] Gemini call/retry exception:', err.message);
-      validationErrorMsg = err.message;
+      // Log full error internally — never expose to client
+      console.error('[cold-email] Generation call exception (internal):', err.message);
+      validationErrorMsg = 'exception';
       validationAttempt++;
     }
   }

@@ -159,10 +159,11 @@
     let debounceTimer = null;
     function updatePreview() {
         if (debounceTimer) clearTimeout(debounceTimer);
+        // 200ms debounce — eliminates lag during fast typing while still feeling instant
         debounceTimer = setTimeout(() => {
             syncStateFromUI();
             renderPreviewIframe();
-        }, 100);
+        }, 200);
     }
 
     function renderPreviewIframe() {
@@ -604,7 +605,9 @@
         const container = document.getElementById('skillsContainer');
         const input = document.getElementById('skillInput');
         if (!container || !input) return;
-        container.innerHTML = '';
+
+        // Use a DocumentFragment to batch all DOM insertions in a single reflow
+        const fragment = document.createDocumentFragment();
         skills.forEach(s => {
             const tag = document.createElement('span');
             tag.className = 'skill-tag';
@@ -617,9 +620,17 @@
             btn.addEventListener('click', function () { removeSkill(this.dataset.skill); });
             tag.appendChild(text);
             tag.appendChild(btn);
-            container.appendChild(tag);
+            fragment.appendChild(tag);
         });
-        container.appendChild(input);
+        fragment.appendChild(input);
+
+        // Single DOM write: clear + insert, preventing multiple reflows
+        container.innerHTML = '';
+        container.appendChild(fragment);
+
+        // Skills change triggers preview update (no extra call needed — the
+        // form's delegated 'input' listener handles it; here we call directly
+        // because skill removal bypasses the form input event)
         updatePreview();
     }
 
@@ -1444,13 +1455,13 @@
         }
 
         if (section === 'summary') {
-            if (box.textContent && box.textContent !== 'Getting AI suggestions...' && box.textContent !== 'Getting suggestions...') {
+            if (box.textContent && box.textContent !== 'Generating content\u2026' && box.textContent !== 'Getting suggestions...') {
                 lastRegeneratedSummary = box.textContent;
             } else {
-                box.textContent = 'Getting AI suggestions...';
+                box.textContent = 'Generating content\u2026';
             }
         } else {
-            box.textContent = 'Getting AI suggestions...';
+            box.textContent = 'Generating content\u2026';
         }
 
         currentAISuggestion = '';
@@ -1525,11 +1536,30 @@
 
             updateAISuggestionsCounter();
         } catch (err) {
-            console.error('AI Suggestions Error:', err);
-            if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('fetch')) {
-                box.textContent = 'AI suggestions require a connected backend. To enable this feature, deploy to a server with the /api/ai-suggestions endpoint configured.';
+            // Log full internal error for debugging — never expose to UI
+            console.error('[CareerCraft] Content generation error:', err);
+
+            const isNetworkError = err.message.includes('Failed to fetch') ||
+                err.message.includes('NetworkError') ||
+                err.message.includes('fetch') ||
+                err.message.includes('ERR_CONNECTION');
+
+            if (isNetworkError) {
+                box.innerHTML = `
+                    <div style="text-align:center; padding:1.5rem 0;">
+                        <div style="color:#f59e0b; font-size:0.9rem; margin-bottom:0.75rem;">⚠️ No Connection</div>
+                        <div style="font-size:0.82rem; color:#94a3b8; margin-bottom:1rem;">AI generation requires a live server connection.</div>
+                        <button type="button" onclick="triggerAIGeneration()" style="background:#6366f1; color:#fff; border:none; padding:0.4rem 1rem; border-radius:6px; font-size:0.8rem; cursor:pointer;">Retry</button>
+                    </div>
+                `;
             } else {
-                box.textContent = 'Error: ' + err.message;
+                box.innerHTML = `
+                    <div style="text-align:center; padding:1.5rem 0;">
+                        <div style="color:#ef4444; font-size:0.9rem; margin-bottom:0.75rem;">⚠️ Generation Unavailable</div>
+                        <div style="font-size:0.82rem; color:#94a3b8; margin-bottom:1rem;">We couldn\u2019t generate content right now. Please try again in a moment.</div>
+                        <button type="button" onclick="triggerAIGeneration()" style="background:#6366f1; color:#fff; border:none; padding:0.4rem 1rem; border-radius:6px; font-size:0.8rem; cursor:pointer;">Retry</button>
+                    </div>
+                `;
             }
         }
     }

@@ -429,7 +429,11 @@
       if (!container) return;
 
       container.innerHTML = '';
-      this.saveUndoSnapshot();
+      // NOTE: saveUndoSnapshot() is intentionally NOT called here.
+      // It was previously called on every render, causing an expensive
+      // JSON.parse(JSON.stringify(state)) on every drag-over, font change,
+      // and color swatch click. Snapshots are now taken explicitly only at
+      // user-intent boundaries (addListEntry, removeListEntry, drag-drop commit).
 
       switch (this.activeTab) {
         case 'home':
