@@ -265,7 +265,7 @@
       setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateX(50px)';
-        toast.style.transition = 'all 0.3s ease';
+        toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
         setTimeout(() => toast.remove(), 300);
       }, 5000);
     }
@@ -840,7 +840,7 @@
     if (card) {
       card.style.opacity = '0';
       card.style.transform = 'translateY(-10px)';
-      card.style.transition = 'all 0.3s ease';
+      card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
       setTimeout(() => {
         card.remove();
         const remainingCards = document.querySelectorAll('#suggestionsList .suggestion-card');

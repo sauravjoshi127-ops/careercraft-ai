@@ -159,11 +159,13 @@
     let debounceTimer = null;
     function updatePreview() {
         if (debounceTimer) clearTimeout(debounceTimer);
-        // 200ms debounce — eliminates lag during fast typing while still feeling instant
+        // 50ms debounce for lightning fast typing responsiveness without blocking main thread
         debounceTimer = setTimeout(() => {
-            syncStateFromUI();
-            renderPreviewIframe();
-        }, 200);
+            requestAnimationFrame(() => {
+                syncStateFromUI();
+                renderPreviewIframe();
+            });
+        }, 50);
     }
 
     function renderPreviewIframe() {
@@ -352,7 +354,9 @@
                 if (focusInputId) {
                     const inputEl = document.getElementById(focusInputId);
                     if (inputEl) {
-                        setTimeout(() => inputEl.focus(), 200);
+                        requestAnimationFrame(() => {
+                            inputEl.focus();
+                        });
                     }
                 }
             }
