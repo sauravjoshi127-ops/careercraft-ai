@@ -169,6 +169,7 @@
     }
 
     function renderPreviewIframe() {
+        if (window.isInlineEditing) return;
         const iframe = document.getElementById('previewIframe');
         if (!iframe) return;
         const doc = iframe.contentDocument || iframe.contentWindow.document;
@@ -284,57 +285,183 @@
         if (!doc.body || doc.body.dataset.syncAttached === 'true') return;
         doc.body.dataset.syncAttached = 'true';
 
-        // Visual pointer feedback: add hover cursor style to elements inside iframe body
+        // Visual pointer feedback and hover styling for interactive preview
         const style = doc.createElement('style');
         style.id = 'sync-styles';
         style.textContent = `
-            body * { cursor: pointer !important; }
-            body *:hover { outline: 1px dashed rgba(99, 102, 241, 0.5); }
+            [data-editable] { cursor: text !important; transition: all 0.2s ease; border-radius: 3px; }
+            [data-editable]:hover { background: rgba(99, 102, 241, 0.05); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15); }
+            .section { transition: all 0.25s ease; border-radius: 8px; padding: 8px; margin-left: -8px; margin-right: -8px; }
+            .section:hover { background: rgba(0,0,0,0.015); box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
         `;
         doc.head.appendChild(style);
 
+        // --- INLINE EDITING LOGIC (Double Click) ---
+        doc.body.addEventListener('dblclick', (e) => {
+            const target = e.target.closest('[data-editable]');
+            if (!target) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            window.isInlineEditing = true;
+            target.contentEditable = "true";
+            target.focus();
+            
+            // Move cursor to end
+            const range = doc.createRange();
+            range.selectNodeContents(target);
+            range.collapse(false);
+            const sel = doc.defaultView.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+            
+            target.style.outline = '2px solid #6366f1';
+            target.style.background = 'white';
+            
+            const fieldId = target.getAttribute('data-editable');
+            
+            function getFormInput(fId) {
+                if (fId === 'fullName') return document.getElementById('fullName');
+                if (fId === 'email') return document.getElementById('email');
+                if (fId === 'phone') return document.getElementById('phone');
+                if (fId === 'location') return document.getElementById('location');
+                if (fId === 'summary') return document.getElementById('summary');
+                if (fId === 'certifications') return document.getElementById('certifications');
+                
+                if (fId.startsWith('exp-')) {
+                    const parts = fId.split('-');
+                    const prop = parts[1];
+                    const idx = parseInt(parts[2], 10);
+                    const cards = document.querySelectorAll('#experienceContainer .entry-card');
+                    if (cards[idx]) {
+                        const realId = cards[idx].id.replace('exp-', '');
+                        if (prop === 'title') return document.getElementById('expTitle-' + realId);
+                        if (prop === 'company') return document.getElementById('expCompany-' + realId);
+                        if (prop === 'start') return document.getElementById('expStart-' + realId);
+                        if (prop === 'end') return document.getElementById('expEnd-' + realId);
+                        if (prop === 'description') return document.getElementById('expDesc-' + realId);
+                    }
+                }
+                
+                if (fId.startsWith('edu-')) {
+                    const parts = fId.split('-');
+                    const prop = parts[1];
+                    const idx = parseInt(parts[2], 10);
+                    const cards = document.querySelectorAll('#educationContainer .entry-card');
+                    if (cards[idx]) {
+                        const realId = cards[idx].id.replace('edu-', '');
+                        if (prop === 'degree') return document.getElementById('eduDegree-' + realId);
+                        if (prop === 'school') return document.getElementById('eduSchool-' + realId);
+                        if (prop === 'year') return document.getElementById('eduYear-' + realId);
+                        if (prop === 'grade') return document.getElementById('eduGrade-' + realId);
+                    }
+                }
+                return null;
+            }
+            
+            const handleInput = () => {
+                const input = getFormInput(fieldId);
+                if (input) {
+                    input.value = target.innerText || target.textContent;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            };
+            
+            const handleBlur = () => {
+                target.contentEditable = "false";
+                target.style.outline = '';
+                target.style.background = '';
+                
+                target.removeEventListener('input', handleInput);
+                target.removeEventListener('blur', handleBlur);
+                
+                window.isInlineEditing = false;
+                syncStateFromUI();
+                updatePreview();
+            };
+            
+            target.addEventListener('input', handleInput);
+            target.addEventListener('blur', handleBlur);
+            
+            target.addEventListener('keydown', (ke) => {
+                if (ke.key === 'Enter' && fieldId !== 'summary' && !fieldId.includes('description') && fieldId !== 'certifications') {
+                    ke.preventDefault();
+                    target.blur();
+                }
+            });
+        });
+
+        // --- CLICK TO EDIT LOGIC (Single Click Focus) ---
         doc.body.addEventListener('click', (e) => {
+            if (window.isInlineEditing) return; // Don't steal focus if inline editing
+            
             const target = e.target;
             let sectionId = null;
             let focusInputId = null;
 
-            if (target.closest('h1')) {
-                sectionId = 'personal';
-                focusInputId = 'fullName';
-            } else if (target.closest('.contact') || target.closest('.sidebar div:nth-child(2)')) {
-                sectionId = 'personal';
-                focusInputId = 'email';
-            } else {
-                // Determine section based on nearest h2 text content
-                const h2Elements = Array.from(doc.querySelectorAll('h2'));
-                if (h2Elements.length > 0) {
-                    const clickedY = e.clientY;
-                    let closestH2 = null;
-                    let minDistance = Infinity;
+            // Direct mapping via data-editable for perfect precision
+            const editable = target.closest('[data-editable]');
+            if (editable) {
+                const fId = editable.getAttribute('data-editable');
+                if (fId === 'fullName') { sectionId = 'personal'; focusInputId = 'fullName'; }
+                else if (['email', 'phone', 'location'].includes(fId)) { sectionId = 'personal'; focusInputId = fId; }
+                else if (fId === 'summary') { sectionId = 'summary'; focusInputId = 'summary'; }
+                else if (fId === 'certifications') { sectionId = 'certifications'; focusInputId = 'certifications'; }
+                else if (fId.startsWith('exp-')) {
+                    sectionId = 'experience';
+                    const parts = fId.split('-');
+                    const idx = parseInt(parts[2], 10);
+                    const cards = document.querySelectorAll('#experienceContainer .entry-card');
+                    if (cards[idx]) focusInputId = 'exp' + parts[1].charAt(0).toUpperCase() + parts[1].slice(1) + '-' + cards[idx].id.replace('exp-', '');
+                }
+                else if (fId.startsWith('edu-')) {
+                    sectionId = 'education';
+                    const parts = fId.split('-');
+                    const idx = parseInt(parts[2], 10);
+                    const cards = document.querySelectorAll('#educationContainer .entry-card');
+                    if (cards[idx]) focusInputId = 'edu' + parts[1].charAt(0).toUpperCase() + parts[1].slice(1) + '-' + cards[idx].id.replace('edu-', '');
+                }
+            }
+            // Fallback for non-editable areas
+            if (!sectionId) {
+                if (target.closest('h1')) {
+                    sectionId = 'personal';
+                    focusInputId = 'fullName';
+                } else if (target.closest('.contact') || target.closest('.sidebar div:nth-child(2)')) {
+                    sectionId = 'personal';
+                    focusInputId = 'email';
+                } else {
+                    const h2Elements = Array.from(doc.querySelectorAll('h2'));
+                    if (h2Elements.length > 0) {
+                        const clickedY = e.clientY;
+                        let closestH2 = null;
+                        let minDistance = Infinity;
 
-                    h2Elements.forEach(h2 => {
-                        const rect = h2.getBoundingClientRect();
-                        const distance = Math.abs(clickedY - rect.top);
-                        if (distance < minDistance) {
-                            minDistance = distance;
-                            closestH2 = h2;
+                        h2Elements.forEach(h2 => {
+                            const rect = h2.getBoundingClientRect();
+                            const distance = Math.abs(clickedY - rect.top);
+                            if (distance < minDistance) {
+                                minDistance = distance;
+                                closestH2 = h2;
+                            }
+                        });
+
+                        const sectionText = closestH2 ? closestH2.textContent.toLowerCase() : '';
+                        if (sectionText.includes('summary') || sectionText.includes('about')) {
+                            sectionId = 'summary';
+                            focusInputId = 'summary';
+                        } else if (sectionText.includes('experience') || sectionText.includes('work')) {
+                            sectionId = 'experience';
+                        } else if (sectionText.includes('education')) {
+                            sectionId = 'education';
+                        } else if (sectionText.includes('skills')) {
+                            sectionId = 'skills';
+                            focusInputId = 'skillInput';
+                        } else if (sectionText.includes('certification')) {
+                            sectionId = 'certifications';
+                            focusInputId = 'certifications';
                         }
-                    });
-
-                    const sectionText = closestH2 ? closestH2.textContent.toLowerCase() : '';
-                    if (sectionText.includes('summary') || sectionText.includes('about')) {
-                        sectionId = 'summary';
-                        focusInputId = 'summary';
-                    } else if (sectionText.includes('experience') || sectionText.includes('work')) {
-                        sectionId = 'experience';
-                    } else if (sectionText.includes('education')) {
-                        sectionId = 'education';
-                    } else if (sectionText.includes('skills')) {
-                        sectionId = 'skills';
-                        focusInputId = 'skillInput';
-                    } else if (sectionText.includes('certification')) {
-                        sectionId = 'certifications';
-                        focusInputId = 'certifications';
                     }
                 }
             }
