@@ -497,7 +497,7 @@
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: transform 0.2s, opacity 0.2s;
       gap: 0.75rem;
       text-align: left;
     }
@@ -707,7 +707,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: all 0.2s;
+      transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
     }
 
     .draft-card:hover {
@@ -935,7 +935,7 @@
       border-radius: 0.75rem;
       padding: 1rem;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
@@ -1017,7 +1017,7 @@
       display: flex;
       align-items: center;
       gap: 0.25rem;
-      transition: all 0.2s ease;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
     }
 
     .status-ok {

@@ -829,7 +829,7 @@
                   resumeSubtitle = `Continue editing ${resumes[0].full_name || 'Resume'}`;
               }
               quickHtml += `
-                  <div onclick="document.querySelector('[data-tab=resume]').click()" style="display: flex; flex-direction: column; gap: 0.15rem; padding: 0.6rem 0.8rem; background: #fafafa; border-left: 3px solid #6366f1; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">
+                  <div onclick="document.querySelector('[data-tab=resume]').click()" style="display: flex; flex-direction: column; gap: 0.15rem; padding: 0.6rem 0.8rem; background: #fafafa; border-left: 3px solid #6366f1; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; border-radius: 4px; cursor: pointer; transition: background-color 0.2s ease, border-color 0.2s ease;">
                       <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Resume Builder</span>
                       <span style="font-size: 0.8rem; font-weight: 600; color: #334155;">${window.appSdk.ui.escapeHtml(resumeSubtitle)}</span>
                   </div>
@@ -840,7 +840,7 @@
                   letterSubtitle = `Open ${coverLetters[0].job_title || 'letter'} draft @ ${coverLetters[0].company_name || 'Acme'}`;
               }
               quickHtml += `
-                  <div onclick="document.querySelector('[data-tab=cover-letter]').click()" style="display: flex; flex-direction: column; gap: 0.15rem; padding: 0.6rem 0.8rem; background: #fafafa; border-left: 3px solid #6366f1; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">
+                  <div onclick="document.querySelector('[data-tab=cover-letter]').click()" style="display: flex; flex-direction: column; gap: 0.15rem; padding: 0.6rem 0.8rem; background: #fafafa; border-left: 3px solid #6366f1; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; border-radius: 4px; cursor: pointer; transition: background-color 0.2s ease, border-color 0.2s ease;">
                       <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Cover Letter</span>
                       <span style="font-size: 0.8rem; font-weight: 600; color: #334155;">${window.appSdk.ui.escapeHtml(letterSubtitle)}</span>
                   </div>
@@ -851,7 +851,7 @@
                   emailSubtitle = `Open intro draft for ${emails[0].company || 'Acme'}`;
               }
               quickHtml += `
-                  <div onclick="document.querySelector('[data-tab=cold-email]').click()" style="display: flex; flex-direction: column; gap: 0.15rem; padding: 0.6rem 0.8rem; background: #fafafa; border-left: 3px solid #6366f1; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; border-radius: 4px; cursor: pointer; transition: all 0.2s ease;">
+                  <div onclick="document.querySelector('[data-tab=cold-email]').click()" style="display: flex; flex-direction: column; gap: 0.15rem; padding: 0.6rem 0.8rem; background: #fafafa; border-left: 3px solid #6366f1; border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; border-radius: 4px; cursor: pointer; transition: background-color 0.2s ease, border-color 0.2s ease;">
                       <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Cold Email</span>
                       <span style="font-size: 0.8rem; font-weight: 600; color: #334155;">${window.appSdk.ui.escapeHtml(emailSubtitle)}</span>
                   </div>

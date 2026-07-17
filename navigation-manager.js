@@ -505,20 +505,31 @@
     _currentNav = topnav;
   }
 
-  /* ── Scroll glass effect ───────────────────────────────── */
+  /* ── Scroll glass effect (rAF-throttled) ───────────────── */
+  let _scrollRafId = null;
   function _initScrollBehavior(nav) {
     if (_scrollListener) {
       window.removeEventListener('scroll', _scrollListener, { passive: true });
     }
+    // Use rAF to throttle — read scrollY once per animation frame,
+    // never on every scroll tick. classList add/remove only when state changes.
+    let _scrolledState = null;
     _scrollListener = function () {
-      if (window.scrollY > 24) {
-        nav.classList.add('ch-nav--scrolled');
-      } else {
-        nav.classList.remove('ch-nav--scrolled');
-      }
+      if (_scrollRafId) return; // already queued
+      _scrollRafId = requestAnimationFrame(function () {
+        _scrollRafId = null;
+        const shouldScroll = window.scrollY > 24;
+        if (shouldScroll === _scrolledState) return; // no-op if same
+        _scrolledState = shouldScroll;
+        if (shouldScroll) {
+          nav.classList.add('ch-nav--scrolled');
+        } else {
+          nav.classList.remove('ch-nav--scrolled');
+        }
+      });
     };
     window.addEventListener('scroll', _scrollListener, { passive: true });
-    // Run immediately in case page is already scrolled
+    // Immediate sync for already-scrolled pages
     _scrollListener();
   }
 
@@ -555,9 +566,11 @@
     dropdown.setAttribute('aria-hidden', 'false');
     avatarBtn.setAttribute('aria-expanded', 'true');
     avatarBtn.classList.add('ch-nav__avatar--open');
-    // Focus first item
-    const first = dropdown.querySelector('[role="menuitem"]');
-    if (first) setTimeout(() => first.focus(), 20);
+    // Use rAF instead of setTimeout to focus without blocking or flickering
+    requestAnimationFrame(function () {
+      const first = dropdown.querySelector('[role="menuitem"]');
+      if (first) first.focus();
+    });
   }
 
   function _closeDropdown() {
@@ -571,7 +584,9 @@
     avatarBtn.classList.remove('ch-nav__avatar--open');
   }
 
-  /* ── Mobile drawer ─────────────────────────────────────── */
+  /* ── Mobile drawer ───────────────────────────────── */
+  const FOCUSABLE_SELECTORS = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
   function _openMobileDrawer() {
     const drawer   = document.getElementById('ch-drawer');
     const backdrop = document.getElementById('ch-drawer-backdrop');
@@ -585,12 +600,15 @@
       hamburger.setAttribute('aria-expanded', 'true');
       hamburger.setAttribute('aria-label', 'Close navigation menu');
     }
-    document.body.style.overflow = 'hidden';
+    // Use CSS class on body instead of inline style to avoid specificity battles
+    document.body.classList.add('ch-body--drawer-open');
     if (_currentNav) _currentNav.classList.add('ch-nav--no-glass');
 
-    // Focus first focusable item in drawer
-    const firstFocusable = drawer.querySelector('a, button');
-    if (firstFocusable) setTimeout(() => firstFocusable.focus(), 50);
+    // Focus first focusable item in drawer — rAF for no-flicker
+    requestAnimationFrame(function () {
+      const focusable = drawer.querySelectorAll(FOCUSABLE_SELECTORS);
+      if (focusable.length) focusable[0].focus();
+    });
   }
 
   function _closeMobileDrawer() {
@@ -605,20 +623,20 @@
       hamburger.classList.remove('ch-hamburger--open');
       hamburger.setAttribute('aria-expanded', 'false');
       hamburger.setAttribute('aria-label', 'Open navigation menu');
+      // Return focus to hamburger for keyboard users
       hamburger.focus();
     }
-    document.body.style.overflow = '';
+    document.body.classList.remove('ch-body--drawer-open');
     if (_currentNav) _currentNav.classList.remove('ch-nav--no-glass');
   }
 
   function _initMobileDrawer(nav) {
-    // Hamburger toggle — may already be in DOM
+    // Hamburger toggle — clone to remove any prior listeners
     const hamburger = document.getElementById('ch-hamburger');
     if (hamburger) {
-      // Remove any prior listener by cloning
       const fresh = hamburger.cloneNode(true);
       hamburger.parentNode.replaceChild(fresh, hamburger);
-      fresh.addEventListener('click', () => {
+      fresh.addEventListener('click', function () {
         _drawerOpen ? _closeMobileDrawer() : _openMobileDrawer();
       });
     }
@@ -635,11 +653,31 @@
       closeBtn.addEventListener('click', _closeMobileDrawer);
     }
 
-    // Close on link click (navigation)
+    // Close on navigation link click
     const drawer = document.getElementById('ch-drawer');
     if (drawer) {
-      drawer.querySelectorAll('a.ch-drawer__link, a.ch-drawer__upgrade').forEach(link => {
-        link.addEventListener('click', () => _closeMobileDrawer());
+      drawer.querySelectorAll('a.ch-drawer__link, a.ch-drawer__upgrade').forEach(function (link) {
+        link.addEventListener('click', _closeMobileDrawer);
+      });
+
+      // Focus trap — keeps Tab/Shift+Tab within the open drawer
+      drawer.addEventListener('keydown', function (e) {
+        if (!_drawerOpen || e.key !== 'Tab') return;
+        const focusable = Array.from(drawer.querySelectorAll(FOCUSABLE_SELECTORS));
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last  = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       });
     }
   }
@@ -699,17 +737,9 @@
 
   /* ── Overflow Menu (Resize Observer) ───────────────────── */
   function _initOverflowMenu() {
-    const container = document.getElementById('ch-nav-links-container');
-    const linkZone = document.querySelector('.ch-nav__link-zone');
-    if (!container || !linkZone || typeof ResizeObserver === 'undefined') return;
-
+    // Reserved for future "More" overflow menu.
+    // The CSS grid column layout naturally constrains the center zone.
     if (_resizeObserver) _resizeObserver.disconnect();
-    
-    // Simplistic overflow handling for future-proofing:
-    // When 7 links are present, this will detect if it overflows
-    // For now we don't strictly hide items as it requires more robust DOM updates
-    // but the grid naturally bounds the center area. If needed in the future,
-    // we will implement a "More" dropdown here.
   }
 
   /* ── Update nav links (workspace change) ───────────────── */
