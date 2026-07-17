@@ -59,6 +59,8 @@
 .form-section-heading.collapsed::after { transform:rotate(-135deg); }
 .form-section-content { max-height:2000px; opacity:1; overflow:hidden; transition:max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, margin-bottom 0.3s ease; }
 .form-section-content.collapsed { max-height:0 !important; opacity:0 !important; margin-bottom:0 !important; pointer-events:none; }
+.form-section-heading.non-collapsible { cursor: default; }
+.form-section-heading.non-collapsible::after { display: none; }
 .entry-card { background:var(--bg-input); border:1px solid var(--border); border-radius:var(--r-md); padding:1.5rem; margin-bottom:1rem; position:relative; transition:border-color 0.2s, transform 0.2s, box-shadow 0.2s; will-change: transform, border-color, box-shadow; }
 .entry-card:hover { border-color:var(--border-hover); transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.1); }
 .entry-card:focus-within { border-color:var(--border-hover); }
@@ -178,8 +180,8 @@
         <input type="hidden" id="templateName" value="modern">
 
         <!-- Personal Info -->
-        <div class="form-section-heading" id="head-personal" style="margin-top:0;" tabindex="0" role="button" aria-expanded="true" aria-controls="sect-personal">Personal Information</div>
-        <div class="form-section-content" id="sect-personal">
+        <div class="form-section-heading non-collapsible" id="head-personal" style="margin-top:0;" tabindex="0" role="button" aria-expanded="true" aria-controls="sect-personal">Personal Information</div>
+        <div class="form-section-content non-collapsible-content" id="sect-personal">
           <div class="form-row">
             <div class="form-group">
               <label>Full Name *</label>
@@ -203,8 +205,8 @@
         </div>
 
         <!-- Summary -->
-        <div class="form-section-heading" id="head-summary" tabindex="0" role="button" aria-expanded="false" aria-controls="sect-summary">Professional Summary <button type="button" class="btn-ai" onclick="getAISuggestions('summary')" tabindex="0">AI Suggest</button></div>
-        <div class="form-section-content collapsed" id="sect-summary">
+        <div class="form-section-heading non-collapsible" id="head-summary" tabindex="0" role="button" aria-expanded="true" aria-controls="sect-summary">Professional Summary <button type="button" class="btn-ai" onclick="getAISuggestions('summary')" tabindex="0">AI Suggest</button></div>
+        <div class="form-section-content non-collapsible-content" id="sect-summary">
           <div class="form-group">
             <label>Summary</label>
             <textarea id="summary" placeholder="A brief overview of your background, skills, and career goals..." rows="4"></textarea>
@@ -212,22 +214,22 @@
         </div>
 
         <!-- Experience -->
-        <div class="form-section-heading" id="head-experience" tabindex="0" role="button" aria-expanded="false" aria-controls="sect-experience">Work Experience</div>
-        <div class="form-section-content collapsed" id="sect-experience">
+        <div class="form-section-heading non-collapsible" id="head-experience" tabindex="0" role="button" aria-expanded="true" aria-controls="sect-experience">Work Experience</div>
+        <div class="form-section-content non-collapsible-content" id="sect-experience">
           <div id="experienceContainer"></div>
           <button type="button" class="btn-add-entry" onclick="addExperience()">+ Add Work Experience</button>
         </div>
 
         <!-- Education -->
-        <div class="form-section-heading" id="head-education" tabindex="0" role="button" aria-expanded="false" aria-controls="sect-education">Education</div>
-        <div class="form-section-content collapsed" id="sect-education">
+        <div class="form-section-heading non-collapsible" id="head-education" tabindex="0" role="button" aria-expanded="true" aria-controls="sect-education">Education</div>
+        <div class="form-section-content non-collapsible-content" id="sect-education">
           <div id="educationContainer"></div>
           <button type="button" class="btn-add-entry" onclick="addEducation()">+ Add Education</button>
         </div>
 
         <!-- Skills -->
-        <div class="form-section-heading" id="head-skills" tabindex="0" role="button" aria-expanded="false" aria-controls="sect-skills">Skills <button type="button" class="btn-ai" onclick="getAISuggestions('skills')" tabindex="0">AI Suggest</button></div>
-        <div class="form-section-content collapsed" id="sect-skills">
+        <div class="form-section-heading non-collapsible" id="head-skills" tabindex="0" role="button" aria-expanded="true" aria-controls="sect-skills">Skills <button type="button" class="btn-ai" onclick="getAISuggestions('skills')" tabindex="0">AI Suggest</button></div>
+        <div class="form-section-content non-collapsible-content" id="sect-skills">
           <div class="form-group">
             <label>Add Skills (press Enter or comma to add)</label>
             <div class="skills-container" id="skillsContainer" onclick="document.getElementById('skillInput').focus()">
