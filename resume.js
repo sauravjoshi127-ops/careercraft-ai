@@ -343,8 +343,12 @@
                 const header = document.getElementById(`head-${sectionId}`);
                 const content = document.getElementById(`sect-${sectionId}`);
                 if (content && content.classList.contains('collapsed')) {
-                    document.querySelectorAll('.form-section-content').forEach(sect => sect.classList.add('collapsed'));
-                    document.querySelectorAll('.form-section-heading').forEach(head => head.classList.add('collapsed'));
+                    document.querySelectorAll('.form-section-content').forEach(sect => {
+                        if (!sect.classList.contains('non-collapsible-content')) sect.classList.add('collapsed');
+                    });
+                    document.querySelectorAll('.form-section-heading').forEach(head => {
+                        if (!head.classList.contains('non-collapsible')) head.classList.add('collapsed');
+                    });
                     content.classList.remove('collapsed');
                     if (header) header.classList.remove('collapsed');
                 }
@@ -1684,6 +1688,8 @@
         // Progressive Accordion Form Section Toggles
         document.querySelectorAll('.form-section-heading').forEach(header => {
             const toggleAccordion = (e) => {
+                if (header.classList.contains('non-collapsible')) return;
+
                 // Ignore clicks that target button controls inside headers (like AI suggest)
                 if (e.target.closest('button')) return;
 
@@ -1694,11 +1700,13 @@
 
                 // Collapse all sibling section blocks
                 document.querySelectorAll('.form-section-content').forEach(sect => {
-                    sect.classList.add('collapsed');
+                    if (!sect.classList.contains('non-collapsible-content')) sect.classList.add('collapsed');
                 });
                 document.querySelectorAll('.form-section-heading').forEach(head => {
-                    head.classList.add('collapsed');
-                    head.setAttribute('aria-expanded', 'false');
+                    if (!head.classList.contains('non-collapsible')) {
+                        head.classList.add('collapsed');
+                        head.setAttribute('aria-expanded', 'false');
+                    }
                 });
 
                 // Expand clicked section block
