@@ -9,6 +9,34 @@ const ResumeRenderer = {
       .replace(/'/g, '&#39;');
   },
 
+  formatText(text, lineH, esc) {
+    if (!text) return '';
+    const lines = text.split('\n');
+    let inList = false;
+    let html = '';
+    lines.forEach(line => {
+      let trimmed = line.trim();
+      if (trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.startsWith('*')) {
+        if (!inList) {
+          html += `<ul style="margin: 4px 0 0 0; padding-left: 18px; line-height: ${lineH};">`;
+          inList = true;
+        }
+        trimmed = trimmed.replace(/^[-•*]\s*/, '');
+        html += `<li style="margin-bottom: 3px;">${esc(trimmed)}</li>`;
+      } else {
+        if (inList) {
+          html += `</ul>`;
+          inList = false;
+        }
+        if (trimmed) {
+          html += `<div style="margin-bottom: 4px; line-height: ${lineH};">${esc(trimmed)}</div>`;
+        }
+      }
+    });
+    if (inList) html += '</ul>';
+    return html;
+  },
+
   render(data, templateName) {
     const exp = data.experience || [];
     const edu = data.education || [];
@@ -52,199 +80,208 @@ const ResumeRenderer = {
 
   modern(data, exp, edu, sk, font, lineH, itemMargin, sectionMargin, padding, accent) {
     const esc = this.escape;
+    const format = this.formatText;
     const name = esc(data.full_name || 'Your Name');
-    const contactParts = [data.email, data.phone, data.location].filter(Boolean).map(esc).join(' · ');
-    const summary = esc(data.professional_summary || '');
-    const certifications = esc(data.certifications || '');
+    const contactParts = [data.email, data.phone, data.location].filter(Boolean).map(esc).join(' <span style="margin:0 4px;color:#cbd5e1;">•</span> ');
+    const summary = format(data.professional_summary || '', lineH, esc);
+    const certifications = format(data.certifications || '', lineH, esc);
 
     const expHTML = exp.filter(e => e.title || e.company).map(e => `
-        <div style="margin-bottom:${itemMargin};">
+        <div style="margin-bottom:${itemMargin}; page-break-inside: avoid;">
             <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
-                <strong style="font-size:13px;color:#1a1a2e;">${esc(e.title || 'Position')}</strong>
-                <span style="font-size:11px;color:#64748b;white-space:nowrap;margin-left:8px;">${esc(e.start || '')}${e.end ? ' – ' + esc(e.end) : ''}</span>
+                <h3 style="font-size:14px; margin:0; color:#0f172a; font-weight:700;">${esc(e.title || 'Position')}</h3>
+                <span style="font-size:11px;color:#64748b;white-space:nowrap;margin-left:8px;font-weight:500;">${esc(e.start || '')}${e.end ? ' – ' + esc(e.end) : ''}</span>
             </div>
-            <div style="font-size:12px;color:${accent};font-weight:600;margin-bottom:4px;">${esc(e.company || 'Company')}</div>
-            <div style="font-size:12px;color:#475569;line-height:${lineH};">${esc(e.description || '').replace(/\n/g, '<br>')}</div>
+            <h4 style="font-size:13px;color:${accent};font-weight:600;margin:0 0 6px 0;">${esc(e.company || 'Company')}</h4>
+            <div style="font-size:12px;color:#334155;">${format(e.description || '', lineH, esc)}</div>
         </div>
     `).join('');
 
     const eduHTML = edu.filter(e => e.degree || e.school).map(e => `
-        <div style="margin-bottom:${itemMargin};">
+        <div style="margin-bottom:${itemMargin}; page-break-inside: avoid;">
             <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
-                <strong style="font-size:13px;color:#1a1a2e;">${esc(e.degree || 'Degree')}</strong>
-                <span style="font-size:11px;color:#64748b;margin-left:8px;">${esc(e.year || '')}</span>
+                <h3 style="font-size:14px; margin:0; color:#0f172a; font-weight:700;">${esc(e.degree || 'Degree')}</h3>
+                <span style="font-size:11px;color:#64748b;margin-left:8px;font-weight:500;">${esc(e.year || '')}</span>
             </div>
-            <div style="font-size:12px;color:#222222;">${esc(e.school || 'School')}${e.grade ? ' · ' + esc(e.grade) : ''}</div>
+            <h4 style="font-size:13px;color:#334155; margin:0; font-weight:500;">${esc(e.school || 'School')}${e.grade ? ' <span style="color:#cbd5e1;">•</span> ' + esc(e.grade) : ''}</h4>
         </div>
     `).join('');
 
     const skHTML = sk.filter(s => s).map(s => 
-        `<span style="display:inline-block;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);color:#222222;padding:3px 10px;border-radius:20px;font-size:11px;margin:3px;white-space:nowrap;">${esc(s)}</span>`
+        `<span style="display:inline-block;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.15);color:#1e293b;padding:4px 12px;border-radius:24px;font-size:11px;margin:4px 6px 4px 0;font-weight:500;">${esc(s)}</span>`
     ).join('');
 
-    const h2Style = `font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:#1a1a2e;margin:0 0 10px;padding-left:8px;border-left:3px solid ${accent};font-weight:700;`;
+    const h2Style = `font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:#0f172a;margin:0 0 12px;padding-left:10px;border-left:3px solid ${accent};font-weight:700;`;
 
-    return `<!DOCTYPE html>
-    <html>
+    return \`<!DOCTYPE html>
+    <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
-            .pdf-body { font-family: ${font}; margin: 0; padding: 0; color: #1a1a2e; background: white; -webkit-print-color-adjust: exact; }
-            .pdf-container { max-width: 8.5in; min-height: 11in; margin: 0 auto; padding: ${padding}; background: white; box-sizing: border-box; }
-            h1 { font-size: 24px; font-weight: 700; margin: 0 0 5px; color: #1a1a2e; }
-            .header { border-bottom: 2px solid ${accent}; padding-bottom: 14px; margin-bottom: ${sectionMargin}; }
-            .contact { margin: 0; color: #475569; font-size: 12px; }
-            .section { margin-bottom: ${sectionMargin}; }
-            h2 { ${h2Style} }
+            *, *::before, *::after { box-sizing: border-box; }
+            .pdf-body { font-family: \${font}; margin: 0; padding: 0; color: #334155; background: white; -webkit-print-color-adjust: exact; }
+            .pdf-container { max-width: 8.5in; min-height: 11in; margin: 0 auto; padding: \${padding}; background: white; }
+            h1 { font-size: 28px; font-weight: 700; margin: 0 0 8px; color: #0f172a; letter-spacing: -0.01em; }
+            .header { border-bottom: 2px solid \${accent}; padding-bottom: 16px; margin-bottom: \${sectionMargin}; }
+            .contact { margin: 0; color: #64748b; font-size: 12px; font-weight: 500; }
+            .section { margin-bottom: \${sectionMargin}; }
+            h2 { \${h2Style} }
+            p, div, ul, li { margin: 0; padding: 0; }
         </style>
     </head>
     <body class="pdf-body">
         <div class="pdf-container">
-            <div class="header">
-                <h1>${name}</h1>
-                <p class="contact">${contactParts}</p>
-            </div>
+            <header class="header">
+                <h1>\${name}</h1>
+                <p class="contact">\${contactParts}</p>
+            </header>
             
-            ${summary ? `<div class="section"><h2>Professional Summary</h2><p style="font-size:12px;color:#475569;line-height:${lineH};margin:0;">${summary}</p></div>` : ''}
-            ${expHTML ? `<div class="section"><h2>Work Experience</h2>${expHTML}</div>` : ''}
-            ${eduHTML ? `<div class="section"><h2>Education</h2>${eduHTML}</div>` : ''}
-            ${skHTML ? `<div class="section"><h2>Skills</h2><div style="margin-top: 4px;">${skHTML}</div></div>` : ''}
-            ${certifications ? `<div class="section"><h2>Certifications</h2><p style="font-size:12px;color:#475569;line-height:${lineH};margin:0;">${certifications.replace(/\n/g, '<br>')}</p></div>` : ''}
+            \${summary ? \`<section class="section"><h2>Professional Summary</h2><div style="font-size:12px;color:#334155;">\${summary}</div></section>\` : ''}
+            \${expHTML ? \`<section class="section"><h2>Work Experience</h2>\${expHTML}</section>\` : ''}
+            \${eduHTML ? \`<section class="section"><h2>Education</h2>\${eduHTML}</section>\` : ''}
+            \${skHTML ? \`<section class="section"><h2>Skills</h2><div style="margin-top: 6px;">\${skHTML}</div></section>\` : ''}
+            \${certifications ? \`<section class="section"><h2>Certifications</h2><div style="font-size:12px;color:#334155;">\${certifications}</div></section>\` : ''}
         </div>
     </body>
-    </html>`;
+    </html>\`;
   },
 
   classic(data, exp, edu, sk, font, lineH, itemMargin, sectionMargin, padding, accent) {
     const esc = this.escape;
+    const format = this.formatText;
     const name = esc(data.full_name || 'Your Name');
     const contactParts = [data.email, data.phone, data.location].filter(Boolean).map(esc).join(' | ');
-    const summary = esc(data.professional_summary || '');
-    const certifications = esc(data.certifications || '');
+    const summary = format(data.professional_summary || '', lineH, esc);
+    const certifications = format(data.certifications || '', lineH, esc);
 
     const expHTML = exp.filter(e => e.title || e.company).map(e => `
-        <div style="margin-bottom:${itemMargin};">
+        <div style="margin-bottom:${itemMargin}; page-break-inside: avoid;">
             <div style="display:flex;justify-content:space-between;align-items:baseline;">
-                <strong style="font-size:13px;color:#111111;">${esc(e.title || 'Position')}</strong>
-                <span style="font-size:11px;color:#555555;">${esc(e.start || '')}${e.end ? ' – ' + esc(e.end) : ''}</span>
+                <h3 style="font-size:14px; margin:0; color:#111111; font-weight:700;">${esc(e.title || 'Position')}</h3>
+                <span style="font-size:11px;color:#555555;font-weight:600;">${esc(e.start || '')}${e.end ? ' – ' + esc(e.end) : ''}</span>
             </div>
-            <div style="font-size:12px;font-style:italic;color:#444444;margin-bottom:4px;">${esc(e.company || 'Company')}</div>
-            <div style="font-size:12px;color:#333333;line-height:${lineH};">${esc(e.description || '').replace(/\n/g, '<br>')}</div>
+            <h4 style="font-size:13px; margin:2px 0 6px 0; font-style:italic;color:#444444;font-weight:500;">${esc(e.company || 'Company')}</h4>
+            <div style="font-size:12px;color:#333333;">${format(e.description || '', lineH, esc)}</div>
         </div>
     `).join('');
 
     const eduHTML = edu.filter(e => e.degree || e.school).map(e => `
-        <div style="margin-bottom:${itemMargin};">
+        <div style="margin-bottom:${itemMargin}; page-break-inside: avoid;">
             <div style="display:flex;justify-content:space-between;align-items:baseline;">
-                <strong style="font-size:13px;color:#111111;">${esc(e.degree || 'Degree')}</strong>
-                <span style="font-size:11px;color:#555555;">${esc(e.year || '')}</span>
+                <h3 style="font-size:14px; margin:0; color:#111111; font-weight:700;">${esc(e.degree || 'Degree')}</h3>
+                <span style="font-size:11px;color:#555555;font-weight:600;">${esc(e.year || '')}</span>
             </div>
-            <div style="font-size:12px;font-style:italic;color:#444444;">${esc(e.school || 'School')}${e.grade ? ' · ' + esc(e.grade) : ''}</div>
+            <h4 style="font-size:13px; margin:2px 0 0 0; font-style:italic;color:#444444;font-weight:500;">${esc(e.school || 'School')}${e.grade ? ' · ' + esc(e.grade) : ''}</h4>
         </div>
     `).join('');
 
     const skText = sk.filter(s => s).map(esc).join(', ');
-    const h2Style = `font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#222222;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid ${accent};font-weight:700;`;
+    const h2Style = `font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:#111111;margin:0 0 10px;padding-bottom:4px;border-bottom:1px solid ${accent};font-weight:700;`;
 
-    return `<!DOCTYPE html>
-    <html>
+    return \`<!DOCTYPE html>
+    <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
-            .pdf-body { font-family: ${font}; margin: 0; padding: 0; color: #1a1a1a; background: white; -webkit-print-color-adjust: exact; }
-            .pdf-container { max-width: 8.5in; min-height: 11in; margin: 0 auto; padding: ${padding}; background: white; box-sizing: border-box; }
-            h1 { font-size: 26px; font-weight: 700; margin: 0 0 5px; letter-spacing: 0.05em; text-transform: uppercase; text-align: center; color: #111111; }
-            .header { text-align: center; margin-bottom: ${sectionMargin}; padding-bottom: 16px; border-bottom: 2px solid #222222; }
-            .contact { margin: 0; color: #444444; font-size: 12px; }
-            .section { margin-bottom: ${sectionMargin}; }
-            h2 { ${h2Style} }
+            *, *::before, *::after { box-sizing: border-box; }
+            .pdf-body { font-family: \${font}; margin: 0; padding: 0; color: #333333; background: white; -webkit-print-color-adjust: exact; }
+            .pdf-container { max-width: 8.5in; min-height: 11in; margin: 0 auto; padding: \${padding}; background: white; }
+            h1 { font-size: 28px; font-weight: 700; margin: 0 0 8px; letter-spacing: 0.04em; text-transform: uppercase; text-align: center; color: #111111; }
+            .header { text-align: center; margin-bottom: \${sectionMargin}; padding-bottom: 18px; border-bottom: 2px solid #222222; }
+            .contact { margin: 0; color: #444444; font-size: 12px; font-weight: 500; }
+            .section { margin-bottom: \${sectionMargin}; }
+            h2 { \${h2Style} }
+            p, div, ul, li { margin: 0; padding: 0; }
         </style>
     </head>
     <body class="pdf-body">
         <div class="pdf-container">
-            <div class="header">
-                <h1>${name}</h1>
-                <p class="contact">${contactParts}</p>
-            </div>
+            <header class="header">
+                <h1>\${name}</h1>
+                <p class="contact">\${contactParts}</p>
+            </header>
             
-            ${summary ? `<div class="section"><h2>Summary</h2><p style="font-size:12px;color:#333333;line-height:${lineH};margin:0;">${summary}</p></div>` : ''}
-            ${expHTML ? `<div class="section"><h2>Experience</h2>${expHTML}</div>` : ''}
-            ${eduHTML ? `<div class="section"><h2>Education</h2>${eduHTML}</div>` : ''}
-            ${skText ? `<div class="section"><h2>Skills</h2><p style="font-size:12px;color:#333333;line-height:${lineH};margin:0;">${skText}</p></div>` : ''}
-            ${certifications ? `<div class="section"><h2>Certifications</h2><p style="font-size:12px;color:#333333;line-height:${lineH};margin:0;">${certifications.replace(/\n/g, '<br>')}</p></div>` : ''}
+            \${summary ? \`<section class="section"><h2>Summary</h2><div style="font-size:12px;color:#333333;">\${summary}</div></section>\` : ''}
+            \${expHTML ? \`<section class="section"><h2>Experience</h2>\${expHTML}</section>\` : ''}
+            \${eduHTML ? \`<section class="section"><h2>Education</h2>\${eduHTML}</section>\` : ''}
+            \${skText ? \`<section class="section"><h2>Skills</h2><div style="font-size:12px;color:#333333;line-height:\${lineH};">\${skText}</div></section>\` : ''}
+            \${certifications ? \`<section class="section"><h2>Certifications</h2><div style="font-size:12px;color:#333333;">\${certifications}</div></section>\` : ''}
         </div>
     </body>
-    </html>`;
+    </html>\`;
   },
 
   creative(data, exp, edu, sk, font, lineH, itemMargin, sectionMargin, padding, accent) {
     const esc = this.escape;
+    const format = this.formatText;
     const name = esc(data.full_name || 'Your Name');
     const contactParts = [data.email, data.phone, data.location].filter(Boolean);
-    const summary = esc(data.professional_summary || '');
-    const certifications = esc(data.certifications || '');
+    const summary = format(data.professional_summary || '', lineH, esc);
+    const certifications = format(data.certifications || '', lineH, esc);
 
     const expHTML = exp.filter(e => e.title || e.company).map(e => `
-        <div style="margin-bottom:${itemMargin};">
+        <div style="margin-bottom:${itemMargin}; page-break-inside: avoid;">
             <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
-                <strong style="font-size:13px;color:#1a1a2e;">${esc(e.title || 'Position')}</strong>
-                <span style="font-size:11px;color:#64748b;white-space:nowrap;margin-left:8px;">${esc(e.start || '')}${e.end ? ' – ' + esc(e.end) : ''}</span>
+                <h3 style="font-size:14px; margin:0; color:#0f172a; font-weight:700;">${esc(e.title || 'Position')}</h3>
+                <span style="font-size:11px;color:#64748b;white-space:nowrap;margin-left:8px;font-weight:600;">${esc(e.start || '')}${e.end ? ' – ' + esc(e.end) : ''}</span>
             </div>
-            <div style="font-size:12px;color:${accent};margin-bottom:4px;font-weight:600;">${esc(e.company || 'Company')}</div>
-            <div style="font-size:12px;color:#475569;line-height:${lineH};">${esc(e.description || '').replace(/\n/g, '<br>')}</div>
+            <h4 style="font-size:13px;color:${accent};margin:0 0 6px 0;font-weight:600;">${esc(e.company || 'Company')}</h4>
+            <div style="font-size:12px;color:#334155;">${format(e.description || '', lineH, esc)}</div>
         </div>
     `).join('');
 
     const eduHTML = edu.filter(e => e.degree || e.school).map(e => `
-        <div style="margin-bottom:12px;">
-            <strong style="font-size:12px;color:white;">${esc(e.degree || 'Degree')}</strong>
-            <div style="font-size:11px;color:#e2e8f0;margin-top:2px;">${esc(e.school || 'School')}${e.grade ? ' · ' + esc(e.grade) : ''} ${e.year ? '(' + esc(e.year) + ')' : ''}</div>
+        <div style="margin-bottom:14px; page-break-inside: avoid;">
+            <h3 style="font-size:13px; margin:0 0 4px 0; color:white; font-weight:700;">${esc(e.degree || 'Degree')}</h3>
+            <div style="font-size:11px;color:#e2e8f0;font-weight:500;line-height:1.4;">${esc(e.school || 'School')}${e.grade ? ' <span style="opacity:0.7;">•</span> ' + esc(e.grade) : ''} ${e.year ? '<br>(' + esc(e.year) + ')' : ''}</div>
         </div>
     `).join('');
 
     const skSidebar = sk.filter(s => s).map(s => 
-        `<div style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);border-radius:4px;padding:4px 8px;font-size:11px;margin-bottom:4px;display:inline-block;margin-right:4px;">${esc(s)}</div>`
+        `<div style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:6px;padding:5px 10px;font-size:11px;margin:0 6px 6px 0;display:inline-block;font-weight:500;">${esc(s)}</div>`
     ).join('');
 
-    return `<!DOCTYPE html>
-    <html>
+    return \`<!DOCTYPE html>
+    <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
-            .pdf-body { font-family: ${font}; margin: 0; padding: 0; color: #1a1a2e; background: white; -webkit-print-color-adjust: exact; }
-            .pdf-container { display: flex; min-height: 11in; margin: 0 auto; max-width: 8.5in; background: white; box-sizing: border-box; }
-            .sidebar { width: 220px; min-width: 220px; background: linear-gradient(165deg, #111111, ${accent}); color: white; padding: ${padding} 18px; box-sizing: border-box; }
-            .main { flex: 1; padding: ${padding} 24px; color: #1a1a2e; box-sizing: border-box; }
-            h1 { font-size: 19px; font-weight: 700; margin: 0 0 6px; line-height: 1.3; color: white; }
-            h2 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: ${accent}; margin: 0 0 10px; font-weight: 700; padding-bottom: 3px; border-bottom: 1.5px solid #e2e8f0; }
-            .section-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.85; margin-bottom: 8px; font-weight: 700; color: white; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 2px; }
+            *, *::before, *::after { box-sizing: border-box; }
+            .pdf-body { font-family: \${font}; margin: 0; padding: 0; color: #334155; background: white; -webkit-print-color-adjust: exact; }
+            .pdf-container { display: flex; min-height: 11in; margin: 0 auto; max-width: 8.5in; background: white; }
+            .sidebar { width: 230px; min-width: 230px; background: linear-gradient(165deg, #0f172a, \${accent}); color: white; padding: \${padding} 22px; }
+            .main { flex: 1; padding: \${padding} 32px; color: #334155; }
+            h1 { font-size: 24px; font-weight: 700; margin: 0 0 16px; line-height: 1.25; color: white; letter-spacing: -0.01em; }
+            h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: \${accent}; margin: 0 0 12px; font-weight: 700; padding-bottom: 4px; border-bottom: 2px solid #e2e8f0; }
+            .section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; margin: 0 0 12px 0; font-weight: 700; color: white; border-bottom: 1px solid rgba(255,255,255,0.25); padding-bottom: 4px; }
             .sidebar h2 { color: white; }
+            p, div, ul, li { margin: 0; padding: 0; }
         </style>
     </head>
     <body class="pdf-body">
         <div class="pdf-container">
-            <div class="sidebar">
-                <div style="margin-bottom:24px;">
-                    <h1>${name}</h1>
-                </div>
-                <div style="margin-bottom:20px;">
-                    <div class="section-label">Contact</div>
-                    ${contactParts.map(c => `<div style="font-size:11px;opacity:0.9;margin-bottom:5px;word-break:break-all;">${esc(c)}</div>`).join('')}
-                </div>
-                ${sk.length ? `<div style="margin-bottom:20px;"><div class="section-label">Skills</div><div style="margin-top:4px;">${skSidebar}</div></div>` : ''}
-                ${eduHTML ? `<div><div class="section-label">Education</div>${eduHTML}</div>` : ''}
-            </div>
-            <div class="main">
-                ${summary ? `<div style="margin-bottom:${sectionMargin};"><h2>About Me</h2><p style="font-size:12px;color:#475569;line-height:${lineH};margin:0;">${summary}</p></div>` : ''}
-                ${expHTML ? `<div style="margin-bottom:${sectionMargin};"><h2>Experience</h2>${expHTML}</div>` : ''}
-                ${certifications ? `<div><h2>Certifications</h2><p style="font-size:12px;color:#475569;line-height:${lineH};margin:0;">${certifications.replace(/\n/g, '<br>')}</p></div>` : ''}
-            </div>
+            <aside class="sidebar">
+                <header style="margin-bottom:32px;">
+                    <h1>\${name}</h1>
+                </header>
+                <section style="margin-bottom:28px;">
+                    <h2 class="section-label" style="border-bottom:1px solid rgba(255,255,255,0.25); margin-bottom:10px; padding-bottom:4px; font-size:10px;">Contact</h2>
+                    \${contactParts.map(c => \`<div style="font-size:11px;opacity:0.95;margin-bottom:6px;word-break:break-word;font-weight:500;">\${esc(c)}</div>\`).join('')}
+                </section>
+                \${sk.length ? \`<section style="margin-bottom:28px;"><h2 class="section-label" style="border-bottom:1px solid rgba(255,255,255,0.25); margin-bottom:12px; padding-bottom:4px; font-size:10px;">Skills</h2><div>\${skSidebar}</div></section>\` : ''}
+                \${eduHTML ? \`<section><h2 class="section-label" style="border-bottom:1px solid rgba(255,255,255,0.25); margin-bottom:12px; padding-bottom:4px; font-size:10px;">Education</h2>\${eduHTML}</section>\` : ''}
+            </aside>
+            <main class="main">
+                \${summary ? \`<section style="margin-bottom:\${sectionMargin};"><h2>About Me</h2><div style="font-size:12px;color:#334155;">\${summary}</div></section>\` : ''}
+                \${expHTML ? \`<section style="margin-bottom:\${sectionMargin};"><h2>Experience</h2>\${expHTML}</section>\` : ''}
+                \${certifications ? \`<section><h2>Certifications</h2><div style="font-size:12px;color:#334155;">\${certifications}</div></section>\` : ''}
+            </main>
         </div>
     </body>
-    </html>`;
+    </html>\`;
   }
 };
 
