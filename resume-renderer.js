@@ -41,6 +41,7 @@ const ResumeRenderer = {
     const exp = data.experience || [];
     const edu = data.education || [];
     const sk = data.skills || [];
+    const proj = data.projects || [];
     const font = data.font_family || 'Inter';
     const spacing = data.spacing || 'normal';
     const accent = data.accent_color || '#6366f1';
@@ -70,15 +71,15 @@ const ResumeRenderer = {
     else if (font === 'Outfit') fontStack = "'Outfit', sans-serif";
 
     if (templateName === 'classic') {
-      return this.classic(data, exp, edu, sk, fontStack, lineH, itemMargin, sectionMargin, padding, accent);
+      return this.classic(data, exp, edu, sk, proj, fontStack, lineH, itemMargin, sectionMargin, padding, accent);
     } else if (templateName === 'creative') {
-      return this.creative(data, exp, edu, sk, fontStack, lineH, itemMargin, sectionMargin, padding, accent);
+      return this.creative(data, exp, edu, sk, proj, fontStack, lineH, itemMargin, sectionMargin, padding, accent);
     } else {
-      return this.modern(data, exp, edu, sk, fontStack, lineH, itemMargin, sectionMargin, padding, accent);
+      return this.modern(data, exp, edu, sk, proj, fontStack, lineH, itemMargin, sectionMargin, padding, accent);
     }
   },
 
-  modern(data, exp, edu, sk, font, lineH, itemMargin, sectionMargin, padding, accent) {
+  modern(data, exp, edu, sk, proj, font, lineH, itemMargin, sectionMargin, padding, accent) {
     const esc = this.escape;
     const format = this.formatText;
     const name = esc(data.full_name || 'Your Name');
@@ -120,8 +121,25 @@ const ResumeRenderer = {
         </div>`;
     }).join('');
 
-    const skHTML = sk.filter(s => s).map(s => 
-        `<span style="display:inline-block;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.15);color:#1e293b;padding:4px 12px;border-radius:24px;font-size:11px;margin:4px 6px 4px 0;font-weight:500;">${esc(s)}</span>`
+    const projHTML = proj.map((p, i) => {
+        if (!p.name) return '';
+        return `
+        <div style="margin-bottom:${itemMargin}; page-break-inside: avoid;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
+                <h3 data-editable="proj-name-${i}" style="font-size:14px; margin:0; color:#0f172a; font-weight:700;">${esc(p.name || 'Project Name')}</h3>
+                <span data-editable="proj-dates-${i}" style="font-size:11px;color:#64748b;white-space:nowrap;margin-left:8px;font-weight:500;">${esc(p.dates || '')}</span>
+            </div>
+            <h4 style="font-size:13px;color:${accent};font-weight:600;margin:0 0 6px 0;">
+                <span data-editable="proj-role-${i}">${esc(p.role || '')}</span>
+                ${p.technologies ? `<span style="color:#64748b;font-weight:500;user-select:none;"> | </span><span data-editable="proj-tech-${i}" style="color:#64748b;font-weight:500;">${esc(p.technologies)}</span>` : ''}
+                ${p.link ? `<span style="color:#64748b;font-weight:500;user-select:none;"> | </span><span data-editable="proj-link-${i}" style="color:${accent};text-decoration:none;">${esc(p.link)}</span>` : ''}
+            </h4>
+            <div data-editable="proj-description-${i}" style="font-size:12px;color:#334155;outline:none;">${format(p.description || '', lineH, esc)}</div>
+        </div>`;
+    }).join('');
+
+    const skHTML = sk.map((s, i) => 
+        s ? `<span data-editable="skill-${i}" style="display:inline-block;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.15);color:#1e293b;padding:4px 12px;border-radius:24px;font-size:11px;margin:4px 6px 4px 0;font-weight:500;">${esc(s)}</span>` : ''
     ).join('');
 
     const h2Style = `font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:#0f172a;margin:0 0 12px;padding-left:10px;border-left:3px solid ${accent};font-weight:700;`;
@@ -144,23 +162,30 @@ const ResumeRenderer = {
         </style>
     </head>
     <body class="pdf-body">
+            .section { margin-bottom: ${sectionMargin}; }
+            h2 { ${h2Style} }
+            p, div, ul, li, h3, h4, span { outline: none; }
+        </style>
+    </head>
+    <body class="pdf-body">
         <div class="pdf-container">
             <header class="header">
-                <h1 data-editable="fullName">\${name}</h1>
-                <p class="contact">\${contactHTML}</p>
+                <h1 data-editable="fullName">${name}</h1>
+                <p class="contact">${contactHTML}</p>
             </header>
             
-            \${summary ? \`<section class="section"><h2>Professional Summary</h2><div data-editable="summary" style="font-size:12px;color:#334155;">\${summary}</div></section>\` : ''}
-            \${expHTML ? \`<section class="section"><h2>Work Experience</h2>\${expHTML}</section>\` : ''}
-            \${eduHTML ? \`<section class="section"><h2>Education</h2>\${eduHTML}</section>\` : ''}
-            \${skHTML ? \`<section class="section"><h2>Skills</h2><div style="margin-top: 6px;">\${skHTML}</div></section>\` : ''}
-            \${certifications ? \`<section class="section"><h2>Certifications</h2><div data-editable="certifications" style="font-size:12px;color:#334155;">\${certifications}</div></section>\` : ''}
+            ${summary ? `<section class="section"><h2>Professional Summary</h2><div data-editable="summary" style="font-size:12px;color:#334155;">${summary}</div></section>` : ''}
+            ${expHTML ? `<section class="section"><h2>Work Experience</h2>${expHTML}</section>` : ''}
+            ${eduHTML ? `<section class="section"><h2>Education</h2>${eduHTML}</section>` : ''}
+            ${projHTML ? `<section class="section"><h2>Projects</h2>${projHTML}</section>` : ''}
+            ${skHTML ? `<section class="section"><h2>Skills</h2><div style="margin-top: 6px;">${skHTML}</div></section>` : ''}
+            ${certifications ? `<section class="section"><h2>Certifications</h2><div data-editable="certifications" style="font-size:12px;color:#334155;">${certifications}</div></section>` : ''}
         </div>
     </body>
-    </html>\`;
+    </html>`;
   },
 
-  classic(data, exp, edu, sk, font, lineH, itemMargin, sectionMargin, padding, accent) {
+  classic(data, exp, edu, sk, proj, font, lineH, itemMargin, sectionMargin, padding, accent) {
     const esc = this.escape;
     const format = this.formatText;
     const name = esc(data.full_name || 'Your Name');
@@ -199,7 +224,24 @@ const ResumeRenderer = {
         </div>\`;
     }).join('');
 
-    const skText = sk.filter(s => s).map(esc).join(', ');
+    const projHTML = proj.map((p, i) => {
+        if (!p.name) return '';
+        return \`
+        <div style="margin-bottom:\${itemMargin}; page-break-inside: avoid;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                <h3 data-editable="proj-name-\${i}" style="font-size:14px; margin:0; color:#111111; font-weight:700;">\${esc(p.name || 'Project Name')}</h3>
+                <span data-editable="proj-dates-\${i}" style="font-size:11px;color:#555555;font-weight:600;">\${esc(p.dates || '')}</span>
+            </div>
+            <h4 style="font-size:13px; margin:2px 0 6px 0; font-style:italic;color:#444444;font-weight:500;">
+                <span data-editable="proj-role-\${i}">\${esc(p.role || '')}</span>
+                \${p.technologies ? \`<span style="user-select:none;"> · </span><span data-editable="proj-tech-\${i}">\${esc(p.technologies)}</span>\` : ''}
+                \${p.link ? \`<span style="user-select:none;"> · </span><span data-editable="proj-link-\${i}">\${esc(p.link)}</span>\` : ''}
+            </h4>
+            <div data-editable="proj-description-\${i}" style="font-size:12px;color:#333333;outline:none;">\${format(p.description || '', lineH, esc)}</div>
+        </div>\`;
+    }).join('');
+
+    const skText = sk.map((s, i) => s ? \`<span data-editable="skill-\${i}">\${esc(s)}</span>\` : '').filter(s => s).join(', ');
     const h2Style = \`font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:#111111;margin:0 0 10px;padding-bottom:4px;border-bottom:1px solid \${accent};font-weight:700;\`;
 
     return \`<!DOCTYPE html>
@@ -226,17 +268,18 @@ const ResumeRenderer = {
                 <p class="contact">\${contactHTML}</p>
             </header>
             
-            \${summary ? \`<section class="section"><h2>Summary</h2><div data-editable="summary" style="font-size:12px;color:#333333;">\${summary}</div></section>\` : ''}
-            \${expHTML ? \`<section class="section"><h2>Experience</h2>\${expHTML}</section>\` : ''}
-            \${eduHTML ? \`<section class="section"><h2>Education</h2>\${eduHTML}</section>\` : ''}
-            \${skText ? \`<section class="section"><h2>Skills</h2><div style="font-size:12px;color:#333333;line-height:\${lineH};">\${skText}</div></section>\` : ''}
-            \${certifications ? \`<section class="section"><h2>Certifications</h2><div data-editable="certifications" style="font-size:12px;color:#333333;">\${certifications}</div></section>\` : ''}
+            ${summary ? `<section class="section"><h2>Summary</h2><div data-editable="summary" style="font-size:12px;color:#333333;">${summary}</div></section>` : ''}
+            ${expHTML ? `<section class="section"><h2>Experience</h2>${expHTML}</section>` : ''}
+            ${eduHTML ? `<section class="section"><h2>Education</h2>${eduHTML}</section>` : ''}
+            ${projHTML ? `<section class="section"><h2>Projects</h2>${projHTML}</section>` : ''}
+            ${skText ? `<section class="section"><h2>Skills</h2><div style="font-size:12px;color:#333333;line-height:${lineH};">${skText}</div></section>` : ''}
+            ${certifications ? `<section class="section"><h2>Certifications</h2><div data-editable="certifications" style="font-size:12px;color:#333333;">${certifications}</div></section>` : ''}
         </div>
     </body>
     </html>\`;
   },
 
-  creative(data, exp, edu, sk, font, lineH, itemMargin, sectionMargin, padding, accent) {
+  creative(data, exp, edu, sk, proj, font, lineH, itemMargin, sectionMargin, padding, accent) {
     const esc = this.escape;
     const format = this.formatText;
     const name = esc(data.full_name || 'Your Name');
@@ -272,8 +315,25 @@ const ResumeRenderer = {
         </div>\`;
     }).join('');
 
-    const skSidebar = sk.filter(s => s).map(s => 
-        `<div style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:6px;padding:5px 10px;font-size:11px;margin:0 6px 6px 0;display:inline-block;font-weight:500;">${esc(s)}</div>`
+    const projHTML = proj.map((p, i) => {
+        if (!p.name) return '';
+        return \`
+        <div style="margin-bottom:\${itemMargin}; page-break-inside: avoid;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
+                <h3 data-editable="proj-name-\${i}" style="font-size:14px; margin:0; color:#0f172a; font-weight:700;">\${esc(p.name || 'Project Name')}</h3>
+                <span data-editable="proj-dates-\${i}" style="font-size:11px;color:#64748b;white-space:nowrap;margin-left:8px;font-weight:600;">\${esc(p.dates || '')}</span>
+            </div>
+            <h4 style="font-size:13px;color:\${accent};margin:0 0 6px 0;font-weight:600;">
+                <span data-editable="proj-role-\${i}">\${esc(p.role || '')}</span>
+                \${p.technologies ? \`<span style="user-select:none;color:#64748b;"> | </span><span data-editable="proj-tech-\${i}" style="color:#64748b;">\${esc(p.technologies)}</span>\` : ''}
+                \${p.link ? \`<span style="user-select:none;color:#64748b;"> | </span><span data-editable="proj-link-\${i}" style="color:\${accent};">\${esc(p.link)}</span>\` : ''}
+            </h4>
+            <div data-editable="proj-description-\${i}" style="font-size:12px;color:#334155;outline:none;">\${format(p.description || '', lineH, esc)}</div>
+        </div>\`;
+    }).join('');
+
+    const skSidebar = sk.map((s, i) => 
+        s ? \`<div data-editable="skill-\${i}" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:6px;padding:5px 10px;font-size:11px;margin:0 6px 6px 0;display:inline-block;font-weight:500;">\${esc(s)}</div>\` : ''
     ).join('');
 
     return \`<!DOCTYPE html>
@@ -308,9 +368,10 @@ const ResumeRenderer = {
                 \${eduHTML ? \`<section><h2 class="section-label" style="border-bottom:1px solid rgba(255,255,255,0.25); margin-bottom:12px; padding-bottom:4px; font-size:10px;">Education</h2>\${eduHTML}</section>\` : ''}
             </aside>
             <main class="main">
-                \${summary ? \`<section style="margin-bottom:\${sectionMargin};"><h2>About Me</h2><div data-editable="summary" style="font-size:12px;color:#334155;">\${summary}</div></section>\` : ''}
-                \${expHTML ? \`<section style="margin-bottom:\${sectionMargin};"><h2>Experience</h2>\${expHTML}</section>\` : ''}
-                \${certifications ? \`<section><h2>Certifications</h2><div data-editable="certifications" style="font-size:12px;color:#334155;">\${certifications}</div></section>\` : ''}
+                ${summary ? `<section style="margin-bottom:${sectionMargin};"><h2>About Me</h2><div data-editable="summary" style="font-size:12px;color:#334155;">${summary}</div></section>` : ''}
+                ${expHTML ? `<section style="margin-bottom:${sectionMargin};"><h2>Experience</h2>${expHTML}</section>` : ''}
+                ${projHTML ? `<section style="margin-bottom:${sectionMargin};"><h2>Projects</h2>${projHTML}</section>` : ''}
+                ${certifications ? `<section><h2>Certifications</h2><div data-editable="certifications" style="font-size:12px;color:#334155;">${certifications}</div></section>` : ''}
             </main>
         </div>
     </body>

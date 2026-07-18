@@ -13,6 +13,7 @@
     let skills = [];
     let expCount = 0;
     let eduCount = 0;
+    let projCount = 0;
     let shareViewMap = {};
     let currentAISuggestion = '';
     let currentAISection = '';
@@ -26,6 +27,7 @@
         professional_summary: '',
         experience: [],
         education: [],
+        projects: [],
         skills: [],
         certifications: '',
         template_name: 'modern',
@@ -74,6 +76,20 @@
             });
         });
 
+        // Projects
+        resumeState.projects = [];
+        document.querySelectorAll('#projectsContainer .entry-card').forEach(card => {
+            const id = card.id.replace('proj-', '');
+            resumeState.projects.push({
+                name: document.getElementById(`projName-${id}`)?.value.trim() || '',
+                role: document.getElementById(`projRole-${id}`)?.value.trim() || '',
+                dates: document.getElementById(`projDates-${id}`)?.value.trim() || '',
+                technologies: document.getElementById(`projTech-${id}`)?.value.trim() || '',
+                link: document.getElementById(`projLink-${id}`)?.value.trim() || '',
+                description: document.getElementById(`projDesc-${id}`)?.value.trim() || ''
+            });
+        });
+
         resumeState.skills = [...skills];
     }
 
@@ -86,6 +102,7 @@
             professional_summary: data.professional_summary || '',
             experience: data.experience || [],
             education: data.education || [],
+            projects: data.projects || [],
             skills: data.skills || [],
             certifications: data.certifications || '',
             template_name: data.template_name || 'modern',
@@ -130,6 +147,15 @@
             resumeState.education.forEach(edu => addEducation(edu));
         } else {
             addEducation();
+        }
+
+        const projContainer = document.getElementById('projectsContainer');
+        projContainer.innerHTML = '';
+        projCount = 0;
+        if (resumeState.projects && resumeState.projects.length > 0) {
+            resumeState.projects.forEach(proj => addProject(proj));
+        } else {
+            addProject();
         }
 
         skills = [...resumeState.skills];
@@ -293,11 +319,12 @@
         const style = doc.createElement('style');
         style.id = 'sync-styles';
         style.textContent = `
-            [data-editable] { cursor: text !important; transition: all 0.2s ease; border-radius: 3px; }
+            /* All editable elements get hover styling and pointer */
+            [data-editable] { cursor: text !important; position: relative; transition: all 0.2s ease; border-radius: 3px; }
             [data-editable]:hover { background: rgba(99, 102, 241, 0.05); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15); }
             
-            [data-editable="summary"] { position: relative; }
-            [data-editable="summary"]::after {
+            /* Tooltip on hover */
+            [data-editable]::after {
                 content: '✏ Double-click to edit';
                 position: absolute;
                 bottom: calc(100% + 4px);
@@ -317,14 +344,14 @@
                 box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
                 font-family: system-ui, -apple-system, sans-serif;
             }
-            [data-editable="summary"]:hover::after {
+            [data-editable]:hover::after {
                 opacity: 1;
                 transform: translateX(-50%) translateY(0);
             }
-            [data-editable="summary"].is-editing::after {
+            [data-editable].is-editing::after {
                 display: none !important;
             }
-            [data-editable="summary"].is-editing {
+            [data-editable].is-editing {
                 background: #ffffff !important;
                 box-shadow: 0 0 0 2px #6366f1 !important;
                 outline: none !important;
@@ -337,9 +364,9 @@
         `;
         doc.head.appendChild(style);
 
-        // --- INLINE EDITING LOGIC (Professional Summary Only) ---
+        // --- INLINE EDITING LOGIC (All Core Sections) ---
         doc.body.addEventListener('dblclick', (e) => {
-            const target = e.target.closest('[data-editable="summary"]');
+            const target = e.target.closest('[data-editable]');
             if (!target) return;
             
             e.preventDefault();
@@ -352,10 +379,43 @@
             const originalHtml = target.innerHTML;
             const originalText = target.innerText || target.textContent;
             
+            const fId = target.getAttribute('data-editable');
+            let formInput = null;
+            let isSkill = false;
+            let skillIdx = -1;
+            
+            if (fId.startsWith('skill-')) {
+                isSkill = true;
+                skillIdx = parseInt(fId.split('-')[1], 10);
+            } else {
+                if (fId === 'fullName') formInput = document.getElementById('fullName');
+                else if (['email', 'phone', 'location'].includes(fId)) formInput = document.getElementById(fId);
+                else if (fId === 'summary') formInput = document.getElementById('summary');
+                else if (fId === 'certifications') formInput = document.getElementById('certifications');
+                else if (fId.startsWith('exp-')) {
+                    const parts = fId.split('-');
+                    const idx = parseInt(parts[2], 10);
+                    const cards = document.querySelectorAll('#experienceContainer .entry-card');
+                    if (cards[idx]) formInput = document.getElementById('exp' + parts[1].charAt(0).toUpperCase() + parts[1].slice(1) + '-' + cards[idx].id.replace('exp-', ''));
+                }
+                else if (fId.startsWith('edu-')) {
+                    const parts = fId.split('-');
+                    const idx = parseInt(parts[2], 10);
+                    const cards = document.querySelectorAll('#educationContainer .entry-card');
+                    if (cards[idx]) formInput = document.getElementById('edu' + parts[1].charAt(0).toUpperCase() + parts[1].slice(1) + '-' + cards[idx].id.replace('edu-', ''));
+                }
+                else if (fId.startsWith('proj-')) {
+                    const parts = fId.split('-');
+                    const idx = parseInt(parts[2], 10);
+                    const cards = document.querySelectorAll('#projectsContainer .entry-card');
+                    if (cards[idx]) formInput = document.getElementById('proj' + parts[1].charAt(0).toUpperCase() + parts[1].slice(1) + '-' + cards[idx].id.replace('proj-', ''));
+                }
+            }
+            
             target.contentEditable = "true";
             target.focus();
             
-            // Place cursor near click if possible
+            // Place cursor near click
             const sel = doc.defaultView.getSelection();
             let range = null;
             try {
@@ -382,11 +442,31 @@
                 sel.addRange(r);
             }
             
-            const formInput = document.getElementById('summary');
-            
+            function htmlToMarkdown(node) {
+                let text = '';
+                node.childNodes.forEach(child => {
+                    if (child.nodeType === 3) text += child.textContent;
+                    else if (child.nodeType === 1) {
+                        if (child.tagName === 'BR') text += '\\n';
+                        else if (child.tagName === 'LI') text += '\\n- ' + htmlToMarkdown(child);
+                        else if (child.tagName === 'UL') text += htmlToMarkdown(child);
+                        else if (child.tagName === 'DIV' || child.tagName === 'P') text += '\\n' + htmlToMarkdown(child);
+                        else text += htmlToMarkdown(child);
+                    }
+                });
+                return text.replace(/^\\n+/, ''); // trim leading newlines due to first div
+            }
+
             const handleInput = () => {
-                if (formInput) {
-                    formInput.value = target.innerText || target.textContent;
+                if (isSkill) {
+                    skills[skillIdx] = (target.innerText || target.textContent).trim();
+                } else if (formInput) {
+                    // For multi-line textareas (description, summary), parse HTML to retain bullet points!
+                    if (formInput.tagName === 'TEXTAREA' && (fId.includes('description') || fId === 'summary')) {
+                        formInput.value = htmlToMarkdown(target).trim();
+                    } else {
+                        formInput.value = (target.innerText || target.textContent).trim();
+                    }
                     formInput.dispatchEvent(new Event('input', { bubbles: true }));
                 }
             };
@@ -401,10 +481,20 @@
                 
                 if (!save) {
                     target.innerHTML = originalHtml;
-                    if (formInput) {
+                    if (isSkill) {
+                        skills[skillIdx] = originalText.trim();
+                    } else if (formInput) {
                         formInput.value = originalText;
                         formInput.dispatchEvent(new Event('input', { bubbles: true }));
                     }
+                } else {
+                    if (isSkill && !(target.innerText || target.textContent).trim()) {
+                        skills.splice(skillIdx, 1);
+                    }
+                }
+                
+                if (isSkill) {
+                    renderSkills();
                 }
                 
                 window.isInlineEditing = false;
@@ -417,7 +507,8 @@
                 if (ke.key === 'Escape') {
                     ke.preventDefault();
                     finishEditing(false);
-                } else if (ke.key === 'Enter' && !ke.shiftKey) {
+                } else if (ke.key === 'Enter' && !ke.shiftKey && !fId.includes('description') && fId !== 'summary') {
+                    // Only blur on enter if it's not a multiline textarea (allow multiline enter)
                     ke.preventDefault();
                     target.blur();
                 }
@@ -457,6 +548,17 @@
                     const idx = parseInt(parts[2], 10);
                     const cards = document.querySelectorAll('#educationContainer .entry-card');
                     if (cards[idx]) focusInputId = 'edu' + parts[1].charAt(0).toUpperCase() + parts[1].slice(1) + '-' + cards[idx].id.replace('edu-', '');
+                }
+                else if (fId.startsWith('proj-')) {
+                    sectionId = 'projects';
+                    const parts = fId.split('-');
+                    const idx = parseInt(parts[2], 10);
+                    const cards = document.querySelectorAll('#projectsContainer .entry-card');
+                    if (cards[idx]) focusInputId = 'proj' + parts[1].charAt(0).toUpperCase() + parts[1].slice(1) + '-' + cards[idx].id.replace('proj-', '');
+                }
+                else if (fId.startsWith('skill-')) {
+                    sectionId = 'skills';
+                    focusInputId = 'skillInput';
                 }
             }
             // Fallback for non-editable areas
@@ -621,6 +723,7 @@
 
         addExperience();
         addEducation();
+        addProject();
         await loadResumes();
         updatePreview();
     }
@@ -814,6 +917,56 @@
         });
     }
 
+    // ── Dynamic Projects ──
+    function addProject(data) {
+        projCount++;
+        const idx = projCount;
+        const container = document.getElementById('projectsContainer');
+        if (!container) return;
+        const div = document.createElement('div');
+        div.className = 'entry-card';
+        div.id = `proj-${idx}`;
+        div.innerHTML = `
+            <button type="button" class="remove-btn" onclick="removeEntry('proj-${idx}')">Remove</button>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Project Name</label>
+                    <input type="text" id="projName-${idx}" placeholder="e.g. CareerCraft AI" value="${escapeHtml(data?.name || '')}">
+                </div>
+                <div class="form-group">
+                    <label>Role / Position</label>
+                    <input type="text" id="projRole-${idx}" placeholder="e.g. Lead Developer" value="${escapeHtml(data?.role || '')}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Technologies Used</label>
+                    <input type="text" id="projTech-${idx}" placeholder="e.g. React, Node.js" value="${escapeHtml(data?.technologies || '')}">
+                </div>
+                <div class="form-group">
+                    <label>Dates</label>
+                    <input type="text" id="projDates-${idx}" placeholder="e.g. Jan 2023 - Present" value="${escapeHtml(data?.dates || '')}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Link / URL</label>
+                    <input type="text" id="projLink-${idx}" placeholder="e.g. https://github.com/..." value="${escapeHtml(data?.link || '')}">
+                </div>
+            </div>
+            <div class="form-group">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                    <label style="margin-bottom:0;">Description</label>
+                </div>
+                <textarea id="projDesc-${idx}" placeholder="Describe the project...">${escapeHtml(data?.description || '')}</textarea>
+            </div>`;
+        container.appendChild(div);
+
+        div.querySelectorAll('input, textarea').forEach(el => {
+            el.addEventListener('input', updatePreview);
+        });
+    }
+
     function removeEntry(id) {
         const el = document.getElementById(id);
         if (el) el.remove();
@@ -889,6 +1042,7 @@
             professional_summary: resumeState.professional_summary,
             experience: resumeState.experience,
             education: resumeState.education,
+            projects: resumeState.projects,
             skills: resumeState.skills,
             certifications: resumeState.certifications,
             template_name: resumeState.template_name,
@@ -1041,8 +1195,10 @@
         document.getElementById('resumeForm').reset();
         document.getElementById('experienceContainer').innerHTML = '';
         document.getElementById('educationContainer').innerHTML = '';
+        document.getElementById('projectsContainer').innerHTML = '';
         expCount = 0;
         eduCount = 0;
+        projCount = 0;
         skills = [];
         
         resumeState = {
@@ -1053,6 +1209,7 @@
             professional_summary: '',
             experience: [],
             education: [],
+            projects: [],
             skills: [],
             certifications: '',
             template_name: 'modern',
@@ -1072,6 +1229,7 @@
 
         addExperience();
         addEducation();
+        addProject();
         renderSkills();
         
         document.getElementById('fullName')?.classList.remove('invalid');
@@ -1896,6 +2054,7 @@
     window.setAccentColor = setAccentColor;
     window.addExperience = () => addExperience();
     window.addEducation = () => addEducation();
+    window.addProject = () => addProject();
     window.cancelEdit = cancelEdit;
     window.applyCustomization = applyCustomization;
     window.triggerAIGeneration = triggerAIGeneration;
