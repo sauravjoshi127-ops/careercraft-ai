@@ -361,8 +361,280 @@
             .section:hover { background: rgba(0,0,0,0.015); box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
             header { transition: all 0.25s ease; border-radius: 8px; padding: 8px; margin-left: -8px; margin-right: -8px; }
             .highlight-active { background-color: rgba(99, 102, 241, 0.06) !important; outline: 2px solid rgba(99, 102, 241, 0.4) !important; border-radius: 6px; }
+            
+            .draggable-entry { cursor: grab !important; }
+            .draggable-entry:active { cursor: grabbing !important; }
+            .draggable-entry.dragging { opacity: 0.4; }
+            .highlight-entry { transition: all 0.2s ease; border-radius: 4px; }
+            .highlight-entry:hover { outline: 1px dashed rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.02); }
+            
+            #floating-toolbar { display:none; position:absolute; z-index:9999; }
+            #floating-toolbar.visible { display:flex; flex-direction:column; }
+            .tb-btn { background:transparent; border:none; color:white; padding:4px 8px; cursor:pointer; font-size:12px; border-radius:4px; }
+            .tb-btn:hover { background:rgba(255,255,255,0.2); }
+            .tb-menu-item { background:transparent; border:none; color:white; padding:6px 10px; cursor:pointer; font-size:11px; text-align:left; border-radius:4px; }
+            .tb-menu-item:hover { background:rgba(255,255,255,0.2); }
+            
+            .add-section-btn { display:block; margin: 10px auto; padding: 4px 12px; background: rgba(99,102,241,0.1); color: #6366f1; border: 1px dashed #6366f1; border-radius: 12px; font-size: 11px; font-weight: 600; cursor: pointer; opacity: 0; transition: opacity 0.2s; }
+            .section:hover .add-section-btn { opacity: 1; }
+            .add-section-btn:hover { background: rgba(99,102,241,0.2); }
+            
+            .ai-diff-panel { margin-top: 8px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc; font-family: -apple-system, sans-serif; }
+            .ai-diff-old { text-decoration: line-through; color: #ef4444; font-size: 11px; margin-bottom: 6px; }
+            .ai-diff-new { color: #10b981; font-size: 12px; margin-bottom: 12px; font-weight: 500; }
+            .ai-diff-actions { display: flex; gap: 8px; }
+            .ai-btn { padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; border: none; }
+            .ai-btn-accept { background: #6366f1; color: white; }
+            .ai-btn-reject { background: #e2e8f0; color: #475569; }
         `;
         doc.head.appendChild(style);
+
+        // --- INJECT FLOATING TOOLBAR ---
+        const toolbar = doc.createElement('div');
+        toolbar.id = 'floating-toolbar';
+        toolbar.innerHTML = `
+            <div style="display:flex;gap:4px;background:#1e293b;padding:4px;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+                <button class="tb-btn" data-action="edit" title="Edit">✏</button>
+                <button class="tb-btn" data-action="ai" title="AI Actions">✨</button>
+                <div class="tb-divider" style="width:1px;background:rgba(255,255,255,0.1);margin:2px;"></div>
+                <button class="tb-btn tb-entry-only" data-action="up" title="Move Up">↑</button>
+                <button class="tb-btn tb-entry-only" data-action="down" title="Move Down">↓</button>
+                <button class="tb-btn tb-entry-only" data-action="delete" title="Delete">🗑</button>
+            </div>
+            <div id="ai-menu" style="display:none;position:absolute;top:100%;left:0;margin-top:4px;background:#1e293b;border-radius:6px;padding:4px;flex-direction:column;min-width:160px;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+                <button class="tb-menu-item" data-prompt="improve">✨ Improve Writing</button>
+                <button class="tb-menu-item" data-prompt="optimize">🎯 ATS Optimize</button>
+                <button class="tb-menu-item" data-prompt="rewrite">✍ Rewrite Professionally</button>
+                <button class="tb-menu-item" data-prompt="shorten">✂ Shorten</button>
+                <button class="tb-menu-item" data-prompt="expand">📝 Expand</button>
+                <button class="tb-menu-item" data-prompt="grammar">✔ Fix Grammar</button>
+                <button class="tb-menu-item" data-prompt="impact">🚀 Make More Impactful</button>
+            </div>
+        `;
+        doc.body.appendChild(toolbar);
+
+        let activeToolbarTarget = null;
+        let activeToolbarEntry = null;
+        
+        doc.body.addEventListener('mousemove', (e) => {
+            if (window.isInlineEditing) return;
+            const editable = e.target.closest('[data-editable]');
+            const entry = e.target.closest('.draggable-entry');
+            const target = editable || entry;
+            
+            if (target && !toolbar.contains(e.target)) {
+                activeToolbarTarget = editable;
+                activeToolbarEntry = entry;
+                
+                const rect = (entry || editable).getBoundingClientRect();
+                toolbar.classList.add('visible');
+                
+                // Position above the element if there's space, else below
+                let topPos = rect.top + doc.defaultView.scrollY - 36;
+                if (topPos < 0) topPos = rect.bottom + doc.defaultView.scrollY + 8;
+                
+                toolbar.style.top = topPos + 'px';
+                toolbar.style.left = Math.max(8, rect.left + doc.defaultView.scrollX) + 'px';
+                
+                toolbar.querySelectorAll('.tb-entry-only').forEach(btn => {
+                    btn.style.display = entry ? 'block' : 'none';
+                });
+                toolbar.querySelector('.tb-divider').style.display = entry ? 'block' : 'none';
+                doc.getElementById('ai-menu').style.display = 'none'; // reset menu
+            }
+        });
+        
+        doc.body.addEventListener('mouseleave', (e) => {
+            if (!toolbar.contains(e.relatedTarget)) {
+                toolbar.classList.remove('visible');
+                doc.getElementById('ai-menu').style.display = 'none';
+            }
+        }, true);
+        
+        toolbar.addEventListener('mouseleave', () => {
+            toolbar.classList.remove('visible');
+            doc.getElementById('ai-menu').style.display = 'none';
+        });
+
+        // Toolbar Actions
+        toolbar.addEventListener('click', (e) => {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            
+            const action = btn.getAttribute('data-action');
+            if (action === 'edit') {
+                if (activeToolbarTarget) {
+                    const dblclickEvent = new MouseEvent('dblclick', { bubbles: true, cancelable: true });
+                    activeToolbarTarget.dispatchEvent(dblclickEvent);
+                }
+                toolbar.classList.remove('visible');
+            } else if (action === 'ai') {
+                const menu = doc.getElementById('ai-menu');
+                menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+            } else if (action === 'delete' && activeToolbarEntry) {
+                const type = activeToolbarEntry.getAttribute('data-dnd-type');
+                const idx = parseInt(activeToolbarEntry.getAttribute('data-dnd-index'), 10);
+                if (type === 'experience') resumeState.experience.splice(idx, 1);
+                if (type === 'education') resumeState.education.splice(idx, 1);
+                if (type === 'projects') resumeState.projects.splice(idx, 1);
+                if (type === 'skills') skills.splice(idx, 1);
+                syncUIFromState(resumeState); // sync form
+                updatePreview();
+                toolbar.classList.remove('visible');
+            } else if ((action === 'up' || action === 'down') && activeToolbarEntry) {
+                const type = activeToolbarEntry.getAttribute('data-dnd-type');
+                const idx = parseInt(activeToolbarEntry.getAttribute('data-dnd-index'), 10);
+                const arr = type === 'experience' ? resumeState.experience : type === 'education' ? resumeState.education : type === 'projects' ? resumeState.projects : type === 'skills' ? skills : null;
+                if (!arr) return;
+                
+                const newIdx = action === 'up' ? idx - 1 : idx + 1;
+                if (newIdx >= 0 && newIdx < arr.length) {
+                    const temp = arr[idx];
+                    arr[idx] = arr[newIdx];
+                    arr[newIdx] = temp;
+                    syncUIFromState(resumeState);
+                    updatePreview();
+                }
+            } else if (btn.classList.contains('tb-menu-item')) {
+                // AI Prompt selected
+                const promptType = btn.getAttribute('data-prompt');
+                if (!activeToolbarTarget) return;
+                
+                const originalText = activeToolbarTarget.innerText || activeToolbarTarget.textContent;
+                toolbar.classList.remove('visible');
+                doc.getElementById('ai-menu').style.display = 'none';
+                
+                // Show loading
+                const loadingHtml = `<div style="font-size:11px;color:#6366f1;font-weight:600;display:flex;align-items:center;gap:4px;">✨ Generating...</div>`;
+                const tempDiv = doc.createElement('div');
+                tempDiv.innerHTML = loadingHtml;
+                activeToolbarTarget.parentNode.insertBefore(tempDiv, activeToolbarTarget.nextSibling);
+                
+                // Simulate AI generation (Fallback for mock)
+                setTimeout(() => {
+                    tempDiv.remove();
+                    const newText = `AI generated content for "${promptType}" on: ${originalText.substring(0,20)}...`;
+                    
+                    const panel = doc.createElement('div');
+                    panel.className = 'ai-diff-panel';
+                    panel.innerHTML = `
+                        <div class="ai-diff-old">${originalText}</div>
+                        <div class="ai-diff-new">${newText}</div>
+                        <div class="ai-diff-actions">
+                            <button class="ai-btn ai-btn-accept">Accept</button>
+                            <button class="ai-btn ai-btn-reject">Reject</button>
+                        </div>
+                    `;
+                    activeToolbarTarget.style.display = 'none';
+                    activeToolbarTarget.parentNode.insertBefore(panel, activeToolbarTarget.nextSibling);
+                    
+                    panel.querySelector('.ai-btn-accept').addEventListener('click', () => {
+                        activeToolbarTarget.style.display = '';
+                        activeToolbarTarget.innerText = newText;
+                        
+                        // force sync
+                        const dblEv = new MouseEvent('dblclick', { bubbles: true });
+                        activeToolbarTarget.dispatchEvent(dblEv);
+                        setTimeout(() => {
+                            if(doc.activeElement) doc.activeElement.blur();
+                        }, 50);
+                        
+                        panel.remove();
+                    });
+                    
+                    panel.querySelector('.ai-btn-reject').addEventListener('click', () => {
+                        activeToolbarTarget.style.display = '';
+                        panel.remove();
+                    });
+                }, 800);
+            }
+        });
+
+        // --- DRAG AND DROP ENGINE ---
+        let dragSource = null;
+        
+        doc.body.addEventListener('dragstart', (e) => {
+            const entry = e.target.closest('.draggable-entry');
+            if (!entry) return;
+            dragSource = entry;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', ''); // Firefox compat
+            setTimeout(() => entry.classList.add('dragging'), 0);
+        });
+        
+        doc.body.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const entry = e.target.closest('.draggable-entry');
+            if (!entry || entry === dragSource) return;
+            if (entry.getAttribute('data-dnd-type') !== dragSource.getAttribute('data-dnd-type')) return;
+            
+            const rect = entry.getBoundingClientRect();
+            const midY = rect.top + rect.height / 2;
+            if (e.clientY < midY) {
+                entry.parentNode.insertBefore(dragSource, entry);
+            } else {
+                entry.parentNode.insertBefore(dragSource, entry.nextSibling);
+            }
+        });
+        
+        doc.body.addEventListener('dragend', (e) => {
+            if (!dragSource) return;
+            dragSource.classList.remove('dragging');
+            
+            // Recompute state array based on new DOM order
+            const type = dragSource.getAttribute('data-dnd-type');
+            const arr = type === 'experience' ? resumeState.experience : type === 'education' ? resumeState.education : type === 'projects' ? resumeState.projects : type === 'skills' ? skills : null;
+            if (!arr) return;
+            
+            const container = dragSource.parentNode;
+            const newOrder = Array.from(container.querySelectorAll('.draggable-entry[data-dnd-type="' + type + '"]'))
+                                .map(el => parseInt(el.getAttribute('data-dnd-index'), 10));
+            
+            const newArr = newOrder.map(idx => arr[idx]);
+            
+            if (type === 'experience') resumeState.experience = newArr;
+            if (type === 'education') resumeState.education = newArr;
+            if (type === 'projects') resumeState.projects = newArr;
+            if (type === 'skills') {
+                skills.length = 0;
+                skills.push(...newArr);
+            }
+            
+            dragSource = null;
+            syncUIFromState(resumeState);
+            updatePreview();
+        });
+        
+        // --- ADD SECTION SHORTCUTS ---
+        setTimeout(() => {
+            const injectAddBtn = (sectionName, actionName) => {
+                const h2s = Array.from(doc.querySelectorAll('h2'));
+                const h2 = h2s.find(el => el.textContent.toLowerCase().includes(sectionName));
+                if (h2) {
+                    const section = h2.closest('.section') || h2.closest('section');
+                    if (section && !section.querySelector('.add-section-btn')) {
+                        const btn = doc.createElement('button');
+                        btn.className = 'add-section-btn';
+                        btn.textContent = '+ Add ' + (sectionName === 'experience' ? 'Experience' : sectionName === 'projects' ? 'Project' : 'Education');
+                        btn.onclick = () => {
+                            if(actionName === 'addExperience') window.parent.addExperience();
+                            if(actionName === 'addEducation') window.parent.addEducation();
+                            if(actionName === 'addProject') window.parent.addProject();
+                            // Scroll form container to bottom
+                            const formPanel = window.parent.document.querySelector('.form-panel');
+                            if (formPanel) {
+                                setTimeout(() => formPanel.scrollTo({ top: formPanel.scrollHeight, behavior: 'smooth' }), 50);
+                            }
+                        };
+                        section.appendChild(btn);
+                    }
+                }
+            };
+            injectAddBtn('experience', 'addExperience');
+            injectAddBtn('education', 'addEducation');
+            injectAddBtn('projects', 'addProject');
+        }, 100);
+
 
         // --- INLINE EDITING LOGIC (All Core Sections) ---
         doc.body.addEventListener('dblclick', (e) => {
