@@ -295,6 +295,41 @@
         style.textContent = `
             [data-editable] { cursor: text !important; transition: all 0.2s ease; border-radius: 3px; }
             [data-editable]:hover { background: rgba(99, 102, 241, 0.05); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15); }
+            
+            [data-editable="summary"] { position: relative; }
+            [data-editable="summary"]::after {
+                content: '✏ Double-click to edit';
+                position: absolute;
+                bottom: calc(100% + 4px);
+                left: 50%;
+                transform: translateX(-50%) translateY(4px);
+                background: #1e293b;
+                color: #fff;
+                font-size: 11px;
+                font-weight: 500;
+                padding: 4px 8px;
+                border-radius: 4px;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.15s ease, transform 0.15s ease;
+                white-space: nowrap;
+                z-index: 10;
+                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+                font-family: system-ui, -apple-system, sans-serif;
+            }
+            [data-editable="summary"]:hover::after {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+            [data-editable="summary"].is-editing::after {
+                display: none !important;
+            }
+            [data-editable="summary"].is-editing {
+                background: #ffffff !important;
+                box-shadow: 0 0 0 2px #6366f1 !important;
+                outline: none !important;
+            }
+
             .section { transition: all 0.25s ease; border-radius: 8px; padding: 8px; margin-left: -8px; margin-right: -8px; }
             .section:hover { background: rgba(0,0,0,0.015); box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
             header { transition: all 0.25s ease; border-radius: 8px; padding: 8px; margin-left: -8px; margin-right: -8px; }
@@ -302,8 +337,96 @@
         `;
         doc.head.appendChild(style);
 
-        // --- INLINE EDITING LOGIC DISABLED ---
-        // Requirement: Do NOT implement inline editing yet. Keep the preview read-only.
+        // --- INLINE EDITING LOGIC (Professional Summary Only) ---
+        doc.body.addEventListener('dblclick', (e) => {
+            const target = e.target.closest('[data-editable="summary"]');
+            if (!target) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (window.isInlineEditing) return;
+            window.isInlineEditing = true;
+            
+            target.classList.add('is-editing');
+            const originalHtml = target.innerHTML;
+            const originalText = target.innerText || target.textContent;
+            
+            target.contentEditable = "true";
+            target.focus();
+            
+            // Place cursor near click if possible
+            const sel = doc.defaultView.getSelection();
+            let range = null;
+            try {
+                if (doc.caretPositionFromPoint) {
+                    const pos = doc.caretPositionFromPoint(e.clientX, e.clientY);
+                    if (pos) {
+                        range = doc.createRange();
+                        range.setStart(pos.offsetNode, pos.offset);
+                        range.collapse(true);
+                    }
+                } else if (doc.caretRangeFromPoint) {
+                    range = doc.caretRangeFromPoint(e.clientX, e.clientY);
+                }
+            } catch(err) {}
+            
+            if (range) {
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } else {
+                const r = doc.createRange();
+                r.selectNodeContents(target);
+                r.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(r);
+            }
+            
+            const formInput = document.getElementById('summary');
+            
+            const handleInput = () => {
+                if (formInput) {
+                    formInput.value = target.innerText || target.textContent;
+                    formInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            };
+            
+            const finishEditing = (save) => {
+                target.contentEditable = "false";
+                target.classList.remove('is-editing');
+                
+                target.removeEventListener('input', handleInput);
+                target.removeEventListener('blur', handleBlur);
+                target.removeEventListener('keydown', handleKeydown);
+                
+                if (!save) {
+                    target.innerHTML = originalHtml;
+                    if (formInput) {
+                        formInput.value = originalText;
+                        formInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+                
+                window.isInlineEditing = false;
+                syncStateFromUI();
+                updatePreview();
+            };
+            
+            const handleBlur = () => finishEditing(true);
+            const handleKeydown = (ke) => {
+                if (ke.key === 'Escape') {
+                    ke.preventDefault();
+                    finishEditing(false);
+                } else if (ke.key === 'Enter' && !ke.shiftKey) {
+                    ke.preventDefault();
+                    target.blur();
+                }
+            };
+            
+            target.addEventListener('input', handleInput);
+            target.addEventListener('blur', handleBlur);
+            target.addEventListener('keydown', handleKeydown);
+        });
 
         // --- CLICK TO EDIT LOGIC (Single Click Focus) ---
         doc.body.addEventListener('click', (e) => {
