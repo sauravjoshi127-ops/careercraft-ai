@@ -16,6 +16,7 @@
     let shareViewMap = {};
     let currentAISuggestion = '';
     let currentAISection = '';
+    let currentHighlightedSection = null;
 
     let resumeState = {
         full_name: '',
@@ -279,6 +280,9 @@
             doc.close();
         }
         setupIframeClickSync(iframe, doc);
+        if (currentHighlightedSection) {
+            highlightSectionInPreview(currentHighlightedSection);
+        }
     }
 
     function setupIframeClickSync(iframe, doc) {
@@ -293,104 +297,13 @@
             [data-editable]:hover { background: rgba(99, 102, 241, 0.05); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15); }
             .section { transition: all 0.25s ease; border-radius: 8px; padding: 8px; margin-left: -8px; margin-right: -8px; }
             .section:hover { background: rgba(0,0,0,0.015); box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+            header { transition: all 0.25s ease; border-radius: 8px; padding: 8px; margin-left: -8px; margin-right: -8px; }
+            .highlight-active { background-color: rgba(99, 102, 241, 0.06) !important; outline: 2px solid rgba(99, 102, 241, 0.4) !important; border-radius: 6px; }
         `;
         doc.head.appendChild(style);
 
-        // --- INLINE EDITING LOGIC (Double Click) ---
-        doc.body.addEventListener('dblclick', (e) => {
-            const target = e.target.closest('[data-editable]');
-            if (!target) return;
-            
-            e.preventDefault();
-            e.stopPropagation();
-            
-            window.isInlineEditing = true;
-            target.contentEditable = "true";
-            target.focus();
-            
-            // Move cursor to end
-            const range = doc.createRange();
-            range.selectNodeContents(target);
-            range.collapse(false);
-            const sel = doc.defaultView.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
-            
-            target.style.outline = '2px solid #6366f1';
-            target.style.background = 'white';
-            
-            const fieldId = target.getAttribute('data-editable');
-            
-            function getFormInput(fId) {
-                if (fId === 'fullName') return document.getElementById('fullName');
-                if (fId === 'email') return document.getElementById('email');
-                if (fId === 'phone') return document.getElementById('phone');
-                if (fId === 'location') return document.getElementById('location');
-                if (fId === 'summary') return document.getElementById('summary');
-                if (fId === 'certifications') return document.getElementById('certifications');
-                
-                if (fId.startsWith('exp-')) {
-                    const parts = fId.split('-');
-                    const prop = parts[1];
-                    const idx = parseInt(parts[2], 10);
-                    const cards = document.querySelectorAll('#experienceContainer .entry-card');
-                    if (cards[idx]) {
-                        const realId = cards[idx].id.replace('exp-', '');
-                        if (prop === 'title') return document.getElementById('expTitle-' + realId);
-                        if (prop === 'company') return document.getElementById('expCompany-' + realId);
-                        if (prop === 'start') return document.getElementById('expStart-' + realId);
-                        if (prop === 'end') return document.getElementById('expEnd-' + realId);
-                        if (prop === 'description') return document.getElementById('expDesc-' + realId);
-                    }
-                }
-                
-                if (fId.startsWith('edu-')) {
-                    const parts = fId.split('-');
-                    const prop = parts[1];
-                    const idx = parseInt(parts[2], 10);
-                    const cards = document.querySelectorAll('#educationContainer .entry-card');
-                    if (cards[idx]) {
-                        const realId = cards[idx].id.replace('edu-', '');
-                        if (prop === 'degree') return document.getElementById('eduDegree-' + realId);
-                        if (prop === 'school') return document.getElementById('eduSchool-' + realId);
-                        if (prop === 'year') return document.getElementById('eduYear-' + realId);
-                        if (prop === 'grade') return document.getElementById('eduGrade-' + realId);
-                    }
-                }
-                return null;
-            }
-            
-            const handleInput = () => {
-                const input = getFormInput(fieldId);
-                if (input) {
-                    input.value = target.innerText || target.textContent;
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-            };
-            
-            const handleBlur = () => {
-                target.contentEditable = "false";
-                target.style.outline = '';
-                target.style.background = '';
-                
-                target.removeEventListener('input', handleInput);
-                target.removeEventListener('blur', handleBlur);
-                
-                window.isInlineEditing = false;
-                syncStateFromUI();
-                updatePreview();
-            };
-            
-            target.addEventListener('input', handleInput);
-            target.addEventListener('blur', handleBlur);
-            
-            target.addEventListener('keydown', (ke) => {
-                if (ke.key === 'Enter' && fieldId !== 'summary' && !fieldId.includes('description') && fieldId !== 'certifications') {
-                    ke.preventDefault();
-                    target.blur();
-                }
-            });
-        });
+        // --- INLINE EDITING LOGIC DISABLED ---
+        // Requirement: Do NOT implement inline editing yet. Keep the preview read-only.
 
         // --- CLICK TO EDIT LOGIC (Single Click Focus) ---
         doc.body.addEventListener('click', (e) => {
@@ -467,6 +380,9 @@
             }
 
             if (sectionId) {
+                currentHighlightedSection = sectionId;
+                highlightSectionInPreview(sectionId);
+                
                 const header = document.getElementById(`head-${sectionId}`);
                 const content = document.getElementById(`sect-${sectionId}`);
                 if (content && content.classList.contains('collapsed')) {
@@ -482,6 +398,10 @@
                 if (header) {
                     header.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
+                if (!focusInputId && content) {
+                    const firstInput = content.querySelector('input, textarea, select');
+                    if (firstInput) focusInputId = firstInput.id;
+                }
                 if (focusInputId) {
                     const inputEl = document.getElementById(focusInputId);
                     if (inputEl) {
@@ -493,6 +413,73 @@
             }
         });
     }
+
+    function highlightSectionInPreview(sectionId) {
+        const iframe = document.getElementById('previewIframe');
+        if (!iframe) return;
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        
+        // Clear existing highlights
+        doc.querySelectorAll('.highlight-active').forEach(el => el.classList.remove('highlight-active'));
+        
+        if (!sectionId) return;
+        
+        if (sectionId === 'personal') {
+            const header = doc.querySelector('header');
+            if (header) header.classList.add('highlight-active');
+        } else {
+            const h2Elements = Array.from(doc.querySelectorAll('h2'));
+            const targetH2 = h2Elements.find(h2 => {
+                const text = h2.textContent.toLowerCase();
+                if (sectionId === 'summary' && (text.includes('summary') || text.includes('about'))) return true;
+                if (sectionId === 'experience' && (text.includes('experience') || text.includes('work'))) return true;
+                if (sectionId === 'education' && text.includes('education')) return true;
+                if (sectionId === 'skills' && text.includes('skills')) return true;
+                if (sectionId === 'certifications' && text.includes('certification')) return true;
+                return false;
+            });
+            
+            if (targetH2) {
+                const section = targetH2.closest('.section') || targetH2.closest('section');
+                if (section) section.classList.add('highlight-active');
+            }
+        }
+    }
+
+    // --- FORM FOCUS SYNC LOGIC ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const resumeForm = document.getElementById('resumeForm');
+        if (resumeForm) {
+            resumeForm.addEventListener('focusin', (e) => {
+                const target = e.target;
+                let sectionId = null;
+                
+                const formSection = target.closest('.form-section-content');
+                if (formSection) {
+                    sectionId = formSection.id.replace('sect-', '');
+                } else if (target.closest('.form-section-heading')) {
+                    sectionId = target.closest('.form-section-heading').id.replace('head-', '');
+                }
+                
+                if (sectionId && sectionId !== currentHighlightedSection) {
+                    currentHighlightedSection = sectionId;
+                    highlightSectionInPreview(sectionId);
+                }
+            });
+            
+            // Also sync when clicking on headers that are already expanded (no focusin triggered)
+            resumeForm.addEventListener('click', (e) => {
+                const heading = e.target.closest('.form-section-heading');
+                if (heading) {
+                    const sectionId = heading.id.replace('head-', '');
+                    if (sectionId && sectionId !== currentHighlightedSection) {
+                        currentHighlightedSection = sectionId;
+                        highlightSectionInPreview(sectionId);
+                    }
+                }
+            });
+        }
+    });
 
     function selectTemplate(name) { 
         const card = document.querySelector(`.template-card-option[data-template="${name}"]`);
