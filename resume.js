@@ -1004,65 +1004,109 @@
     async function loadResumes() {
         const listEl = document.getElementById('resumeList');
         if (!listEl) return;
-        listEl.innerHTML = '<div class="empty-state"><div class="empty-icon"></div><p>Loading resumes...</p></div>';
+        
+        listEl.innerHTML = `
+            <div class="empty-state">
+                <div class="loader-spinner" style="border-top-color: var(--cyan); width: 24px; height: 24px; margin: 0 auto 1rem;"></div>
+                <p>Loading your resumes...</p>
+            </div>`;
 
-        const { data, error } = await client
-            .from('resumes')
-            .select('*')
-            .eq('user_id', currentUserId)
-            .order('created_at', { ascending: false });
+        let isTimeout = false;
+        let isLoaded = false;
 
-        if (error) {
-            listEl.innerHTML = '<div class="empty-state"><div class="empty-icon"></div><p>Could not load resumes. Please refresh the page.</p></div>';
-            return;
-        }
+        const timeoutId = setTimeout(() => {
+            if (!isLoaded) {
+                isTimeout = true;
+                listEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">⚠️</div>
+                        <p>We couldn't load your resumes.</p>
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem;">
+                            <button class="btn btn-secondary" onclick="window.loadResumes()">Retry</button>
+                            <button class="btn btn-secondary" onclick="window.location.reload()">Refresh</button>
+                            <a href="#resumeForm" class="btn btn-primary" onclick="document.getElementById('full_name').focus()">Create New Resume</a>
+                        </div>
+                    </div>`;
+            }
+        }, 10000);
 
-        if (!data || data.length === 0) {
-            listEl.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon"></div>
-                    <p>No saved resumes yet. Fill in the form below and hit <strong>Save Resume</strong>!</p>
-                </div>`;
-            return;
-        }
-
-        // Fetch share + view data (gracefully skip if tables don't exist yet)
-        shareViewMap = {};
         try {
-            const resumeIds = data.map(r => r.id);
-            const { data: shares } = await client
-                .from('resume_shares')
-                .select('id, resume_id, share_token')
-                .in('resume_id', resumeIds)
-                .eq('is_active', true);
+            const { data, error } = await client
+                .from('resumes')
+                .select('*')
+                .eq('user_id', currentUserId)
+                .order('created_at', { ascending: false });
 
-            if (shares && shares.length > 0) {
-                const shareIds = shares.map(s => s.id);
-                const { data: views } = await client
-                    .from('resume_views')
-                    .select('share_id, view_count')
-                    .in('share_id', shareIds);
+            if (isTimeout) return;
 
-                const viewSumByShareId = {};
-                if (views) {
-                    views.forEach(v => {
-                        viewSumByShareId[v.share_id] = (viewSumByShareId[v.share_id] || 0) + (v.view_count || 1);
+            if (error) {
+                throw new Error(error.message);
+            }
+
+            if (!data || data.length === 0) {
+                listEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon"></div>
+                        <p>No saved resumes yet. Fill in the form below and hit <strong>Save Resume</strong>!</p>
+                    </div>`;
+                return;
+            }
+
+            // Fetch share + view data (gracefully skip if tables don't exist yet)
+            shareViewMap = {};
+            try {
+                const resumeIds = data.map(r => r.id);
+                const { data: shares } = await client
+                    .from('resume_shares')
+                    .select('id, resume_id, share_token')
+                    .in('resume_id', resumeIds)
+                    .eq('is_active', true);
+
+                if (shares && shares.length > 0) {
+                    const shareIds = shares.map(s => s.id);
+                    const { data: views } = await client
+                        .from('resume_views')
+                        .select('share_id, view_count')
+                        .in('share_id', shareIds);
+
+                    const viewSumByShareId = {};
+                    if (views) {
+                        views.forEach(v => {
+                            viewSumByShareId[v.share_id] = (viewSumByShareId[v.share_id] || 0) + (v.view_count || 1);
+                        });
+                    }
+
+                    shares.forEach(s => {
+                        shareViewMap[s.resume_id] = {
+                            shareToken: s.share_token,
+                            viewCount: viewSumByShareId[s.id] || 0,
+                        };
                     });
                 }
-
-                shares.forEach(s => {
-                    shareViewMap[s.resume_id] = {
-                        shareToken: s.share_token,
-                        viewCount: viewSumByShareId[s.id] || 0,
-                    };
-                });
+            } catch (e) {
+                console.warn('Could not load share data:', e);
             }
-        } catch (e) {
-            console.warn('Could not load share data:', e);
-        }
 
-        const cards = data.map(r => buildResumeCard(r)).join('');
-        listEl.innerHTML = `<div class="resume-cards">${cards}</div>`;
+            const cards = data.map(r => buildResumeCard(r)).join('');
+            listEl.innerHTML = `<div class="resume-cards">${cards}</div>`;
+        } catch (error) {
+            console.error('[CareerCraft] Resume load error:', error);
+            if (!isTimeout) {
+                listEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">⚠️</div>
+                        <p>We couldn't load your resumes.</p>
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem;">
+                            <button class="btn btn-secondary" onclick="window.loadResumes()">Retry</button>
+                            <button class="btn btn-secondary" onclick="window.location.reload()">Refresh</button>
+                            <a href="#resumeForm" class="btn btn-primary" onclick="document.getElementById('full_name').focus()">Create New Resume</a>
+                        </div>
+                    </div>`;
+            }
+        } finally {
+            isLoaded = true;
+            clearTimeout(timeoutId);
+        }
     }
 
     function buildResumeCard(r) {
@@ -2139,47 +2183,7 @@
         });
     }
 
-    async function getAISuggestions(section, itemIndex = null) {
-        currentAISection = section;
-        currentAIItemIndex = itemIndex;
 
-        const box = document.getElementById('aiSuggestionsBox');
-        const configPanel = document.getElementById('aiConfigPanel');
-        const counterRow = document.getElementById('aiLiveCounterRow');
-        const insertBtn = document.getElementById('aiBtnInsert');
-        const replaceBtn = document.getElementById('aiBtnReplace');
-        const compareBtn = document.getElementById('aiBtnCompare');
-        const styleContainer = document.getElementById('aiOutputStyleContainer');
-        
-        if (styleContainer) {
-            styleContainer.style.display = (section === 'experience') ? 'block' : 'none';
-        }
-
-        if (insertBtn) {
-            if (section === 'summary') {
-                insertBtn.textContent = 'Insert Summary';
-                insertBtn.style.display = 'block';
-                if (replaceBtn) replaceBtn.classList.add('is-hidden');
-                if (compareBtn) compareBtn.classList.add('is-hidden');
-            } else if (section === 'skills') {
-                insertBtn.textContent = 'Add Skills';
-                insertBtn.style.display = 'block';
-                if (replaceBtn) replaceBtn.classList.add('is-hidden');
-                if (compareBtn) compareBtn.classList.add('is-hidden');
-            } else if (section === 'experience') {
-                insertBtn.textContent = 'Append Description';
-                insertBtn.style.display = 'block';
-                if (replaceBtn) {
-                    replaceBtn.classList.remove('is-hidden');
-                    replaceBtn.textContent = 'Replace Description';
-                }
-                if (compareBtn) compareBtn.classList.remove('is-hidden');
-            } else {
-                insertBtn.style.display = 'none';
-                if (replaceBtn) replaceBtn.classList.add('is-hidden');
-                if (compareBtn) compareBtn.classList.add('is-hidden');
-            }
-        }
 
     async function getAISuggestions(section, itemIndex = null) {
         currentAISection = section;
@@ -2489,6 +2493,7 @@
     window.cancelEdit = cancelEdit;
     window.applyCustomization = applyCustomization;
     window.triggerAIGeneration = triggerAIGeneration;
+    window.loadResumes = loadResumes;
 
     let currentZoom = 1;
     window.zoomPreview = function(delta) {
