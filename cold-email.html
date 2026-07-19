@@ -873,41 +873,7 @@
       background: rgba(255, 255, 255, .04);
     }
     
-    /* ── Toast ── */
-    .toast {
-      position: fixed;
-      bottom: 1.5rem;
-      right: 1.5rem;
-      background: var(--surface);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--primary);
-      color: #fff;
-      padding: .85rem 1.25rem;
-      border-radius: .5rem;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, .3);
-      transform: translateY(16px);
-      opacity: 0;
-      transition: .3s;
-      z-index: 2000;
-      pointer-events: none;
-      font-size: .9rem;
-    }
-    
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-    
-    @keyframes fadeDown {
-      from { opacity: 0; transform: translateY(-16px) }
-      to { opacity: 1; transform: translateY(0) }
-    }
-    
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px) }
-      to { opacity: 1; transform: translateY(0) }
-    }
-    
+
     @keyframes fadeIn {
       from { opacity: 0 }
       to { opacity: 1 }

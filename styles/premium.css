@@ -2245,6 +2245,8 @@ select option {
   max-width: 340px;
 }
 .toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { border-left: 4px solid var(--success); }
+.toast.error { border-left: 4px solid var(--danger); }
 
 /* ─── SPINNER ─────────────────────────────────────────────── */
 .spinner {

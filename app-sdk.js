@@ -92,6 +92,41 @@
       }
     },
 
+    // API Module for standardized error handling and timeouts
+    api: {
+      async safeFetch(url, options = {}, timeoutMs = 15000) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        const fetchOptions = { ...options, signal: controller.signal };
+
+        try {
+          const response = await fetch(url, fetchOptions);
+          if (!response.ok) {
+            let errorMsg = `HTTP Error ${response.status}`;
+            try {
+              const errData = await response.json();
+              if (errData && errData.error) errorMsg = errData.error;
+              else if (errData && errData.message) errorMsg = errData.message;
+            } catch (e) {
+              // Ignore JSON parse error, use default status text
+            }
+            throw new Error(errorMsg);
+          }
+          return response;
+        } catch (error) {
+          if (error.name === 'AbortError') {
+            appSdk.ui.showToast('Request timed out. Please check your connection and try again.', 'error');
+            throw new Error('Request timed out');
+          }
+          const msg = error.message || 'An unexpected network error occurred.';
+          appSdk.ui.showToast(msg, 'error');
+          throw error;
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      }
+    },
+
     // Billing Module (Razorpay Checkout)
     billing: {
       async initiateCheckout(planId, amount) {

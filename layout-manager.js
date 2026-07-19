@@ -154,8 +154,13 @@
       }
 
       toast.innerHTML = message;
-      toast.className = `toast ${className} show`;
+      toast.className = `toast ${className}`;
       toast.style.display = 'block';
+
+      // Force a reflow so the browser applies the display block before the transition starts
+      void toast.offsetHeight;
+
+      toast.classList.add('show');
 
       if (toast.timeoutId) clearTimeout(toast.timeoutId);
       toast.timeoutId = setTimeout(() => {
@@ -164,7 +169,7 @@
           if (!toast.classList.contains('show')) {
             toast.style.display = 'none';
           }
-        }, 400);
+        }, 300); // Wait for transition to finish
       }, 3000);
     }
   };
