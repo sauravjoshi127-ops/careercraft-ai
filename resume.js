@@ -1909,6 +1909,21 @@
         });
 
         // Action Bindings
+        document.getElementById('aiBtnGenerateWorkflow')?.addEventListener('click', async () => {
+            const btn = document.getElementById('aiBtnGenerateWorkflow');
+            const loader = document.getElementById('aiEditorLoaderConfig');
+            if (btn) btn.disabled = true;
+            if (loader) loader.classList.remove('is-hidden');
+            await executeAIGeneration();
+            if (btn) btn.disabled = false;
+            if (loader) loader.classList.add('is-hidden');
+        });
+
+        document.getElementById('aiBtnBackToConfig')?.addEventListener('click', () => {
+            document.getElementById('aiWorkflowReview')?.classList.add('is-hidden');
+            document.getElementById('aiWorkflowConfig')?.classList.remove('is-hidden');
+        });
+
         document.getElementById('aiBtnInsert')?.addEventListener('click', () => {
             if (currentAISection === 'summary') {
                 handleInsertSummary();
@@ -2166,25 +2181,27 @@
             }
         }
 
-        if (section === 'summary') {
-            if (box.textContent && box.textContent !== 'Generating content\u2026' && box.textContent !== 'Getting suggestions...') {
-                lastRegeneratedSummary = box.textContent;
-            } else {
-                box.textContent = 'Generating content\u2026';
-            }
-        } else {
-            box.textContent = 'Generating content\u2026';
-        }
-
+    async function getAISuggestions(section, itemIndex = null) {
+        currentAISection = section;
+        currentAIItemIndex = itemIndex;
         currentAISuggestion = '';
-        document.getElementById('aiDrawer')?.classList.add('ai-copilot-active');
+        lastRegeneratedSummary = '';
 
-        // Reset live counter
-        const counter = document.getElementById('aiLiveCounter');
-        if (counter) {
-            let limitLabel = selectedWordLimit + ' words';
-            if (customLimitActive) limitLabel = selectedWordLimit + ' (Custom)';
-            counter.textContent = `0 / ${limitLabel}`;
+        // Reset UI state for Config mode
+        const workflowConfig = document.getElementById('aiWorkflowConfig');
+        const workflowReview = document.getElementById('aiWorkflowReview');
+        const styleContainer = document.getElementById('aiOutputStyleContainer');
+        const loaderConfig = document.getElementById('aiEditorLoaderConfig');
+        const btnGenerate = document.getElementById('aiBtnGenerateWorkflow');
+        const sqContainer = document.getElementById('aiSmartQuestionsContainer');
+
+        if (workflowConfig) workflowConfig.classList.remove('is-hidden');
+        if (workflowReview) workflowReview.classList.add('is-hidden');
+        if (loaderConfig) loaderConfig.classList.add('is-hidden');
+        if (btnGenerate) btnGenerate.disabled = false;
+
+        if (styleContainer) {
+            styleContainer.style.display = (section === 'experience') ? 'block' : 'none';
         }
 
         const resumeData = collectFormData();
@@ -2203,14 +2220,54 @@
             content = (resumeData.skills || []).join(', ');
         }
 
-        // --- Smart Questions Interception ---
         if (section === 'experience' && content.trim().length < 50) {
-            const answers = await promptSmartQuestions(section, itemIndex, resumeData);
-            if (answers) {
-                content = content + '\n\nUser Context:\n' + answers;
+            setupSmartQuestionsForm(section, itemIndex, resumeData);
+            if (sqContainer) sqContainer.classList.remove('is-hidden');
+        } else {
+            if (sqContainer) sqContainer.classList.add('is-hidden');
+        }
+
+        document.getElementById('aiDrawer')?.classList.add('ai-copilot-active');
+    }
+
+    async function executeAIGeneration() {
+        const section = currentAISection;
+        const itemIndex = currentAIItemIndex;
+        const box = document.getElementById('aiSuggestionsBox');
+        
+        const resumeData = collectFormData();
+        let content = '';
+        if (section === 'summary') {
+            content = resumeData.professional_summary;
+        } else if (section === 'experience') {
+            if (itemIndex !== null) {
+                content = document.getElementById(`expDesc-${itemIndex}`)?.value.trim() || '';
+            } else {
+                content = (resumeData.experience || []).map(e =>
+                    `${e.title || ''} at ${e.company || ''} (${e.start || ''}${e.end ? ' – ' + e.end : ''}):\n${e.description || ''}`
+                ).join('\n\n');
+            }
+        } else if (section === 'skills') {
+            content = (resumeData.skills || []).join(', ');
+        }
+
+        const sqContainer = document.getElementById('aiSmartQuestionsContainer');
+        if (sqContainer && !sqContainer.classList.contains('is-hidden')) {
+            let answers = [];
+            const inputs = document.getElementById('aiSmartQuestionsForm')?.querySelectorAll('input, textarea');
+            if (inputs) {
+                inputs.forEach(input => {
+                    const val = input.value.trim();
+                    if (val) {
+                        const label = input.previousElementSibling?.textContent || '';
+                        answers.push(`${label} ${val}`);
+                    }
+                });
+            }
+            if (answers.length > 0) {
+                content = content + '\n\nUser Context:\n' + answers.join('\n');
             }
         }
-        // ------------------------------------
 
         try {
             const session = await window.appSdk.auth.getSession();
@@ -2240,49 +2297,47 @@
 
             const result = await response.json();
             
-            if (section === 'summary' && lastRegeneratedSummary) {
-                window.LayoutManager.showToast('Summary regenerated. <a href="#" id="aiUndoRegenAction" style="color:var(--cyan); margin-left:8px; font-weight:600; text-decoration:underline;">Undo</a>', 'success');
-                setTimeout(() => {
-                    const undoAnchor = document.getElementById('aiUndoRegenAction');
-                    if (undoAnchor) {
-                        undoAnchor.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            undoRegenerateSummary();
-                        });
-                    }
-                }, 100);
-            }
-
             currentAISuggestion = result.suggestions || '';
             box.textContent = currentAISuggestion || '(No suggestion returned)';
-
             updateAISuggestionsCounter();
-        } catch (err) {
-            // Log full internal error for debugging — never expose to UI
-            console.error('[CareerCraft] Content generation error:', err);
 
-            const isNetworkError = err.message.includes('Failed to fetch') ||
-                err.message.includes('NetworkError') ||
-                err.message.includes('fetch') ||
-                err.message.includes('ERR_CONNECTION');
+            // Switch UI to Review Mode
+            document.getElementById('aiWorkflowConfig')?.classList.add('is-hidden');
+            document.getElementById('aiWorkflowReview')?.classList.remove('is-hidden');
 
-            if (isNetworkError) {
-                box.innerHTML = `
-                    <div style="text-align:center; padding:1.5rem 0;">
-                        <div style="color:#f59e0b; font-size:0.9rem; margin-bottom:0.75rem;">⚠️ No Connection</div>
-                        <div style="font-size:0.82rem; color:#94a3b8; margin-bottom:1rem;">AI generation requires a live server connection.</div>
-                        <button type="button" onclick="triggerAIGeneration()" style="background:#6366f1; color:#fff; border:none; padding:0.4rem 1rem; border-radius:6px; font-size:0.8rem; cursor:pointer;">Retry</button>
-                    </div>
-                `;
-            } else {
-                box.innerHTML = `
-                    <div style="text-align:center; padding:1.5rem 0;">
-                        <div style="color:#ef4444; font-size:0.9rem; margin-bottom:0.75rem;">⚠️ Generation Unavailable</div>
-                        <div style="font-size:0.82rem; color:#94a3b8; margin-bottom:1rem;">We couldn\u2019t generate content right now. Please try again in a moment.</div>
-                        <button type="button" onclick="triggerAIGeneration()" style="background:#6366f1; color:#fff; border:none; padding:0.4rem 1rem; border-radius:6px; font-size:0.8rem; cursor:pointer;">Retry</button>
-                    </div>
-                `;
+            const insertBtn = document.getElementById('aiBtnInsert');
+            const replaceBtn = document.getElementById('aiBtnReplace');
+            const compareBtn = document.getElementById('aiBtnCompare');
+            
+            if (insertBtn) {
+                if (section === 'summary') {
+                    insertBtn.textContent = 'Replace';
+                    insertBtn.style.display = 'flex';
+                    if (replaceBtn) replaceBtn.classList.add('is-hidden');
+                    if (compareBtn) compareBtn.classList.add('is-hidden');
+                } else if (section === 'skills') {
+                    insertBtn.textContent = 'Append';
+                    insertBtn.style.display = 'flex';
+                    if (replaceBtn) replaceBtn.classList.add('is-hidden');
+                    if (compareBtn) compareBtn.classList.add('is-hidden');
+                } else if (section === 'experience') {
+                    insertBtn.textContent = 'Append';
+                    insertBtn.style.display = 'flex';
+                    if (replaceBtn) replaceBtn.classList.remove('is-hidden');
+                    if (compareBtn) compareBtn.classList.remove('is-hidden');
+                } else {
+                    insertBtn.style.display = 'none';
+                    if (replaceBtn) replaceBtn.classList.add('is-hidden');
+                    if (compareBtn) compareBtn.classList.add('is-hidden');
+                }
             }
+
+        } catch (err) {
+            console.error('[CareerCraft] Content generation error:', err);
+            // Restore config mode on error so they can try again
+            document.getElementById('aiWorkflowConfig')?.classList.remove('is-hidden');
+            document.getElementById('aiWorkflowReview')?.classList.add('is-hidden');
+            window.LayoutManager.showToast('Failed to generate suggestions. Please try again.', 'error');
         }
     }
 
@@ -2335,81 +2390,41 @@
     }
 
     // --- Smart Questions Implementation ---
-    function promptSmartQuestions(section, itemIndex, resumeData) {
-        return new Promise((resolve) => {
-            const container = document.getElementById('aiSmartQuestionsContainer');
-            const form = document.getElementById('aiSmartQuestionsForm');
-            const box = document.getElementById('aiSuggestionsBox');
-            const loader = document.getElementById('aiEditorLoader');
-            
-            if (!container || !form || !box) {
-                resolve(null);
-                return;
-            }
+    function setupSmartQuestionsForm(section, itemIndex, resumeData) {
+        const form = document.getElementById('aiSmartQuestionsForm');
+        if (!form) return;
 
-            // Hide normal view, show questions
-            box.classList.add('is-hidden');
-            if (loader) loader.classList.add('is-hidden');
-            container.classList.remove('is-hidden');
+        const exp = (resumeData.experience && itemIndex !== null) ? resumeData.experience[itemIndex] : null;
+        const title = (exp?.title || '').toLowerCase();
+        const industry = (document.getElementById('aiIndustry')?.value || '').toLowerCase();
+        
+        let questions = [
+            { id: 'sq_resp', label: 'Primary responsibilities?', type: 'textarea' },
+            { id: 'sq_achiev', label: 'Major achievements or metrics?', type: 'textarea' }
+        ];
 
-            const exp = (resumeData.experience && itemIndex !== null) ? resumeData.experience[itemIndex] : null;
-            const title = (exp?.title || '').toLowerCase();
-            const industry = (document.getElementById('aiIndustry')?.value || '').toLowerCase();
-            
-            let questions = [
-                { id: 'sq_resp', label: 'Primary responsibilities?', type: 'textarea' },
-                { id: 'sq_achiev', label: 'Major achievements or metrics?', type: 'textarea' }
-            ];
+        if (title.includes('software') || title.includes('developer') || title.includes('engineer') || industry.includes('tech')) {
+            questions.push({ id: 'sq_tech', label: 'Technologies & Frameworks used?', type: 'text' });
+            questions.push({ id: 'sq_arch', label: 'Architecture / System Design impact?', type: 'text' });
+        } else if (title.includes('law') || title.includes('legal') || industry.includes('law')) {
+            questions.push({ id: 'sq_cases', label: 'Case types / Legal research done?', type: 'text' });
+            questions.push({ id: 'sq_draft', label: 'Drafting & Client Interaction?', type: 'text' });
+        } else if (title.includes('marketing') || industry.includes('marketing')) {
+            questions.push({ id: 'sq_campaign', label: 'Campaigns & ROI?', type: 'text' });
+            questions.push({ id: 'sq_seo', label: 'SEO & Analytics tools?', type: 'text' });
+        }
 
-            if (title.includes('software') || title.includes('developer') || title.includes('engineer') || industry.includes('tech')) {
-                questions.push({ id: 'sq_tech', label: 'Technologies & Frameworks used?', type: 'text' });
-                questions.push({ id: 'sq_arch', label: 'Architecture / System Design impact?', type: 'text' });
-            } else if (title.includes('law') || title.includes('legal') || industry.includes('law')) {
-                questions.push({ id: 'sq_cases', label: 'Case types / Legal research done?', type: 'text' });
-                questions.push({ id: 'sq_draft', label: 'Drafting & Client Interaction?', type: 'text' });
-            } else if (title.includes('marketing') || industry.includes('marketing')) {
-                questions.push({ id: 'sq_campaign', label: 'Campaigns & ROI?', type: 'text' });
-                questions.push({ id: 'sq_seo', label: 'SEO & Analytics tools?', type: 'text' });
-            }
-
-            form.innerHTML = '';
-            questions.forEach(q => {
-                const wrapper = document.createElement('div');
-                wrapper.innerHTML = `
-                    <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-2); margin-bottom: 0.35rem;">${q.label}</label>
-                    ${q.type === 'textarea' 
-                        ? `<textarea id="${q.id}" rows="2" style="width: 100%; padding: 0.4rem; font-size: 0.8rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;"></textarea>`
-                        : `<input type="text" id="${q.id}" style="width: 100%; padding: 0.4rem; font-size: 0.8rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">`
-                    }
-                `;
-                form.appendChild(wrapper);
-            });
-
-            const btnSkip = document.getElementById('aiBtnSkipQuestions');
-            const btnSubmit = document.getElementById('aiBtnSubmitQuestions');
-
-            const cleanup = () => {
-                btnSkip.replaceWith(btnSkip.cloneNode(true));
-                btnSubmit.replaceWith(btnSubmit.cloneNode(true));
-                container.classList.add('is-hidden');
-                box.classList.remove('is-hidden');
-                if (loader) loader.classList.remove('is-hidden'); // generation is about to start
-            };
-
-            document.getElementById('aiBtnSkipQuestions').addEventListener('click', () => {
-                cleanup();
-                resolve(null);
-            });
-
-            document.getElementById('aiBtnSubmitQuestions').addEventListener('click', () => {
-                let answers = [];
-                questions.forEach(q => {
-                    const val = document.getElementById(q.id)?.value.trim();
-                    if (val) answers.push(`${q.label} ${val}`);
-                });
-                cleanup();
-                resolve(answers.length > 0 ? answers.join('\n') : null);
-            });
+        form.innerHTML = '';
+        questions.forEach(q => {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = `
+                <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-2); margin-bottom: 0.35rem;">${q.label}</label>
+                ${q.type === 'textarea' 
+                    ? `<textarea id="${q.id}" rows="2" style="width: 100%; padding: 0.4rem; font-size: 0.8rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none; resize: vertical;" placeholder="Optional"></textarea>`
+                    : `<input type="text" id="${q.id}" style="width: 100%; padding: 0.4rem; font-size: 0.8rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;" placeholder="Optional">`
+                }
+            `;
+            form.appendChild(wrapper);
         });
     }
     // --------------------------------------

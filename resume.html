@@ -408,148 +408,151 @@
             </button>
         </div>
  
-        <div class="ai-drawer-content">
-            <p style="color: var(--text-2); font-size: 0.85rem; line-height: 1.5; margin: 0;">Review or edit AI-powered summary suggestions inline to fit your professional background.</p>
- 
-            <!-- Premium AI Suggestions Workspace Card -->
-            <div class="ai-editor-card" style="margin-bottom: 0;">
-                <div class="ai-editor-body">
-                    <!-- View Mode -->
-                    <div class="ai-text-view" id="aiSuggestionsBox" tabindex="0" aria-label="AI summary text preview">Getting suggestions...</div>
-                    
-                    <!-- Smart Questions Mode -->
-                    <div class="ai-smart-questions is-hidden" id="aiSmartQuestionsContainer" style="padding: 1rem; background: var(--bg-body); border-radius: var(--r-md); border: 1px solid var(--border);">
-                        <h4 style="font-size: 0.85rem; color: var(--text-1); margin-bottom: 0.75rem;" id="aiSmartQuestionsTitle">Missing Information</h4>
-                        <div id="aiSmartQuestionsForm" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                            <!-- Dynamically populated -->
+        <div class="ai-drawer-content" style="display: flex; flex-direction: column; padding: 1.25rem;">
+            
+            <!-- CONFIGURATION (Steps 1 & 2) -->
+            <div id="aiWorkflowConfig" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                
+                <!-- Step 1: Missing Information -->
+                <div id="aiSmartQuestionsContainer" class="is-hidden" style="background: rgba(0,0,0,0.03); padding: 1rem; border-radius: var(--r-md); border: 1px solid var(--border-md);">
+                    <h4 style="font-size: 0.85rem; color: var(--text-1); margin-bottom: 0.75rem;">Step 1: Missing Information</h4>
+                    <p style="font-size: 0.75rem; color: var(--text-3); margin-bottom: 0.75rem;">Fill in some details to help the AI generate better content.</p>
+                    <div id="aiSmartQuestionsForm" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Step 2: Refinement Options -->
+                <div id="aiRefinementContainer">
+                    <h4 style="font-size: 0.85rem; color: var(--text-1); margin-bottom: 0.75rem;">Step 2: Refinement Options</h4>
+                    <div class="ai-config-panel" id="aiConfigPanel" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <!-- Word Limit -->
+                        <div>
+                            <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-3); margin-bottom: 0.5rem; text-transform: uppercase;">Target Length</label>
+                            <div class="word-limit-selector" id="aiWordLimitSelector" style="display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;">
+                                <button type="button" class="pill-btn" data-words="30">30w</button>
+                                <button type="button" class="pill-btn" data-words="50">50w</button>
+                                <button type="button" class="pill-btn active" data-words="75">75w</button>
+                                <button type="button" class="pill-btn" data-words="100">100w</button>
+                                <input type="number" id="customWordLimit" min="10" max="500" value="75" style="display: none; width: 65px; padding: 0.25rem 0.4rem; font-size: 0.75rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;" placeholder="Qty">
+                            </div>
                         </div>
-                        <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
-                            <button type="button" class="btn btn-secondary" id="aiBtnSkipQuestions" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;">Skip & Generate</button>
-                            <button type="button" class="btn btn-primary" id="aiBtnSubmitQuestions" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;">Submit</button>
+
+                        <!-- Dropdowns -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                            <div>
+                                <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Tone</label>
+                                <select id="aiTone" style="width: 100%; padding: 0.4rem; font-size: 0.78rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
+                                    <option value="Professional" selected>Professional</option>
+                                    <option value="Bold">Confident</option>
+                                    <option value="Creative">Creative</option>
+                                    <option value="Casual">Casual</option>
+                                    <option value="Executive">Executive</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Language</label>
+                                <select id="aiLanguage" style="width: 100%; padding: 0.4rem; font-size: 0.78rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
+                                    <option value="English" selected>English</option>
+                                    <option value="Spanish">Spanish</option>
+                                    <option value="French">French</option>
+                                    <option value="German">German</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Target Industry</label>
+                            <input type="text" id="aiIndustry" placeholder="e.g. Technology" style="width: 100%; padding: 0.4rem; font-size: 0.78rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
+                        </div>
+
+                        <div id="aiOutputStyleContainer" style="display: none;">
+                            <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Output Style</label>
+                            <select id="aiOutputStyle" style="width: 100%; padding: 0.4rem; font-size: 0.78rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
+                                <option value="Single-line achievement">Single-line achievement</option>
+                                <option value="2–3 concise bullet points">2–3 concise bullet points</option>
+                                <option value="4–6 detailed ATS bullet points" selected>4–6 detailed ATS bullet points</option>
+                                <option value="Paragraph description">Paragraph description</option>
+                                <option value="Executive style">Executive style</option>
+                                <option value="Technical style">Technical style</option>
+                                <option value="Leadership focused">Leadership focused</option>
+                                <option value="Quantified achievements">Quantified achievements</option>
+                                <option value="Internship/Fresher style">Internship/Fresher style</option>
+                                <option value="Senior professional style">Senior professional style</option>
+                            </select>
                         </div>
                     </div>
-                    
-                    <!-- Edit Mode -->
-                    <textarea class="ai-text-edit is-hidden" id="aiTextEdit" aria-label="AI summary document editor" placeholder="Write your professional summary here..."></textarea>
-                    
-                    <!-- Loader overlay -->
-                    <div class="ai-editor-loader is-hidden" id="aiEditorLoader">
-                        <div class="loader-spinner"></div>
-                        <span style="font-size: 0.8rem; font-weight: 500;">Generating suggestion...</span>
+                </div>
+
+                <!-- Step 3: Generate Action -->
+                <div style="margin-top: 0.5rem; border-top: 1px solid var(--border-md); padding-top: 1.5rem;">
+                    <button type="button" class="btn btn-primary" id="aiBtnGenerateWorkflow" style="width: 100%; justify-content: center; font-size: 0.95rem; font-weight: 600; padding: 0.8rem; border-radius: var(--r-md); background: var(--cyan); color: #000;">
+                        <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 18px; height: 18px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                        <span>Generate</span>
+                    </button>
+                    <div class="ai-editor-loader is-hidden" id="aiEditorLoaderConfig" style="text-align: center; margin-top: 1rem; color: var(--cyan);">
+                        <div class="loader-spinner" style="border-top-color: var(--cyan); width: 24px; height: 24px; margin: 0 auto 0.5rem;"></div>
+                        <span style="font-size: 0.8rem; font-weight: 500;">Generating your tailored content...</span>
                     </div>
+                </div>
+            </div>
+
+            <!-- REVIEW (Step 4) -->
+            <div id="aiWorkflowReview" class="is-hidden" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h4 style="font-size: 0.85rem; color: var(--text-1); margin-bottom: 0;">Step 4: Review Result</h4>
+                    <button type="button" id="aiBtnBackToConfig" style="background: none; border: none; color: var(--text-3); font-size: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 0.2rem;">
+                        <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 12px; height: 12px;"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg>
+                        <span>Back to Settings</span>
+                    </button>
                 </div>
                 
-                <div class="ai-editor-footer" id="aiLiveCounterRow" style="padding: 0.75rem 1.25rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.08);">
-                    <div class="status-metrics" style="font-size: 0.72rem; color: var(--text-3); display: flex; gap: 0.5rem;">
-                        <span id="aiMetricWords">0 words</span>
-                        <span>·</span>
-                        <span id="aiMetricReadTime">0 min read</span>
+                <div class="ai-editor-card" style="margin-bottom: 0; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-md);">
+                    <div class="ai-editor-body" style="padding: 1rem; min-height: 120px;">
+                        <div class="ai-text-view" id="aiSuggestionsBox" tabindex="0" style="font-size: 0.85rem; color: var(--text-1); white-space: pre-wrap; line-height: 1.6;"></div>
+                        <textarea class="ai-text-edit is-hidden" id="aiTextEdit" aria-label="AI summary document editor" style="width: 100%; min-height: 120px; font-size: 0.85rem; color: var(--text-1); background: transparent; border: none; outline: none; resize: vertical;"></textarea>
                     </div>
-                    <div class="word-limit-indicator" id="aiWordLimitIndicator" style="font-size: 0.72rem;">
-                        <span id="aiLiveCounter">0 / 75 words</span>
+                    
+                    <div class="ai-editor-footer" id="aiLiveCounterRow" style="padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border-md);">
+                        <div class="status-metrics" style="font-size: 0.72rem; color: var(--text-3); display: flex; gap: 0.5rem;">
+                            <span id="aiMetricWords">0 words</span>
+                        </div>
                     </div>
                 </div>
-            </div>
- 
-            <!-- Accordion Refine Trigger -->
-            <button type="button" class="ai-accordion-trigger" id="aiAccordionTrigger" aria-expanded="false" aria-controls="aiAccordionContent">
-                <span>Refinement Parameters</span>
-                <svg class="chevron-icon icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
-            </button>
- 
-            <!-- Accordion Refine Content -->
-            <div class="ai-accordion-content" id="aiAccordionContent">
-                <div class="ai-config-panel" id="aiConfigPanel" style="display: flex; flex-direction: column; gap: 1rem; border: none; padding: 0; background: transparent; margin: 0;">
-                    <!-- Limit selectors -->
-                    <div>
-                        <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-3); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">Target Length</label>
-                        <div class="word-limit-selector" id="aiWordLimitSelector" style="display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;">
-                            <button type="button" class="pill-btn" data-words="30">30w</button>
-                            <button type="button" class="pill-btn" data-words="50">50w</button>
-                            <button type="button" class="pill-btn active" data-words="75">75w</button>
-                            <button type="button" class="pill-btn" data-words="100">100w</button>
-                            <input type="number" id="customWordLimit" min="10" max="500" value="75" style="display: none; width: 65px; padding: 0.25rem 0.4rem; font-size: 0.75rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;" placeholder="Qty">
-                        </div>
+
+                <div class="ai-review-actions" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem;">
+                    <!-- Primary CTA -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                        <button type="button" class="btn btn-primary" id="aiBtnReplace" style="justify-content: center; font-size: 0.85rem; font-weight: 600; background: var(--cyan); color: #000;">Replace</button>
+                        <button type="button" class="btn btn-secondary" id="aiBtnInsert" style="justify-content: center; font-size: 0.85rem; font-weight: 600;">Append</button>
                     </div>
- 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-                        <div>
-                            <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Tone</label>
-                            <select id="aiTone" style="width: 100%; padding: 0.35rem; font-size: 0.78rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
-                                <option value="Professional" selected>Professional</option>
-                                <option value="Bold">Confident</option>
-                                <option value="Creative">Creative</option>
-                                <option value="Casual">Casual</option>
-                                <option value="Executive">Executive</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Language</label>
-                            <select id="aiLanguage" style="width: 100%; padding: 0.35rem; font-size: 0.78rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
-                                <option value="English" selected>English</option>
-                                <option value="Spanish">Spanish</option>
-                                <option value="French">French</option>
-                                <option value="German">German</option>
-                            </select>
-                        </div>
-                    </div>
- 
-                    <div>
-                        <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Target Industry</label>
-                        <input type="text" id="aiIndustry" placeholder="e.g. Technology" style="width: 100%; padding: 0.35rem; font-size: 0.78rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
+                    
+                    <!-- Secondary/Tertiary Actions -->
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; border-top: 1px solid var(--border-md); padding-top: 0.75rem;">
+                        <button type="button" class="btn btn-secondary" id="aiBtnRegen" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 12px; height: 12px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                            <span>Regenerate</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="aiBtnEdit" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 12px; height: 12px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            <span>Edit</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary is-hidden" id="aiBtnCompare" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 12px; height: 12px;"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"></path></svg>
+                            <span>Compare</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="aiBtnCopy" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 12px; height: 12px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            <span>Copy</span>
+                        </button>
                     </div>
 
-                    <div id="aiOutputStyleContainer" style="display: none;">
-                        <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-3); margin-bottom: 0.35rem; text-transform: uppercase;">Output Style (Experience)</label>
-                        <select id="aiOutputStyle" style="width: 100%; padding: 0.35rem; font-size: 0.78rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">
-                            <option value="Single-line achievement">Single-line achievement</option>
-                            <option value="2–3 concise bullet points">2–3 concise bullet points</option>
-                            <option value="4–6 detailed ATS bullet points" selected>4–6 detailed ATS bullet points</option>
-                            <option value="Paragraph description">Paragraph description</option>
-                            <option value="Executive style">Executive style</option>
-                            <option value="Technical style">Technical style</option>
-                            <option value="Leadership focused">Leadership focused</option>
-                            <option value="Quantified achievements">Quantified achievements</option>
-                            <option value="Internship/Fresher style">Internship/Fresher style</option>
-                            <option value="Senior professional style">Senior professional style</option>
-                        </select>
+                    <!-- Editor Toolbar (Hidden by default) -->
+                    <div class="ai-drawer-primary-row is-hidden" id="aiToolbarEdit" style="gap: 0.5rem; padding-top: 0.5rem; display: flex; justify-content: space-between;">
+                        <button type="button" class="btn btn-primary" id="aiBtnSave" style="flex: 1; font-size: 0.78rem;">Save Edit</button>
+                        <button type="button" class="btn btn-secondary" id="aiBtnCancel" style="flex: 1; font-size: 0.78rem;">Cancel</button>
                     </div>
                 </div>
-            </div>
-        </div>
- 
-        <div class="ai-drawer-actions">
-            <div class="ai-drawer-primary-row" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                <button type="button" class="btn btn-primary" id="aiBtnInsert" style="font-size: 0.82rem; font-weight: 700;">Insert Summary</button>
-                <button type="button" class="btn btn-primary is-hidden" id="aiBtnReplace" style="font-size: 0.82rem; font-weight: 700;">Replace Existing</button>
-            </div>
-            <div class="ai-drawer-tools-row" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                <button type="button" class="btn btn-secondary" id="aiBtnEdit" style="padding: 0.35rem 0.625rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
-                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                    <span>Edit inline</span>
-                </button>
-                <button type="button" class="btn btn-secondary" id="aiBtnCopy" style="padding: 0.35rem 0.625rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
-                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                    <span>Copy</span>
-                </button>
-                <button type="button" class="btn btn-secondary is-hidden" id="aiBtnCompare" style="padding: 0.35rem 0.625rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
-                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"></path><path d="M14 2v6h6"></path><path d="M3 15h6"></path><path d="M3 18h6"></path></svg>
-                    <span>Compare</span>
-                </button>
-                <button type="button" class="btn btn-secondary" id="aiBtnRegen" style="padding: 0.35rem 0.625rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
-                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
-                    <span>Regen</span>
-                </button>
-                <button type="button" class="btn btn-secondary" id="aiBtnClear" style="padding: 0.35rem 0.625rem; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
-                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    <span>Clear</span>
-                </button>
-            </div>
-            
-            <!-- Save/Cancel row when in editing state (initially hidden) -->
-            <div class="ai-drawer-primary-row is-hidden" id="aiToolbarEdit" style="gap: 0.5rem; border-top: 1px solid var(--border-md); padding-top: 0.75rem;">
-                <button type="button" class="btn btn-primary" id="aiBtnSave" style="font-size: 0.78rem; min-height: 36px;">Save Changes</button>
-                <button type="button" class="btn btn-secondary" id="aiBtnCancel" style="font-size: 0.78rem; min-height: 36px;">Cancel</button>
             </div>
         </div>
     </div>
