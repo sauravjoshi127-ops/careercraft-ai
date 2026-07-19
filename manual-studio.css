@@ -58,7 +58,7 @@
 }
 
 .workspace-portal-title {
-  font-family: 'Outfit', sans-serif;
+  
   font-size: 1.4rem;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -101,7 +101,7 @@ body.workspace-transitioning {
   transition: background 0.25s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   outline: none;
-  font-family: 'Inter', sans-serif;
+  
 }
 
 .workspace-toggle-btn:hover {
@@ -124,7 +124,7 @@ body.workspace-transitioning {
 .manual-studio-active, .manual-studio-active body {
   background: #f8fafc !important;
   color: #1e293b !important;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  
 }
 
 /* Hide AI components inside Manual Studio */
@@ -230,7 +230,7 @@ body.workspace-transitioning {
 }
 
 .sidebar-title {
-  font-family: 'Outfit', sans-serif;
+  
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -316,8 +316,8 @@ body.workspace-transitioning {
 .manual-paper[data-accent="rose"] { --theme-accent: #f43f5e; }
 
 /* Font Family Classes */
-.font-inter { font-family: 'Inter', sans-serif; }
-.font-outfit { font-family: 'Outfit', sans-serif; }
+.font-inter {  }
+.font-outfit {  }
 .font-georgia { font-family: 'Georgia', serif; }
 .font-roboto { font-family: 'Roboto', sans-serif; }
 
@@ -361,7 +361,7 @@ body.workspace-transitioning {
   border: none;
   width: 100%;
   margin-bottom: 0.5rem;
-  font-family: 'Outfit', sans-serif;
+  
   letter-spacing: -0.03em;
 }
 
@@ -847,7 +847,7 @@ body.workspace-transitioning {
 }
 
 .exclusive-feature-title {
-  font-family: 'Outfit', sans-serif;
+  
   font-size: 1.4rem;
   font-weight: 800;
   color: #0f172a;
@@ -881,7 +881,7 @@ body.workspace-transitioning {
   background: #7c3aed;
   color: #ffffff;
   border: none;
-  font-family: 'Inter', sans-serif;
+  
   box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
 }
 
