@@ -1649,6 +1649,7 @@
     let selectedTone = 'Professional';
     let selectedIndustry = '';
     let selectedLanguage = 'English';
+    let selectedOutputStyle = '4–6 detailed ATS bullet points';
 
     // AI Document Editor states
     let lastClearedSummary = '';
@@ -1912,8 +1913,18 @@
             if (currentAISection === 'summary') {
                 handleInsertSummary();
             } else {
-                acceptAISuggestion();
+                acceptAISuggestion('append');
             }
+        });
+        document.getElementById('aiBtnReplace')?.addEventListener('click', () => {
+            acceptAISuggestion('replace');
+        });
+        document.getElementById('aiBtnCompare')?.addEventListener('click', () => {
+            openCompareModal();
+        });
+        document.getElementById('btnCompareReplace')?.addEventListener('click', () => {
+            document.getElementById('aiCompareModal')?.classList.remove('active');
+            acceptAISuggestion('replace');
         });
         document.getElementById('aiBtnEdit')?.addEventListener('click', enterEditorEditMode);
         document.getElementById('aiBtnCopy')?.addEventListener('click', copyEditorText);
@@ -2010,10 +2021,12 @@
         const toneSelect = document.getElementById('aiTone');
         const industryInput = document.getElementById('aiIndustry');
         const languageSelect = document.getElementById('aiLanguage');
+        const outputStyleSelect = document.getElementById('aiOutputStyle');
 
         if (selector) {
             selector.querySelectorAll('.pill-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
                     selector.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     
@@ -2058,6 +2071,12 @@
         if (languageSelect) {
             languageSelect.addEventListener('change', () => {
                 selectedLanguage = languageSelect.value;
+            });
+        }
+
+        if (outputStyleSelect) {
+            outputStyleSelect.addEventListener('change', () => {
+                selectedOutputStyle = outputStyleSelect.value;
             });
         }
 
@@ -2113,19 +2132,37 @@
         const configPanel = document.getElementById('aiConfigPanel');
         const counterRow = document.getElementById('aiLiveCounterRow');
         const insertBtn = document.getElementById('aiBtnInsert');
+        const replaceBtn = document.getElementById('aiBtnReplace');
+        const compareBtn = document.getElementById('aiBtnCompare');
+        const styleContainer = document.getElementById('aiOutputStyleContainer');
         
+        if (styleContainer) {
+            styleContainer.style.display = (section === 'experience') ? 'block' : 'none';
+        }
+
         if (insertBtn) {
             if (section === 'summary') {
                 insertBtn.textContent = 'Insert Summary';
                 insertBtn.style.display = 'block';
+                if (replaceBtn) replaceBtn.classList.add('is-hidden');
+                if (compareBtn) compareBtn.classList.add('is-hidden');
             } else if (section === 'skills') {
                 insertBtn.textContent = 'Add Skills';
                 insertBtn.style.display = 'block';
+                if (replaceBtn) replaceBtn.classList.add('is-hidden');
+                if (compareBtn) compareBtn.classList.add('is-hidden');
             } else if (section === 'experience') {
-                insertBtn.textContent = 'Insert Description';
+                insertBtn.textContent = 'Append Description';
                 insertBtn.style.display = 'block';
+                if (replaceBtn) {
+                    replaceBtn.classList.remove('is-hidden');
+                    replaceBtn.textContent = 'Replace Description';
+                }
+                if (compareBtn) compareBtn.classList.remove('is-hidden');
             } else {
                 insertBtn.style.display = 'none';
+                if (replaceBtn) replaceBtn.classList.add('is-hidden');
+                if (compareBtn) compareBtn.classList.add('is-hidden');
             }
         }
 
@@ -2166,6 +2203,15 @@
             content = (resumeData.skills || []).join(', ');
         }
 
+        // --- Smart Questions Interception ---
+        if (section === 'experience' && content.trim().length < 50) {
+            const answers = await promptSmartQuestions(section, itemIndex, resumeData);
+            if (answers) {
+                content = content + '\n\nUser Context:\n' + answers;
+            }
+        }
+        // ------------------------------------
+
         try {
             const session = await window.appSdk.auth.getSession();
             const headers = { 'Content-Type': 'application/json' };
@@ -2177,7 +2223,8 @@
                 wordLimit: selectedWordLimit,
                 tone: selectedTone,
                 targetIndustry: selectedIndustry,
-                selectedLanguage: selectedLanguage
+                selectedLanguage: selectedLanguage,
+                outputStyle: selectedOutputStyle
             };
 
             const response = await fetch('/api/ai-suggestions', {
@@ -2239,7 +2286,7 @@
         }
     }
 
-    function acceptAISuggestion() {
+    function acceptAISuggestion(action = 'replace') {
         if (!currentAISuggestion) return;
         if (currentAISection === 'summary') {
             const summaryEl = document.getElementById('summary');
@@ -2252,12 +2299,27 @@
         } else if (currentAISection === 'experience' && currentAIItemIndex !== null) {
             const textEl = document.getElementById(`expDesc-${currentAIItemIndex}`);
             if (textEl) {
-                textEl.value = currentAISuggestion;
-                window.LayoutManager.showToast('Experience description polished with AI suggestion.', 'success');
+                if (action === 'append') {
+                    const currentVal = textEl.value.trim();
+                    textEl.value = currentVal ? (currentVal + '\n\n' + currentAISuggestion) : currentAISuggestion;
+                } else {
+                    textEl.value = currentAISuggestion;
+                }
+                window.LayoutManager.showToast(`Experience description ${action === 'append' ? 'appended' : 'replaced'} with AI suggestion.`, 'success');
             }
         }
         updatePreview();
         closeAIDrawer();
+    }
+
+    function openCompareModal() {
+        if (currentAISection !== 'experience' || currentAIItemIndex === null) return;
+        const textEl = document.getElementById(`expDesc-${currentAIItemIndex}`);
+        const originalText = textEl ? textEl.value : '';
+        
+        document.getElementById('aiCompareOriginal').textContent = originalText;
+        document.getElementById('aiCompareNew').textContent = currentAISuggestion;
+        document.getElementById('aiCompareModal')?.classList.add('active');
     }
 
     function closeAIDrawer() {
@@ -2265,10 +2327,92 @@
             cancelEditorEdit();
         }
         document.getElementById('aiDrawer')?.classList.remove('ai-copilot-active');
+        document.getElementById('aiSmartQuestionsContainer')?.classList.add('is-hidden');
+        document.getElementById('aiSuggestionsBox')?.classList.remove('is-hidden');
         currentAISuggestion = '';
         currentAISection = '';
         currentAIItemIndex = null;
     }
+
+    // --- Smart Questions Implementation ---
+    function promptSmartQuestions(section, itemIndex, resumeData) {
+        return new Promise((resolve) => {
+            const container = document.getElementById('aiSmartQuestionsContainer');
+            const form = document.getElementById('aiSmartQuestionsForm');
+            const box = document.getElementById('aiSuggestionsBox');
+            const loader = document.getElementById('aiEditorLoader');
+            
+            if (!container || !form || !box) {
+                resolve(null);
+                return;
+            }
+
+            // Hide normal view, show questions
+            box.classList.add('is-hidden');
+            if (loader) loader.classList.add('is-hidden');
+            container.classList.remove('is-hidden');
+
+            const exp = (resumeData.experience && itemIndex !== null) ? resumeData.experience[itemIndex] : null;
+            const title = (exp?.title || '').toLowerCase();
+            const industry = (document.getElementById('aiIndustry')?.value || '').toLowerCase();
+            
+            let questions = [
+                { id: 'sq_resp', label: 'Primary responsibilities?', type: 'textarea' },
+                { id: 'sq_achiev', label: 'Major achievements or metrics?', type: 'textarea' }
+            ];
+
+            if (title.includes('software') || title.includes('developer') || title.includes('engineer') || industry.includes('tech')) {
+                questions.push({ id: 'sq_tech', label: 'Technologies & Frameworks used?', type: 'text' });
+                questions.push({ id: 'sq_arch', label: 'Architecture / System Design impact?', type: 'text' });
+            } else if (title.includes('law') || title.includes('legal') || industry.includes('law')) {
+                questions.push({ id: 'sq_cases', label: 'Case types / Legal research done?', type: 'text' });
+                questions.push({ id: 'sq_draft', label: 'Drafting & Client Interaction?', type: 'text' });
+            } else if (title.includes('marketing') || industry.includes('marketing')) {
+                questions.push({ id: 'sq_campaign', label: 'Campaigns & ROI?', type: 'text' });
+                questions.push({ id: 'sq_seo', label: 'SEO & Analytics tools?', type: 'text' });
+            }
+
+            form.innerHTML = '';
+            questions.forEach(q => {
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = `
+                    <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-2); margin-bottom: 0.35rem;">${q.label}</label>
+                    ${q.type === 'textarea' 
+                        ? `<textarea id="${q.id}" rows="2" style="width: 100%; padding: 0.4rem; font-size: 0.8rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;"></textarea>`
+                        : `<input type="text" id="${q.id}" style="width: 100%; padding: 0.4rem; font-size: 0.8rem; border: 1px solid var(--border-md); border-radius: var(--r-sm); background: var(--bg-input); color: var(--text-1); outline: none;">`
+                    }
+                `;
+                form.appendChild(wrapper);
+            });
+
+            const btnSkip = document.getElementById('aiBtnSkipQuestions');
+            const btnSubmit = document.getElementById('aiBtnSubmitQuestions');
+
+            const cleanup = () => {
+                btnSkip.replaceWith(btnSkip.cloneNode(true));
+                btnSubmit.replaceWith(btnSubmit.cloneNode(true));
+                container.classList.add('is-hidden');
+                box.classList.remove('is-hidden');
+                if (loader) loader.classList.remove('is-hidden'); // generation is about to start
+            };
+
+            document.getElementById('aiBtnSkipQuestions').addEventListener('click', () => {
+                cleanup();
+                resolve(null);
+            });
+
+            document.getElementById('aiBtnSubmitQuestions').addEventListener('click', () => {
+                let answers = [];
+                questions.forEach(q => {
+                    const val = document.getElementById(q.id)?.value.trim();
+                    if (val) answers.push(`${q.label} ${val}`);
+                });
+                cleanup();
+                resolve(answers.length > 0 ? answers.join('\n') : null);
+            });
+        });
+    }
+    // --------------------------------------
 
     function handleInsertSummary() {
         const textView = document.getElementById('aiSuggestionsBox');
@@ -2413,7 +2557,9 @@
         document.addEventListener('click', (e) => {
             const drawer = document.getElementById('aiDrawer');
             if (drawer && drawer.classList.contains('ai-copilot-active')) {
-                if (!drawer.contains(e.target) && !e.target.closest('.btn-ai')) {
+                // Use composedPath to avoid closing when a clicked element is temporarily removed/detached from DOM
+                const path = e.composedPath();
+                if (!path.includes(drawer) && !e.target.closest('.btn-ai')) {
                     closeAIDrawer();
                 }
             }
