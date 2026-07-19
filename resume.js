@@ -1116,8 +1116,9 @@
         const date = new Date(r.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
         const updatedDate = r.updated_at ? new Date(r.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : null;
 
-        const skillTags = skList.slice(0, 4).map(s => `<span class="resume-card-tag">${escapeHtml(s)}</span>`).join('');
-        const extraSkills = skList.length > 4 ? `<span class="resume-card-tag">+${skList.length - 4} more</span>` : '';
+        const maxSkills = 4;
+        const skillTags = skList.slice(0, maxSkills).map(s => `<span class="resume-card-tag">${escapeHtml(s)}</span>`).join('');
+        const extraSkills = skList.length > maxSkills ? `<span class="resume-card-tag">+${skList.length - maxSkills} more</span>` : '';
 
         const templateName = r.template_name || 'modern';
         const shareInfo = shareViewMap[r.id];
@@ -1140,6 +1141,7 @@
                 <div class="resume-card-tags">
                     ${skillTags}${extraSkills}
                 </div>
+                <div style="flex-grow: 1;"></div>
                 <div class="card-actions-row">
                     <button class="btn btn-secondary" onclick="editResume('${r.id}')">Edit</button>
                     <button class="btn btn-secondary" onclick="downloadPDF('${r.id}')">PDF</button>
