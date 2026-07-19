@@ -1110,43 +1110,53 @@
     }
 
     function buildResumeCard(r) {
-        const exp = r.experience || [];
-        const edu = r.education || [];
-        const skList = r.skills || [];
         const date = new Date(r.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
         const updatedDate = r.updated_at ? new Date(r.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : null;
 
-        const maxSkills = 4;
-        const skillTags = skList.slice(0, maxSkills).map(s => `<span class="resume-card-tag">${escapeHtml(s)}</span>`).join('');
-        const extraSkills = skList.length > maxSkills ? `<span class="resume-card-tag">+${skList.length - maxSkills} more</span>` : '';
-
         const templateName = r.template_name || 'modern';
-        const shareInfo = shareViewMap[r.id];
-        const viewBadge = shareInfo ? `<span class="view-badge">Views: ${shareInfo.viewCount}</span>` : '';
+        
+        let subtitle = '';
+        if (r.professional_summary) {
+            subtitle = r.professional_summary.substring(0, 60) + (r.professional_summary.length > 60 ? '...' : '');
+        }
+
+        const lastUpdatedStr = updatedDate && updatedDate !== date ? `Updated ${updatedDate}` : `Created ${date}`;
 
         return `
             <div class="resume-card" id="card-${r.id}">
                 <div class="card-badges">
-                    <span class="template-badge">${escapeHtml(templateName)} Template</span>${viewBadge}
+                    <span class="template-badge">${escapeHtml(templateName)}</span>
                 </div>
                 <div class="resume-card-title">${escapeHtml(r.full_name || 'Untitled Resume')}</div>
-                <div class="resume-card-meta">
-                    ${escapeHtml(r.email || '')}
-                    ${r.location ? ' - ' + escapeHtml(r.location) : ''}
-                    <br>
-                    ${exp.length} experience${exp.length !== 1 ? 's' : ''} - ${edu.length} education ${edu.length === 1 ? 'entry' : 'entries'}
-                    <br>
-                    Saved ${date}${updatedDate && updatedDate !== date ? ' - Updated ' + updatedDate : ''}
-                </div>
-                <div class="resume-card-tags">
-                    ${skillTags}${extraSkills}
+                ${subtitle ? `<div class="resume-card-meta">${escapeHtml(subtitle)}</div>` : ''}
+                <div class="resume-card-meta" style="margin-bottom: 0; font-size: 0.75rem; opacity: 0.7;">
+                    ${lastUpdatedStr}
                 </div>
                 <div style="flex-grow: 1;"></div>
                 <div class="card-actions-row">
-                    <button class="btn btn-secondary" onclick="editResume('${r.id}')">Edit</button>
-                    <button class="btn btn-secondary" onclick="downloadPDF('${r.id}')">PDF</button>
-                    <button class="btn btn-secondary" onclick="shareResume('${r.id}')">Share</button>
-                    <button class="btn btn-danger" onclick="openDeleteModal('${r.id}')">Delete</button>
+                    <button class="btn btn-primary btn-sm" onclick="editResume('${r.id}')">
+                        <svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        Edit
+                    </button>
+                    <div style="display: flex; gap: 0.25rem;">
+                        <button class="btn btn-secondary btn-sm btn-icon-only" title="Download PDF" onclick="downloadPDF('${r.id}')">
+                            <svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        </button>
+                        <button class="btn btn-secondary btn-sm btn-icon-only" title="Share" onclick="shareResume('${r.id}')">
+                            <svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                        </button>
+                        <div class="dropdown-container">
+                            <button class="btn btn-secondary btn-sm btn-icon-only dropdown-trigger" onclick="window.toggleDropdown(this, event)">
+                                <svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+                            </button>
+                            <div class="dropdown-menu">
+                                <button class="dropdown-item text-danger" onclick="openDeleteModal('${r.id}')">
+                                    <svg class="icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                    Delete Resume
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>`;
     }
@@ -2489,6 +2499,24 @@
     window.copyShareLink = copyShareLink;
     window.switchTemplateCard = switchTemplateCard;
     window.setAccentColor = setAccentColor;
+    
+    window.toggleDropdown = function(btn, event) {
+        event.stopPropagation();
+        const container = btn.closest('.dropdown-container');
+        const isActive = container.classList.contains('active');
+        
+        // Close all other dropdowns
+        document.querySelectorAll('.dropdown-container.active').forEach(el => el.classList.remove('active'));
+        
+        if (!isActive) {
+            container.classList.add('active');
+        }
+    };
+    
+    // Close dropdowns on outside click
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.dropdown-container.active').forEach(el => el.classList.remove('active'));
+    });
     window.addExperience = () => addExperience();
     window.addEducation = () => addEducation();
     window.addProject = () => addProject();
