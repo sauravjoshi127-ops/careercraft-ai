@@ -100,6 +100,34 @@ module.exports = async function handler(req, res) {
             senior: 'Write for a senior professional. Emphasize leadership, strategic impact, scaled outcomes, mentorship, and business metrics.'
         }[expLevel];
 
+        const outputStyle = options?.outputStyle || '4–6 detailed ATS bullet points';
+        let styleGuidance = 'Transform the candidate\'s work experience description into 3–5 polished, ATS-optimized bullet points.';
+        let formatGuidance = '- Return ONLY the bullet points, one per line, each starting with a dash (-)';
+
+        if (outputStyle === 'Single-line achievement') {
+            styleGuidance = 'Transform the experience into a single, highly impactful achievement line.';
+            formatGuidance = '- Return EXACTLY ONE sentence summary.';
+        } else if (outputStyle === '2–3 concise bullet points') {
+            styleGuidance = 'Transform the experience into 2 to 3 concise, highly readable bullet points.';
+        } else if (outputStyle === '4–6 detailed ATS bullet points') {
+            styleGuidance = 'Transform the experience into 4 to 6 detailed, ATS-optimized bullet points loaded with keywords.';
+        } else if (outputStyle === 'Paragraph description') {
+            styleGuidance = 'Transform the experience into a cohesive, flowing paragraph describing their role and achievements.';
+            formatGuidance = '- Return ONLY a single paragraph, NO bullet points.';
+        } else if (outputStyle === 'Executive style') {
+            styleGuidance = 'Transform the experience into an executive-level summary focusing on strategic impact, P&L, and high-level leadership. Use 3-4 bullet points.';
+        } else if (outputStyle === 'Technical style') {
+            styleGuidance = 'Transform the experience focusing heavily on technical stacks, architecture, scalability, and engineering practices. Use 4-5 bullet points.';
+        } else if (outputStyle === 'Leadership focused') {
+            styleGuidance = 'Transform the experience highlighting team building, mentoring, stakeholder management, and cross-functional leadership. Use 3-4 bullet points.';
+        } else if (outputStyle === 'Quantified achievements') {
+            styleGuidance = 'Transform the experience to strictly highlight measurable metrics, KPIs, revenue, and quantifiable outcomes. Use 4-5 bullet points.';
+        } else if (outputStyle === 'Internship/Fresher style') {
+            styleGuidance = 'Transform the experience focusing on learning agility, foundational skills applied, project assistance, and academic overlap. Use 2-3 bullet points.';
+        } else if (outputStyle === 'Senior professional style') {
+            styleGuidance = 'Transform the experience focusing on domain expertise, driving change, organizational scale, and sustained impact. Use 4-5 bullet points.';
+        }
+
         const hasContent = (content || '').trim().length > 20;
         const dataHint = hasContent
             ? ''
@@ -110,7 +138,7 @@ module.exports = async function handler(req, res) {
         systemPrompt =
             `You are an elite resume writer and ATS optimization specialist with deep expertise in the ${industry} industry.
 
-YOUR TASK: Transform the candidate's work experience description into 3–5 polished, ATS-optimized bullet points.
+YOUR TASK: ${styleGuidance}
 
 CANDIDATE CONTEXT:
 - Role: ${currentTitle || 'Not specified'}
@@ -142,7 +170,7 @@ QUALITY REQUIREMENTS — strictly follow all of these:
 7. AVOID REPETITION: Do not repeat the same verb or the same theme across multiple bullets.
 
 OUTPUT FORMAT:
-- Return ONLY the bullet points, one per line, each starting with a dash (-)
+${formatGuidance}
 - No preamble, no commentary, no markdown headers${dataHint}`;
     }
 
