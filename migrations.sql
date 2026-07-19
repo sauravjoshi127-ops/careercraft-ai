@@ -190,3 +190,7 @@ CREATE POLICY "auth_manage_portfolios"
     USING (auth.uid() = user_id)
     WITH CHECK (auth.uid() = user_id);
 
+
+-- Add projects column to resumes table
+ALTER TABLE resumes ADD COLUMN IF NOT EXISTS projects JSONB DEFAULT '[]'::jsonb;
+
