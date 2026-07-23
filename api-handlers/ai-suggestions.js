@@ -82,6 +82,18 @@ module.exports = async function handler(req, res) {
         grammar:
             'You are a professional editor. Fix any grammar, spelling, and punctuation issues ' +
             'in the following text. Return only the corrected text with no additional commentary.',
+        headline:
+            'Generate a concise Professional Headline from the candidate\'s resume.\n' +
+            'Return ONLY 3–5 highly relevant areas of expertise separated by "•".\n' +
+            'Maximum 70 characters before wrapping.\n' +
+            'Never use commas.\n' +
+            'Do not use sentences or paragraphs.\n' +
+            'Do not describe personality (e.g. "Experienced", "Hardworking", "Dedicated").\n' +
+            'Do not include soft skills or buzzwords.\n' +
+            'Do not repeat the Job Title.\n' +
+            'Use recruiter-recognized professional keywords.\n' +
+            'Return plain text only.\n' +
+            'Example:\nIBC • Contract Drafting • Corporate Compliance • Legal Research',
     };
 
     let systemPrompt = systemPrompts[section];
@@ -216,7 +228,7 @@ ${formatGuidance}
     }
 
     const userContent =
-        section === 'skills'
+        (section === 'skills' || section === 'headline')
             ? JSON.stringify(resumeData || {})
             : (content || '');
 
