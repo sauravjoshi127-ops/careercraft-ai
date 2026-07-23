@@ -89,6 +89,7 @@ const ResumeRenderer = {
     if (data.location) contactParts.push(`<span data-editable="location">${esc(data.location)}</span>`);
     const contactHTML = contactParts.join(' <span style="margin:0 4px;color:#cbd5e1;user-select:none;">•</span> ');
     
+    const headline = esc(data.professional_headline || '');
     const summary = format(data.professional_summary || '', lineH, esc);
     const certifications = format(data.certifications || '', lineH, esc);
 
@@ -166,6 +167,7 @@ const ResumeRenderer = {
             <header class="header">
                 <h1 data-editable="fullName">${name}</h1>
                 <p class="contact">${contactHTML}</p>
+                ${headline ? `<div data-editable="headline" style="font-size:15px;font-weight:500;color:#64748b;margin-top:10px;margin-bottom:14px;">${headline}</div>` : ''}
             </header>
             
             ${summary ? `<section class="section"><h2>Professional Summary</h2><div data-editable="summary" style="font-size:12px;color:#334155;">${summary}</div></section>` : ''}
@@ -190,6 +192,7 @@ const ResumeRenderer = {
     if (data.location) contactParts.push(`<span data-editable="location">${esc(data.location)}</span>`);
     const contactHTML = contactParts.join(' <span style="user-select:none;">|</span> ');
 
+    const headline = esc(data.professional_headline || '');
     const summary = format(data.professional_summary || '', lineH, esc);
     const certifications = format(data.certifications || '', lineH, esc);
 
@@ -260,6 +263,7 @@ const ResumeRenderer = {
             <header class="header">
                 <h1 data-editable="fullName">${name}</h1>
                 <p class="contact">${contactHTML}</p>
+                ${headline ? `<div data-editable="headline" style="font-size:15px;font-weight:500;color:#444444;margin-top:10px;margin-bottom:14px;">${headline}</div>` : ''}
             </header>
             
             ${summary ? `<section class="section"><h2>Summary</h2><div data-editable="summary" style="font-size:12px;color:#333333;">${summary}</div></section>` : ''}
@@ -284,6 +288,7 @@ const ResumeRenderer = {
     if (data.location) contactParts.push(`<div data-editable="location" style="font-size:11px;opacity:0.95;margin-bottom:6px;word-break:break-word;font-weight:500;">${esc(data.location)}</div>`);
     const contactHTML = contactParts.join('');
 
+    const headline = esc(data.professional_headline || '');
     const summary = format(data.professional_summary || '', lineH, esc);
     const certifications = format(data.certifications || '', lineH, esc);
 
@@ -362,6 +367,7 @@ const ResumeRenderer = {
                 ${eduHTML ? `<section><h2 class="section-label" style="border-bottom:1px solid rgba(255,255,255,0.25); margin-bottom:12px; padding-bottom:4px; font-size:10px;">Education</h2>${eduHTML}</section>` : ''}
             </aside>
             <main class="main">
+                ${headline ? `<section style="margin-bottom:14px;"><h2>Headline</h2><div data-editable="headline" style="font-size:15px;font-weight:600;color:${accent};">${headline}</div></section>` : ''}
                 ${summary ? `<section style="margin-bottom:${sectionMargin};"><h2>About Me</h2><div data-editable="summary" style="font-size:12px;color:#334155;">${summary}</div></section>` : ''}
                 ${expHTML ? `<section style="margin-bottom:${sectionMargin};"><h2>Experience</h2>${expHTML}</section>` : ''}
                 ${projHTML ? `<section style="margin-bottom:${sectionMargin};"><h2>Projects</h2>${projHTML}</section>` : ''}

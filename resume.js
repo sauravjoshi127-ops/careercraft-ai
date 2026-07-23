@@ -24,6 +24,7 @@
         email: '',
         phone: '',
         location: '',
+        professional_headline: '',
         professional_summary: '',
         experience: [],
         education: [],
@@ -41,6 +42,7 @@
         resumeState.email = document.getElementById('email')?.value.trim() || '';
         resumeState.phone = document.getElementById('phone')?.value.trim() || '';
         resumeState.location = document.getElementById('location')?.value.trim() || '';
+        resumeState.professional_headline = document.getElementById('headline')?.value.trim() || '';
         resumeState.professional_summary = document.getElementById('summary')?.value.trim() || '';
         resumeState.certifications = document.getElementById('certifications')?.value.trim() || '';
         resumeState.template_name = document.getElementById('templateName')?.value || 'modern';
@@ -99,6 +101,7 @@
             email: data.email || '',
             phone: data.phone || '',
             location: data.location || '',
+            professional_headline: data.professional_headline || '',
             professional_summary: data.professional_summary || '',
             experience: data.experience || [],
             education: data.education || [],
@@ -115,6 +118,7 @@
         document.getElementById('email').value = resumeState.email;
         document.getElementById('phone').value = resumeState.phone;
         document.getElementById('location').value = resumeState.location;
+        if (document.getElementById('headline')) document.getElementById('headline').value = resumeState.professional_headline;
         document.getElementById('summary').value = resumeState.professional_summary;
         document.getElementById('certifications').value = resumeState.certifications;
         document.getElementById('templateName').value = resumeState.template_name;
@@ -1360,6 +1364,7 @@
             email: resumeState.email,
             phone: resumeState.phone,
             location: resumeState.location,
+            professional_headline: resumeState.professional_headline,
             professional_summary: resumeState.professional_summary,
             experience: resumeState.experience,
             education: resumeState.education,
@@ -1527,6 +1532,7 @@
             email: '',
             phone: '',
             location: '',
+            professional_headline: '',
             professional_summary: '',
             experience: [],
             education: [],
@@ -2215,7 +2221,9 @@
 
         const resumeData = collectFormData();
         let content = '';
-        if (section === 'summary') {
+        if (section === 'headline') {
+            content = '';
+        } else if (section === 'summary') {
             content = resumeData.professional_summary;
         } else if (section === 'experience') {
             if (itemIndex !== null) {
@@ -2246,7 +2254,9 @@
         
         const resumeData = collectFormData();
         let content = '';
-        if (section === 'summary') {
+        if (section === 'headline') {
+            content = '';
+        } else if (section === 'summary') {
             content = resumeData.professional_summary;
         } else if (section === 'experience') {
             if (itemIndex !== null) {
@@ -2319,7 +2329,7 @@
             const compareBtn = document.getElementById('aiBtnCompare');
             
             if (insertBtn) {
-                if (section === 'summary') {
+                if (section === 'headline' || section === 'summary') {
                     insertBtn.textContent = 'Replace';
                     insertBtn.style.display = 'flex';
                     if (replaceBtn) replaceBtn.classList.add('is-hidden');
@@ -2352,7 +2362,11 @@
 
     function acceptAISuggestion(action = 'replace') {
         if (!currentAISuggestion) return;
-        if (currentAISection === 'summary') {
+        if (currentAISection === 'headline') {
+            const headlineEl = document.getElementById('headline');
+            if (headlineEl) headlineEl.value = currentAISuggestion;
+            window.LayoutManager.showToast('Headline updated with AI suggestion.', 'success');
+        } else if (currentAISection === 'summary') {
             const summaryEl = document.getElementById('summary');
             if (summaryEl) summaryEl.value = currentAISuggestion;
             window.LayoutManager.showToast('Summary updated with AI suggestion.', 'success');

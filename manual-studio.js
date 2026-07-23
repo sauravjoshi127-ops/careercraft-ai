@@ -23,6 +23,7 @@
         email: '',
         phone: '',
         location: '',
+        professional_headline: '',
         professional_summary: '',
         experience: [],
         education: [],
@@ -386,6 +387,7 @@
           if (document.getElementById('email')) document.getElementById('email').value = data.email;
           if (document.getElementById('phone')) document.getElementById('phone').value = data.phone;
           if (document.getElementById('location')) document.getElementById('location').value = data.location;
+          if (document.getElementById('headline')) document.getElementById('headline').value = data.professional_headline;
           if (document.getElementById('summary')) document.getElementById('summary').value = data.professional_summary;
           if (document.getElementById('certifications')) document.getElementById('certifications').value = data.certifications;
           if (document.getElementById('templateName')) document.getElementById('templateName').value = data.template_name;
@@ -884,6 +886,8 @@
 
       const summaryHtml = `
         <div class="paper-section">
+          <div class="paper-section-title">Professional Headline</div>
+          <div contenteditable="true" placeholder="e.g. React • Node.js • TypeScript • AWS" id="res-headline" style="font-size:0.9rem; line-height:1.6; margin-bottom: 1rem;">${data.professional_headline || ''}</div>
           <div class="paper-section-title">Professional Summary</div>
           <div contenteditable="true" placeholder="A brief professional summary describing your qualifications..." id="res-summary" style="font-size:0.9rem; line-height:1.6;">${data.professional_summary || ''}</div>
         </div>
@@ -1302,6 +1306,7 @@
           else if (id === 'res-email') this.state.resume.email = text;
           else if (id === 'res-phone') this.state.resume.phone = text;
           else if (id === 'res-location') this.state.resume.location = text;
+          else if (id === 'res-headline') this.state.resume.professional_headline = text;
           else if (id === 'res-summary') this.state.resume.professional_summary = text;
           else if (id === 'res-certifications') this.state.resume.certifications = text;
         }
@@ -2048,6 +2053,9 @@
         bodyHtml = `
           <h1>${r.full_name || 'Untitled Resume'}</h1>
           <p>${r.email || ''} | ${r.phone || ''} | ${r.location || ''}</p>
+          <hr/>
+          <h3>Professional Headline</h3>
+          <p>${r.professional_headline || ''}</p>
           <hr/>
           <h3>Professional Summary</h3>
           <p>${r.professional_summary || ''}</p>
