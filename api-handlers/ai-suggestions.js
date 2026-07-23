@@ -90,7 +90,12 @@ module.exports = async function handler(req, res) {
     if (section === 'experience') {
         const expLevel = inferExperienceLevel(resumeData);
         const industry = options?.targetIndustry || inferIndustry(resumeData);
-        const tone = options?.tone || 'Professional';
+        let tone = options?.tone || 'Professional';
+        let markdownInstruction = '';
+        if (tone === 'Bold' || tone === 'Confident') {
+            tone = 'Confident';
+            markdownInstruction = '\nReturn plain text only.\nDo not use Markdown.\nDo not use bold (**), italics (*), headings, bullet formatting, code blocks, or any formatting characters.';
+        }
         const currentTitle = (resumeData?.experience || []).find(e => e.description)?.title || '';
         const currentCompany = (resumeData?.experience || []).find(e => e.description)?.company || '';
 
@@ -171,13 +176,18 @@ QUALITY REQUIREMENTS — strictly follow all of these:
 
 OUTPUT FORMAT:
 ${formatGuidance}
-- No preamble, no commentary, no markdown headers${dataHint}`;
+- No preamble, no commentary, no markdown headers${dataHint}${markdownInstruction}`;
     }
 
     if (!systemPrompt) systemPrompt = systemPrompts.grammar;
 
     if (section === 'summary' && options) {
-        const { wordLimit, tone, targetIndustry, selectedLanguage } = options;
+        let { wordLimit, tone, targetIndustry, selectedLanguage } = options;
+        let markdownInstruction = '';
+        if (tone === 'Bold' || tone === 'Confident') {
+            tone = 'Confident';
+            markdownInstruction = '\nReturn plain text only.\nDo not use Markdown.\nDo not use bold (**), italics (*), headings, bullet formatting, code blocks, or any formatting characters.';
+        }
         
         let limitClause = 'Keep it under 4 sentences.';
         if (wordLimit) {
@@ -202,7 +212,7 @@ ${formatGuidance}
         systemPrompt = 
             `You are an expert resume writer and ATS optimization coach. Rewrite the following professional summary ` +
             `to make it ${toneClause} ${limitClause}${industryClause}${languageClause} ` +
-            `Return ONLY the improved summary text with no extra commentary, chat preambles, or formatting markup.`;
+            `Return ONLY the improved summary text with no extra commentary, chat preambles, or formatting markup.${markdownInstruction}`;
     }
 
     const userContent =
@@ -248,7 +258,12 @@ ${formatGuidance}
         const result = await geminiRes.json();
         console.log('[ai-suggestions] Generation API raw response received, length:', JSON.stringify(result).length);
 
-        const suggestions = extractGeminiText(result);
+        let suggestions = extractGeminiText(result);
+
+        // Sanitize markdown as a safety layer
+        if (suggestions) {
+            suggestions = suggestions.replace(/\*\*/g, '').replace(/__/g, '').replace(/^#+\s/gm, '');
+        }
 
         if (!suggestions) {
             console.error('[ai-suggestions] Empty response from generation API.');
