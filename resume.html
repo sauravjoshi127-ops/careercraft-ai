@@ -24,13 +24,13 @@
 .resume-workspace { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; }
 @media(max-width:960px){ .resume-workspace { grid-template-columns:1fr; } }
 .form-panel { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-xl); padding:2rem; box-shadow:var(--shadow-card); }
-.preview-panel { position:sticky; top:5rem; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-xl); box-shadow:var(--shadow-card); overflow:hidden; }
+.preview-panel { position:sticky; top:5rem; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-xl); box-shadow:var(--shadow-card); overflow:hidden; display:flex; flex-direction:column; height:calc(100vh - 6rem); }
 .preview-panel-header { padding:0.875rem 1.25rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:0.75rem; }
 .preview-panel-title { font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-3); }
 .template-tabs { display:flex; gap:0.2rem; background:var(--bg-input); padding:3px; border-radius:var(--r-sm); }
 .template-tab { padding:0.3rem 0.65rem; font-size:0.75rem; font-weight:600; color:var(--text-2); border:none; background:transparent; border-radius:4px; cursor:pointer; transition:background 0.15s, color 0.15s; font-family:inherit; }
 .template-tab.active { background:var(--bg-card); color:var(--text-1); box-shadow:0 1px 4px rgba(0,0,0,0.4); }
-.preview-body { padding:1.5rem; min-height:480px; font-size:0.82rem; line-height:1.65; color:var(--text-1); overflow-y:auto; max-height:calc(100vh - 14rem); }
+.preview-body { padding:1.5rem; min-height:480px; font-size:0.82rem; line-height:1.65; color:var(--text-1); overflow-y:auto; flex:1; scroll-behavior:smooth; }
 .preview-placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:380px; color:var(--text-3); text-align:center; gap:0.75rem; }
 .preview-placeholder p { font-size:0.85rem; }
 .customizer { padding:0.875rem 1.25rem; border-top:1px solid var(--border); display:flex; gap:1rem; flex-wrap:wrap; align-items:center; background:rgba(255,255,255,0.015); }
@@ -137,8 +137,8 @@
 .preview-skills { display:flex; flex-wrap:wrap; gap:0.3rem; margin-top:0.25rem; }
 .preview-skill { background:rgba(255,255,255,0.07); border:1px solid var(--border); border-radius:999px; padding:0.15rem 0.55rem; font-size:0.7rem; color:var(--text-2); }
 /* Visual template cards styles */
-.template-cards-container { display:flex; gap:0.75rem; margin-top:0.5rem; width:100%; }
-.template-card-option { flex:1; background:var(--bg-input); border:1px solid var(--border); border-radius:var(--r-md); padding:0.75rem; cursor:pointer; transition:border-color 0.2s ease, background-color 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease; display:flex; flex-direction:column; gap:0.5rem; align-items:center; text-align:center; min-width:80px; box-sizing:border-box; will-change:transform, border-color, box-shadow, background-color; }
+.template-cards-container { display:flex; gap:0.75rem; margin-top:0.5rem; width:100%; overflow-x:auto; padding-bottom:0.5rem; scrollbar-width:thin; scroll-behavior:smooth; -webkit-overflow-scrolling:touch; }
+.template-card-option { flex:0 0 auto; background:var(--bg-input); border:1px solid var(--border); border-radius:var(--r-md); padding:0.75rem; cursor:pointer; transition:border-color 0.2s ease, background-color 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease; display:flex; flex-direction:column; gap:0.5rem; align-items:center; text-align:center; min-width:90px; box-sizing:border-box; will-change:transform, border-color, box-shadow, background-color; }
 .template-card-option:hover { border-color:rgba(99,102,241,0.6); background:rgba(255,255,255,0.03); transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,0.15); }
 .template-card-option.active { border-color:var(--cyan); background:rgba(99,102,241,0.08); transform:scale(1.02); box-shadow:0 0 0 2px rgba(99,102,241,0.25); }
 .template-card-visual { width:100%; height:40px; background:rgba(255,255,255,0.02); border-radius:6px; border:1px dashed var(--border-md); display:flex; flex-direction:column; gap:4px; padding:6px; box-sizing:border-box; justify-content:center; transition:border-color 0.2s ease; }
