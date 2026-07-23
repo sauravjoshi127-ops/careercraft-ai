@@ -56,8 +56,15 @@ const ResumeRenderer = {
       lineH = '1.6'; itemMargin = '13px'; sectionMargin = '18px'; padding = '36px';
     }
 
-    let fontStack = "'Inter', sans-serif";
-    if (font === 'Georgia') fontStack = "Georgia, serif";
+    let fontStack = "'Geist', sans-serif";
+    if (font === 'Inter') fontStack = "'Inter', sans-serif";
+    else if (font === 'Plus Jakarta Sans') fontStack = "'Plus Jakarta Sans', sans-serif";
+    else if (font === 'Manrope') fontStack = "'Manrope', sans-serif";
+    else if (font === 'IBM Plex Sans') fontStack = "'IBM Plex Sans', sans-serif";
+    else if (font === 'Source Sans 3') fontStack = "'Source Sans 3', sans-serif";
+    else if (font === 'Lato') fontStack = "'Lato', sans-serif";
+    else if (font === 'Merriweather') fontStack = "'Merriweather', serif";
+    else if (font === 'Georgia') fontStack = "Georgia, serif";
     else if (font === 'Outfit') fontStack = "'Outfit', sans-serif";
 
     if (templateName === 'classic') {
@@ -134,6 +141,7 @@ const ResumeRenderer = {
     return `<!DOCTYPE html>
     <html lang="en">
     <head>
+        <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Lato:wght@400;700;900&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet">
         <meta charset="UTF-8">
         <style>
             *, *::before, *::after { box-sizing: border-box; }

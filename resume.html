@@ -151,6 +151,7 @@
 .template-card-name { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-3); transition:color 0.2s ease; }
 .template-card-option.active .template-card-name { color:var(--cyan); }
 </style>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Lato:wght@400;700;900&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles/premium.css">
     <link rel="stylesheet" href="manual-studio.css">
     <script src="manual-studio.js" defer></script>
@@ -301,10 +302,11 @@
         </div>
       </div>
       <!-- Customization bar -->
-      <div class="customizer" style="border-top: none; border-bottom: 1px solid var(--border);">
-        <!-- Visual Template Cards -->
-        <div class="customizer-group" style="flex-basis: 100%; margin-bottom: 0.5rem; display: flex; flex-direction: column;">
-          <span class="customizer-label">Resume Template</span>
+      <div class="customizer" style="border-top: none; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 1.25rem;">
+        
+        <!-- Template Selector Section -->
+        <div class="customizer-section" style="width: 100%;">
+          <span class="customizer-label" style="display: block; margin-bottom: 0.5rem; color: var(--text-1);">Resume Template</span>
           <div class="template-cards-container" id="templateCards">
             <div class="template-card-option active" data-template="modern" onclick="switchTemplateCard('modern', this)" title="Best For: Software Engineers, Product Managers, Startups">
               <div class="template-card-visual">
@@ -349,29 +351,81 @@
           </div>
         </div>
 
-        <div class="customizer-group">
-          <span class="customizer-label">Font</span>
-          <select class="customizer-select" id="custFont" onchange="applyCustomization()">
-            <option value="Inter">Inter</option>
-            <option value="Georgia">Georgia</option>
-            <option value="Outfit">Outfit</option>
-          </select>
-        </div>
-        <div class="customizer-group">
-          <span class="customizer-label">Spacing</span>
-          <select class="customizer-select" id="custSpacing" onchange="applyCustomization()">
-            <option value="compact">Compact</option>
-            <option value="normal" selected>Normal</option>
-            <option value="relaxed">Relaxed</option>
-          </select>
-        </div>
-        <div class="customizer-group">
-          <span class="customizer-label">Accent</span>
-          <div class="color-swatches">
-            <div class="color-swatch active" style="background:#6366f1;" data-color="#6366f1" onclick="setAccentColor(this)"></div>
-            <div class="color-swatch" style="background:#a855f7;" data-color="#a855f7" onclick="setAccentColor(this)"></div>
+        <!-- Appearance Controls Section -->
+        <div class="customizer-section" style="width: 100%;">
+          <span class="customizer-label" style="display: block; margin-bottom: 0.5rem; color: var(--text-1);">Appearance</span>
+          
+          <div class="appearance-controls" style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
+            
+            <div class="customizer-group" style="margin: 0; gap: 0.2rem;">
+              <span class="customizer-label" style="font-size: 0.55rem; opacity: 0.7;">Font</span>
+              <div class="custom-select-wrapper" id="fontDropdownWrapper" style="position: relative;">
+                <button type="button" class="customizer-select" id="fontSelectBtn" onclick="toggleFontDropdown(event)" style="width: 130px; text-align: left; display: flex; justify-content: space-between; align-items: center;">
+                  <span id="fontSelectLabel" style="font-family: 'Geist', sans-serif;">Geist</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div id="fontDropdownMenu" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-lg); width: 220px; max-height: 300px; overflow-y: auto; z-index: 100; padding: 0.5rem; flex-direction: column; gap: 2px;">
+                  <div class="font-option active" style="font-family: 'Geist', sans-serif;" onclick="selectFont('Geist', this)">
+                    <span style="opacity: 0.6; font-size: 1.1em; width: 24px; display: inline-block;">Aa</span> Geist
+                  </div>
+                  <div class="font-option" style="font-family: 'Inter', sans-serif;" onclick="selectFont('Inter', this)">
+                    <span style="opacity: 0.6; font-size: 1.1em; width: 24px; display: inline-block;">Aa</span> Inter
+                  </div>
+                  <div class="font-option" style="font-family: 'Plus Jakarta Sans', sans-serif;" onclick="selectFont('Plus Jakarta Sans', this)">
+                    <span style="opacity: 0.6; font-size: 1.1em; width: 24px; display: inline-block;">Aa</span> Plus Jakarta Sans
+                  </div>
+                  <div class="font-option" style="font-family: 'Manrope', sans-serif;" onclick="selectFont('Manrope', this)">
+                    <span style="opacity: 0.6; font-size: 1.1em; width: 24px; display: inline-block;">Aa</span> Manrope
+                  </div>
+                  <div class="font-option" style="font-family: 'IBM Plex Sans', sans-serif;" onclick="selectFont('IBM Plex Sans', this)">
+                    <span style="opacity: 0.6; font-size: 1.1em; width: 24px; display: inline-block;">Aa</span> IBM Plex Sans
+                  </div>
+                  <div class="font-option" style="font-family: 'Source Sans 3', sans-serif;" onclick="selectFont('Source Sans 3', this)">
+                    <span style="opacity: 0.6; font-size: 1.1em; width: 24px; display: inline-block;">Aa</span> Source Sans 3
+                  </div>
+                  <div class="font-option" style="font-family: 'Lato', sans-serif;" onclick="selectFont('Lato', this)">
+                    <span style="opacity: 0.6; font-size: 1.1em; width: 24px; display: inline-block;">Aa</span> Lato
+                  </div>
+                  <div class="font-option" style="font-family: 'Merriweather', serif;" onclick="selectFont('Merriweather', this)">
+                    <span style="opacity: 0.6; font-size: 1.1em; width: 24px; display: inline-block;">Aa</span> Merriweather
+                  </div>
+                </div>
+                <input type="hidden" id="custFont" value="Geist">
+              </div>
+            </div>
+
+            <div class="customizer-group" style="margin: 0; gap: 0.2rem;">
+              <span class="customizer-label" style="font-size: 0.55rem; opacity: 0.7;">Spacing</span>
+              <select class="customizer-select" id="custSpacing" onchange="applyCustomization()" style="width: 100px;">
+                <option value="compact">Compact</option>
+                <option value="normal" selected>Normal</option>
+                <option value="relaxed">Relaxed</option>
+              </select>
+            </div>
+
+            <div class="customizer-group" style="margin: 0; gap: 0.2rem; flex: 1; min-width: 250px;">
+              <span class="customizer-label" style="font-size: 0.55rem; opacity: 0.7;">Accent</span>
+              <div class="color-swatches" style="flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; padding-top: 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; width: 100%;">
+                <div class="color-swatch active" style="background:#6366f1; flex-shrink: 0;" data-color="#6366f1" onclick="setAccentColor(this)" title="Indigo"></div>
+                <div class="color-swatch" style="background:#2563eb; flex-shrink: 0;" data-color="#2563eb" onclick="setAccentColor(this)" title="Royal Blue"></div>
+                <div class="color-swatch" style="background:#1e3a8a; flex-shrink: 0;" data-color="#1e3a8a" onclick="setAccentColor(this)" title="Navy"></div>
+                <div class="color-swatch" style="background:#10b981; flex-shrink: 0;" data-color="#10b981" onclick="setAccentColor(this)" title="Emerald"></div>
+                <div class="color-swatch" style="background:#14b8a6; flex-shrink: 0;" data-color="#14b8a6" onclick="setAccentColor(this)" title="Teal"></div>
+                <div class="color-swatch" style="background:#64748b; flex-shrink: 0;" data-color="#64748b" onclick="setAccentColor(this)" title="Slate"></div>
+                <div class="color-swatch" style="background:#334155; flex-shrink: 0;" data-color="#334155" onclick="setAccentColor(this)" title="Charcoal"></div>
+                <div class="color-swatch" style="background:#9f1239; flex-shrink: 0;" data-color="#9f1239" onclick="setAccentColor(this)" title="Burgundy"></div>
+                
+                <div style="width: 2px; height: 16px; background: var(--border); margin: 0 4px; flex-shrink: 0;"></div>
+                
+                <div class="color-swatch" style="background:#a855f7; flex-shrink: 0;" data-color="#a855f7" onclick="setAccentColor(this)" title="Purple"></div>
+                <div class="color-swatch" style="background:#f97316; flex-shrink: 0;" data-color="#f97316" onclick="setAccentColor(this)" title="Orange"></div>
+                <div class="color-swatch" style="background:#f43f5e; flex-shrink: 0;" data-color="#f43f5e" onclick="setAccentColor(this)" title="Rose"></div>
+              </div>
+            </div>
+
           </div>
         </div>
+
       </div>
       <div class="preview-body" id="previewBody" style="padding:0; background:#ffffff;">
         <iframe id="previewIframe" style="width:100%; height:100%; min-height:480px; border:none; background:#ffffff; display:block;"></iframe>

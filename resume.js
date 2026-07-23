@@ -184,6 +184,30 @@
         el.classList.add('active');
         updatePreview();
     }
+    window.toggleFontDropdown = function(event) {
+        event.stopPropagation();
+        const menu = document.getElementById('fontDropdownMenu');
+        menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+    };
+    window.selectFont = function(fontName, element) {
+        document.getElementById('fontSelectLabel').textContent = fontName;
+        document.getElementById('fontSelectLabel').style.fontFamily = `"${fontName}", sans-serif`;
+        document.getElementById('custFont').value = fontName;
+        
+        document.querySelectorAll('.font-option').forEach(el => el.classList.remove('active'));
+        if(element) element.classList.add('active');
+        
+        document.getElementById('fontDropdownMenu').style.display = 'none';
+        applyCustomization();
+    };
+    document.addEventListener('click', function(e) {
+        const menu = document.getElementById('fontDropdownMenu');
+        const btn = document.getElementById('fontSelectBtn');
+        if (menu && btn && !menu.contains(e.target) && !btn.contains(e.target)) {
+            menu.style.display = 'none';
+        }
+    });
+
     function applyCustomization() { updatePreview(); }
     function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
     
