@@ -2,6 +2,13 @@ require('./utils/env-loader');
 const path = require('path');
 const express = require('express');
 
+// Schema synchronization safeguard
+try {
+  require('./verify-schema')();
+} catch (err) {
+  process.exit(1);
+}
+
 // Modular API Handlers
 const uploadResumeHandler = require('./api-handlers/upload-resume');
 const coverLetterHandler = require('./api-handlers/cover-letter');

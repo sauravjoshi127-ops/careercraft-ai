@@ -194,3 +194,6 @@ CREATE POLICY "auth_manage_portfolios"
 -- Add projects column to resumes table
 ALTER TABLE resumes ADD COLUMN IF NOT EXISTS projects JSONB DEFAULT '[]'::jsonb;
 
+-- Add professional_headline to resumes table
+ALTER TABLE resumes ADD COLUMN IF NOT EXISTS professional_headline TEXT;
+
