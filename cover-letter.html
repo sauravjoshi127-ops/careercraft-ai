@@ -766,8 +766,19 @@
 
           <div class="form-row">
             <div class="input-wrapper">
+              <label for="companyWebsite">Company Website</label>
+              <input id="companyWebsite" placeholder="e.g. https://www.google.com" />
+            </div>
+            <div class="input-wrapper">
               <label for="industry">Industry</label>
               <input id="industry" placeholder="e.g. Technology, Fintech, Healthcare" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="input-wrapper">
+              <label for="referral">Referral Name</label>
+              <input id="referral" placeholder="e.g. John Doe (Optional)" />
             </div>
             <div class="input-wrapper">
               <label for="location">Job Location</label>
@@ -827,6 +838,17 @@
             <div class="input-helper">Specific projects or achievements you want the letter to center on.</div>
           </div>
 
+          <div class="form-row" style="margin-bottom: 1.5rem;">
+            <div class="input-wrapper" style="margin-bottom: 0;">
+              <label for="linkedinUrl">LinkedIn URL (Optional)</label>
+              <input id="linkedinUrl" placeholder="https://linkedin.com/in/..." />
+            </div>
+            <div class="input-wrapper" style="margin-bottom: 0;">
+              <label for="portfolio">Portfolio (Optional)</label>
+              <input id="portfolio" placeholder="https://github.com/..." />
+            </div>
+          </div>
+
           <div class="toggle-row" id="mirrorRow" style="display:none; margin-bottom:1.5rem;">
             <label class="toggle">
               <input type="checkbox" id="mirrorStructure" />
@@ -848,15 +870,15 @@
               <label for="tone">Writing Tone *</label>
               <select id="tone">
                 <option>Professional</option>
-                <option>Formal</option>
-                <option>Friendly</option>
                 <option>Executive</option>
-                <option>Startup</option>
-                <option>Creative</option>
-                <option>Corporate</option>
+                <option>Confident</option>
+                <option>Formal</option>
+                <option>Conversational</option>
                 <option>Technical</option>
+                <option>Legal</option>
                 <option>Academic</option>
-                <option>Government</option>
+                <option>Consulting</option>
+                <option>Sales</option>
               </select>
             </div>
             <div class="input-wrapper">
