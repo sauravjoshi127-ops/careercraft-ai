@@ -309,7 +309,7 @@
         <div class="customizer-group" style="flex-basis: 100%; margin-bottom: 0.5rem; display: flex; flex-direction: column;">
           <span class="customizer-label">Resume Template</span>
           <div class="template-cards-container" id="templateCards">
-            <div class="template-card-option active" data-template="modern" onclick="switchTemplateCard('modern', this)">
+            <div class="template-card-option active" data-template="modern" onclick="switchTemplateCard('modern', this)" title="Best For: Software Engineers, Product Managers, Startups">
               <div class="template-card-visual">
                 <div class="template-card-line accent"></div>
                 <div class="template-card-line"></div>
@@ -317,7 +317,7 @@
               </div>
               <span class="template-card-name">Modern</span>
             </div>
-            <div class="template-card-option" data-template="classic" onclick="switchTemplateCard('classic', this)">
+            <div class="template-card-option" data-template="classic" onclick="switchTemplateCard('classic', this)" title="Best For: Lawyers, Government, Finance">
               <div class="template-card-visual" style="align-items: center;">
                 <div class="template-card-line" style="width: 50%;"></div>
                 <div class="template-card-line" style="width: 80%;"></div>
@@ -325,13 +325,29 @@
               </div>
               <span class="template-card-name">Classic</span>
             </div>
-            <div class="template-card-option" data-template="creative" onclick="switchTemplateCard('creative', this)">
+            <div class="template-card-option" data-template="executive" onclick="switchTemplateCard('executive', this)" title="Best For: Leadership, Senior Managers, Directors">
+              <div class="template-card-visual" style="align-items: center; border-top: 2px solid var(--accent); padding-top: 4px;">
+                <div class="template-card-line" style="width: 60%; height: 3px;"></div>
+                <div class="template-card-line"></div>
+                <div class="template-card-line"></div>
+              </div>
+              <span class="template-card-name">Executive</span>
+            </div>
+            <div class="template-card-option" data-template="creative" onclick="switchTemplateCard('creative', this)" title="Best For: Design, Marketing, Media">
               <div class="template-card-visual">
                 <div class="template-card-line accent" style="background: var(--cyan); width: 40%;"></div>
                 <div class="template-card-line"></div>
                 <div class="template-card-line"></div>
               </div>
               <span class="template-card-name">Creative</span>
+            </div>
+            <div class="template-card-option" data-template="minimal" onclick="switchTemplateCard('minimal', this)" title="Best For: Universal ATS, General Purpose">
+              <div class="template-card-visual" style="align-items: flex-start; gap: 4px;">
+                <div class="template-card-line" style="width: 30%;"></div>
+                <div class="template-card-line" style="width: 90%;"></div>
+                <div class="template-card-line" style="width: 90%;"></div>
+              </div>
+              <span class="template-card-name">Minimal</span>
             </div>
           </div>
         </div>
