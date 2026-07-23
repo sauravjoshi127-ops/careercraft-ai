@@ -140,6 +140,11 @@ module.exports = async function handler(req, res) {
   const companyResearch = String(body.companyResearch || '').trim();
   const volunteerProjects = String(body.volunteerProjects || '').trim();
   const extraKeywords = String(body.extraKeywords || '').trim();
+  
+  const companyWebsite = String(body.companyWebsite || '').trim();
+  const referral = String(body.referral || '').trim();
+  const linkedinUrl = String(body.linkedinUrl || '').trim();
+  const portfolio = String(body.portfolio || '').trim();
 
   if (!jobTitle || !companyName || !jobDescription) {
     return res.status(400).json({ error: 'Missing required fields.' });
@@ -192,6 +197,10 @@ FORM CONTEXT & METADATA:
 - Hiring Manager: ${hiringManager || 'Not specified'}
 - Target Industry: ${industry || 'Not specified'}
 - Target Location: ${location || 'Not specified'}
+- Company Website: ${companyWebsite || 'Not specified'}
+- Referral Name: ${referral || 'Not specified'}
+- LinkedIn URL: ${linkedinUrl || 'Not specified'}
+- Portfolio: ${portfolio || 'Not specified'}
 - Key Skills to emphasize: ${keySkills || 'Not specified'}
 - Measurable Achievements to highlight: ${achievements || 'Not specified'}
 ${additionalInstructions ? `- Additional Instructions: ${additionalInstructions}` : ''}
