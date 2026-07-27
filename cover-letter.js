@@ -553,6 +553,84 @@
     throw lastError;
   }
 
+  let premiumLoadingInterval = null;
+
+  function startPremiumLoading(sheet) {
+    if (!sheet) return;
+    const stages = [
+      'Preparing your information…',
+      'Understanding the job requirements…',
+      'Analyzing your experience…',
+      'Matching your resume with the role…',
+      'Writing your personalized cover letter…',
+      'Optimizing ATS keywords…',
+      'Refining grammar and tone…'
+    ];
+    let idx = 0;
+
+    const renderStage = (i) => {
+      const pct = Math.round(((i + 1) / (stages.length + 1)) * 100);
+      sheet.innerHTML = `
+        <div class="premium-loading-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 4rem 2rem; color:var(--text-1);">
+          <div class="spinner-premium" style="width:40px; height:40px; border:3px solid rgba(var(--accent-rgb), 0.1); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite; margin-bottom:1.5rem;"></div>
+          <div style="font-weight:600; font-size:1.15rem; color:var(--text-1); letter-spacing:-0.01em; animation: fadeIn 0.4s ease;">
+            ${stages[i]}
+          </div>
+          <div style="width: 240px; height: 4px; background: rgba(0,0,0,0.05); border-radius: 4px; margin-top: 1.5rem; overflow: hidden; position: relative;">
+             <div style="position:absolute; top:0; left:0; height:100%; width: ${pct}%; background: var(--accent); transition: width 0.6s ease; border-radius:4px;"></div>
+          </div>
+        </div>
+        <style>
+          @keyframes spin { 100% { transform: rotate(360deg); } }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        </style>
+      `;
+    };
+
+    renderStage(idx);
+    if (premiumLoadingInterval) clearInterval(premiumLoadingInterval);
+    premiumLoadingInterval = setInterval(() => {
+      idx++;
+      if (idx >= stages.length) {
+        clearInterval(premiumLoadingInterval);
+        return;
+      }
+      renderStage(idx);
+    }, 1200);
+  }
+
+  function finishPremiumLoading(sheet) {
+    if (premiumLoadingInterval) clearInterval(premiumLoadingInterval);
+    if (!sheet) return;
+    sheet.innerHTML = `
+      <div class="premium-loading-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 4rem 2rem; color:var(--text-1);">
+        <div style="width:40px; height:40px; border-radius:50%; background:var(--success); color:white; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:1.5rem; animation: fadeIn 0.4s ease;">✓</div>
+        <div style="font-weight:600; font-size:1.15rem; color:var(--text-1); letter-spacing:-0.01em; animation: fadeIn 0.4s ease;">
+          Generation Complete
+        </div>
+      </div>
+    `;
+  }
+
+  async function injectEditorContent(htmlContent) {
+    let editor = document.getElementById('editorSheet');
+    for (let i = 0; i < 3; i++) {
+      if (editor && document.body.contains(editor) && editor.isContentEditable !== false) {
+        break;
+      }
+      await new Promise(r => setTimeout(r, 500));
+      editor = document.getElementById('editorSheet');
+    }
+    
+    if (!editor || !document.body.contains(editor)) {
+      throw new Error('Editor instance was null');
+    }
+    
+    editor.innerHTML = htmlContent;
+    saveEditorState();
+    updateCounts();
+  }
+
   async function generateCoverLetter(event) {
     if (event) { event.preventDefault(); event.stopPropagation(); }
     if (isGenerating) { showToast('error', 'Already generating... please wait.'); return; }
@@ -603,24 +681,8 @@
       generateBtn.disabled = true;
 
       // Phase 9: Progressive UX Loading States
-      generateBtn.textContent = '⏳ 1/4 Validating Input...';
-      if (sheet) {
-        sheet.innerHTML = `
-          <div style="text-align:center; padding:3rem 1.5rem; color:var(--text-2);">
-            <div class="spinner" style="width:28px; height:28px; margin-bottom:1rem;"></div>
-            <div style="font-weight:700; font-size:1.05rem; color:var(--text-1); margin-bottom:0.35rem;" id="genStepTitle">Preparing Prompt Context</div>
-            <div style="font-size:0.85rem; color:var(--text-3);" id="genStepDesc">Structuring target role, company requirements, and resume highlights...</div>
-          </div>
-        `;
-      }
-
-      const updateProgress = (title, desc, btnLabel) => {
-        generateBtn.textContent = btnLabel;
-        const t = document.getElementById('genStepTitle');
-        const d = document.getElementById('genStepDesc');
-        if (t) t.textContent = title;
-        if (d) d.textContent = desc;
-      };
+      generateBtn.textContent = '⏳ Generating...';
+      startPremiumLoading(sheet);
 
       const payload = {
         jobTitle: document.getElementById('jobTitle').value.trim(),
@@ -664,11 +726,7 @@
         length: payload.length
       });
 
-      updateProgress(
-        'Connecting to AI Engine',
-        'Transmitting prompt payload to Career Hub AI Assistant...',
-        '⏳ 2/4 Generating Letter...'
-      );
+      generateBtn.textContent = '⏳ Analyzing...';
 
       const session = await window.appSdk.auth.getSession();
       const headers = { 'Content-Type': 'application/json' };
@@ -694,26 +752,15 @@
         throw error;
       }
 
-      updateProgress(
-        'Scoring & Evaluating ATS Match',
-        'Computing keyword relevance, readability, and tailoring metrics...',
-        '⏳ 3/4 Scoring ATS...'
-      );
+      generateBtn.textContent = '⏳ Optimizing...';
 
       lastGeneratedData = data;
       const letterText = cleanEscapes(data.letter);
 
-      updateProgress(
-        'Finalizing Workspace Document',
-        'Rendering letter into interactive Notion sheet editor...',
-        '⏳ 4/4 Finalizing...'
-      );
+      finishPremiumLoading(sheet);
+      generateBtn.textContent = '⏳ Finalizing...';
 
-      if (sheet) {
-        sheet.innerHTML = letterText;
-      }
-      saveEditorState();
-      updateCounts();
+      await injectEditorContent(letterText);
 
       updateGauges(data.detailed_scores || {});
       renderATSAnalysis(data);
@@ -727,34 +774,22 @@
       CoverLetterLogger.end(true);
 
     } catch (err) {
-      CoverLetterLogger.error('Execution Catch Block', err);
+      if (premiumLoadingInterval) clearInterval(premiumLoadingInterval);
 
-      // Phase 2 & Phase 6: Unmasked, Actionable Error Handling
-      const isNetwork = err.name === 'AbortError' || err.message?.includes('fetch') || err.message?.includes('NetworkError') || err.message?.includes('Failed to fetch');
-      const isTimeout = err.message?.toLowerCase().includes('timeout');
-      const isRateLimit = err.status === 429 || err.message?.includes('429') || err.message?.toLowerCase().includes('rate');
+      CoverLetterLogger.error('Generation Failed', {
+        stage: 'Cover Letter Generation',
+        reason: err.message,
+        stack: err.stack
+      });
 
-      let userMsg = err.data?.error || err.message || 'Cover letter generation failed.';
-
-      if (isNetwork) {
-        userMsg = 'Network connection lost. Please check your internet connection and try again.';
-      } else if (isTimeout) {
-        userMsg = 'Generation timed out after 30 seconds. Please try again with a shorter prompt.';
-      } else if (isRateLimit) {
-        userMsg = 'AI generation is temporarily busy. Please wait a moment and try again.';
-      } else if (err.status === 401) {
-        userMsg = 'Session expired. Please log in again to generate your cover letter.';
-      } else if (err.status === 403 || userMsg.includes('GEMINI_API_KEY') || userMsg.includes('not configured')) {
-        userMsg = 'AI service is not configured (missing or invalid API key). Please contact system administrator.';
-      }
-
-      showToast('error', userMsg);
+      const safeUserMsg = "We couldn't generate your cover letter. Please try again. If the issue continues, contact support.";
+      showToast('error', safeUserMsg);
 
       if (sheet) {
         sheet.innerHTML = `
           <div style="text-align:center; padding: 2.5rem 1rem; color: #64748b;">
             <div style="font-size:1.1rem; font-weight:600; color:#ef4444; margin-bottom:0.75rem;">⚠️ Generation Failed</div>
-            <div style="font-size:0.9rem; margin-bottom:1.5rem; max-width:420px; margin-left:auto; margin-right:auto; color:var(--text-2); line-height:1.6;">${userMsg}</div>
+            <div style="font-size:0.9rem; margin-bottom:1.5rem; max-width:420px; margin-left:auto; margin-right:auto; color:var(--text-2); line-height:1.6;">${safeUserMsg}</div>
             <button onclick="document.getElementById('generateBtn').click()" style="background:var(--accent); color:#fff; border:none; padding:0.5rem 1.5rem; border-radius:8px; font-weight:600; font-size:0.9rem; cursor:pointer;">↺ Try Again</button>
           </div>
         `;
@@ -1090,25 +1125,35 @@
     const atsVal = data.ats_score || 0;
     const relVal = data.relevance_score || 0;
 
-    document.getElementById('atsScoreDisplay').textContent = atsVal;
-    document.getElementById('atsScoreDisplay').className = 'score-number' + (atsVal >= 70 ? ' score-high' : atsVal >= 50 ? ' score-mid' : ' score-low');
-    document.getElementById('relScoreDisplay').textContent = relVal;
-    document.getElementById('relScoreDisplay').className = 'score-number' + (relVal >= 75 ? ' score-high' : relVal >= 55 ? ' score-mid' : ' score-low');
+    const atsScoreDisplay = document.getElementById('atsScoreDisplay');
+    const relScoreDisplay = document.getElementById('relScoreDisplay');
+
+    if (atsScoreDisplay) {
+      atsScoreDisplay.textContent = atsVal;
+      atsScoreDisplay.className = 'score-number' + (atsVal >= 70 ? ' score-high' : atsVal >= 50 ? ' score-mid' : ' score-low');
+    }
+    
+    if (relScoreDisplay) {
+      relScoreDisplay.textContent = relVal;
+      relScoreDisplay.className = 'score-number' + (relVal >= 75 ? ' score-high' : relVal >= 55 ? ' score-mid' : ' score-low');
+    }
 
     const matched = data.matched_keywords || [];
     const missing = data.missing_keywords || [];
     const keywordsSection = document.getElementById('atsKeywordsSection');
 
-    keywordsSection.innerHTML = `
-      <h4 style="margin-bottom:0.5rem; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.04em;">Matched Job Terms (${matched.length})</h4>
-      <div style="margin-bottom:1rem;">
-        ${matched.length ? matched.map(k => `<span class="tag tag-matched">${k}</span>`).join('') : '<span style="font-size:0.8rem; color:var(--text-3);">None matched yet.</span>'}
-      </div>
-      <h4 style="margin-bottom:0.5rem; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.04em;">Missing / Recommended Terms (${missing.length})</h4>
-      <div>
-        ${missing.length ? missing.map(k => `<span class="tag tag-missing">${k}</span>`).join('') : '<span style="font-size:0.8rem; color:var(--text-3);">Perfect match! No keywords missing.</span>'}
-      </div>
-    `;
+    if (keywordsSection) {
+      keywordsSection.innerHTML = `
+        <h4 style="margin-bottom:0.5rem; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.04em;">Matched Job Terms (${matched.length})</h4>
+        <div style="margin-bottom:1rem;">
+          ${matched.length ? matched.map(k => `<span class="tag tag-matched">${k}</span>`).join('') : '<span style="font-size:0.8rem; color:var(--text-3);">None matched yet.</span>'}
+        </div>
+        <h4 style="margin-bottom:0.5rem; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.04em;">Missing / Recommended Terms (${missing.length})</h4>
+        <div>
+          ${missing.length ? missing.map(k => `<span class="tag tag-missing">${k}</span>`).join('') : '<span style="font-size:0.8rem; color:var(--text-3);">Perfect match! No keywords missing.</span>'}
+        </div>
+      `;
+    }
   }
 
   function renderVariants(variants, mainText) {
