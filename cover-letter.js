@@ -1385,10 +1385,172 @@
     showToast('success', 'Cover letter DOCX exported!');
   }
 
-  function copyToClipboard() {
-    const text = document.getElementById('editorSheet').innerText;
-    navigator.clipboard.writeText(text);
-    showToast('success', 'Text copied to clipboard!');
+  // ── Progressive Step Accordion Helper ──
+  window.toggleStepAccordion = function(stepId) {
+    document.querySelectorAll('.cl-step-accordion').forEach(acc => {
+      acc.classList.toggle('active', acc.id === `step-${stepId}`);
+    });
+  };
+
+  // ── Auto Detect Company Info from Website URL ──
+  window.autoDetectCompanyInfo = function() {
+    const urlInput = document.getElementById('companyWebsite');
+    const nameInput = document.getElementById('companyName');
+    if (!urlInput || !urlInput.value.trim()) return;
+
+    try {
+      let rawUrl = urlInput.value.trim();
+      if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+        rawUrl = 'https://' + rawUrl;
+      }
+      const parsed = new URL(rawUrl);
+      let host = parsed.hostname.replace(/^www\./, '');
+      let nameGuess = host.split('.')[0];
+      if (nameGuess && (!nameInput.value || nameInput.value.trim() === '')) {
+        nameInput.value = nameGuess.charAt(0).toUpperCase() + nameGuess.slice(1);
+      }
+    } catch (_) {}
+  };
+
+  // ── Extracted Resume Chips Renderer ──
+  function renderResumeChips(skillsArray) {
+    const container = document.getElementById('resumeChipsContainer');
+    const section = document.getElementById('extractedChipsSection');
+    if (!container || !section) return;
+
+    if (!skillsArray || !skillsArray.length) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+    container.innerHTML = skillsArray.map((skill, idx) => `
+      <span class="cl-chip" id="chip-${idx}">
+        ${skill}
+        <span class="cl-chip-remove" onclick="this.parentElement.remove()">×</span>
+      </span>
+    `).join('');
+  }
+
+  // ── Selection Floating Toolbar Handler ──
+  document.addEventListener('selectionchange', () => {
+    const toolbar = document.getElementById('floatingEditorToolbar');
+    const sheet = document.getElementById('editorSheet');
+    if (!toolbar || !sheet) return;
+
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !sheet.contains(selection.anchorNode)) {
+      toolbar.classList.remove('visible');
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const sheetRect = sheet.getBoundingClientRect();
+
+    if (rect.width > 0 && rect.height > 0) {
+      toolbar.style.top = `${rect.top - sheetRect.top - 45}px`;
+      toolbar.style.left = `${rect.left - sheetRect.left + (rect.width / 2) - 80}px`;
+      toolbar.classList.add('visible');
+    } else {
+      toolbar.classList.remove('visible');
+    }
+  });
+
+  // ── AI Selection Rewrite Helper ──
+  window.aiImproveSelection = async function(action) {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) {
+      showToast('error', 'Select text in the editor to improve.');
+      return;
+    }
+
+    const selectedText = selection.toString();
+    showToast('success', `Applying AI ${action}...`);
+
+    try {
+      const payload = {
+        letter: selectedText,
+        action: action,
+        jobTitle: document.getElementById('jobTitle').value.trim()
+      };
+      
+      const session = await window.appSdk.auth.getSession();
+      const headers = { 'Content-Type': 'application/json' };
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      const res = await fetch('/api/cover-letter', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.letter) {
+        document.execCommand('insertHTML', false, `<strong>${data.letter}</strong>`);
+        saveEditorState();
+        updateCounts();
+        showToast('success', 'Selection improved!');
+      }
+    } catch (err) {
+      showToast('error', 'AI rewrite error: ' + err.message);
+    }
+  };
+
+  // ── Updated Live Metrics Calculator & Empty State Handler ──
+  function updateCounts() {
+    const sheet = document.getElementById('editorSheet');
+    const emptyState = document.getElementById('editorEmptyState');
+    if (!sheet) return;
+
+    const text = sheet.innerText || '';
+    const cleanText = text.trim();
+    
+    // Toggle Empty State
+    if (!cleanText || cleanText.startsWith('Your generated cover letter will appear here.')) {
+      if (emptyState) emptyState.style.display = 'block';
+      sheet.style.display = 'none';
+    } else {
+      if (emptyState) emptyState.style.display = 'none';
+      sheet.style.display = 'block';
+    }
+
+    const chars = cleanText.length;
+    const words = cleanText ? cleanText.split(/\s+/).filter(Boolean).length : 0;
+    const paragraphs = cleanText ? cleanText.split(/\n\s*\n/).filter(Boolean).length : 0;
+    const readMin = Math.max(1, Math.round(words / 200));
+
+    // Calculate Flesch-Kincaid / Readability score (0-100)
+    let readability = 85;
+    if (words > 20) {
+      const avgWordLength = chars / words;
+      readability = Math.max(40, Math.min(98, Math.round(100 - (avgWordLength * 6))));
+    }
+
+    const updateDOM = () => {
+      const charEl = document.getElementById('charCount');
+      const wordEl = document.getElementById('wordCount');
+      const paraEl = document.getElementById('paragraphCount');
+      const readEl = document.getElementById('readTime');
+      const readabEl = document.getElementById('readabilityScore');
+      const liveAtsEl = document.getElementById('liveAtsScore');
+
+      if (charEl) charEl.textContent = `${chars}`;
+      if (wordEl) wordEl.textContent = `${words}`;
+      if (paraEl) paraEl.textContent = `${paragraphs}`;
+      if (readEl) readEl.textContent = `${readMin}m`;
+      if (readabEl) readabEl.textContent = words > 10 ? `${readability}%` : '—';
+      if (liveAtsEl && currentAtsData?.overallATSScore) {
+        liveAtsEl.textContent = `${currentAtsData.overallATSScore}%`;
+      }
+    };
+
+    if (window.PerformanceManager) {
+      window.PerformanceManager.scheduleUpdate(updateDOM);
+    } else {
+      updateDOM();
+    }
   }
 
   // Export to window namespace for HTML click bindings

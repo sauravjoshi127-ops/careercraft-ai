@@ -731,386 +731,434 @@
     <div class="page-header" style="margin-bottom:1.5rem;">
       <h1 class="heading-gradient">Cover Letter Workspace</h1>
       <p>Build, test, polish, and optimize your application letter with tailored recruiter metrics and keyword scoring.</p>
-    </div>
-
-    <div class="workspace-container">
+      <div class="cl-workspace">
       
-      <!-- ── LEFT SIDE: THE BUILDER WIZARD ── -->
-      <div class="glass-card">
-        <div class="tab-header" id="wizardTabs">
-          <button class="tab-btn active" data-wizard-tab="jobInfo">Job Info</button>
-          <button class="tab-btn" data-wizard-tab="resumeTab">Resume &amp; Highlights</button>
-          <button class="tab-btn" data-wizard-tab="writerSettings">Style Settings</button>
-          <button class="tab-btn" data-wizard-tab="optimizerTab">Score Optimizer</button>
+      <!-- ── LEFT PANEL: Guided Progressive Workflow ── -->
+      <div class="cl-left-panel">
+        <div style="margin-bottom:1rem;">
+          <h2 style="font-size:1.15rem; font-weight:700; color:var(--text-1); margin:0 0 0.25rem 0;">Information Collection</h2>
+          <p style="font-size:0.82rem; color:var(--text-3); margin:0;">Complete the steps below to tailor your AI application letter.</p>
         </div>
 
-        <!-- Wizard Progress Indicator -->
-        <div class="wizard-progress-container" style="height: 4px; background: rgba(255, 255, 255, 0.05); border-radius: 2px; margin-bottom: 1.25rem; overflow: hidden;">
-          <div id="wizardProgressBar" style="height: 100%; width: 25%; background: var(--cyan); transition: width 0.3s ease;"></div>
-        </div>
-
-        <!-- Wizard Panel 1: Job Info -->
-        <div class="tab-pane active" id="pane-jobInfo">
-          <div class="form-row">
+        <!-- Step 1: Job Information -->
+        <div class="cl-step-accordion active" id="step-jobInfo">
+          <div class="cl-step-header" onclick="toggleStepAccordion('jobInfo')">
+            <div class="cl-step-title-group">
+              <div class="cl-step-num">1</div>
+              <div class="cl-step-title">Job Information</div>
+            </div>
+            <span class="cl-step-badge">Required *</span>
+          </div>
+          <div class="cl-step-body">
             <div class="input-wrapper">
               <label for="jobTitle">Job Title *</label>
-              <input id="jobTitle" placeholder="e.g. Senior Frontend Developer" required />
+              <input id="jobTitle" placeholder="e.g. Senior Frontend Engineer" required />
               <div class="validation-err" id="err-jobTitle">Please enter a job title.</div>
             </div>
+
+            <div class="input-wrapper">
+              <label for="jobDescription">Job Description *</label>
+              <textarea id="jobDescription" placeholder="Paste the full job requirements here..." style="min-height:140px; resize: vertical;" required></textarea>
+              <div class="validation-err" id="err-jobDescription">Please paste the job description.</div>
+              <div class="input-helper">
+                <span id="jdWordCount">0 words</span>
+                <span>Min 50 words recommended</span>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; margin-top:0.75rem;">
+              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('companyDetails')">Next: Company Details →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Company Details -->
+        <div class="cl-step-accordion" id="step-companyDetails">
+          <div class="cl-step-header" onclick="toggleStepAccordion('companyDetails')">
+            <div class="cl-step-title-group">
+              <div class="cl-step-num">2</div>
+              <div class="cl-step-title">Company Details</div>
+            </div>
+            <span class="cl-step-badge">Auto-detect</span>
+          </div>
+          <div class="cl-step-body">
             <div class="input-wrapper">
               <label for="companyName">Company Name *</label>
               <input id="companyName" placeholder="e.g. Google" required />
               <div class="validation-err" id="err-companyName">Please enter a company name.</div>
             </div>
-          </div>
 
-          <div class="form-row">
-            <div class="input-wrapper">
-              <label for="companyWebsite">Company Website</label>
-              <input id="companyWebsite" placeholder="e.g. https://www.google.com" />
+            <div class="form-row">
+              <div class="input-wrapper">
+                <label for="companyWebsite">Website</label>
+                <input id="companyWebsite" placeholder="e.g. https://google.com" onchange="autoDetectCompanyInfo()" />
+              </div>
+              <div class="input-wrapper">
+                <label for="industry">Industry</label>
+                <input id="industry" placeholder="e.g. Technology" list="industryOptions" />
+                <datalist id="industryOptions">
+                  <option value="Technology"></option>
+                  <option value="Fintech"></option>
+                  <option value="Healthcare"></option>
+                  <option value="E-commerce"></option>
+                  <option value="Consulting"></option>
+                  <option value="Finance"></option>
+                </datalist>
+              </div>
             </div>
-            <div class="input-wrapper">
-              <label for="industry">Industry</label>
-              <input id="industry" placeholder="e.g. Technology, Fintech, Healthcare" />
-            </div>
-          </div>
 
-          <div class="form-row">
-            <div class="input-wrapper">
-              <label for="referral">Referral Name</label>
-              <input id="referral" placeholder="e.g. John Doe (Optional)" />
+            <div class="form-row">
+              <div class="input-wrapper">
+                <label for="hiringManager">Hiring Manager</label>
+                <input id="hiringManager" placeholder="e.g. Dr. Jennifer Adams" />
+                <div class="input-helper">Used in salutation block.</div>
+              </div>
+              <div class="input-wrapper">
+                <label for="location">Location</label>
+                <input id="location" placeholder="e.g. Remote, NY" />
+              </div>
             </div>
-            <div class="input-wrapper">
-              <label for="location">Job Location</label>
-              <input id="location" placeholder="e.g. Remote, San Francisco, CA" />
+
+            <div style="display:flex; justify-content:space-between; margin-top:0.75rem;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('jobInfo')">← Back</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('resumeTab')">Next: Resume Integration →</button>
             </div>
-          </div>
-
-          <div class="input-wrapper">
-            <label for="hiringManager">Hiring Manager Name</label>
-            <input id="hiringManager" placeholder="e.g. Dr. Jennifer Adams (or leave blank)" />
-            <div class="input-helper">We will use this in the salutation block if provided.</div>
-          </div>
-
-          <div class="input-wrapper">
-            <label for="jobDescription">Job Description *</label>
-            <textarea id="jobDescription" placeholder="Paste the full job post details here. The AI uses this to match keywords..." style="min-height:160px; resize: vertical;" required></textarea>
-            <div class="validation-err" id="err-jobDescription">Please paste the job description.</div>
-            <div class="input-helper">
-              <span id="jdWordCount">0 words</span>
-              <span>Min 50 words recommended</span>
-            </div>
-          </div>
-
-          <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
-            <button class="btn btn-primary wizard-nav-btn" data-wizard-tab="resumeTab">Next: Resume &amp; Highlights →</button>
           </div>
         </div>
 
-        <!-- Wizard Panel 2: Resume Upload & Highlights -->
-        <div class="tab-pane" id="pane-resumeTab">
-          <div class="input-wrapper">
-            <label>Provide Resume profile context</label>
-            <div style="margin-bottom:0.75rem;">
-              <select id="savedResumeSelect" class="history-select" style="width:100%;">
-                <option value="">— Select from your Saved Resumes —</option>
+        <!-- Step 3: Resume Integration -->
+        <div class="cl-step-accordion" id="step-resumeTab">
+          <div class="cl-step-header" onclick="toggleStepAccordion('resumeTab')">
+            <div class="cl-step-title-group">
+              <div class="cl-step-num">3</div>
+              <div class="cl-step-title">Resume Integration</div>
+            </div>
+            <span class="cl-step-badge">Smart Import</span>
+          </div>
+          <div class="cl-step-body">
+            <div class="input-wrapper">
+              <label>Select Saved Resume or Upload</label>
+              <select id="savedResumeSelect" class="history-select" style="width:100%; margin-bottom:0.75rem;">
+                <option value="">— Choose Existing Resume —</option>
               </select>
+
+              <div class="upload-area" id="uploadArea">
+                <input type="file" id="resumeFile" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                <div class="upload-icon"><svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-3); margin:0 auto;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+                <div class="upload-text">Import PDF / DOCX Resume</div>
+                <div class="upload-hint">Extracts skills, achievements &amp; experience automatically</div>
+              </div>
+              <div id="resumeStatus" style="display:none" class="resume-status"></div>
             </div>
 
-            <div class="upload-area" id="uploadArea">
-              <input type="file" id="resumeFile" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-              <div class="upload-icon"><svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg" style="color:var(--text-3); margin:0 auto;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
-              <div class="upload-text">Drag &amp; drop or click to upload PDF/DOCX</div>
-              <div class="upload-hint">Supports up to 5 MB</div>
+            <!-- Extracted Resume Chips -->
+            <div id="extractedChipsSection" style="display:none; margin-top:0.75rem;">
+              <label style="font-size:0.78rem; font-weight:700; color:var(--text-2);">Extracted Skills &amp; Highlights (Click to remove)</label>
+              <div class="cl-chips-container" id="resumeChipsContainer"></div>
             </div>
-            <div class="resume-progress" id="resumeProgress" style="height:4px; background:rgba(255,255,255,0.05); border-radius:4px; margin-top:0.5rem; overflow:hidden; display:none;">
-              <div id="resumeProgressBar" style="height:100%; background:var(--cyan); width:0; transition:width 0.2s;"></div>
-            </div>
-            <div id="resumeStatus" style="display:none" class="resume-status"></div>
-            <div id="resumeClearRow" style="display:none;margin-top:.5rem;">
-              <button id="clearResumeBtn" class="btn btn-secondary btn-sm" style="min-height:30px; padding:0.2rem 0.5rem;">✕ Remove uploaded resume</button>
-            </div>
-          </div>
 
-          <div class="input-wrapper">
-            <label for="highlights">Key Highlights &amp; Qualifications</label>
-            <textarea id="highlights" placeholder="Provide 2–4 bullets or details about your accomplishments (if blank, AI infers from resume)..." style="min-height:100px; resize: vertical;"></textarea>
-            <div class="input-helper">Specific projects or achievements you want the letter to center on.</div>
-          </div>
-
-          <div class="form-row" style="margin-bottom: 1.5rem;">
-            <div class="input-wrapper" style="margin-bottom: 0;">
-              <label for="linkedinUrl">LinkedIn URL (Optional)</label>
-              <input id="linkedinUrl" placeholder="https://linkedin.com/in/..." />
+            <div class="input-wrapper" style="margin-top:0.875rem;">
+              <label for="highlights">Specific Achievements to Center On</label>
+              <textarea id="highlights" placeholder="Mention key projects or metrics you want emphasized..." style="min-height:80px;"></textarea>
             </div>
-            <div class="input-wrapper" style="margin-bottom: 0;">
-              <label for="portfolio">Portfolio (Optional)</label>
-              <input id="portfolio" placeholder="https://github.com/..." />
+
+            <div style="display:flex; justify-content:space-between; margin-top:0.75rem;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('companyDetails')">← Back</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('writerSettings')">Next: Writing Preferences →</button>
             </div>
-          </div>
-
-          <div class="toggle-row" id="mirrorRow" style="display:none; margin-bottom:1.5rem;">
-            <label class="toggle">
-              <input type="checkbox" id="mirrorStructure" />
-              <span class="toggle-slider"></span>
-            </label>
-            <span class="toggle-label" style="font-size:0.85rem; color:var(--text-2)">Mirror my resume styling/organization structure</span>
-          </div>
-
-          <div style="display:flex; justify-content:space-between; margin-top:1rem;">
-            <button class="btn btn-secondary wizard-nav-btn" data-wizard-tab="jobInfo">← Back</button>
-            <button class="btn btn-primary wizard-nav-btn" data-wizard-tab="writerSettings">Next: Style Settings →</button>
           </div>
         </div>
 
-        <!-- Wizard Panel 3: Style Settings -->
-        <div class="tab-pane" id="pane-writerSettings">
-          <div class="form-row">
-            <div class="input-wrapper">
-              <label for="tone">Writing Tone *</label>
-              <select id="tone">
-                <option>Professional</option>
-                <option>Executive</option>
-                <option>Confident</option>
-                <option>Formal</option>
-                <option>Conversational</option>
-                <option>Technical</option>
-                <option>Legal</option>
-                <option>Academic</option>
-                <option>Consulting</option>
-                <option>Sales</option>
-              </select>
+        <!-- Step 4: Writing Preferences -->
+        <div class="cl-step-accordion" id="step-writerSettings">
+          <div class="cl-step-header" onclick="toggleStepAccordion('writerSettings')">
+            <div class="cl-step-title-group">
+              <div class="cl-step-num">4</div>
+              <div class="cl-step-title">Writing Preferences</div>
             </div>
-            <div class="input-wrapper">
-              <label for="length">Target Length *</label>
-              <select id="length">
-                <option>Short</option>
-                <option selected>Medium</option>
-                <option>Long</option>
-              </select>
+            <span class="cl-step-badge">Tone &amp; Format</span>
+          </div>
+          <div class="cl-step-body">
+            <div class="form-row">
+              <div class="input-wrapper">
+                <label for="tone">Writing Tone *</label>
+                <select id="tone">
+                  <option selected>Professional</option>
+                  <option>Executive</option>
+                  <option>Friendly</option>
+                  <option>Formal</option>
+                  <option>Confident</option>
+                  <option>Conversational</option>
+                </select>
+              </div>
+              <div class="input-wrapper">
+                <label for="length">Target Length *</label>
+                <select id="length">
+                  <option>Short (200 words)</option>
+                  <option selected>Medium (350 words)</option>
+                  <option>Long (500 words)</option>
+                </select>
+              </div>
             </div>
-          </div>
 
-          <div class="form-row">
-            <div class="input-wrapper">
-              <label for="experienceLevel">Experience Level *</label>
-              <select id="experienceLevel">
-                <option>Entry</option>
-                <option selected>Mid</option>
-                <option>Senior</option>
-                <option>Executive</option>
-              </select>
+            <div class="form-row">
+              <div class="input-wrapper">
+                <label for="experienceLevel">Experience Level</label>
+                <select id="experienceLevel">
+                  <option>Entry Level</option>
+                  <option selected>Mid Career</option>
+                  <option>Senior Leader</option>
+                  <option>Executive</option>
+                </select>
+              </div>
+              <div class="input-wrapper">
+                <label for="candidateName">Your Name</label>
+                <input id="candidateName" placeholder="e.g. Jane Smith" />
+              </div>
             </div>
-            <div class="input-wrapper">
-              <label for="candidateName">Candidate Name (Header)</label>
-              <input id="candidateName" placeholder="e.g. Jane Smith" />
-              <div class="input-helper">Appears in header block of exported files.</div>
+
+            <div style="display:flex; justify-content:space-between; margin-top:0.75rem;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('resumeTab')">← Back</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('aiPersonalization')">Next: AI Personalization →</button>
             </div>
-          </div>
-
-          <div class="input-wrapper">
-            <label for="opening">Custom Opening Sentence (optional)</label>
-            <input id="opening" placeholder="e.g. Dear Dr. Adams, I was thrilled to come across..." />
-            <div class="input-helper">Overrides default AI opening sentence structure.</div>
-          </div>
-
-          <div class="input-wrapper">
-            <label for="closing">Custom Closing Sentence (optional)</label>
-            <input id="closing" placeholder="e.g. I look forward to detailing how my expertise fits..." />
-            <div class="input-helper">Overrides default AI closing sentence structure.</div>
-          </div>
-
-          <div class="input-wrapper">
-            <label for="additionalInstructions">Additional Instructions</label>
-            <textarea id="additionalInstructions" placeholder="e.g. Highlight my fintech background and mention my ability to relocate within a month." style="min-height:80px;"></textarea>
-            <div class="input-helper">Directives for tailoring vocabulary or thematic focus.</div>
-          </div>
-
-          <div style="display:flex; justify-content:space-between; margin-top:1rem;">
-            <button class="btn btn-secondary wizard-nav-btn" data-wizard-tab="resumeTab">← Back</button>
-            <button class="btn btn-primary wizard-nav-btn" data-wizard-tab="optimizerTab">Next: Score Optimizer →</button>
           </div>
         </div>
 
-        <!-- Wizard Panel 4: Score Optimizer -->
-        <div class="tab-pane" id="pane-optimizerTab">
-          <p style="font-size:0.85rem; color:var(--text-3); margin-bottom:1rem;">Provide specific answers to these contextual checkpoints to feed the ATS matching algorithms and maximize target relevance.</p>
-          
-          <div class="input-wrapper">
-            <label for="mustHaveSkills">Must-have Skills or Core Tech Stack</label>
-            <textarea id="mustHaveSkills" placeholder="e.g. React, Node.js, AWS, Kubernetes, CI/CD..." style="min-height:60px;"></textarea>
+        <!-- Step 5: AI Personalization -->
+        <div class="cl-step-accordion" id="step-aiPersonalization">
+          <div class="cl-step-header" onclick="toggleStepAccordion('aiPersonalization')">
+            <div class="cl-step-title-group">
+              <div class="cl-step-num">5</div>
+              <div class="cl-step-title">AI Personalization</div>
+            </div>
+            <span class="cl-step-badge">Advanced AI</span>
           </div>
+          <div class="cl-step-body">
+            <div class="form-row">
+              <div class="input-wrapper">
+                <label for="creativityLevel">Creativity</label>
+                <select id="creativityLevel">
+                  <option value="Low">Low (Factual &amp; Direct)</option>
+                  <option value="Balanced" selected>Balanced (Standard)</option>
+                  <option value="High">High (Expressive)</option>
+                </select>
+              </div>
+              <div class="input-wrapper">
+                <label for="focusArea">Thematic Focus</label>
+                <select id="focusArea">
+                  <option value="Achievements" selected>Key Achievements</option>
+                  <option value="Technical Skills">Technical Expertise</option>
+                  <option value="Leadership">Leadership &amp; Ownership</option>
+                  <option value="Culture Fit">Culture &amp; Mission Alignment</option>
+                  <option value="Problem Solving">Problem Solving &amp; Impact</option>
+                  <option value="Career Change">Career Transition</option>
+                </select>
+              </div>
+            </div>
 
-          <div class="input-wrapper">
-            <label for="keyAchievements">Measurable Achievements</label>
-            <textarea id="keyAchievements" placeholder="e.g. Increased loading speeds by 40%, cut cloud costs by $15k/mo..." style="min-height:60px;"></textarea>
-          </div>
+            <div class="input-wrapper">
+              <label for="additionalInstructions">Custom Directives (Optional)</label>
+              <textarea id="additionalInstructions" placeholder="e.g. Emphasize my remote team leadership and SOC2 compliance experience..." style="min-height:70px;"></textarea>
+            </div>
 
-          <div class="input-wrapper">
-            <label for="workHistoryAlignment">Closest Past Role or Project Description</label>
-            <textarea id="workHistoryAlignment" placeholder="e.g. Led UI refactoring for client onboarding panel at Acme FinTech..." style="min-height:60px;"></textarea>
-          </div>
-
-          <div class="input-wrapper">
-            <label for="softSkills">Soft Skills / Cultural Values</label>
-            <textarea id="softSkills" placeholder="e.g. extreme ownership, peer mentorship, cross-functional partner..." style="min-height:60px;"></textarea>
-          </div>
-
-          <div class="input-wrapper">
-            <label for="companyResearch">Why this company specifically?</label>
-            <textarea id="companyResearch" placeholder="e.g. Adore their open source devtools; saw Jennifer's blog post on scaling their database..." style="min-height:60px;"></textarea>
-          </div>
-
-          <div class="input-wrapper">
-            <label for="volunteerProjects">Side projects or extra activities</label>
-            <textarea id="volunteerProjects" placeholder="e.g. contributor to Next.js repository, hackathon organizer..." style="min-height:60px;"></textarea>
-          </div>
-
-          <div class="input-wrapper">
-            <label for="extraKeywords">Extra terms to force include</label>
-            <textarea id="extraKeywords" placeholder="e.g. PMP, Scrum Master, SOC2, HIPAA..." style="min-height:60px;"></textarea>
-          </div>
-
-          <div style="display:flex; justify-content:space-between; margin-top:1rem;">
-            <button class="btn btn-secondary wizard-nav-btn" data-wizard-tab="writerSettings">← Back</button>
-            <button id="generateBtn" class="btn btn-primary">Generate Cover Letter</button>
+            <div style="display:flex; justify-content:space-between; margin-top:1rem;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('writerSettings')">← Back</button>
+              <button id="generateBtn" class="btn btn-primary">Generate Cover Letter ✨</button>
+            </div>
           </div>
         </div>
 
       </div>
 
-      <!-- ── RIGHT SIDE: THE EDITOR & WORKSPACE ── -->
-      <div class="editor-container">
-        <div class="tab-header" id="editorTabs">
-          <button class="tab-btn active" data-editor-tab="editPane">Live Editor</button>
-          <button class="tab-btn" data-editor-tab="suggestionsPane">AI Suggestions <span id="suggestionsCount"></span></button>
-          <button class="tab-btn" data-editor-tab="atsPane">ATS Analysis</button>
-          <button class="tab-btn" data-editor-tab="variantsPane">Variants</button>
-        </div>
-
-        <!-- Editor Pane -->
-        <div class="tab-pane active" id="pane-editPane">
-          <div class="editor-toolbar">
-            <button class="toolbar-btn" data-command="undo" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg></button>
-            <button class="toolbar-btn" data-command="redo" title="Redo (Ctrl+Y)"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg></button>
-            <div class="toolbar-divider"></div>
-            <button class="toolbar-btn" data-command="bold" title="Bold (Ctrl+B)"><b>B</b></button>
-            <button class="toolbar-btn" data-command="italic" title="Italic (Ctrl+I)"><i>I</i></button>
-            <button class="toolbar-btn" data-command="insertUnorderedList" title="Bullet List"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
-            <div class="toolbar-divider"></div>
-            <button class="toolbar-btn" data-command="justifyLeft" title="Align Left"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
-            <button class="toolbar-btn" data-command="justifyFull" title="Align Justify"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg></button>
-          </div>
-
-          <div class="editor-sheet-container">
-            <div class="editor-sheet" id="editorSheet" contenteditable="true" oninput="handleEditorInput()" spellcheck="true">Your generated cover letter will appear here. Edit, format, or configure inputs on the left side to get started...</div>
-          </div>
-
-          <div class="editor-footer">
-            <div style="display:flex; gap:0.75rem;">
-              <span id="charCount">0 characters</span>
-              <span>•</span>
-              <span id="wordCount">0 words</span>
-              <span>•</span>
-              <span id="readTime">0 min read</span>
-            </div>
-            <div class="autosave-status" id="autosaveLabel">
-              <span style="font-size:0.7rem;">●</span> Draft local-saved
-            </div>
-          </div>
-
-          <div class="tools" style="margin-top:1.25rem;">
-            <button id="saveLetterBtn" class="btn btn-primary">Save Letter</button>
-            <button id="downloadPdfBtn" class="btn btn-secondary">Download PDF</button>
-            <button id="downloadDocxBtn" class="btn btn-secondary">Download DOCX</button>
-            <button id="copyTextBtn" class="btn btn-secondary">Copy Text</button>
-          </div>
-        </div>
-
-        <!-- AI Suggestions Pane -->
-        <div class="tab-pane" id="pane-suggestionsPane">
-          <div class="metrics-grid">
-            <div class="metric-card">
-              <svg class="gauge-svg">
-                <circle class="gauge-bg" cx="40" cy="40" r="36" />
-                <circle class="gauge-fill" id="gauge-overallATSScore" cx="40" cy="40" r="36" />
-              </svg>
-              <div class="metric-value" id="val-overallATSScore">—</div>
-              <div class="metric-label">Overall ATS</div>
-            </div>
-            <div class="metric-card">
-              <svg class="gauge-svg">
-                <circle class="gauge-bg" cx="40" cy="40" r="36" />
-                <circle class="gauge-fill" id="gauge-keywordMatch" cx="40" cy="40" r="36" />
-              </svg>
-              <div class="metric-value" id="val-keywordMatch">—</div>
-              <div class="metric-label">Keyword Match</div>
-            </div>
-            <div class="metric-card">
-              <svg class="gauge-svg">
-                <circle class="gauge-bg" cx="40" cy="40" r="36" />
-                <circle class="gauge-fill" id="gauge-recruiterReadability" cx="40" cy="40" r="36" />
-              </svg>
-              <div class="metric-value" id="val-recruiterReadability">—</div>
-              <div class="metric-label">Readability</div>
-            </div>
-            <div class="metric-card">
-              <svg class="gauge-svg">
-                <circle class="gauge-bg" cx="40" cy="40" r="36" />
-                <circle class="gauge-fill" id="gauge-professionalTone" cx="40" cy="40" r="36" />
-              </svg>
-              <div class="metric-value" id="val-professionalTone">—</div>
-              <div class="metric-label">Tone</div>
-            </div>
-            <div class="metric-card">
-              <svg class="gauge-svg">
-                <circle class="gauge-bg" cx="40" cy="40" r="36" />
-                <circle class="gauge-fill" id="gauge-personalization" cx="40" cy="40" r="36" />
-              </svg>
-              <div class="metric-value" id="val-personalization">—</div>
-              <div class="metric-label">Personalization</div>
-            </div>
-          </div>
-
-          <div style="display: flex; gap: 0.5rem; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-            <h3 style="font-size:1.05rem; margin:0;">Interactive Suggestions</h3>
-            <button id="reanalyzeAtsBtn" class="btn btn-secondary btn-sm" style="min-height:30px; font-size:0.75rem; padding:0.2rem 0.6rem; display:none;" onclick="reanalyzeATS()">🔄 Re-analyze ATS</button>
-          </div>
+      <!-- ── RIGHT PANEL: Notion-Style Live Editor & AI Suite ── -->
+      <div class="cl-right-panel">
+        <div class="cl-editor-container">
           
-          <div id="suggestionsSummaryContainer"></div>
-
-          <div id="suggestionsList">
-            <p style="color:var(--text-3); font-size:0.85rem;">No recommendations generated yet. Generate your letter to receive improvement suggestions.</p>
+          <!-- Workspace Header Tabs -->
+          <div class="tab-header" id="editorTabs">
+            <button class="tab-btn active" data-editor-tab="editPane">Live Editor</button>
+            <button class="tab-btn" data-editor-tab="suggestionsPane">AI Assistant <span id="suggestionsCount"></span></button>
+            <button class="tab-btn" data-editor-tab="atsPane">ATS Analysis</button>
+            <button class="tab-btn" data-editor-tab="variantsPane">Variants</button>
           </div>
-        </div>
 
-        <!-- ATS Analysis Pane -->
-        <div class="tab-pane" id="pane-atsPane">
-          <div class="score-box" style="margin-top:0; margin-bottom:1.5rem; display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-            <div class="score">
-              <div class="score-number" id="atsScoreDisplay">—</div>
-              <div class="score-label">ATS Keyword Score</div>
-              <div class="score-tip" id="atsScoreTip">Matches target job keywords against letter vocabulary.</div>
+          <!-- Tab Pane 1: Live Editor -->
+          <div class="tab-pane active" id="pane-editPane">
+            
+            <!-- Sticky Toolbar -->
+            <div class="cl-editor-toolbar-sticky">
+              <div class="cl-toolbar-group">
+                <button type="button" class="cl-toolbar-btn" data-command="undo" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg></button>
+                <button type="button" class="cl-toolbar-btn" data-command="redo" title="Redo (Ctrl+Y)"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg></button>
+              </div>
+
+              <div class="cl-toolbar-group">
+                <button type="button" class="cl-toolbar-btn" data-command="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+                <button type="button" class="cl-toolbar-btn" data-command="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+                <button type="button" class="cl-toolbar-btn" data-command="underline" title="Underline (Ctrl+U)"><u>U</u></button>
+              </div>
+
+              <div class="cl-toolbar-group">
+                <button type="button" class="cl-toolbar-btn" data-command="insertUnorderedList" title="Bullet List"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+                <button type="button" class="cl-toolbar-btn" data-command="insertOrderedList" title="Numbered List">1.</button>
+              </div>
+
+              <div class="cl-toolbar-group">
+                <button type="button" class="cl-toolbar-btn" data-command="justifyLeft" title="Align Left"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
+                <button type="button" class="cl-toolbar-btn" data-command="justifyFull" title="Justify"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg></button>
+              </div>
+
+              <div class="cl-toolbar-group">
+                <button type="button" class="cl-toolbar-btn" data-command="formatBlock" data-value="H3" title="Heading"><b>H</b></button>
+                <button type="button" class="cl-toolbar-btn" data-command="formatBlock" data-value="BLOCKQUOTE" title="Quote">”</button>
+                <button type="button" class="cl-toolbar-btn" data-command="removeFormat" title="Clear Formatting">✕</button>
+              </div>
             </div>
-            <div class="score">
-              <div class="score-number" id="relScoreDisplay">—</div>
-              <div class="score-label">Hiring Manager Fit</div>
-              <div class="score-tip" id="relScoreTip">Scores highlighted accomplishments and career level.</div>
+
+            <!-- Floating Selection Toolbar -->
+            <div class="cl-floating-toolbar" id="floatingEditorToolbar">
+              <button type="button" class="cl-toolbar-btn" onclick="executeEditorCommand('bold')" title="Bold"><b>B</b></button>
+              <button type="button" class="cl-toolbar-btn" onclick="executeEditorCommand('italic')" title="Italic"><i>I</i></button>
+              <button type="button" class="cl-toolbar-btn" onclick="aiImproveSelection('rewrite')" title="AI Rewrite">✨ Rewrite</button>
+              <button type="button" class="cl-toolbar-btn" onclick="aiImproveSelection('persuasive')" title="Make Persuasive">🔥 Persuasive</button>
+            </div>
+
+            <!-- Notion Paper Sheet Container -->
+            <div class="cl-editor-paper-wrapper">
+              
+              <!-- Empty State Hero -->
+              <div class="cl-empty-state" id="editorEmptyState">
+                <div class="cl-empty-icon">📝</div>
+                <div class="cl-empty-title">No Draft Created Yet</div>
+                <div class="cl-empty-desc">Fill in your job title and click "Generate Cover Letter", or import your resume to start immediately.</div>
+                <div class="cl-empty-actions">
+                  <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('jobInfo')">Fill Job Info</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('resumeTab')">Import Resume</button>
+                </div>
+              </div>
+
+              <!-- Editable Sheet Page -->
+              <div class="cl-editor-paper" id="editorSheet" contenteditable="true" spellcheck="true" style="display:none;"></div>
+            </div>
+
+            <!-- Real-time Live Metrics Bar -->
+            <div class="cl-live-metrics-bar">
+              <div class="cl-metric-item">
+                <span class="cl-metric-num" id="wordCount">0</span>
+                <span class="cl-metric-lbl">Words</span>
+              </div>
+              <div class="cl-metric-item">
+                <span class="cl-metric-num" id="charCount">0</span>
+                <span class="cl-metric-lbl">Characters</span>
+              </div>
+              <div class="cl-metric-item">
+                <span class="cl-metric-num" id="paragraphCount">0</span>
+                <span class="cl-metric-lbl">Paragraphs</span>
+              </div>
+              <div class="cl-metric-item">
+                <span class="cl-metric-num" id="readTime">0m</span>
+                <span class="cl-metric-lbl">Read Time</span>
+              </div>
+              <div class="cl-metric-item">
+                <span class="cl-metric-num" id="liveAtsScore">—</span>
+                <span class="cl-metric-lbl">ATS Match</span>
+              </div>
+              <div class="cl-metric-item">
+                <span class="cl-metric-num" id="readabilityScore">—</span>
+                <span class="cl-metric-lbl">Readability</span>
+              </div>
+            </div>
+
+            <!-- One-Click Primary Action Bar -->
+            <div style="display:flex; flex-wrap:wrap; gap:0.6rem; margin-top:1.25rem; justify-content:space-between; align-items:center;">
+              <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                <button id="saveLetterBtn" class="btn btn-primary">Save Draft</button>
+                <button id="downloadPdfBtn" class="btn btn-secondary">Download PDF</button>
+                <button id="downloadDocxBtn" class="btn btn-secondary">Download DOCX</button>
+                <button id="copyTextBtn" class="btn btn-secondary">Copy</button>
+              </div>
+              <div class="autosave-status" id="autosaveLabel" style="font-size:0.78rem; color:var(--text-3);">
+                <span>●</span> Draft local-saved
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Tab Pane 2: AI Writing Assistant -->
+          <div class="tab-pane" id="pane-suggestionsPane">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+              <div>
+                <h3 style="font-size:1.05rem; font-weight:700; margin:0 0 0.2rem 0;">AI Writing Assistant</h3>
+                <p style="font-size:0.8rem; color:var(--text-3); margin:0;">Contextual improvements with side-by-side diff previews.</p>
+              </div>
+              <button id="reanalyzeAtsBtn" class="btn btn-secondary btn-sm" onclick="reanalyzeATS()">🔄 Re-analyze Draft</button>
+            </div>
+
+            <div id="suggestionsSummaryContainer"></div>
+            <div id="suggestionsList">
+              <p style="color:var(--text-3); font-size:0.85rem;">No recommendations generated yet. Click "Generate Cover Letter" to receive instant feedback.</p>
             </div>
           </div>
 
-          <div class="keywords-section" id="atsKeywordsSection">
-            <h4 style="margin-bottom:0.5rem; font-size:0.8rem;">Keyword Coverage</h4>
-            <p style="font-size:0.85rem; color:var(--text-3)">Generate a letter to see matched and missing keywords.</p>
-          </div>
-        </div>
+          <!-- Tab Pane 3: ATS Analysis -->
+          <div class="tab-pane" id="pane-atsPane">
+            <h3 style="font-size:1.05rem; font-weight:700; margin:0 0 0.25rem 0;">ATS Compatibility Scorecard</h3>
+            <p style="font-size:0.8rem; color:var(--text-3); margin:0 0 1rem 0;">Detailed evaluation against ATS parser algorithms.</p>
 
-        <!-- Variants Pane -->
-        <div class="tab-pane" id="pane-variantsPane">
-          <p style="font-size:0.85rem; color:var(--text-2); margin-bottom:1rem;">Select one of the alternate draft strategies below to preview or replace your active editor workspace text.</p>
-          
-          <div id="variantsContainer">
-            <p style="color:var(--text-3); font-size:0.85rem;">No variants generated yet.</p>
+            <div class="cl-ats-card-grid">
+              <div class="cl-ats-card">
+                <div class="cl-ats-card-header">
+                  <span class="cl-ats-card-title">Overall Score</span>
+                  <span class="cl-ats-card-score" id="val-overallATSScore">—</span>
+                </div>
+                <div class="cl-ats-progress-track"><div class="cl-ats-fill" id="fill-overallATSScore" style="width:0%;"></div></div>
+              </div>
+
+              <div class="cl-ats-card">
+                <div class="cl-ats-card-header">
+                  <span class="cl-ats-card-title">Keyword Match</span>
+                  <span class="cl-ats-card-score" id="val-keywordMatch">—</span>
+                </div>
+                <div class="cl-ats-progress-track"><div class="cl-ats-fill" id="fill-keywordMatch" style="width:0%;"></div></div>
+              </div>
+
+              <div class="cl-ats-card">
+                <div class="cl-ats-card-header">
+                  <span class="cl-ats-card-title">Readability</span>
+                  <span class="cl-ats-card-score" id="val-recruiterReadability">—</span>
+                </div>
+                <div class="cl-ats-progress-track"><div class="cl-ats-fill" id="fill-recruiterReadability" style="width:0%;"></div></div>
+              </div>
+
+              <div class="cl-ats-card">
+                <div class="cl-ats-card-header">
+                  <span class="cl-ats-card-title">Professional Tone</span>
+                  <span class="cl-ats-card-score" id="val-professionalTone">—</span>
+                </div>
+                <div class="cl-ats-progress-track"><div class="cl-ats-fill" id="fill-professionalTone" style="width:0%;"></div></div>
+              </div>
+            </div>
+
+            <div style="margin-top:1.5rem;" id="atsKeywordsSection">
+              <h4 style="margin-bottom:0.5rem; font-size:0.88rem; font-weight:700;">Keyword Breakdown</h4>
+              <p style="font-size:0.82rem; color:var(--text-3);">Generate your letter to view matched vs missing job description keywords.</p>
+            </div>
+          </div>
+
+          <!-- Tab Pane 4: Variants -->
+          <div class="tab-pane" id="pane-variantsPane">
+            <h3 style="font-size:1.05rem; font-weight:700; margin:0 0 0.25rem 0;">Target Archetype Variants</h3>
+            <p style="font-size:0.8rem; color:var(--text-3); margin:0 0 1rem 0;">Select a variant strategy tailored to specific company cultures.</p>
+            
+            <div id="variantsContainer">
+              <p style="color:var(--text-3); font-size:0.85rem;">No variants generated yet.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>ed yet.</p>
           </div>
         </div>
 
