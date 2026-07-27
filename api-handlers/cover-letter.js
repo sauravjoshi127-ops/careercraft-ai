@@ -146,6 +146,10 @@ module.exports = async function handler(req, res) {
   const linkedinUrl = String(body.linkedinUrl || '').trim();
   const portfolio = String(body.portfolio || '').trim();
 
+  // AI Personalization
+  const creativityLevel = String(body.creativityLevel || 'Balanced').trim();
+  const focusArea = String(body.focusArea || 'Achievements').trim();
+
   if (!jobTitle || !companyName || !jobDescription) {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
@@ -310,23 +314,25 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
 
     if (!r.ok) {
       const errText = await r.text();
-      // Full error details logged server-side for debugging only
       console.error('[cover-letter] Generation API error:', r.status, r.statusText, errText.substring(0, 500));
 
       const responseStatus = r.status || 502;
-      // Map status codes to user-facing messages
-      const statusMessages = {
-        429: 'Generation is temporarily busy. Please wait a moment and try again.',
-        503: 'Generation is temporarily unavailable. Please retry in a moment.',
-        502: 'Generation is temporarily unavailable. Please retry in a moment.',
-        401: 'Authentication required. Please refresh and try again.',
-        403: 'Access denied. Please check your account and try again.'
-      };
-      const userMsg = statusMessages[responseStatus] || 'We couldn\'t generate your cover letter right now. Please try again.';
+      let rawMsg = r.statusText || 'Error';
+      try {
+        const parsed = JSON.parse(errText);
+        rawMsg = parsed.error?.message || rawMsg;
+      } catch (_) {}
+
+      const userMsg = process.env.NODE_ENV === 'test' ? rawMsg : (rawMsg || 'Generation is temporarily unavailable. Please retry in a moment.');
 
       return res.status(responseStatus).json({
         success: false,
-        error: userMsg
+        error: userMsg,
+        details: {
+          source: 'gemini_http_error',
+          status: responseStatus,
+          message: rawMsg
+        }
       });
     }
 
