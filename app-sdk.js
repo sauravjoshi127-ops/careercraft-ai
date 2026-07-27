@@ -89,6 +89,80 @@
 
       isValidUUID(str) {
         return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+      },
+
+      /**
+       * Universal, browser-compatible copy to clipboard utility with fallback and toast notifications.
+       * @param {string} text - Content to copy
+       * @param {string|object} [optionsOrMessage] - Toast message or options object { successMessage, showToast, silent }
+       * @returns {Promise<boolean>}
+       */
+      async copyToClipboard(text, optionsOrMessage = 'Copied to clipboard!') {
+        let successMessage = 'Copied to clipboard!';
+        let notify = true;
+
+        if (typeof optionsOrMessage === 'string') {
+          successMessage = optionsOrMessage;
+        } else if (optionsOrMessage && typeof optionsOrMessage === 'object') {
+          if (optionsOrMessage.successMessage) successMessage = optionsOrMessage.successMessage;
+          if (typeof optionsOrMessage.showToast === 'boolean') notify = optionsOrMessage.showToast;
+          if (optionsOrMessage.silent) notify = false;
+        }
+
+        const textToCopy = typeof text === 'string' ? text : String(text || '');
+        if (!textToCopy) {
+          if (notify) appSdk.ui.showToast('Nothing to copy.', 'error');
+          return false;
+        }
+
+        let copied = false;
+
+        // 1. Try modern navigator.clipboard API if available
+        if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          try {
+            await navigator.clipboard.writeText(textToCopy);
+            copied = true;
+          } catch (err) {
+            console.warn('[Clipboard] Modern API writeText failed, attempting fallback execCommand:', err);
+          }
+        }
+
+        // 2. Fallback to execCommand('copy') via temporary hidden textarea
+        if (!copied && typeof document !== 'undefined') {
+          try {
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            textarea.style.position = 'fixed';
+            textarea.style.top = '-9999px';
+            textarea.style.left = '-9999px';
+            textarea.style.opacity = '0';
+            textarea.setAttribute('readonly', '');
+            document.body.appendChild(textarea);
+
+            const activeEl = document.activeElement;
+            textarea.focus();
+            textarea.select();
+            textarea.setSelectionRange(0, textarea.value.length);
+
+            copied = document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            if (activeEl && typeof activeEl.focus === 'function') {
+              activeEl.focus();
+            }
+          } catch (fallbackErr) {
+            console.error('[Clipboard] Fallback execCommand failed:', fallbackErr);
+            copied = false;
+          }
+        }
+
+        if (copied) {
+          if (notify) appSdk.ui.showToast(successMessage, 'success');
+          return true;
+        } else {
+          if (notify) appSdk.ui.showToast('Failed to copy to clipboard. Please copy manually.', 'error');
+          return false;
+        }
       }
     },
 
@@ -287,4 +361,5 @@
   })();
 
   window.appSdk = appSdk;
+  window.copyToClipboard = (text, optionsOrMessage) => appSdk.ui.copyToClipboard(text, optionsOrMessage);
 })();

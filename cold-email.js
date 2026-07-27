@@ -1051,21 +1051,33 @@
   });
 
   document.getElementById('btnCopyEmail')?.addEventListener('click', () => {
-    const text = document.getElementById('previewBody').textContent;
-    navigator.clipboard.writeText(text);
-    showToast('Email body copied to clipboard!');
+    const text = document.getElementById('previewBody')?.textContent || '';
+    if (window.copyToClipboard) {
+      window.copyToClipboard(text, 'Email body copied to clipboard!');
+    } else {
+      navigator.clipboard?.writeText(text);
+      showToast('Email body copied to clipboard!');
+    }
   });
 
   document.getElementById('btnCopySubject')?.addEventListener('click', () => {
-    const text = document.getElementById('previewSubject').textContent.replace('Subject: ', '');
-    navigator.clipboard.writeText(text);
-    showToast('Subject line copied to clipboard!');
+    const text = (document.getElementById('previewSubject')?.textContent || '').replace(/^Subject:\s*/i, '');
+    if (window.copyToClipboard) {
+      window.copyToClipboard(text, 'Subject line copied to clipboard!');
+    } else {
+      navigator.clipboard?.writeText(text);
+      showToast('Subject line copied to clipboard!');
+    }
   });
 
   document.getElementById('cpFu')?.addEventListener('click', () => {
-    const text = document.getElementById('fuBody').textContent;
-    navigator.clipboard.writeText(text);
-    showToast('Follow-up text copied to clipboard!');
+    const text = document.getElementById('fuBody')?.textContent || '';
+    if (window.copyToClipboard) {
+      window.copyToClipboard(text, 'Follow-up text copied to clipboard!');
+    } else {
+      navigator.clipboard?.writeText(text);
+      showToast('Follow-up text copied to clipboard!');
+    }
   });
 
   document.getElementById('btnExportTxt')?.addEventListener('click', () => {
