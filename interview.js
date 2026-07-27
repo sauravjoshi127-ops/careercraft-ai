@@ -778,14 +778,18 @@
   }
 
   async function copyModelAnswer() {
-    const txt = els.modelContentBox.textContent;
+    const txt = els.modelContentBox ? (els.modelContentBox.innerText || els.modelContentBox.textContent || '') : '';
     if (!txt) return;
 
-    try {
-      await navigator.clipboard.writeText(txt);
-      setStatus(els.practiceStatus, 'Model answer copied to clipboard.', 'success');
-    } catch (_err) {
-      setStatus(els.practiceStatus, 'Clipboard write blocked.', 'error');
+    if (window.copyToClipboard) {
+      await window.copyToClipboard(txt, 'Model answer copied to clipboard.');
+    } else {
+      try {
+        await navigator.clipboard?.writeText(txt);
+        setStatus(els.practiceStatus, 'Model answer copied to clipboard.', 'success');
+      } catch (_err) {
+        setStatus(els.practiceStatus, 'Clipboard write blocked.', 'error');
+      }
     }
   }
 

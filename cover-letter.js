@@ -121,7 +121,7 @@
     document.getElementById('saveLetterBtn')?.addEventListener('click', saveOrUpdateCoverLetter);
     document.getElementById('downloadPdfBtn')?.addEventListener('click', downloadPDF);
     document.getElementById('downloadDocxBtn')?.addEventListener('click', downloadDOCX);
-    document.getElementById('copyTextBtn')?.addEventListener('click', copyToClipboard);
+    document.getElementById('copyTextBtn')?.addEventListener('click', handleCopyCoverLetter);
 
     // History controls (Search, Sort, Filter)
     document.getElementById('historySearch')?.addEventListener('input', handleHistorySearch);
@@ -858,9 +858,23 @@
     }
   }
 
+  function handleCopyCoverLetter() {
+    const editorSheet = document.getElementById('editorSheet');
+    const text = editorSheet ? (editorSheet.innerText || editorSheet.textContent || '') : '';
+    if (window.copyToClipboard) {
+      window.copyToClipboard(text, 'Cover letter text copied to clipboard!');
+    } else if (window.appSdk && window.appSdk.ui && typeof window.appSdk.ui.copyToClipboard === 'function') {
+      window.appSdk.ui.copyToClipboard(text, 'Cover letter text copied to clipboard!');
+    }
+  }
+
   function copySuggestionText(text) {
-    navigator.clipboard.writeText(cleanEscapes(text));
-    showToast('success', 'Suggested text copied to clipboard.');
+    const cleanText = cleanEscapes(text);
+    if (window.copyToClipboard) {
+      window.copyToClipboard(cleanText, 'Suggested text copied to clipboard.');
+    } else if (window.appSdk && window.appSdk.ui && typeof window.appSdk.ui.copyToClipboard === 'function') {
+      window.appSdk.ui.copyToClipboard(cleanText, 'Suggested text copied to clipboard.');
+    }
   }
 
   let activeCompareId = null;
@@ -972,8 +986,12 @@
   }
 
   function copyVariantText(text) {
-    navigator.clipboard.writeText(cleanEscapes(text));
-    showToast('success', 'Variant copied to clipboard.');
+    const cleanText = cleanEscapes(text);
+    if (window.copyToClipboard) {
+      window.copyToClipboard(cleanText, 'Variant copied to clipboard.');
+    } else if (window.appSdk && window.appSdk.ui && typeof window.appSdk.ui.copyToClipboard === 'function') {
+      window.appSdk.ui.copyToClipboard(cleanText, 'Variant copied to clipboard.');
+    }
   }
 
   function applyVariantText(text) {
@@ -1571,6 +1589,9 @@
   window.switchWizardTab = switchWizardTab;
   window.switchEditorTab = switchEditorTab;
   window.executeEditorCommand = executeEditorCommand;
+
+  window.handleCopyCoverLetter = handleCopyCoverLetter;
+  window.copyToClipboard = window.copyToClipboard || handleCopyCoverLetter;
 
   // Initialize
   window.addEventListener('load', init);

@@ -1696,8 +1696,13 @@
 
     function copyShareLink() {
         const input = document.getElementById('shareLinkInput');
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(input.value)
+        const text = input ? input.value : '';
+        if (window.copyToClipboard) {
+            window.copyToClipboard(text, 'Share link copied to clipboard!');
+        } else if (window.appSdk && window.appSdk.ui && typeof window.appSdk.ui.copyToClipboard === 'function') {
+            window.appSdk.ui.copyToClipboard(text, 'Share link copied to clipboard!');
+        } else if (navigator.clipboard) {
+            navigator.clipboard.writeText(text)
                 .then(() => showAlert('success', 'Share link copied to clipboard!'))
                 .catch(() => fallbackCopy(input));
         } else {
@@ -1877,17 +1882,23 @@
         const text = textView ? (textView.innerText || textView.textContent || '') : '';
         if (!text) return;
 
-        navigator.clipboard.writeText(text).then(() => {
-            window.LayoutManager.showToast('Copied to clipboard.', 'success');
-        }).catch(() => {
-            const el = document.createElement('textarea');
-            el.value = text;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            window.LayoutManager.showToast('Copied to clipboard.', 'success');
-        });
+        if (window.copyToClipboard) {
+            window.copyToClipboard(text, 'Copied to clipboard.');
+        } else if (window.appSdk && window.appSdk.ui && typeof window.appSdk.ui.copyToClipboard === 'function') {
+            window.appSdk.ui.copyToClipboard(text, 'Copied to clipboard.');
+        } else {
+            navigator.clipboard?.writeText(text).then(() => {
+                if (window.LayoutManager) window.LayoutManager.showToast('Copied to clipboard.', 'success');
+            }).catch(() => {
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                if (window.LayoutManager) window.LayoutManager.showToast('Copied to clipboard.', 'success');
+            });
+        }
     }
 
     function promptClearSummary() {
