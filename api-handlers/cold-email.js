@@ -667,9 +667,9 @@ module.exports = async function handler(req, res) {
   const keys = getApiKeys();
   if (keys.length === 0) {
     let fallback;
-    if (action === 'generate') fallback = buildFallbackColdEmail(dataFields, 'GEMINI_API_KEY is not set.');
-    else if (action === 'regenerate-subjects') fallback = buildFallbackSubjects(dataFields, 'GEMINI_API_KEY is not set.');
-    else fallback = buildFallbackOptimize(dataFields, 'GEMINI_API_KEY is not set.');
+    if (action === 'generate') fallback = buildFallbackColdEmail(dataFields, 'AI Provider API Key is not set.');
+    else if (action === 'regenerate-subjects') fallback = buildFallbackSubjects(dataFields, 'AI Provider API Key is not set.');
+    else fallback = buildFallbackOptimize(dataFields, 'AI Provider API Key is not set.');
     return res.status(200).json(fallback);
   }
 
