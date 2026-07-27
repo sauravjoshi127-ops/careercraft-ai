@@ -568,26 +568,38 @@
     ];
     let idx = 0;
 
-    const renderStage = (i) => {
-      const pct = Math.round(((i + 1) / (stages.length + 1)) * 100);
-      sheet.innerHTML = `
-        <div class="premium-loading-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 4rem 2rem; color:var(--text-1);">
-          <div class="spinner-premium" style="width:40px; height:40px; border:3px solid rgba(var(--accent-rgb), 0.1); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite; margin-bottom:1.5rem;"></div>
-          <div style="font-weight:600; font-size:1.15rem; color:var(--text-1); letter-spacing:-0.01em; animation: fadeIn 0.4s ease;">
-            ${stages[i]}
-          </div>
-          <div style="width: 240px; height: 4px; background: rgba(0,0,0,0.05); border-radius: 4px; margin-top: 1.5rem; overflow: hidden; position: relative;">
-             <div style="position:absolute; top:0; left:0; height:100%; width: ${pct}%; background: var(--accent); transition: width 0.6s ease; border-radius:4px;"></div>
-          </div>
+    // Render the loading skeleton exactly once to prevent continuous remounting/flickering
+    sheet.innerHTML = `
+      <div class="premium-loading-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 4rem 2rem; color:var(--text-1);">
+        <div class="spinner-premium" style="width:40px; height:40px; border:3px solid rgba(var(--accent-rgb), 0.1); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite; margin-bottom:1.5rem;"></div>
+        <div id="premiumLoadingText" style="font-weight:600; font-size:1.15rem; color:var(--text-1); letter-spacing:-0.01em; animation: fadeIn 0.4s ease; transition: opacity 0.2s ease;">
+          ${stages[0]}
         </div>
-        <style>
-          @keyframes spin { 100% { transform: rotate(360deg); } }
-          @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        </style>
-      `;
+        <div style="width: 240px; height: 4px; background: rgba(0,0,0,0.05); border-radius: 4px; margin-top: 1.5rem; overflow: hidden; position: relative;">
+           <div id="premiumLoadingBar" style="position:absolute; top:0; left:0; height:100%; width: ${Math.round((1 / (stages.length + 1)) * 100)}%; background: var(--accent); transition: width 0.6s ease; border-radius:4px;"></div>
+        </div>
+      </div>
+      <style>
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+      </style>
+    `;
+
+    const updateStage = (i) => {
+      const pct = Math.round(((i + 1) / (stages.length + 1)) * 100);
+      const textEl = document.getElementById('premiumLoadingText');
+      const barEl = document.getElementById('premiumLoadingBar');
+      
+      if (textEl) {
+        textEl.style.opacity = '0';
+        setTimeout(() => {
+          textEl.textContent = stages[i];
+          textEl.style.opacity = '1';
+        }, 200);
+      }
+      if (barEl) barEl.style.width = pct + '%';
     };
 
-    renderStage(idx);
     if (premiumLoadingInterval) clearInterval(premiumLoadingInterval);
     premiumLoadingInterval = setInterval(() => {
       idx++;
@@ -595,7 +607,7 @@
         clearInterval(premiumLoadingInterval);
         return;
       }
-      renderStage(idx);
+      updateStage(idx);
     }, 1200);
   }
 
