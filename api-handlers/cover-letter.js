@@ -310,8 +310,8 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
       return res.status(status).json({
         success: false,
         error: msg === 'GEMINI_API_KEY missing' || msg.includes('Gemini API key is not configured')
-          ? 'Gemini API key is not configured on this server. Set GEMINI_API_KEY in your environment.'
-          : `Gemini API execution failed: ${msg}`,
+          ? 'AI Provider API key is not configured on this server. Set GEMINI_API_KEY in your environment.'
+          : `AI Provider API execution failed: ${msg}`,
         details: {
           source: 'gemini_exception',
           status,

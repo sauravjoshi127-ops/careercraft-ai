@@ -666,7 +666,7 @@
 
       updateProgress(
         'Connecting to AI Engine',
-        'Transmitting prompt payload to Gemini 2.5 Flash...',
+        'Transmitting prompt payload to Career Hub AI Assistant...',
         '⏳ 2/4 Generating Letter...'
       );
 
