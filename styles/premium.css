@@ -1622,6 +1622,55 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 0 3px rgba(99,102,241,0.16);
 }
 
+/* Password Toggle Components */
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-wrapper input[type="password"],
+.password-wrapper input[type="text"] {
+  padding-right: 3rem;
+  width: 100%;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-3);
+  z-index: 2;
+  min-height: auto;
+  transition: color var(--t-fast);
+}
+
+.password-toggle-btn:hover {
+  color: var(--text-1);
+}
+
+/* Hide native browser password reveal icons (Edge/IE) */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+input[type="password"]::-webkit-contacts-auto-fill-button,
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+  display: none !important;
+  pointer-events: none;
+}
+
 textarea {
   min-height: 120px;
   resize: vertical;
