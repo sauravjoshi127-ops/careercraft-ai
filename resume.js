@@ -34,7 +34,7 @@
         template_name: 'modern',
         font_family: 'Inter',
         spacing: 'normal',
-        accent_color: '#6366f1'
+        accent_color: '#2563eb'
     };
 
     function syncStateFromUI() {
@@ -187,7 +187,7 @@
     window.toggleFontDropdown = function(event) {
         event.stopPropagation();
         const menu = document.getElementById('fontDropdownMenu');
-        menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+        menu.classList.toggle('open');
     };
     window.selectFont = function(fontName, element) {
         document.getElementById('fontSelectLabel').textContent = fontName;
@@ -197,14 +197,14 @@
         document.querySelectorAll('.font-option').forEach(el => el.classList.remove('active'));
         if(element) element.classList.add('active');
         
-        document.getElementById('fontDropdownMenu').style.display = 'none';
+        document.getElementById('fontDropdownMenu').classList.remove('open');
         applyCustomization();
     };
     document.addEventListener('click', function(e) {
         const menu = document.getElementById('fontDropdownMenu');
         const btn = document.getElementById('fontSelectBtn');
         if (menu && btn && !menu.contains(e.target) && !btn.contains(e.target)) {
-            menu.style.display = 'none';
+            menu.classList.remove('open');
         }
     });
 
@@ -317,7 +317,8 @@
             }
 
             updateDOM(doc.body, newDoc.body);
-            doc.body.style.zoom = currentZoom;
+            doc.body.style.transform = `scale(${currentZoom})`;
+            doc.body.style.transformOrigin = 'top center';
             
             const oldStyle = doc.head.querySelector('style:not(#sync-styles)');
             const newStyle = newDoc.head.querySelector('style');
@@ -2648,9 +2649,36 @@
         
         const iframe = document.getElementById('previewIframe');
         if (iframe && iframe.contentDocument && iframe.contentDocument.body) {
-            iframe.contentDocument.body.style.zoom = currentZoom;
+            iframe.contentDocument.body.style.transform = `scale(${currentZoom})`;
+            iframe.contentDocument.body.style.transformOrigin = 'top center';
         }
     };
+    window.resetZoom = function() {
+        currentZoom = 1;
+        const display = document.getElementById('zoomLevelDisplay');
+        if (display) display.innerText = '100%';
+        const iframe = document.getElementById('previewIframe');
+        if (iframe && iframe.contentDocument && iframe.contentDocument.body) {
+            iframe.contentDocument.body.style.transform = 'scale(1)';
+            iframe.contentDocument.body.style.transformOrigin = 'top center';
+        }
+    };
+
+    // Keyboard shortcuts for zoom
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '=')) {
+            e.preventDefault();
+            window.zoomPreview(0.1);
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === '-') {
+            e.preventDefault();
+            window.zoomPreview(-0.1);
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+            e.preventDefault();
+            window.resetZoom();
+        }
+    });
 
     // Bind save handler on DOM
     document.addEventListener('DOMContentLoaded', () => {
