@@ -150,8 +150,17 @@ module.exports = async function handler(req, res) {
   const creativityLevel = String(body.creativityLevel || 'Balanced').trim();
   const focusArea = String(body.focusArea || 'Achievements').trim();
 
-  if (!jobTitle || !companyName || !jobDescription) {
-    return res.status(400).json({ error: 'Missing required fields.' });
+  const missingFields = [];
+  if (!jobTitle) missingFields.push('Job Title');
+  if (!companyName) missingFields.push('Company Name');
+  if (!jobDescription) missingFields.push('Job Description');
+
+  if (missingFields.length > 0) {
+    return res.status(400).json({
+      success: false,
+      error: `Missing required fields: ${missingFields.join(', ')}.`,
+      details: { missingFields }
+    });
   }
 
   const resumeSection = resumeText

@@ -705,7 +705,7 @@ module.exports = async function handler(req, res) {
         if (httpStatus === 429) {
           validationErrorMsg = 'rate_limit';
         } else if (httpStatus >= 500) {
-          validationErrorMsg = 'service_error';
+          validationErrorMsg = `service_error (${httpStatus})`;
         } else {
           validationErrorMsg = `HTTP_${httpStatus}`;
         }

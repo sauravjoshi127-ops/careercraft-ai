@@ -489,69 +489,186 @@
     document.getElementById('resumeClearRow').style.display = 'block';
   }
 
+  const CoverLetterLogger = {
+    start() {
+      if (typeof console !== 'undefined' && console.group) {
+        console.group('🚀 [Cover Letter Pipeline]');
+      }
+    },
+    step(stage, details) {
+      if (typeof console !== 'undefined' && console.log) {
+        console.log(`[Pipeline Stage: ${stage}]`, details);
+      }
+    },
+    error(stage, err) {
+      if (typeof console !== 'undefined' && console.error) {
+        console.error(`❌ [Pipeline Error @ ${stage}]`, err);
+      }
+    },
+    end(success) {
+      if (typeof console !== 'undefined' && console.groupEnd) {
+        console.groupEnd();
+      }
+    }
+  };
+
+  async function executeCoverLetterRequest(payload, headers, maxRetries = 1) {
+    let lastError;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          CoverLetterLogger.step('Retry Attempt', `Retrying request (${attempt}/${maxRetries}) after transient delay...`);
+          await new Promise(r => setTimeout(r, 1500));
+        }
+
+        const res = await fetch('/api/cover-letter', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+
+        if (res.status === 502 || res.status === 503 || res.status === 504) {
+          const text = await res.text().catch(() => '');
+          let msg = res.statusText;
+          try {
+            const json = JSON.parse(text);
+            msg = json.error || json.message || msg;
+          } catch (_) {}
+          const err = new Error(msg || `Server temporary unavailable (${res.status})`);
+          err.status = res.status;
+          lastError = err;
+          if (attempt < maxRetries) continue;
+          throw err;
+        }
+
+        return res;
+      } catch (err) {
+        lastError = err;
+        if (attempt < maxRetries && (err.name === 'AbortError' || err.message?.includes('fetch'))) {
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw lastError;
+  }
+
   async function generateCoverLetter(event) {
     if (event) { event.preventDefault(); event.stopPropagation(); }
     if (isGenerating) { showToast('error', 'Already generating... please wait.'); return; }
 
+    CoverLetterLogger.start();
+    CoverLetterLogger.step('Initiated', 'User clicked Generate Cover Letter button');
+
+    // Phase 3: Client-side Inline Input Validation
     let hasErr = false;
-    const fields = ['jobTitle', 'companyName', 'jobDescription'];
+    const missingFields = [];
+    const fields = [
+      { id: 'jobTitle', name: 'Job Title' },
+      { id: 'companyName', name: 'Company Name' },
+      { id: 'jobDescription', name: 'Job Description' }
+    ];
+
     fields.forEach(f => {
-      const val = document.getElementById(f).value.trim();
-      const errEl = document.getElementById(`err-${f}`);
+      const inputEl = document.getElementById(f.id);
+      const val = inputEl ? inputEl.value.trim() : '';
+      const errEl = document.getElementById(`err-${f.id}`);
       if (!val) {
-        errEl.style.display = 'block';
+        if (errEl) errEl.style.display = 'block';
+        if (inputEl) inputEl.style.borderColor = 'var(--danger)';
         hasErr = true;
+        missingFields.push(f.name);
       } else {
-        errEl.style.display = 'none';
+        if (errEl) errEl.style.display = 'none';
+        if (inputEl) inputEl.style.borderColor = '';
       }
     });
 
     if (hasErr) {
-      showToast('error', 'Please fill in all required fields marked with *');
-      switchWizardTab('jobInfo');
+      CoverLetterLogger.step('Validation', `Failed — Missing required fields: ${missingFields.join(', ')}`);
+      showToast('error', `Please fill in all required fields: ${missingFields.join(', ')}.`);
+      toggleStepAccordion('jobInfo');
+      CoverLetterLogger.end(false);
       return;
     }
 
+    CoverLetterLogger.step('Validation', 'Passed — All required fields populated.');
+
     const generateBtn = document.getElementById('generateBtn');
     const originalText = generateBtn.textContent;
+    const sheet = document.getElementById('editorSheet');
 
     try {
       isGenerating = true;
-      generateBtn.textContent = '⏳ Tailoring Letter...';
       generateBtn.disabled = true;
 
-      document.getElementById('editorSheet').textContent = 'Generating cover letter...\n\nAnalyzing job descriptions and writing variants... (takes 10-15s)';
+      // Phase 9: Progressive UX Loading States
+      generateBtn.textContent = '⏳ 1/4 Validating Input...';
+      if (sheet) {
+        sheet.innerHTML = `
+          <div style="text-align:center; padding:3rem 1.5rem; color:var(--text-2);">
+            <div class="spinner" style="width:28px; height:28px; margin-bottom:1rem;"></div>
+            <div style="font-weight:700; font-size:1.05rem; color:var(--text-1); margin-bottom:0.35rem;" id="genStepTitle">Preparing Prompt Context</div>
+            <div style="font-size:0.85rem; color:var(--text-3);" id="genStepDesc">Structuring target role, company requirements, and resume highlights...</div>
+          </div>
+        `;
+      }
+
+      const updateProgress = (title, desc, btnLabel) => {
+        generateBtn.textContent = btnLabel;
+        const t = document.getElementById('genStepTitle');
+        const d = document.getElementById('genStepDesc');
+        if (t) t.textContent = title;
+        if (d) d.textContent = desc;
+      };
 
       const payload = {
         jobTitle: document.getElementById('jobTitle').value.trim(),
         companyName: document.getElementById('companyName').value.trim(),
         jobDescription: document.getElementById('jobDescription').value.trim(),
-        highlights: document.getElementById('highlights').value.trim(),
+        highlights: document.getElementById('highlights') ? document.getElementById('highlights').value.trim() : '',
         tone: document.getElementById('tone').value,
         length: document.getElementById('length').value,
-        opening: document.getElementById('opening').value.trim(),
-        closing: document.getElementById('closing').value.trim(),
+        opening: document.getElementById('opening') ? document.getElementById('opening').value.trim() : '',
+        closing: document.getElementById('closing') ? document.getElementById('closing').value.trim() : '',
         resumeText: resumeText || '',
-        mirrorStructure: document.getElementById('mirrorStructure').checked,
-        hiringManager: document.getElementById('hiringManager').value.trim(),
-        industry: document.getElementById('industry').value.trim(),
-        location: document.getElementById('location').value.trim(),
+        mirrorStructure: document.getElementById('mirrorStructure') ? document.getElementById('mirrorStructure').checked : false,
+        hiringManager: document.getElementById('hiringManager') ? document.getElementById('hiringManager').value.trim() : '',
+        industry: document.getElementById('industry') ? document.getElementById('industry').value.trim() : '',
+        location: document.getElementById('location') ? document.getElementById('location').value.trim() : '',
         companyWebsite: document.getElementById('companyWebsite') ? document.getElementById('companyWebsite').value.trim() : '',
         referral: document.getElementById('referral') ? document.getElementById('referral').value.trim() : '',
         linkedinUrl: document.getElementById('linkedinUrl') ? document.getElementById('linkedinUrl').value.trim() : '',
         portfolio: document.getElementById('portfolio') ? document.getElementById('portfolio').value.trim() : '',
-        experienceLevel: document.getElementById('experienceLevel').value,
-        keySkills: document.getElementById('mustHaveSkills').value.trim(),
-        achievements: document.getElementById('keyAchievements').value.trim(),
-        additionalInstructions: document.getElementById('additionalInstructions').value.trim(),
-        mustHaveSkills: document.getElementById('mustHaveSkills').value.trim(),
-        keyAchievements: document.getElementById('keyAchievements').value.trim(),
-        workHistoryAlignment: document.getElementById('workHistoryAlignment').value.trim(),
-        softSkills: document.getElementById('softSkills').value.trim(),
-        companyResearch: document.getElementById('companyResearch').value.trim(),
-        volunteerProjects: document.getElementById('volunteerProjects').value.trim(),
-        extraKeywords: document.getElementById('extraKeywords').value.trim()
+        experienceLevel: document.getElementById('experienceLevel') ? document.getElementById('experienceLevel').value : 'Mid',
+        keySkills: document.getElementById('mustHaveSkills') ? document.getElementById('mustHaveSkills').value.trim() : '',
+        achievements: document.getElementById('keyAchievements') ? document.getElementById('keyAchievements').value.trim() : '',
+        additionalInstructions: document.getElementById('additionalInstructions') ? document.getElementById('additionalInstructions').value.trim() : '',
+        mustHaveSkills: document.getElementById('mustHaveSkills') ? document.getElementById('mustHaveSkills').value.trim() : '',
+        keyAchievements: document.getElementById('keyAchievements') ? document.getElementById('keyAchievements').value.trim() : '',
+        workHistoryAlignment: document.getElementById('workHistoryAlignment') ? document.getElementById('workHistoryAlignment').value.trim() : '',
+        softSkills: document.getElementById('softSkills') ? document.getElementById('softSkills').value.trim() : '',
+        companyResearch: document.getElementById('companyResearch') ? document.getElementById('companyResearch').value.trim() : '',
+        volunteerProjects: document.getElementById('volunteerProjects') ? document.getElementById('volunteerProjects').value.trim() : '',
+        extraKeywords: document.getElementById('extraKeywords') ? document.getElementById('extraKeywords').value.trim() : '',
+        creativityLevel: document.getElementById('creativityLevel') ? document.getElementById('creativityLevel').value : 'Balanced',
+        focusArea: document.getElementById('focusArea') ? document.getElementById('focusArea').value : 'Achievements'
       };
+
+      CoverLetterLogger.step('Payload Built', {
+        jobTitle: payload.jobTitle,
+        companyName: payload.companyName,
+        jobDescLength: payload.jobDescription.length,
+        hasResume: Boolean(payload.resumeText),
+        tone: payload.tone,
+        length: payload.length
+      });
+
+      updateProgress(
+        'Connecting to AI Engine',
+        'Transmitting prompt payload to Gemini 2.5 Flash...',
+        '⏳ 2/4 Generating Letter...'
+      );
 
       const session = await window.appSdk.auth.getSession();
       const headers = { 'Content-Type': 'application/json' };
@@ -559,20 +676,42 @@
         headers['Authorization'] = `Bearer ${session.access_token}`;
       }
 
-      const res = await fetch('/api/cover-letter', {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(payload)
+      // Phase 10: Automatic Retry Execution
+      const res = await executeCoverLetterRequest(payload, headers, 1);
+      const data = await res.json();
+
+      CoverLetterLogger.step('Network Response', {
+        status: res.status,
+        ok: res.ok,
+        hasLetter: Boolean(data.letter),
+        errorMsg: data.error || null
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `API error ${res.status}`);
+      if (!res.ok) {
+        const error = new Error(data.error || `HTTP ${res.status} server error`);
+        error.status = res.status;
+        error.data = data;
+        throw error;
+      }
+
+      updateProgress(
+        'Scoring & Evaluating ATS Match',
+        'Computing keyword relevance, readability, and tailoring metrics...',
+        '⏳ 3/4 Scoring ATS...'
+      );
 
       lastGeneratedData = data;
-      
-      const sheet = document.getElementById('editorSheet');
       const letterText = cleanEscapes(data.letter);
-      sheet.innerHTML = letterText;
+
+      updateProgress(
+        'Finalizing Workspace Document',
+        'Rendering letter into interactive Notion sheet editor...',
+        '⏳ 4/4 Finalizing...'
+      );
+
+      if (sheet) {
+        sheet.innerHTML = letterText;
+      }
       saveEditorState();
       updateCounts();
 
@@ -584,33 +723,43 @@
       switchEditorTab('editPane');
 
       runAtsAnalysisOnText(letterText);
+      CoverLetterLogger.step('Completed', 'Document rendered into editor.');
+      CoverLetterLogger.end(true);
+
     } catch (err) {
-      // Log full error internally for debugging — never expose to users
-      console.error('[CareerCraft] Cover letter generation error (internal):', err);
+      CoverLetterLogger.error('Execution Catch Block', err);
 
-      const isNetwork = err.message?.includes('fetch') || err.message?.includes('NetworkError') || err.message?.includes('Failed to fetch');
+      // Phase 2 & Phase 6: Unmasked, Actionable Error Handling
+      const isNetwork = err.name === 'AbortError' || err.message?.includes('fetch') || err.message?.includes('NetworkError') || err.message?.includes('Failed to fetch');
       const isTimeout = err.message?.toLowerCase().includes('timeout');
-      const isRateLimit = err.message?.includes('429') || err.message?.toLowerCase().includes('rate');
+      const isRateLimit = err.status === 429 || err.message?.includes('429') || err.message?.toLowerCase().includes('rate');
 
-      let userMsg;
+      let userMsg = err.data?.error || err.message || 'Cover letter generation failed.';
+
       if (isNetwork) {
-        userMsg = 'No connection detected. Please check your internet and try again.';
+        userMsg = 'Network connection lost. Please check your internet connection and try again.';
       } else if (isTimeout) {
-        userMsg = 'Generation timed out. Please try again — complex requests may take a moment.';
+        userMsg = 'Generation timed out after 30 seconds. Please try again with a shorter prompt.';
       } else if (isRateLimit) {
-        userMsg = 'Generation is temporarily busy. Please wait a moment and try again.';
-      } else {
-        userMsg = 'We couldn\u2019t generate your cover letter right now. Please try again in a moment.';
+        userMsg = 'AI generation is temporarily busy. Please wait a moment and try again.';
+      } else if (err.status === 401) {
+        userMsg = 'Session expired. Please log in again to generate your cover letter.';
+      } else if (err.status === 403 || userMsg.includes('GEMINI_API_KEY') || userMsg.includes('not configured')) {
+        userMsg = 'AI service is not configured (missing or invalid API key). Please contact system administrator.';
       }
 
       showToast('error', userMsg);
-      document.getElementById('editorSheet').innerHTML = `
-        <div style="text-align:center; padding: 2.5rem 1rem; color: #64748b;">
-          <div style="font-size:1.1rem; font-weight:600; color:#ef4444; margin-bottom:0.75rem;">&#9888;&#65039; Generation Unavailable</div>
-          <div style="font-size:0.9rem; margin-bottom:1.5rem;">${userMsg}</div>
-          <button onclick="document.getElementById('generateBtn').click()" style="background:#6366f1; color:#fff; border:none; padding:0.5rem 1.5rem; border-radius:8px; font-weight:600; font-size:0.9rem; cursor:pointer;">&#8635; Try Again</button>
-        </div>
-      `;
+
+      if (sheet) {
+        sheet.innerHTML = `
+          <div style="text-align:center; padding: 2.5rem 1rem; color: #64748b;">
+            <div style="font-size:1.1rem; font-weight:600; color:#ef4444; margin-bottom:0.75rem;">⚠️ Generation Failed</div>
+            <div style="font-size:0.9rem; margin-bottom:1.5rem; max-width:420px; margin-left:auto; margin-right:auto; color:var(--text-2); line-height:1.6;">${userMsg}</div>
+            <button onclick="document.getElementById('generateBtn').click()" style="background:var(--accent); color:#fff; border:none; padding:0.5rem 1.5rem; border-radius:8px; font-weight:600; font-size:0.9rem; cursor:pointer;">↺ Try Again</button>
+          </div>
+        `;
+      }
+      CoverLetterLogger.end(false);
     } finally {
       isGenerating = false;
       generateBtn.textContent = originalText;
