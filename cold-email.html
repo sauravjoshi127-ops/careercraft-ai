@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Cold Email Writer - CareerCraft AI</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <title>Cold Email Workspace - CareerCraft</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Load Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="storage-manager.js" defer></script>
   <script src="auth-manager.js" defer></script>
   <script src="workspace-manager.js" defer></script>
@@ -18,697 +19,601 @@
   <script src="manual-studio.js" defer></script>
   <link rel="stylesheet" href="styles/premium.css">
   <link rel="stylesheet" href="manual-studio.css">
+
   <style>
-    :root {
-      --bg: #050505;
-      --surface: rgba(20, 20, 24, .6);
-      --border: rgba(255, 255, 255, .08);
-      --primary: #7c3aed;
-      --primary-glow: rgba(124, 58, 237, .35);
-      --accent: #a855f7;
-      --text: #ffffff;
-      --text-muted: #a1a1aa;
-      --danger: #ef4444;
-      --success: #10b981;
-      --radius: 1rem;
-      --font: 'Inter', system-ui, sans-serif;
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-    
-    .orb {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(100px);
-      pointer-events: none;
-      z-index: -1;
-    }
-    
-    .orb-1 {
-      width: 400px;
-      height: 400px;
-      top: -100px;
-      left: -100px;
-      background: rgba(124, 58, 237, .2);
-    }
-    
-    .orb-2 {
-      width: 500px;
-      height: 500px;
-      bottom: 20%;
-      right: -200px;
-      background: rgba(168, 85, 247, .15);
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2.5rem 1.5rem 4rem;
-    }
-    
-    .hero {
-      text-align: center;
-      margin-bottom: 2rem;
-      animation: fadeDown .5s ease-out;
-    }
-    
-    .hero h1 {
-      
-      font-size: 2.6rem;
-      font-weight: 800;
-      letter-spacing: -1px;
-      margin-bottom: .35rem;
-    }
-    
-    .hero h1 em {
-      font-style: normal;
-      background: linear-gradient(135deg, #7c3aed, #a855f7);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    
-    .hero p {
-      font-size: 1.05rem;
-      color: var(--text-muted);
-    }
-
-    /* ── Layout ── */
-    .app-layout {
+    /* Workspace standard layout */
+    .workspace-container {
       display: grid;
       grid-template-columns: 1fr 1.1fr;
-      gap: 2rem;
+      gap: 1.5rem;
       align-items: start;
-      margin-top: 1.5rem;
+      margin-top: 1rem;
     }
-    
+
     @media (max-width: 1024px) {
-      .app-layout {
+      .workspace-container {
         grid-template-columns: 1fr;
       }
     }
 
-    /* ── Cards & Sections ── */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.75rem;
-      margin-bottom: 1.25rem;
-      backdrop-filter: blur(12px);
-      animation: fadeUp .5s ease-out backwards;
-      position: relative;
-    }
-    
-    .card-head {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      padding-bottom: .65rem;
-      border-bottom: 1px solid var(--border);
-      
+    .hero {
+      text-align: center;
+      margin-bottom: 2rem;
+      animation: fadeIn 0.5s ease-out;
     }
 
-    /* ── Nexus ── */
-    .nexus {
-      background: linear-gradient(145deg, rgba(139,92,246,.1), rgba(56,189,248,.03));
-      border: 1px solid rgba(139,92,246,.18);
-      border-radius: var(--radius);
-      padding: 1.25rem;
-      margin-bottom: 1.25rem;
+    .hero h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.5rem;
+      color: var(--text-1);
+    }
+
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--text-2);
+    }
+
+    /* Accordion styles */
+    .accordion-item {
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .accordion-item.active {
+      border-color: var(--border-focus);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .accordion-header {
+      padding: 1rem 1.25rem;
       display: flex;
-      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      gap: 1rem;
-    }
-    
-    .nexus h3 {
-      font-size: 0.95rem;
-      color: #e2e8f0;
-      margin-bottom: .15rem;
-    }
-    
-    .nexus p {
-      font-size: .8rem;
-      color: var(--text-muted);
-    }
-    
-    .nexus-actions {
-      display: flex;
-      gap: .5rem;
-      flex-wrap: wrap;
-    }
-    
-    .nbtn {
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: .55rem 1rem;
-      border-radius: .5rem;
-      font-weight: 600;
-      font-size: .8rem;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: .4rem;
-      transition: .2s;
-    }
-    
-    .nbtn:hover {
-      filter: brightness(1.15);
-      transform: translateY(-1px);
-    }
-    
-    .nbtn.outline {
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.15);
-      color: var(--text);
-    }
-    
-    #pdfStatus {
-      display: none;
-      font-size: .8rem;
-      padding: .4rem .6rem;
-      border-radius: .5rem;
-      width: 100%;
-      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-1);
+      background: rgba(255, 255, 255, 0.01);
+      transition: background-color 0.2s;
     }
 
-    /* ── Forms & Validation ── */
-    .grid2 {
+    .accordion-header:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .accordion-header .icon-right {
+      transition: transform 0.2s;
+      color: var(--text-3);
+    }
+
+    .accordion-item.active .accordion-header .icon-right {
+      transform: rotate(180deg);
+    }
+
+    .accordion-content {
+      padding: 0 1.25rem;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+    }
+
+    .accordion-item.active .accordion-content {
+      padding: 1rem 1.25rem 1.25rem;
+      max-height: 800px;
+      overflow-y: auto;
+    }
+    
+    .accordion-header .status-icon {
+      margin-left: 0.5rem;
+      color: var(--success);
+      display: none;
+    }
+    
+    .accordion-item.completed .status-icon {
+      display: inline-block;
+    }
+
+    /* Input wrapper matching cover letter */
+    .input-wrapper {
+      position: relative;
+      margin-bottom: 1.25rem;
+    }
+
+    .input-wrapper label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-1);
+      margin-bottom: 0.4rem;
+    }
+    
+    .input-wrapper label .optional {
+      color: var(--text-3);
+      font-weight: 400;
+    }
+
+    .input-wrapper input,
+    .input-wrapper select,
+    .input-wrapper textarea {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 0.75rem 1rem;
+      color: var(--text-1);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-wrapper textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .input-wrapper input:focus,
+    .input-wrapper select:focus,
+    .input-wrapper textarea:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+    
+    .input-wrapper input.invalid, 
+    .input-wrapper textarea.invalid, 
+    .input-wrapper select.invalid {
+      border-color: var(--danger) !important;
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
+    }
+    
+    .input-wrapper .error-msg {
+      color: var(--danger);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      display: block;
+    }
+
+    .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1.25rem;
     }
     
-    .fg {
-      display: flex;
-      flex-direction: column;
-      gap: .4rem;
-      position: relative;
-    }
-    
-    .fg.full {
-      grid-column: span 2;
-    }
-    
     @media (max-width: 640px) {
-      .grid2 {
-        grid-template-columns: 1fr;
-      }
-      .fg.full {
-        grid-column: auto;
-      }
-    }
-    
-    label {
-      font-size: .8rem;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-    
-    label .req {
-      color: var(--danger);
-    }
-    
-    input, textarea, select {
-      background: rgba(0, 0, 0, .35);
-      border: 1px solid var(--border);
-      border-radius: .5rem;
-      padding: .65rem .85rem;
-      color: var(--text);
-      font-family: var(--font);
-      font-size: .9rem;
-      transition: .2s;
-      width: 100%;
-    }
-    
-    input:focus, textarea:focus, select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 2px var(--primary-glow);
+      .grid-2 { grid-template-columns: 1fr; }
     }
 
-    input.invalid, textarea.invalid, select.invalid {
-      border-color: var(--danger) !important;
-      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
-    }
-    
-    textarea {
-      min-height: 80px;
-      resize: vertical;
-    }
-    
-    .char-ct {
-      text-align: right;
-      font-size: .72rem;
-      color: var(--text-muted);
-      margin-top: 0.15rem;
-    }
-
-    /* ── Tabs ── */
-    .tabs {
+    /* Tabs */
+    .tab-header {
       display: flex;
-      gap: .3rem;
+      gap: 0.5rem;
       border-bottom: 1px solid var(--border);
-      padding-bottom: .4rem;
       margin-bottom: 1.25rem;
-      flex-wrap: wrap;
+      padding-bottom: 0.25rem;
+      overflow-x: auto;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 10;
     }
-    
-    .tab {
-      padding: .5rem 1rem;
-      background: 0;
+
+    .tab-btn {
+      background: transparent;
       border: none;
-      color: var(--text-muted);
-      font-size: .85rem;
+      color: var(--text-2);
+      padding: 0.6rem 1rem;
+      font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
-      position: relative;
-      transition: .2s;
-      font-family: var(--font);
-      border-radius: 0.25rem;
-    }
-    
-    .tab:hover {
-      color: var(--text);
-      background: rgba(255,255,255,.03);
-    }
-    
-    .tab.on {
-      color: var(--primary);
-      background: rgba(124, 58, 237, 0.1);
-    }
-    
-    .tab.on::after {
-      content: '';
-      position: absolute;
-      bottom: -.45rem;
-      left: 0;
-      width: 100%;
-      height: 2px;
-      background: var(--primary);
-      border-radius: 2px;
-    }
-
-    /* ── Preview Area ── */
-    .preview-header {
-      background: rgba(0, 0, 0, 0.25);
-      border: 1px solid var(--border);
-      border-bottom: none;
-      border-radius: .5rem .5rem 0 0;
-      padding: .75rem 1rem;
-      font-size: .85rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .preview-meta-row {
-      color: var(--text-muted);
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .preview-subject-line {
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    .preview-body-container {
-      background: rgba(0, 0, 0, .4);
-      border: 1px solid var(--border);
-      border-radius: 0 0 .5rem .5rem;
-      padding: 1.25rem;
-      white-space: pre-wrap;
-      font-size: .95rem;
-      line-height: 1.7;
-      min-height: 250px;
-      margin-bottom: 1.25rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    .preview-body-container:focus {
-      border-color: var(--primary);
-    }
-
-    .preview-actions-row {
-      display: flex;
-      gap: .75rem;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-    }
-
-    .abtn {
-      padding: .55rem 1.1rem;
-      border-radius: .5rem;
-      border: 1px solid var(--border);
-      background: rgba(255, 255, 255, .04);
-      color: var(--text);
-      font-weight: 600;
-      font-size: .82rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: .4rem;
-      transition: .2s;
-      font-family: var(--font);
-    }
-    
-    .abtn:hover {
-      background: rgba(255, 255, 255, .08);
-      border-color: rgba(255,255,255,.15);
-    }
-    
-    .abtn.primary {
-      background: var(--primary);
-      color: #fff;
-      border: none;
-    }
-    
-    .abtn.primary:hover {
-      filter: brightness(1.15);
-    }
-
-    /* ── Quality Engine UI ── */
-    .quality-box {
-      background: rgba(255, 255, 255, .02);
-      border: 1px solid var(--border);
-      border-radius: .75rem;
-      padding: 1.25rem;
-      margin-top: 1.25rem;
-    }
-
-    .quality-title {
-      font-size: 0.95rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      
-    }
-
-    .score-badge {
-      padding: 0.25rem 0.75rem;
-      border-radius: 99px;
-      font-size: 0.85rem;
-      font-weight: 800;
-    }
-
-    .score-high { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .score-mid { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .score-low { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
-
-    .quality-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .quality-item {
-      font-size: 0.85rem;
-      display: flex;
-      gap: 0.5rem;
-      align-items: flex-start;
-    }
-
-    .quality-icon {
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-
-    /* ── Subject Lines Selector ── */
-    .subjects-box {
-      background: rgba(255, 255, 255, .01);
-      border: 1px solid var(--border);
-      border-radius: .75rem;
-      padding: 1.25rem;
-      margin-top: 1.25rem;
-    }
-
-    .subjects-title-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-
-    .subjects-title-row h4 {
-      font-size: 0.95rem;
-      font-weight: 700;
-      
-    }
-
-    .subjects-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-      max-height: 220px;
-      overflow-y: auto;
-      padding-right: 0.25rem;
-    }
-
-    .subject-item {
-      background: rgba(0, 0, 0, 0.2);
-      border: 1px solid var(--border);
-      border-radius: 0.5rem;
-      padding: 0.65rem 0.85rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      transition: transform 0.2s, opacity 0.2s;
-      gap: 0.75rem;
-      text-align: left;
-    }
-
-    .subject-item:hover {
-      border-color: var(--primary);
-      background: rgba(124, 58, 237, 0.05);
-    }
-
-    .subject-item.active {
-      border-color: var(--primary);
-      background: rgba(124, 58, 237, 0.12);
-    }
-
-    .subject-text {
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--text);
-      word-break: break-all;
-    }
-
-    .subject-badges {
+      border-radius: var(--r-sm);
+      white-space: nowrap;
+      transition: background-color 0.2s, color 0.2s;
       display: flex;
       align-items: center;
       gap: 0.4rem;
-      flex-shrink: 0;
     }
 
-    .prob-badge {
-      background: rgba(255,255,255,0.05);
-      color: var(--text-muted);
+    .tab-btn:hover {
+      color: var(--text-1);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn.active {
+      color: var(--text-1);
+      background: var(--accent-soft-bg-2);
+      box-shadow: inset 0 -2px 0 var(--primary);
+    }
+
+    .tab-pane {
+      display: none;
+      animation: fadeIn 0.3s;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* Editor Specific */
+    .editor-container {
+      background: var(--bg-soft);
       border: 1px solid var(--border);
-      padding: 0.15rem 0.45rem;
-      border-radius: 99px;
-      font-size: 0.7rem;
-      font-weight: 600;
+      border-radius: var(--r-lg);
+      padding: 1rem;
+      box-shadow: var(--shadow-card);
     }
-
-    .reco-badge {
-      background: rgba(16, 185, 129, 0.12);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.25);
-      padding: 0.15rem 0.45rem;
-      border-radius: 99px;
-      font-size: 0.7rem;
-      font-weight: 700;
-    }
-
-    /* ── Email Optimizer UI ── */
-    .optimizer-box {
-      background: rgba(124, 58, 237, 0.03);
-      border: 1px solid rgba(124, 58, 237, 0.15);
-      border-radius: .75rem;
-      padding: 1.25rem;
-      margin-top: 1.25rem;
-    }
-
-    .optimizer-head {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: #c4b5fd;
-      margin-bottom: 0.75rem;
-      
-    }
-
-    .optimizer-row {
+    
+    .editor-toolbar {
       display: flex;
-      gap: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+      align-items: center;
     }
 
-    .optimizer-row input {
-      background: rgba(0,0,0,0.4);
-    }
-
-    /* ── Spam Words Alert ── */
-    .spam-alert {
-      background: rgba(239, 68, 68, 0.07);
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      border-radius: 0.5rem;
-      padding: 0.75rem 1rem;
-      margin-bottom: 1.25rem;
-      display: none;
-      font-size: 0.82rem;
-      color: #fca5a5;
-    }
-
-    /* ── Generate Button Wrapper ── */
-    .gen-wrap {
-      margin-top: 1.75rem;
-    }
-    
-    .btn-gen {
-      background: linear-gradient(135deg, #8b5cf6, #38bdf8);
-      color: #fff;
+    .toolbar-btn {
+      background: transparent;
       border: none;
-      padding: .9rem 2.5rem;
-      border-radius: 999px;
-      font-size: 1rem;
-      font-weight: 700;
+      color: var(--text-2);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--r-sm);
       cursor: pointer;
-      transition: .25s;
-      box-shadow: 0 8px 24px -8px var(--primary-glow);
-      font-family: var(--font);
-      width: 100%;
-    }
-    
-    .btn-gen:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 32px -8px var(--primary-glow);
-    }
-    
-    .btn-gen:disabled {
-      opacity: .5;
-      cursor: not-allowed;
-      transform: none;
-    }
-    
-    /* ── Alert ── */
-    .alert {
-      background: rgba(239, 68, 68, .08);
-      border: 1px solid rgba(239, 68, 68, .25);
-      border-radius: .5rem;
-      padding: 1rem 1.25rem;
-      margin-bottom: 1.25rem;
-      display: none;
-    }
-    
-    .alert.show {
-      display: block;
-      animation: fadeIn .3s;
-    }
-    
-    .alert h4 {
-      color: #fca5a5;
-      font-size: .95rem;
-      margin-bottom: .2rem;
-    }
-    
-    .alert p {
-      color: #fecaca;
-      font-size: .88rem;
-    }
-    
-    /* ── Skeleton ── */
-    .skel-wrap {
-      display: none;
-      margin-top: 2rem;
-    }
-    
-    .skel-wrap.show {
-      display: block;
-    }
-    
-    .skel {
-      background: linear-gradient(90deg, rgba(255, 255, 255, .04) 25%, rgba(255, 255, 255, .08) 50%, rgba(255, 255, 255, .04) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
-      border-radius: .5rem;
-      margin-bottom: .75rem;
-    }
-    
-    @keyframes shimmer {
-      0% { background-position: 200% 0 }
-      100% { background-position: -200% 0 }
-    }
-    
-    .skel-msg {
-      text-align: center;
-      color: var(--text-muted);
-      margin-bottom: 1.5rem;
-      font-size: .92rem;
-    }
-    
-    /* ── Drafts History System ── */
-    .history-card {
-      margin-top: 3rem;
-      border-top: 1px solid var(--border);
-      padding-top: 2rem;
+      transition: background-color 0.15s;
     }
 
-    .history-header-row {
+    .toolbar-btn:hover {
+      color: var(--text-1);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    
+    .toolbar-divider {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+      margin: 0 0.4rem;
+    }
+
+    .editor-subject {
+      font-size: 1.05rem;
+      font-weight: 600;
+      padding: 0.75rem;
+      border: 1px solid transparent;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+      width: 100%;
+      background: transparent;
+      color: var(--text-1);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    .editor-subject:focus {
+      border-color: var(--border-focus);
+    }
+
+    .editor-body {
+      min-height: 400px;
+      padding: 0.75rem;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: var(--text-1);
+      outline: none;
+      border: 1px solid transparent;
+      border-radius: var(--r-sm);
+      transition: border-color 0.2s;
+      white-space: pre-wrap;
+    }
+    
+    .editor-body:focus {
+      border-color: var(--border-focus);
+    }
+    
+    /* Metrics Bar */
+    .metrics-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 1.25rem;
-      flex-wrap: wrap;
-      gap: 1rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: var(--r-sm);
+      padding: 0.6rem 1rem;
+      font-size: 0.8rem;
+      color: var(--text-2);
+      margin-top: 1rem;
+    }
+    
+    .metrics-bar span {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    
+    /* Follow Up Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 2rem;
+    }
+    
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+    
+    .timeline-item {
+      position: relative;
+      margin-bottom: 2rem;
+    }
+    
+    .timeline-dot {
+      position: absolute;
+      left: -2rem;
+      top: 0.25rem;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 2px solid var(--primary);
+      z-index: 1;
+    }
+    
+    .timeline-content {
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 1.25rem;
+    }
+    
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+    
+    .timeline-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    
+    .timeline-meta {
+      font-size: 0.75rem;
+      color: var(--text-3);
+    }
+    
+    /* Custom buttons */
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--r-sm);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: filter 0.2s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
-    .history-search-input {
-      max-width: 320px;
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-1);
+      padding: 0.5rem 1rem;
+      border-radius: var(--r-sm);
       font-size: 0.85rem;
-      padding: 0.5rem 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-2);
+    }
+    
+    .empty-state i {
+      color: var(--text-3);
+      margin-bottom: 1rem;
+    }
+    
+    .empty-state h3 {
+      font-size: 1.1rem;
+      color: var(--text-1);
+      margin-bottom: 0.5rem;
     }
 
-    .drafts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1rem;
+    /* Score UI */
+    .score-card {
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 1.5rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
     }
+    
+    .score-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 4px solid var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0 auto 1rem;
+      color: var(--text-1);
+    }
+    
+    .score-details {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      text-align: left;
+    }
+    
+    .score-item {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      font-size: 0.85rem;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: var(--r-sm);
+      border: 1px solid var(--border);
+    }
+    
+    .score-item.success i { color: var(--success); }
+    .score-item.warning i { color: var(--warning); }
+    .score-item.error i { color: var(--danger); }
 
+    /* AI Assistant */
+    .ai-action-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .ai-action-btn {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      border-radius: var(--r-sm);
+      color: var(--text-1);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    
+    .ai-action-btn:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: var(--primary);
+    }
+    
+    .ai-action-btn i {
+      color: var(--primary);
+    }
+    
+    .diff-preview {
+      background: rgba(0,0,0,0.2);
+      border-radius: var(--r-sm);
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      display: none;
+    }
+    
+    .diff-original {
+      text-decoration: line-through;
+      color: var(--danger);
+      margin-bottom: 0.5rem;
+    }
+    
+    .diff-suggested {
+      color: var(--success);
+    }
+    
+    .diff-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    
+    /* Variant Cards */
+    .variant-card {
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      transition: border-color 0.2s;
+    }
+    
+    .variant-card:hover {
+      border-color: var(--border-hover);
+    }
+    
+    .variant-card.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+    
+    .variant-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    
+    .variant-body {
+      font-size: 0.85rem;
+      color: var(--text-2);
+      white-space: pre-wrap;
+      max-height: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      line-clamp: 4;
+      -webkit-box-orient: vertical;
+    }
+    
+    /* Draft History Grid */
     .draft-card {
       background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--border);
-      border-radius: 0.75rem;
+      border-radius: var(--r-md);
       padding: 1.25rem;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
+      transition: background-color 0.2s, border-color 0.2s;
     }
 
     .draft-card:hover {
@@ -718,23 +623,22 @@
 
     .draft-card-meta {
       font-size: 0.75rem;
-      color: var(--text-muted);
+      color: var(--text-3);
       margin-bottom: 0.5rem;
       display: flex;
       justify-content: space-between;
     }
 
     .draft-card-title {
-      font-weight: 700;
+      font-weight: 600;
       font-size: 0.95rem;
-      margin-bottom: 0.35rem;
-      color: var(--text);
-      word-break: break-all;
+      margin-bottom: 0.5rem;
+      color: var(--text-1);
     }
 
     .draft-card-desc {
       font-size: 0.8rem;
-      color: var(--text-muted);
+      color: var(--text-2);
       margin-bottom: 1rem;
       line-height: 1.5;
       display: -webkit-box;
@@ -742,22 +646,21 @@
       line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     .draft-card-actions {
       display: flex;
-      gap: 0.4rem;
+      gap: 0.5rem;
       justify-content: flex-end;
     }
-
+    
     .draft-btn {
       padding: 0.35rem 0.65rem;
       font-size: 0.75rem;
-      border-radius: 0.25rem;
+      border-radius: var(--r-sm);
       border: 1px solid var(--border);
       background: rgba(255, 255, 255, 0.03);
-      color: var(--text);
+      color: var(--text-1);
       cursor: pointer;
       transition: 0.15s;
     }
@@ -766,659 +669,358 @@
       background: rgba(255, 255, 255, 0.08);
     }
 
-    .draft-btn.load {
-      background: rgba(124, 58, 237, 0.1);
-      color: #c4b5fd;
-      border-color: rgba(124, 58, 237, 0.3);
-    }
-
-    .draft-btn.load:hover {
-      background: rgba(124, 58, 237, 0.2);
-    }
-
-    .draft-btn.delete {
-      color: #fca5a5;
-      border-color: rgba(239, 68, 68, 0.2);
-    }
-
-    .draft-btn.delete:hover {
-      background: rgba(239, 68, 68, 0.1);
-    }
-
-    /* ── Modal ── */
-    .modal-bg {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, .65);
-      backdrop-filter: blur(6px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: .2s;
-    }
-    
-    .modal-bg.show {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-    }
-    
-    .modal {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      width: 92%;
-      max-width: 480px;
-      padding: 1.75rem;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, .4);
-    }
-    
-    .modal h2 {
-      font-size: 1.15rem;
-      margin-bottom: 1.25rem;
-      
-    }
-    
-    .rlist {
-      max-height: 280px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: .4rem;
-    }
-    
-    .ritem {
-      padding: .85rem;
-      background: rgba(255, 255, 255, .02);
-      border: 1px solid var(--border);
-      border-radius: .5rem;
-      cursor: pointer;
-      transition: .2s;
-      text-align: left;
-      color: var(--text);
-    }
-    
-    .ritem:hover {
-      border-color: var(--primary);
-      background: rgba(139, 92, 246, .08);
-    }
-    
-    .ritem h4 {
-      font-size: .9rem;
-      margin-bottom: .15rem;
-    }
-    
-    .ritem p {
-      font-size: .78rem;
-      color: var(--text-muted);
-    }
-    
-    .mcl {
-      margin-top: 1.25rem;
-      width: 100%;
-      padding: .65rem;
-      background: 0;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      border-radius: .5rem;
-      cursor: pointer;
-      font-family: var(--font);
-    }
-    
-    .mcl:hover {
-      background: rgba(255, 255, 255, .04);
-    }
-    
-
     @keyframes fadeIn {
       from { opacity: 0 }
       to { opacity: 1 }
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg) }
-    }
-
-    /* ── Target Length Selector Cards ── */
-    .length-options-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 0.75rem;
-      margin-top: 0.5rem;
-    }
-    
-    @media (min-width: 640px) {
-      .length-options-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    .length-option-card {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid var(--border);
-      border-radius: 0.75rem;
-      padding: 1rem;
-      cursor: pointer;
-      transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      position: relative;
-    }
-
-    .length-option-card:hover {
-      border-color: rgba(255, 255, 255, 0.15);
-      background: rgba(255, 255, 255, 0.04);
-    }
-
-    .length-option-card.active {
-      border-color: var(--primary);
-      background: rgba(124, 58, 237, 0.08);
-      box-shadow: 0 0 0 1px var(--primary);
-    }
-
-    .length-option-title {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: var(--text);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .length-range {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .length-option-desc {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
-
-    .custom-length-inputs {
-      animation: fadeIn 0.25s ease-out;
-    }
-
-    /* ── Live Email Statistics ── */
-    .preview-stats-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid var(--border);
-      border-radius: 0.5rem;
-      padding: 0.75rem 1rem;
-      font-size: 0.8rem;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-bottom: 1.25rem;
-    }
-
-    .stat-item {
-      display: flex;
-      gap: 0.35rem;
-      align-items: center;
-    }
-
-    .stat-label {
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .stat-value {
-      color: var(--text);
-      font-weight: 700;
-    }
-
-    .stat-status-badge {
-      padding: 0.25rem 0.65rem;
-      border-radius: 99px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      transition: border-color 0.2s ease, background-color 0.2s ease;
-    }
-
-    .status-ok {
-      background: rgba(16, 185, 129, 0.15);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.25);
-    }
-
-    .status-warning {
-      background: rgba(245, 158, 11, 0.15);
-      color: #fbbf24;
-      border: 1px solid rgba(245, 158, 11, 0.25);
     }
   </style>
 </head>
 <body>
 
-
-  <!-- Top Navigation — rendered by NavigationManager -->
+  <!-- Top Navigation -->
   <nav class="ch-nav" aria-label="Main navigation"></nav>
 
-  <div class="container">
+  <div class="container" style="max-width: 1300px; margin: 0 auto; padding: 2rem 1.5rem;">
     <div class="hero">
-      <h1>Cold Email <em>Writer</em></h1>
-      <p>Elite outreach and sales copywriting frameworks that maximize response rates.</p>
+      <h1>Cold Email Workspace</h1>
+      <p>Create concise, personalized outreach that gets noticed and encourages a response.</p>
     </div>
 
-    <div class="alert" id="errAlert">
-      <h4>Error</h4>
-      <p id="errMsg">Something went wrong.</p>
+    <!-- Alert -->
+    <div class="alert" id="errAlert" style="display:none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 1rem; border-radius: var(--r-sm); margin-bottom: 1.5rem;">
+      <h4 style="color: #fca5a5; margin-bottom: 0.25rem;">Error</h4>
+      <p id="errMsg" style="color: #fecaca; font-size: 0.9rem;"></p>
     </div>
 
-    <!-- Layout Grid -->
-    <div class="app-layout">
+    <div class="workspace-container">
       
-      <!-- LEFT: FORM COLUMN -->
+      <!-- LEFT: GUIDED WORKFLOW -->
       <div class="left-pane">
-        
-        <!-- Nexus Import Card -->
-        <div class="nexus">
-          <div>
-            <h3>Context Nexus</h3>
-            <p>Load background summary directly from a saved resume or upload a PDF.</p>
-          </div>
-          <div class="nexus-actions">
-            <button type="button" class="nbtn outline" id="btnUploadPdf">⬆ Upload PDF</button>
-            <input type="file" id="fileIn" accept=".pdf,.docx,application/pdf" style="display:none">
-            <button type="button" class="nbtn" id="btnSelectSaved">＋ Select Saved</button>
-          </div>
-          <div id="pdfStatus"></div>
-        </div>
-
         <form id="emailForm" novalidate>
           
-          <!-- STEP 1: Select Email Goal -->
-          <div class="card" style="animation-delay:.05s">
-            <div class="card-head">Step 1 — Select Email Goal</div>
-            <div class="fg">
-              <label for="emailGoal">What is the objective of this cold email? <span class="req">*</span></label>
-              <select id="emailGoal" required>
-                <option value="">— Select Goal —</option>
-                <option value="Internship Request">Internship Request</option>
-                <option value="Job Application">Job Application</option>
-                <option value="Recruiter Outreach">Recruiter Outreach</option>
-                <option value="Referral Request">Referral Request</option>
-                <option value="Networking">Networking</option>
-                <option value="Follow-Up">Follow-Up</option>
-                <option value="Business Proposal">Business Proposal</option>
-                <option value="Custom">Custom</option>
-              </select>
+          <!-- Section 1: Recipient -->
+          <div class="accordion-item active" id="sec-recipient">
+            <div class="accordion-header" onclick="toggleAccordion('sec-recipient')">
+              <span>1. Recipient <i data-lucide="check-circle" class="status-icon" width="16"></i></span>
+              <i data-lucide="chevron-down" class="icon-right" width="18"></i>
             </div>
-          </div>
-
-          <!-- STEP 2: Enter Recipient Details -->
-          <div class="card" style="animation-delay:.1s">
-            <div class="card-head">Step 2 — Enter Recipient Details</div>
-            <div class="grid2">
-              <div class="fg">
-                <label for="recipientName">Recipient Name (optional)</label>
+            <div class="accordion-content">
+              <div class="input-wrapper">
+                <label for="recipientName">Recipient Name <span class="optional">Optional</span></label>
                 <input id="recipientName" placeholder="e.g. Sarah">
               </div>
-              <div class="fg">
-                <label for="companyName">Company Name <span class="req">*</span></label>
-                <input id="companyName" required placeholder="e.g. Stripe, OpenAI">
-              </div>
-              <div class="fg">
-                <label for="position">Recipient Position <span class="req">*</span></label>
+              <div class="input-wrapper">
+                <label for="position">Recipient Role / Title</label>
                 <input id="position" required placeholder="e.g. VP of Engineering">
               </div>
-              <div class="fg">
-                <label for="linkedinUrl">LinkedIn URL (optional)</label>
-                <input id="linkedinUrl" placeholder="e.g. https://linkedin.com/in/username">
+              <div class="input-wrapper">
+                <label for="companyName">Company Name</label>
+                <input id="companyName" required placeholder="e.g. Stripe, OpenAI">
               </div>
-              <div class="fg full">
-                <label for="companyWebsite">Company Website (optional)</label>
-                <input id="companyWebsite" placeholder="e.g. https://company.com">
+              <div class="input-wrapper">
+                <label for="recipientEmail">Recipient Email <span class="optional">Optional</span></label>
+                <input id="recipientEmail" type="email" placeholder="e.g. sarah@company.com">
               </div>
             </div>
           </div>
 
-          <!-- STEP 3: Enter User Context -->
-          <div class="card" style="animation-delay:.15s">
-            <div class="card-head">Step 3 — Enter Your Context</div>
-            <div class="grid2">
-              <div class="fg full">
-                <label for="userName">Your Name <span class="req">*</span></label>
+          <!-- Section 2: Company & Context -->
+          <div class="accordion-item" id="sec-company">
+            <div class="accordion-header" onclick="toggleAccordion('sec-company')">
+              <span>2. Company & Context <i data-lucide="check-circle" class="status-icon" width="16"></i></span>
+              <i data-lucide="chevron-down" class="icon-right" width="18"></i>
+            </div>
+            <div class="accordion-content">
+              <div class="input-wrapper">
+                <label for="companyContext">Company Context <span class="optional">Optional</span></label>
+                <textarea id="companyContext" placeholder="e.g. They just raised Series B and are expanding the engineering team..."></textarea>
+              </div>
+              <div class="input-wrapper">
+                <label for="relevantTrigger">Relevant Trigger / Event <span class="optional">Optional</span></label>
+                <input id="relevantTrigger" placeholder="e.g. Hiring announcement, new product launch">
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Your Background -->
+          <div class="accordion-item" id="sec-background">
+            <div class="accordion-header" onclick="toggleAccordion('sec-background')">
+              <span>3. Your Background <i data-lucide="check-circle" class="status-icon" width="16"></i></span>
+              <i data-lucide="chevron-down" class="icon-right" width="18"></i>
+            </div>
+            <div class="accordion-content">
+              <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                <button type="button" class="btn-secondary" id="btnSelectSaved" style="flex:1;"><i data-lucide="file-text" width="16"></i> Choose Resume</button>
+              </div>
+              <div class="input-wrapper">
+                <label for="userName">Your Name</label>
                 <input id="userName" required placeholder="e.g. John Doe">
               </div>
-              <div class="fg full">
-                <label for="background">Professional Background Summary <span class="req">*</span></label>
-                <textarea id="background" required placeholder="Describe your background briefly (or load it from Nexus above)…" style="min-height:90px"></textarea>
-                <div class="char-ct" id="bgCt">0 / 400</div>
+              <div class="input-wrapper">
+                <label for="background">Professional Summary</label>
+                <textarea id="background" required placeholder="Brief description of your background..."></textarea>
               </div>
-              <div class="fg full">
-                <label for="keySkills">Key Skills & Technologies <span class="req">*</span></label>
-                <input id="keySkills" required placeholder="e.g. Node.js, Python, AWS, React, Project Management">
-              </div>
-              <div class="fg full">
-                <label for="experience">Relevant Accomplishments & Experience <span class="req">*</span></label>
-                <textarea id="experience" required placeholder="e.g. Built and shipped 3 internal microservices, worked 2 years at TechCorp..." style="min-height:80px"></textarea>
-              </div>
-              <div class="fg full">
-                <label for="whyContacting">Why Contacting / Value Hook <span class="req">*</span></label>
-                <textarea id="whyContacting" required placeholder="What interesting value proposition do you bring? e.g. 'I want to show how Stripe can reduce API latency by 12%'" style="min-height:72px"></textarea>
+              <div class="input-wrapper">
+                <label for="keySkills">Key Skills</label>
+                <input id="keySkills" required placeholder="e.g. React, Node.js, Leadership">
               </div>
             </div>
           </div>
 
-          <!-- STEP 4: AI Length Config -->
-          <div class="card" style="animation-delay:.2s">
-            <div class="card-head">Step 4 — AI Length Config</div>
-            <div class="fg">
-              <label style="margin-bottom: 0.25rem;">Target Length</label>
-              <div class="length-options-grid">
-                <!-- Short -->
-                <div class="length-option-card active" data-preset="Short" onclick="selectLengthOption('Short')">
-                  <div class="length-option-title">
-                    <span>Short</span>
-                    <span class="length-range">(80–100 words)</span>
-                  </div>
-                  <div class="length-option-desc">Best for quick recruiter outreach.</div>
+          <!-- Section 4: Email Goal -->
+          <div class="accordion-item" id="sec-goal">
+            <div class="accordion-header" onclick="toggleAccordion('sec-goal')">
+              <span>4. Email Goal <i data-lucide="check-circle" class="status-icon" width="16"></i></span>
+              <i data-lucide="chevron-down" class="icon-right" width="18"></i>
+            </div>
+            <div class="accordion-content">
+              <div class="input-wrapper">
+                <label for="emailGoal">Goal</label>
+                <select id="emailGoal" required>
+                  <option value="">— Select Goal —</option>
+                  <option value="Job Inquiry">Job Inquiry</option>
+                  <option value="Referral Request">Referral Request</option>
+                  <option value="Recruiter Outreach">Recruiter Outreach</option>
+                  <option value="Networking">Networking</option>
+                  <option value="Informational Interview">Informational Interview</option>
+                  <option value="Freelance / Consulting">Freelance / Consulting</option>
+                  <option value="Custom">Custom</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 5: Personalization -->
+          <div class="accordion-item" id="sec-personalization">
+            <div class="accordion-header" onclick="toggleAccordion('sec-personalization')">
+              <span>5. Personalization <i data-lucide="check-circle" class="status-icon" width="16"></i></span>
+              <i data-lucide="chevron-down" class="icon-right" width="18"></i>
+            </div>
+            <div class="accordion-content">
+              <div class="grid-2">
+                <div class="input-wrapper">
+                  <label for="tone">Tone</label>
+                  <select id="tone">
+                    <option value="Professional">Professional</option>
+                    <option value="Confident">Confident</option>
+                    <option value="Warm">Warm</option>
+                    <option value="Concise">Concise</option>
+                    <option value="Executive">Executive</option>
+                    <option value="Conversational">Conversational</option>
+                  </select>
                 </div>
-                <!-- Medium -->
-                <div class="length-option-card" data-preset="Medium" onclick="selectLengthOption('Medium')">
-                  <div class="length-option-title">
-                    <span>Medium</span>
-                    <span class="length-range">(120–170 words)</span>
-                  </div>
-                  <div class="length-option-desc">Recommended for most standard cold emails.</div>
-                </div>
-                <!-- Long -->
-                <div class="length-option-card" data-preset="Long" onclick="selectLengthOption('Long')">
-                  <div class="length-option-title">
-                    <span>Long</span>
-                    <span class="length-range">(180–250 words)</span>
-                  </div>
-                  <div class="length-option-desc">Best for executive networking and senior professionals.</div>
-                </div>
-                <!-- Custom -->
-                <div class="length-option-card" data-preset="Custom" onclick="selectLengthOption('Custom')">
-                  <div class="length-option-title">Custom</div>
-                  <div class="length-option-desc">Choose your own custom word range.</div>
+                <div class="input-wrapper">
+                  <label for="length">Length</label>
+                  <select id="length">
+                    <option value="Short">Short (Recommended)</option>
+                    <option value="Standard">Standard</option>
+                    <option value="Detailed">Detailed</option>
+                  </select>
                 </div>
               </div>
-
-              <!-- Custom Min/Max Inputs (hidden by default) -->
-              <div id="customLengthInputs" class="custom-length-inputs" style="display: none; margin-top: 1.25rem;">
-                <div class="grid2">
-                  <div class="fg">
-                    <label for="minLengthInput">Min Words <span class="req">*</span></label>
-                    <input type="number" id="minLengthInput" min="1" placeholder="e.g. 100" value="100">
-                  </div>
-                  <div class="fg">
-                    <label for="maxLengthInput">Max Words <span class="req">*</span></label>
-                    <input type="number" id="maxLengthInput" min="1" placeholder="e.g. 140" value="140">
-                  </div>
+              <div class="grid-2">
+                <div class="input-wrapper">
+                  <label for="ctaStyle">CTA Style</label>
+                  <select id="ctaStyle">
+                    <option value="Soft Ask">Soft Ask</option>
+                    <option value="Direct Ask">Direct Ask</option>
+                    <option value="Meeting Request">Meeting Request</option>
+                    <option value="Reply Request">Reply Request</option>
+                  </select>
+                </div>
+                <div class="input-wrapper">
+                  <label for="personalizationLevel">Personalization Level</label>
+                  <select id="personalizationLevel">
+                    <option value="Balanced">Balanced</option>
+                    <option value="Light">Light</option>
+                    <option value="High">High</option>
+                  </select>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="gen-wrap">
-            <button type="submit" class="btn-gen" id="genBtn">Generate Elite Emails</button>
+          <div style="margin-top: 1.5rem;">
+            <button type="submit" class="btn-primary" id="genBtn">
+              <i data-lucide="sparkles" width="18"></i> Generate Email
+            </button>
           </div>
+          
+          <div id="loadingState" style="display:none; text-align:center; margin-top: 1rem; color: var(--text-2); font-size: 0.9rem;">
+            <i data-lucide="loader-2" class="spin" style="margin-right:0.5rem; vertical-align:middle;"></i>
+            <span id="loadingText">Understanding your outreach goal...</span>
+          </div>
+
         </form>
       </div>
 
-      <!-- RIGHT: LIVE PREVIEW & WORKSPACE -->
+      <!-- RIGHT: WORKSPACE -->
       <div class="right-pane">
         
-        <!-- Live Email Preview Card -->
-        <div class="card" id="previewCard" style="animation-delay:.05s">
-          <div class="card-head" id="previewTitle">Live Email Preview</div>
-          
-          <div class="spam-alert" id="spamAlert">
-            <strong>Spam Trigger Warning:</strong> The current variant contains spam-associated words (<span id="spamWordsText"></span>) which may affect deliverability. Consider replacing them.
-          </div>
+        <div class="tab-header" id="workspaceTabs">
+          <button type="button" class="tab-btn active" data-target="tab-editor"><i data-lucide="edit-3" width="16"></i> Email Editor</button>
+          <button type="button" class="tab-btn" data-target="tab-ai"><i data-lucide="bot" width="16"></i> AI Assistant</button>
+          <button type="button" class="tab-btn" data-target="tab-score"><i data-lucide="activity" width="16"></i> Outreach Score</button>
+          <button type="button" class="tab-btn" data-target="tab-variants"><i data-lucide="copy" width="16"></i> Variants</button>
+          <button type="button" class="tab-btn" data-target="tab-followups"><i data-lucide="git-branch" width="16"></i> Follow-Ups</button>
+        </div>
 
-          <!-- Preview Header -->
-          <div class="preview-header">
-            <div class="preview-meta-row">
-              <span id="previewMeta">To: [Recipient Details]</span>
-              <span class="badge" id="previewApproachBadge" style="display:none">PAS Framework</span>
-            </div>
-            <div class="preview-subject-line" id="previewSubject">Subject: [Subject Line]</div>
-          </div>
-
-          <!-- Preview Body -->
-          <div class="preview-body-container" id="previewBody" contenteditable="true" spellcheck="false" title="Click to edit content directly">
-            [Email Body text will compile here as you fill out the form...]
-          </div>
-
-          <!-- Live Email Statistics -->
-          <div class="preview-stats-bar" id="previewStatsBar" style="display: none;">
-            <div class="stat-item">
-              <span class="stat-label">Words:</span>
-              <span class="stat-value" id="statWordCount">0</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Characters:</span>
-              <span class="stat-value" id="statCharCount">0</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Reading Time:</span>
-              <span class="stat-value" id="statReadTime">0s</span>
-            </div>
-            <div class="stat-status-badge" id="statLengthStatus">
-              ✓ Within target
-            </div>
-          </div>
-
-          <!-- Variant Selector (Hidden before generate) -->
-          <div id="variantTabsRow" style="display:none;">
-            <label style="display:block;margin-bottom:0.4rem;font-size:0.8rem;font-weight:700;">Compare Variants</label>
-            <div class="tabs" id="vtabs">
-              <button type="button" class="tab on" data-key="A">Professional</button>
-              <button type="button" class="tab" data-key="B">Friendly</button>
-              <button type="button" class="tab" data-key="C">Executive</button>
-              <button type="button" class="tab" data-key="D">Startup</button>
-              <button type="button" class="tab" data-key="E">Technical</button>
-              <button type="button" class="tab" data-key="F">Networking</button>
-            </div>
-          </div>
-
-          <!-- Export Actions -->
-          <div class="preview-actions-row">
-            <button type="button" class="abtn primary" id="btnCopyEmail">Copy Email</button>
-            <button type="button" class="abtn" id="btnCopySubject">Copy Subject</button>
-            <button type="button" class="abtn" id="btnExportTxt">Export TXT</button>
-            <button type="button" class="abtn" id="btnExportPdf">Export PDF</button>
-            <button type="button" class="abtn" id="btnSaveDraft">Save Draft</button>
-          </div>
-
-          <!-- Email Optimizer Panel -->
-          <div class="optimizer-box" id="optimizerBox" style="display:none;">
-            <div class="optimizer-head">AI Email Optimizer</div>
-            <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem">Provide feedback to instantly rewrite and refine this specific variant (e.g. "make it punchier", "focus on cloud migration skills").</p>
-            <div class="optimizer-row">
-              <input type="text" id="optimizerFeedback" placeholder="e.g. Make it shorter and add a link hook...">
-              <button type="button" class="nbtn" id="btnRunOptimizer">Improve</button>
-            </div>
-          </div>
-
-          <!-- Subject Line Generator Panel -->
-          <div class="subjects-box" id="subjectsBox" style="display:none;">
-            <div class="subjects-title-row">
-              <h4>Alternative Subject Lines</h4>
-              <button type="button" class="draft-btn" id="btnRegenSubjects" style="padding:0.25rem 0.5rem">Regenerate</button>
-            </div>
-            <div class="subjects-list" id="subjectsList">
-              <!-- Subject items will go here -->
-            </div>
-          </div>
-
-          <!-- Quality Engine Panel -->
-          <div class="quality-box" id="qualityBox" style="display:none;">
-            <div class="quality-title">
-              <span>AI Quality Evaluation</span>
-              <span class="score-badge score-high" id="overallScoreBadge">90% Reply Probability</span>
+        <!-- TAB: Email Editor -->
+        <div class="tab-pane active" id="tab-editor">
+          <div class="editor-container">
+            <div id="emptyState" class="empty-state">
+              <i data-lucide="mail" width="48" height="48"></i>
+              <h3>No Email Draft Yet</h3>
+              <p>Add recipient and outreach details to create a personalized email.</p>
             </div>
             
-            <!-- 7 Score Progress Bars -->
-            <div class="score-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-top:1rem; margin-bottom:1.25rem;">
-              <div class="score-item-bar">
-                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.25rem;">
-                  <span>Personalization</span>
-                  <span id="scoreValPersonalization" style="font-weight:600;">0%</span>
-                </div>
-                <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
-                  <div id="scoreBarPersonalization" style="height:100%; width:0%; background:var(--primary); transition: width 0.4s ease-out;"></div>
-                </div>
+            <div id="editorContent" style="display:none;">
+              <div class="editor-toolbar">
+                <button type="button" class="toolbar-btn" title="Bold" onclick="document.execCommand('bold')"><i data-lucide="bold" width="16"></i></button>
+                <button type="button" class="toolbar-btn" title="Italic" onclick="document.execCommand('italic')"><i data-lucide="italic" width="16"></i></button>
+                <button type="button" class="toolbar-btn" title="Underline" onclick="document.execCommand('underline')"><i data-lucide="underline" width="16"></i></button>
+                <div class="toolbar-divider"></div>
+                <button type="button" class="toolbar-btn" title="Bullet List" onclick="document.execCommand('insertUnorderedList')"><i data-lucide="list" width="16"></i></button>
+                <button type="button" class="toolbar-btn" title="Numbered List" onclick="document.execCommand('insertOrderedList')"><i data-lucide="list-ordered" width="16"></i></button>
+                <div class="toolbar-divider"></div>
+                <button type="button" class="toolbar-btn" title="Clear Formatting" onclick="document.execCommand('removeFormat')"><i data-lucide="remove-formatting" width="16"></i></button>
               </div>
-              <div class="score-item-bar">
-                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.25rem;">
-                  <span>Open Rate Prediction</span>
-                  <span id="scoreValOpenRate" style="font-weight:600;">0%</span>
-                </div>
-                <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
-                  <div id="scoreBarOpenRate" style="height:100%; width:0%; background:var(--primary); transition: width 0.4s ease-out;"></div>
-                </div>
+              
+              <input type="text" id="editorSubject" class="editor-subject" placeholder="Subject">
+              <div id="editorBody" class="editor-body" contenteditable="true" spellcheck="false" placeholder="Email body..."></div>
+              
+              <div class="metrics-bar">
+                <span id="metricWords"><i data-lucide="file-text" width="14"></i> <span class="val">0</span> words</span>
+                <span id="metricChars"><i data-lucide="hash" width="14"></i> <span class="val">0</span> characters</span>
+                <span id="metricTime"><i data-lucide="clock" width="14"></i> <span class="val">&lt;1 min</span> read</span>
+                <span id="metricScore"><i data-lucide="award" width="14"></i> Score: <span class="val">--</span></span>
               </div>
-              <div class="score-item-bar">
-                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.25rem;">
-                  <span>Recruiter Engagement</span>
-                  <span id="scoreValRecruiter" style="font-weight:600;">0%</span>
-                </div>
-                <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
-                  <div id="scoreBarRecruiter" style="height:100%; width:0%; background:var(--primary); transition: width 0.4s ease-out;"></div>
-                </div>
-              </div>
-              <div class="score-item-bar">
-                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.25rem;">
-                  <span>Professional Tone</span>
-                  <span id="scoreValTone" style="font-weight:600;">0%</span>
-                </div>
-                <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
-                  <div id="scoreBarTone" style="height:100%; width:0%; background:var(--primary); transition: width 0.4s ease-out;"></div>
-                </div>
-              </div>
-              <div class="score-item-bar">
-                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.25rem;">
-                  <span>Spam Risk Score</span>
-                  <span id="scoreValSpam" style="font-weight:600;">0%</span>
-                </div>
-                <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
-                  <div id="scoreBarSpam" style="height:100%; width:0%; background:var(--primary); transition: width 0.4s ease-out;"></div>
-                </div>
-              </div>
-              <div class="score-item-bar">
-                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.25rem;">
-                  <span>Grammar Quality</span>
-                  <span id="scoreValGrammar" style="font-weight:600;">0%</span>
-                </div>
-                <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
-                  <div id="scoreBarGrammar" style="height:100%; width:0%; background:var(--primary); transition: width 0.4s ease-out;"></div>
-                </div>
-              </div>
-              <div class="score-item-bar" style="grid-column: 1 / -1;">
-                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.25rem;">
-                  <span>Clarity & Focus</span>
-                  <span id="scoreValClarity" style="font-weight:600;">0%</span>
-                </div>
-                <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
-                  <div id="scoreBarClarity" style="height:100%; width:0%; background:var(--primary); transition: width 0.4s ease-out;"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Dynamic Interactive Suggestions List -->
-            <div id="suggestionsWrapper" style="border-top:1px solid var(--border); padding-top:1rem; margin-top:1rem;">
-              <h4 style="font-size:0.85rem; font-weight:700; margin-bottom:0.75rem; color:#fff;">Interactive Outreach Improvements</h4>
-              <div id="suggestionsInteractiveList" style="display:flex; flex-direction:column; gap:0.75rem;"></div>
-            </div>
-
-            <!-- Strengths and Weaknesses -->
-            <div class="quality-list" style="margin-top:1.25rem;">
-              <div class="quality-item">
-                <span class="quality-icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg" style="color:#10b981; display:inline-block; vertical-align:middle;"><polyline points="20 6 9 17 4 12"/></svg></span>
-                <span id="strengthsText"></span>
-              </div>
-              <div class="quality-item">
-                <span class="quality-icon"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="icon-svg" style="color:#fbbf24; display:inline-block; vertical-align:middle;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-                <span id="weaknessesText"></span>
+              
+              <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <button type="button" class="btn-primary" id="btnCopyEmail" style="flex:2;"><i data-lucide="copy" width="16"></i> Copy Email</button>
+                <button type="button" class="btn-secondary" id="btnSaveDraft" style="flex:1;"><i data-lucide="save" width="16"></i> Save</button>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Spam Radar Panel -->
-          <div class="card" id="spamRadarBox" style="display:none; margin-top: 1.25rem; background:rgba(239,68,68,.02); border-color:rgba(239,68,68,.2)">
-            <div class="card-head">🚨 Spam Radar</div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-              <span style="font-size:0.9rem; font-weight:600; color:var(--text-muted);">Spam Trigger Risk:</span>
-              <span id="spamScoreBadge" class="score-badge">Low Risk</span>
+        <!-- TAB: AI Assistant -->
+        <div class="tab-pane" id="tab-ai">
+          <div class="editor-container" style="min-height: 400px;">
+            <h3 style="font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+              <i data-lucide="sparkles" width="18" style="color: var(--primary);"></i> AI Assistant
+            </h3>
+            <p style="font-size: 0.9rem; color: var(--text-2); margin-bottom: 1.5rem;">Improve the current email draft contextually.</p>
+            
+            <div class="ai-action-list">
+              <button type="button" class="ai-action-btn" data-action="improve"><i data-lucide="zap" width="16"></i> Improve Email</button>
+              <button type="button" class="ai-action-btn" data-action="shorten"><i data-lucide="minimize-2" width="16"></i> Make Shorter</button>
+              <button type="button" class="ai-action-btn" data-action="confident"><i data-lucide="shield-check" width="16"></i> Make More Confident</button>
+              <button type="button" class="ai-action-btn" data-action="natural"><i data-lucide="message-circle" width="16"></i> Make More Natural</button>
+              <button type="button" class="ai-action-btn" data-action="subject"><i data-lucide="heading" width="16"></i> Generate Subject Alternatives</button>
             </div>
-            <div id="spamWordsContainer" style="margin-bottom:1rem; display:none;">
-              <p style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.4rem;">Flagged Spam Keywords:</p>
-              <div id="spamWordsList" style="display:flex; flex-wrap:wrap; gap:0.4rem;"></div>
+            
+            <div id="aiLoading" style="display:none; margin-top: 1.5rem; text-align: center; color: var(--text-2); font-size: 0.9rem;">
+              <i data-lucide="loader-2" class="spin" style="margin-right:0.5rem; vertical-align:middle;"></i> Working...
             </div>
-            <div id="spamRecsContainer" style="margin-bottom:0.5rem;">
-              <p style="font-size:0.8rem; font-weight:600; color:var(--text-muted); margin-bottom:0.4rem;">Placement Recommendations:</p>
-              <ul id="spamRecsList" style="font-size:0.78rem; color:var(--text-muted); padding-left:1.2rem; display:flex; flex-direction:column; gap:0.25rem;"></ul>
+
+            <div class="diff-preview" id="aiDiffPreview">
+              <p style="font-size: 0.8rem; font-weight: 600; color: var(--text-2); margin-bottom: 0.5rem;">Preview Changes:</p>
+              <div class="diff-original" id="diffOriginal"></div>
+              <div class="diff-suggested" id="diffSuggested"></div>
+              <div class="diff-actions">
+                <button type="button" class="btn-secondary" id="btnRejectAi" style="flex:1;">Reject</button>
+                <button type="button" class="btn-primary" id="btnAcceptAi" style="flex:1;">Accept</button>
+              </div>
+            </div>
+            
+            <div id="subjectAlternatives" style="display:none; margin-top: 1.5rem;">
+              <p style="font-size: 0.8rem; font-weight: 600; color: var(--text-2); margin-bottom: 0.5rem;">Alternative Subjects:</p>
+              <div id="subjectList" style="display:flex; flex-direction:column; gap:0.5rem;"></div>
             </div>
           </div>
+        </div>
 
-          <!-- Follow-up Card -->
-          <div class="card" id="fuCard" style="display:none;margin-top:1.25rem;background:rgba(56,189,248,.04);border-color:rgba(56,189,248,.22)">
-            <div class="card-head">🔄 3-Day Follow-Up Sequence</div>
-            <div class="preview-body-container" id="fuBody" style="min-height:auto;background:rgba(0,0,0,0.15)"></div>
-            <button type="button" class="abtn" id="cpFu" style="width:100%;justify-content:center">📋 Copy Follow-up</button>
+        <!-- TAB: Outreach Score -->
+        <div class="tab-pane" id="tab-score">
+          <div class="editor-container" style="min-height: 400px;">
+            <div class="score-card">
+              <div class="score-circle" id="mainScoreValue">--</div>
+              <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Outreach Score</h3>
+              <p style="font-size: 0.9rem; color: var(--text-2);" id="scoreDesc">Generate an email to see its score.</p>
+            </div>
+            
+            <div class="score-details" id="scoreDetailsList">
+              <!-- Score items populated via JS -->
+            </div>
           </div>
+        </div>
 
+        <!-- TAB: Variants -->
+        <div class="tab-pane" id="tab-variants">
+          <div class="editor-container" style="min-height: 400px;">
+            <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Email Variants</h3>
+            <p style="font-size: 0.9rem; color: var(--text-2); margin-bottom: 1.5rem;">Explore different approaches to your outreach.</p>
+            
+            <div id="variantsList" style="display:flex; flex-direction:column; gap: 1rem;">
+              <p style="color: var(--text-3); text-align: center; font-size: 0.9rem;">Generate an email to see variants.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Follow-Ups -->
+        <div class="tab-pane" id="tab-followups">
+          <div class="editor-container" style="min-height: 400px;">
+            <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Follow-Up Sequence</h3>
+            <p style="font-size: 0.9rem; color: var(--text-2); margin-bottom: 1.5rem;">Recommended sequence for this outreach.</p>
+            
+            <div class="timeline" id="followUpTimeline">
+              <p style="color: var(--text-3); text-align: center; font-size: 0.9rem;">Generate an email to create a follow-up sequence.</p>
+            </div>
+          </div>
         </div>
 
       </div>
-
     </div>
-
-    <!-- Skeleton loader -->
-    <div class="skel-wrap" id="skelWrap">
-      <div class="skel-msg">
-        <svg style="animation:spin 1s linear infinite;width:20px;height:20px;display:inline-block;vertical-align:middle;margin-right:.4rem" fill="none" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" stroke-dasharray="32" stroke-linecap="round"/>
-        </svg>
-        AI is writing and evaluating your copy...
-      </div>
-      <div class="card"><div class="skel" style="height:28px;width:35%"></div><div class="skel" style="height:90px;width:100%"></div></div>
-      <div class="card" style="opacity:.6"><div class="skel" style="height:28px;width:28%"></div><div class="skel" style="height:90px;width:100%"></div></div>
-    </div>
-
-    <!-- SAVED DRAFTS / DRAFT HISTORY -->
-    <div class="history-card" id="historySection">
-      <div class="history-header-row">
-        <h2>📂 Saved Outreach Drafts</h2>
-        <input type="text" id="draftSearch" class="history-search-input" placeholder="Search drafts by company, position...">
-      </div>
-      <div class="drafts-grid" id="draftsList">
-        <p style="color:var(--text-muted);text-align:center;grid-column:1/-1;padding:2rem;">Loading saved drafts...</p>
+    
+    <!-- Drafts History -->
+    <div style="margin-top: 3rem; border-top: 1px solid var(--border); padding-top: 2rem;">
+      <h2 style="font-size: 1.2rem; margin-bottom: 1rem;"><i data-lucide="archive" width="20" style="vertical-align: middle; margin-right: 0.5rem;"></i> Saved Drafts</h2>
+      <div id="draftsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+        <p style="color: var(--text-3); font-size: 0.9rem;">Loading drafts...</p>
       </div>
     </div>
-
+    
   </div>
-
-  <!-- Saved Resume Nexus Modal -->
-  <div class="modal-bg" id="nexusModal">
-    <div class="modal">
-      <h2>Select a Saved Resume</h2>
-      <div id="rlist" class="rlist"><p style="color:var(--text-muted);text-align:center">Loading…</p></div>
-      <button type="button" class="mcl" id="closeModal">Cancel</button>
+  
+  <!-- Saved Resume Modal -->
+  <div class="modal-bg" id="nexusModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s; pointer-events:none;">
+    <div style="background:var(--bg); border:1px solid var(--border); border-radius:var(--r-md); padding:1.5rem; width:90%; max-width:450px;">
+      <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Select a Saved Resume</h3>
+      <div id="rlist" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:0.5rem;"></div>
+      <div style="margin-top:1.5rem; text-align:right;">
+        <button type="button" class="btn-secondary" id="closeModal">Cancel</button>
+      </div>
     </div>
   </div>
+  
+  <div class="toast" id="toast"></div>
 
-  <div class="toast" id="toast">Message</div>
+  <style>
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    
+    .modal-bg.show {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+  </style>
 
-  <!-- Page logic loaded via cold-email.js -->
+  <script>
+    // Initialize Lucide icons
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  </script>
 </body>
 </html>
