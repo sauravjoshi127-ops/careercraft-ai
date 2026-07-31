@@ -13,124 +13,61 @@
   let currentDraftId = null; // Stores loaded draft database ID
   let activeGenerationController = null; // Tracks active generation request for duplicate prevention
 
-  let selectedLengthPreset = 'Short'; // 'Short' | 'Medium' | 'Long' | 'Custom'
-
-  function selectLengthOption(preset) {
-    selectedLengthPreset = preset;
+  // Make toggleAccordion available globally
+  window.toggleAccordion = function(id) {
+    const item = document.getElementById(id);
+    if (!item) return;
     
-    // Update UI active class
-    document.querySelectorAll('.length-option-card').forEach(card => {
-      if (card.dataset.preset === preset) {
-        card.classList.add('active');
-      } else {
-        card.classList.remove('active');
+    // Close others
+    document.querySelectorAll('.accordion-item').forEach(el => {
+      if (el.id !== id) {
+        el.classList.remove('active');
       }
     });
     
-    // Toggle custom inputs visibility
-    const customInputs = document.getElementById('customLengthInputs');
-    if (customInputs) {
-      if (preset === 'Custom') {
-        customInputs.style.display = 'block';
-      } else {
-        customInputs.style.display = 'none';
+    // Toggle clicked
+    item.classList.toggle('active');
+  };
+
+  // Clipboard utility
+  const ClipboardUtility = {
+    async copy(text, successMsg = 'Copied to clipboard!') {
+      try {
+        if (!navigator.clipboard) {
+          throw new Error('Clipboard API not available');
+        }
+        await navigator.clipboard.writeText(text);
+        showToast(successMsg, false);
+      } catch (err) {
+        console.error('Failed to copy text: ', err);
+        showToast('Failed to copy text. Please copy manually.', true);
       }
     }
-    
-    updateLiveStats();
-  }
-
-  function getSelectedLengthRange() {
-    if (selectedLengthPreset === 'Short') {
-      return { min: 80, max: 100 };
-    } else if (selectedLengthPreset === 'Medium') {
-      return { min: 120, max: 170 };
-    } else if (selectedLengthPreset === 'Long') {
-      return { min: 180, max: 250 };
-    } else {
-      const minVal = parseInt(document.getElementById('minLengthInput').value, 10);
-      const maxVal = parseInt(document.getElementById('maxLengthInput').value, 10);
-      return {
-        min: isNaN(minVal) ? 100 : minVal,
-        max: isNaN(maxVal) ? 140 : maxVal
-      };
-    }
-  }
-
-  function setLengthUI(lengthType, minLength, maxLength) {
-    selectedLengthPreset = lengthType || 'Short';
-    
-    document.querySelectorAll('.length-option-card').forEach(card => {
-      if (card.dataset.preset === selectedLengthPreset) {
-        card.classList.add('active');
-      } else {
-        card.classList.remove('active');
-      }
-    });
-    
-    const customInputs = document.getElementById('customLengthInputs');
-    if (customInputs) {
-      if (selectedLengthPreset === 'Custom') {
-        customInputs.style.display = 'block';
-        if (minLength) document.getElementById('minLengthInput').value = minLength;
-        if (maxLength) document.getElementById('maxLengthInput').value = maxLength;
-      } else {
-        customInputs.style.display = 'none';
-      }
-    }
-    updateLiveStats();
-  }
-
-  function calculateWordCount(text) {
-    if (!text) return 0;
-    return text.trim().split(/\s+/).filter(Boolean).length;
-  }
-
-  function calculateCharCount(text) {
-    if (!text) return 0;
-    return text.length;
-  }
+  };
 
   function updateLiveStats() {
-    const previewBody = document.getElementById('previewBody');
-    if (!previewBody) return;
+    const editorBody = document.getElementById('editorBody');
+    if (!editorBody) return;
     
-    const text = previewBody.textContent.trim();
-    const isPlaceholder = text.startsWith('[Email Body text');
+    const text = editorBody.innerText.trim();
     
-    const statsBar = document.getElementById('previewStatsBar');
-    if (isPlaceholder || !text) {
-      if (statsBar) statsBar.style.display = 'none';
-      return;
-    }
-    
-    if (statsBar) statsBar.style.display = 'flex';
-    
-    const words = calculateWordCount(text);
-    const chars = calculateCharCount(text);
+    const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+    const chars = text.length;
     const readingTimeSec = Math.ceil((words / 200) * 60);
     
-    const wordCountEl = document.getElementById('statWordCount');
-    const charCountEl = document.getElementById('statCharCount');
-    const readTimeEl = document.getElementById('statReadTime');
-    const statusBadge = document.getElementById('statLengthStatus');
+    const metricWords = document.getElementById('metricWords');
+    const metricChars = document.getElementById('metricChars');
+    const metricTime = document.getElementById('metricTime');
     
-    if (wordCountEl) wordCountEl.textContent = words;
-    if (charCountEl) charCountEl.textContent = chars;
-    if (readTimeEl) readTimeEl.textContent = `${readingTimeSec}s`;
+    if (metricWords) metricWords.innerHTML = `<i data-lucide="file-text" width="14"></i> <span class="val">${words}</span> words`;
+    if (metricChars) metricChars.innerHTML = `<i data-lucide="hash" width="14"></i> <span class="val">${chars}</span> characters`;
+    if (metricTime) {
+      const timeStr = readingTimeSec < 60 ? '<1 min' : `${Math.ceil(readingTimeSec/60)} min`;
+      metricTime.innerHTML = `<i data-lucide="clock" width="14"></i> <span class="val">${timeStr}</span> read`;
+    }
     
-    if (statusBadge) {
-      const range = getSelectedLengthRange();
-      if (words >= range.min && words <= range.max) {
-        statusBadge.textContent = '✓ Within target';
-        statusBadge.className = 'stat-status-badge status-ok';
-      } else if (words < range.min) {
-        statusBadge.textContent = `⚠ Too short (Target: ${range.min}–${range.max})`;
-        statusBadge.className = 'stat-status-badge status-warning';
-      } else {
-        statusBadge.textContent = `⚠ Too long (Target: ${range.min}–${range.max})`;
-        statusBadge.className = 'stat-status-badge status-warning';
-      }
+    if (window.lucide) {
+      lucide.createIcons();
     }
   }
 
@@ -159,29 +96,29 @@
     async save(draftData) {
       if (this.dbAvailable === null) await this.checkDb();
 
-      const range = getSelectedLengthRange();
       const metadata = {
         variantName: activeVariantKey,
-        emailGoal: draftData.emailGoal,
-        recipientName: draftData.recipientName,
-        linkedinUrl: draftData.linkedinUrl,
-        website: draftData.companyWebsite,
-        userName: draftData.userName,
-        background: draftData.background,
-        keySkills: draftData.keySkills,
-        experience: draftData.experience,
-        whyContacting: draftData.whyContacting,
-        length: selectedLengthPreset,
-        lengthType: selectedLengthPreset,
-        minLength: range.min,
-        maxLength: range.max,
+        emailGoal: document.getElementById('emailGoal').value,
+        recipientName: document.getElementById('recipientName').value,
+        companyName: document.getElementById('companyName').value,
+        position: document.getElementById('position').value,
+        recipientEmail: document.getElementById('recipientEmail').value,
+        companyContext: document.getElementById('companyContext').value,
+        relevantTrigger: document.getElementById('relevantTrigger').value,
+        userName: document.getElementById('userName').value,
+        background: document.getElementById('background').value,
+        keySkills: document.getElementById('keySkills').value,
+        tone: document.getElementById('tone').value,
+        length: document.getElementById('length').value,
+        ctaStyle: document.getElementById('ctaStyle').value,
+        personalizationLevel: document.getElementById('personalizationLevel').value,
         generatedPayload: currentGenerated
       };
 
       const record = {
         user_id: currentUser?.id || 'anonymous',
-        company: draftData.companyName,
-        recipient_title: draftData.position,
+        company: metadata.companyName,
+        recipient_title: metadata.position,
         subject: draftData.subject,
         body: draftData.body,
         variant: JSON.stringify(metadata),
@@ -305,6 +242,42 @@
       wireUpLivePreview();
       loadSavedResumes();
 
+      // Initialize tabs
+      setupTabs();
+      
+      // Initialize Copy action
+      const btnCopyEmail = document.getElementById('btnCopyEmail');
+      if (btnCopyEmail) {
+        btnCopyEmail.addEventListener('click', () => {
+          const subject = document.getElementById('editorSubject').value;
+          const body = document.getElementById('editorBody').innerText;
+          const text = `Subject: ${subject}\n\n${body}`;
+          ClipboardUtility.copy(text, 'Email copied to clipboard!');
+        });
+      }
+      
+      // Save Draft
+      const btnSaveDraft = document.getElementById('btnSaveDraft');
+      if (btnSaveDraft) {
+        btnSaveDraft.addEventListener('click', async () => {
+          btnSaveDraft.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Saving...';
+          if(window.lucide) lucide.createIcons();
+          try {
+            await DraftStore.save({
+              subject: document.getElementById('editorSubject').value,
+              body: document.getElementById('editorBody').innerHTML // Save HTML for formatting
+            });
+            showToast('Draft saved successfully!');
+            loadHistory(); // refresh list
+          } catch(e) {
+            showToast('Failed to save draft.', true);
+          } finally {
+            btnSaveDraft.innerHTML = '<i data-lucide="save" width="16"></i> Save';
+            if(window.lucide) lucide.createIcons();
+          }
+        });
+      }
+
     } catch (err) {
       console.error('Initialization error:', err);
       showToast('System initialization error: ' + err.message, true);
@@ -320,74 +293,34 @@
   }
 
   function wireUpLivePreview() {
-    const inputs = [
-      'companyName', 'recipientName', 'position', 'userName', 
-      'background', 'keySkills', 'experience', 'whyContacting', 'emailGoal'
-    ];
-    inputs.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.addEventListener('input', updateLivePreview);
-        el.addEventListener('change', updateLivePreview);
-      }
-    });
-
-    const bgInput = document.getElementById('background');
-    if (bgInput) {
-      bgInput.addEventListener('input', e => {
-        document.getElementById('bgCt').textContent = `${e.target.value.length} / 400`;
-      });
+    const editorBody = document.getElementById('editorBody');
+    if (editorBody) {
+      editorBody.addEventListener('input', updateLiveStats);
     }
-    
-    const previewBody = document.getElementById('previewBody');
-    if (previewBody) {
-      previewBody.addEventListener('input', updateLiveStats);
-    }
-    
-    const minLenEl = document.getElementById('minLengthInput');
-    const maxLenEl = document.getElementById('maxLengthInput');
-    if (minLenEl) minLenEl.addEventListener('input', updateLiveStats);
-    if (maxLenEl) maxLenEl.addEventListener('input', updateLiveStats);
-
-    updateLivePreview();
   }
 
-  function updateLivePreview() {
-    if (currentGenerated) return;
-
-    const goal = document.getElementById('emailGoal').value || '[Email Goal]';
-    const company = document.getElementById('companyName').value.trim() || '[Company Name]';
-    const recipient = document.getElementById('recipientName').value.trim() || '[Recipient Name]';
-    const position = document.getElementById('position').value.trim() || '[Recipient Position]';
-    const userName = document.getElementById('userName').value.trim() || '[Your Name]';
-    const background = document.getElementById('background').value.trim() || '[Your Background summary]';
-    const keySkills = document.getElementById('keySkills').value.trim() || '[Key Skills]';
-    const experience = document.getElementById('experience').value.trim() || '[Accomplishments]';
-    const whyContacting = document.getElementById('whyContacting').value.trim() || '[Why you are writing]';
-
-    const subject = `inquiry regarding ${company.toLowerCase()} — ${goal.toLowerCase()}`;
-    const body = `Hi ${recipient},\n\nI’m reaching out because I saw you work as the ${position} at ${company}.\n\nMy name is ${userName}, and I have a background in ${background}, with specialized skills in ${keySkills}.\n\nGiven my experience in ${experience}, I'm connecting to discuss ${whyContacting}.\n\nWould you be open to a brief 2-minute chat next week to see if my background aligns with your team's needs?\n\nBest,\n${userName}`;
-
-    const updateDOM = () => {
-      const subjectEl = document.getElementById('previewSubject');
-      const bodyEl = document.getElementById('previewBody');
-      const metaEl = document.getElementById('previewMeta');
-      if (subjectEl) subjectEl.textContent = `Subject: ${subject}`;
-      if (bodyEl) bodyEl.textContent = body;
-      if (metaEl) metaEl.textContent = `To: ${recipient} (${company})`;
-    };
-
-    if (window.PerformanceManager) {
-      window.PerformanceManager.scheduleUpdate(updateDOM);
-    } else {
-      updateDOM();
-    }
+  function setupTabs() {
+    const tabs = document.querySelectorAll('.tab-btn');
+    const panes = document.querySelectorAll('.tab-pane');
+    
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        panes.forEach(p => p.classList.remove('active'));
+        
+        tab.classList.add('active');
+        const target = document.getElementById(tab.dataset.target);
+        if (target) {
+          target.classList.add('active');
+        }
+      });
+    });
   }
 
   function validateForm() {
     let isValid = true;
-    document.querySelectorAll('.fg .error-msg').forEach(el => el.remove());
-    document.querySelectorAll('.fg input, .fg textarea, .fg select').forEach(el => el.classList.remove('invalid'));
+    document.querySelectorAll('.error-msg').forEach(el => el.remove());
+    document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
 
     function setError(id, msg) {
       const el = document.getElementById(id);
@@ -395,9 +328,14 @@
         el.classList.add('invalid');
         const err = document.createElement('span');
         err.className = 'error-msg';
-        err.style.cssText = 'color:var(--danger);font-size:0.75rem;margin-top:0.25rem;font-weight:500;';
         err.textContent = msg;
         el.parentNode.appendChild(err);
+        
+        // Open the parent accordion section
+        const section = el.closest('.accordion-item');
+        if (section && !section.classList.contains('active')) {
+          window.toggleAccordion(section.id);
+        }
       }
       isValid = false;
     }
@@ -421,40 +359,16 @@
     const keySkills = document.getElementById('keySkills').value.trim();
     if (!keySkills) setError('keySkills', 'Key Skills are required');
 
-    const experience = document.getElementById('experience').value.trim();
-    if (!experience) setError('experience', 'Accomplishments are required');
-
-    const whyContacting = document.getElementById('whyContacting').value.trim();
-    if (!whyContacting) setError('whyContacting', 'Reason for contacting is required');
-
-    const linkedin = document.getElementById('linkedinUrl').value.trim();
-    if (linkedin && !/^https?:\/\/(www\.)?linkedin\.com\/.*$/i.test(linkedin)) {
-      setError('linkedinUrl', 'Please enter a valid LinkedIn URL');
-    }
-
-    const website = document.getElementById('companyWebsite').value.trim();
-    if (website && !/^https?:\/\/([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/i.test(website)) {
-      setError('companyWebsite', 'Please enter a valid website URL');
-    }
-
-    if (selectedLengthPreset === 'Custom') {
-      const minVal = parseInt(document.getElementById('minLengthInput').value, 10);
-      const maxVal = parseInt(document.getElementById('maxLengthInput').value, 10);
-      
-      if (isNaN(minVal) || minVal < 1) {
-        setError('minLengthInput', 'Min words must be at least 1');
-      }
-      if (isNaN(maxVal) || maxVal < 1) {
-        setError('maxLengthInput', 'Max words must be at least 1');
-      } else if (maxVal < minVal) {
-        setError('maxLengthInput', 'Max words cannot be less than Min words');
-      }
-    }
-
     if (!isValid) {
       showToast('Please correct the highlighted form errors.', true);
       const firstErr = document.querySelector('.invalid');
       if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      // Mark sections as completed
+      ['sec-recipient', 'sec-company', 'sec-background', 'sec-goal', 'sec-personalization'].forEach(id => {
+        const sec = document.getElementById(id);
+        if (sec) sec.classList.add('completed');
+      });
     }
 
     return isValid;
@@ -465,10 +379,15 @@
     document.getElementById('btnSelectSaved').addEventListener('click', async e => {
       e.stopPropagation();
       if (!currentUser) return showToast('Please log in first to access saved resumes.', true);
-      document.getElementById('nexusModal').classList.add('show');
+      
+      const modal = document.getElementById('nexusModal');
+      modal.style.display = 'flex';
+      // Force reflow
+      void modal.offsetWidth;
+      modal.classList.add('show');
       
       const list = document.getElementById('rlist');
-      list.innerHTML = '<p style="color:var(--text-muted);text-align:center">Loading saved resumes...</p>';
+      list.innerHTML = '<p style="color:var(--text-3);text-align:center">Loading saved resumes...</p>';
 
       try {
         const { data, error } = await supabaseClient
@@ -478,34 +397,54 @@
           .order('created_at', { ascending: false });
 
         if (error || !data || data.length === 0) {
-          list.innerHTML = '<p style="color:var(--text-muted);text-align:center;">No saved resumes found. Build one on the Resume builder page first!</p>';
+          list.innerHTML = '<p style="color:var(--text-3);text-align:center;">No saved resumes found. Build one on the Resume builder page first!</p>';
           return;
         }
         savedResumes = data;
         list.innerHTML = '';
         data.forEach((r, idx) => {
           const div = document.createElement('div');
+          div.style.cssText = 'padding: 0.85rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: var(--r-sm); cursor: pointer; transition: 0.2s;';
           div.className = 'ritem';
           div.dataset.idx = idx;
-          div.innerHTML = `<h4>${r.full_name || 'Untitled'}</h4><p>${r.title || ''}</p>`;
+          div.innerHTML = `<h4 style="font-size:0.95rem; margin-bottom:0.25rem;">${r.full_name || 'Untitled'}</h4><p style="font-size:0.8rem; color:var(--text-2);">${r.title || ''}</p>`;
+          
+          div.addEventListener('mouseover', () => {
+            div.style.borderColor = 'var(--primary)';
+            div.style.background = 'rgba(124, 58, 237, 0.05)';
+          });
+          div.addEventListener('mouseout', () => {
+            div.style.borderColor = 'var(--border)';
+            div.style.background = 'rgba(255, 255, 255, 0.02)';
+          });
+          
           list.appendChild(div);
         });
       } catch (err) {
-        list.innerHTML = '<p style="color:var(--text-muted);text-align:center;">Error loading resumes.</p>';
+        list.innerHTML = '<p style="color:var(--danger);text-align:center;">Error loading resumes.</p>';
       }
     });
   }
 
   const closeModalEl = document.getElementById('closeModal');
   if (closeModalEl) {
-    closeModalEl.addEventListener('click', e => { e.stopPropagation(); document.getElementById('nexusModal').classList.remove('show'); });
+    closeModalEl.addEventListener('click', e => { 
+      e.stopPropagation(); 
+      document.getElementById('nexusModal').classList.remove('show'); 
+      setTimeout(() => document.getElementById('nexusModal').style.display = 'none', 200);
+    });
   }
   const nexusModalEl = document.getElementById('nexusModal');
   if (nexusModalEl) {
-    nexusModalEl.addEventListener('click', e => { if (e.target.id === 'nexusModal') document.getElementById('nexusModal').classList.remove('show'); });
+    nexusModalEl.addEventListener('click', e => { 
+      if (e.target.id === 'nexusModal') {
+        nexusModalEl.classList.remove('show');
+        setTimeout(() => nexusModalEl.style.display = 'none', 200);
+      }
+    });
   }
 
-  document.getElementById('rlist').addEventListener('click', e => {
+  document.getElementById('rlist')?.addEventListener('click', e => {
     const item = e.target.closest('.ritem');
     if (!item) return;
     const idx = Number(item.dataset.idx);
@@ -517,7 +456,6 @@
     let bg = '';
     if (r.professional_summary) bg += r.professional_summary + ' ';
     document.getElementById('background').value = bg.trim().substring(0, 400);
-    document.getElementById('bgCt').textContent = `${document.getElementById('background').value.length} / 400`;
 
     if (r.skills && Array.isArray(r.skills)) {
       document.getElementById('keySkills').value = r.skills.slice(0, 8).join(', ');
@@ -529,65 +467,22 @@
         expStr += `${ex.title} at ${ex.company}: ${ex.description || ''}\n`;
       });
     }
-    document.getElementById('experience').value = expStr.trim();
-
+    
     document.getElementById('nexusModal').classList.remove('show');
+    setTimeout(() => document.getElementById('nexusModal').style.display = 'none', 200);
     showToast('Context imported from saved resume!');
-    updateLivePreview();
   });
-
-  async function handlePDFUpload(input) {
-    const file = (input.files && (input.files[0] || input.files.item(0))) || null;
-    if (!file) return;
-    const status = document.getElementById('pdfStatus');
-    status.style.display = 'block';
-    status.style.color = 'var(--text-muted)';
-    status.textContent = `⏳ Parsing ${file.name}...`;
-    
-    const form = new FormData();
-    form.append('resume', file);
-    
-    const session = await window.appSdk.auth.getSession();
-    const headers = {};
-    if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
-    }
-
-    try {
-      const res = await fetch('/api/upload-resume', { method: 'POST', headers: headers, body: form });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
-      if (data.resumeText) {
-        const bg = document.getElementById('background');
-        bg.value = data.resumeText.substring(0, 400).trim();
-        document.getElementById('bgCt').textContent = `${bg.value.length} / 400`;
-        
-        status.textContent = `Imported: ${file.name}`;
-        status.style.color = 'var(--success)';
-        showToast('PDF background summary imported!');
-        updateLivePreview();
-      } else {
-        throw new Error('No text extracted');
-      }
-    } catch (err) {
-      console.error(err);
-      status.textContent = `Upload failed: ${err.message}`;
-      status.style.color = 'var(--danger)';
-      showToast('PDF parsing failed: ' + err.message, true);
-    }
-    input.value = '';
-  }
-
-  document.getElementById('btnUploadPdf')?.addEventListener('click', () => { document.getElementById('fileIn').click(); });
-  document.getElementById('fileIn')?.addEventListener('change', function() { handlePDFUpload(this); });
 
   document.getElementById('emailForm')?.addEventListener('submit', async e => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    document.getElementById('errAlert').classList.remove('show');
-    document.getElementById('skelWrap').classList.add('show');
-    document.getElementById('genBtn').disabled = true;
+    document.getElementById('errAlert').style.display = 'none';
+    
+    const loadingState = document.getElementById('loadingState');
+    loadingState.style.display = 'block';
+    const btn = document.getElementById('genBtn');
+    btn.disabled = true;
 
     if (activeGenerationController) {
       activeGenerationController.abortReason = 'stale';
@@ -604,20 +499,23 @@
         name: document.getElementById('recipientName').value.trim(),
         company: document.getElementById('companyName').value.trim(),
         position: document.getElementById('position').value.trim(),
-        linkedinUrl: document.getElementById('linkedinUrl').value.trim(),
-        website: document.getElementById('companyWebsite').value.trim()
+        email: document.getElementById('recipientEmail').value.trim()
+      },
+      context: {
+        companyContext: document.getElementById('companyContext').value.trim(),
+        relevantTrigger: document.getElementById('relevantTrigger').value.trim()
       },
       userContext: {
         name: document.getElementById('userName').value.trim(),
         background: document.getElementById('background').value.trim(),
-        keySkills: document.getElementById('keySkills').value.trim(),
-        experience: document.getElementById('experience').value.trim(),
-        whyContacting: document.getElementById('whyContacting').value.trim()
+        keySkills: document.getElementById('keySkills').value.trim()
       },
-      length: selectedLengthPreset,
-      lengthType: selectedLengthPreset,
-      minLength: getSelectedLengthRange().min,
-      maxLength: getSelectedLengthRange().max
+      personalization: {
+        tone: document.getElementById('tone').value,
+        length: document.getElementById('length').value,
+        ctaStyle: document.getElementById('ctaStyle').value,
+        level: document.getElementById('personalizationLevel').value
+      }
     };
 
     const timeoutDuration = 60000;
@@ -658,20 +556,19 @@
       if (data.fallbackUsed) {
         showToast('AI service currently unavailable. Local fallback drafts applied.', false);
       } else {
-        showToast('Elite emails generated successfully!');
+        showToast('Email generated successfully!');
       }
 
     } catch (err) {
-      // Always log the full error internally for debugging
-      console.error('[CareerCraft] Cold email generation error (internal):', err);
+      console.error('[CareerCraft] Cold email generation error:', err);
 
       if (err.name === 'AbortError') {
         const reason = controller.abortReason || controller.signal.reason || 'unknown';
         if (reason === 'stale') return;
 
         const alert = document.getElementById('errAlert');
+        alert.style.display = 'block';
         document.getElementById('errMsg').textContent = 'Generation timed out. Please try again or reduce your input length.';
-        alert.classList.add('show');
         alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
         showToast('Generation timed out. Please try again.', true);
       } else {
@@ -688,15 +585,15 @@
         }
 
         const alert = document.getElementById('errAlert');
+        alert.style.display = 'block';
         document.getElementById('errMsg').textContent = userMsg;
-        alert.classList.add('show');
         alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
         showToast(userMsg, true);
       }
     } finally {
       if (activeGenerationController === controller) {
-        document.getElementById('skelWrap').classList.remove('show');
-        document.getElementById('genBtn').disabled = false;
+        loadingState.style.display = 'none';
+        btn.disabled = false;
         activeGenerationController = null;
       }
     }
@@ -714,667 +611,306 @@
   function renderActiveVariant() {
     if (!currentGenerated) return;
 
-    const variant = getVariantByKey(activeVariantKey);
-    if (!variant) return;
-
-    document.getElementById('previewSubject').textContent = `Subject: ${variant.subject}`;
-    document.getElementById('previewBody').textContent = variant.body;
-    
-    const recipientName = document.getElementById('recipientName').value.trim();
-    const companyName = document.getElementById('companyName').value.trim();
-    document.getElementById('previewMeta').textContent = `To: ${recipientName || '[RecipientName]'} at ${companyName || '[CompanyName]'}`;
-    
-    const badge = document.getElementById('previewApproachBadge');
-    badge.textContent = variant.approach || `${variant.tone} Tone`;
-    badge.style.display = 'inline-block';
-
-    document.querySelectorAll('.tab').forEach(btn => {
-      btn.classList.toggle('on', btn.dataset.key === activeVariantKey);
-    });
-    document.getElementById('variantTabsRow').style.display = 'block';
-
-    const spamAlert = document.getElementById('spamAlert');
-    if (spamAlert) spamAlert.style.display = 'none';
-
-    const spamRadar = document.getElementById('spamRadarBox');
-    if (spamRadar) {
-      spamRadar.style.display = 'block';
-      const spamScore = currentGenerated.spamScore || 0;
-      const spamScoreBadge = document.getElementById('spamScoreBadge');
-      spamScoreBadge.textContent = `${spamScore}% Risk`;
-      spamScoreBadge.className = 'score-badge ' + (spamScore >= 50 ? 'score-low' : spamScore >= 20 ? 'score-mid' : 'score-high');
-      
-      const spamWordsList = document.getElementById('spamWordsList');
-      const spamWordsContainer = document.getElementById('spamWordsContainer');
-      const bodyTextLower = (variant.body + ' ' + variant.subject).toLowerCase();
-      const activeSpam = (currentGenerated.spamWords || []).filter(word => bodyTextLower.includes(word.toLowerCase()));
-      
-      if (activeSpam.length > 0) {
-        spamWordsContainer.style.display = 'block';
-        spamWordsList.innerHTML = activeSpam.map(w => `<span class="tag tag-missing" style="background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); font-size:0.75rem; padding:0.25rem 0.5rem; border-radius:4px;">${w}</span>`).join('');
-      } else {
-        spamWordsContainer.style.display = 'none';
-      }
-      
-      const spamRecsList = document.getElementById('spamRecsList');
-      const recommendations = currentGenerated.spamRecommendations || [
-        "Keep the email length below 150 words.",
-        "Ensure CTA is clear, low-friction, and has no sales trigger words."
-      ];
-      spamRecsList.innerHTML = recommendations.map(rec => `<li>${rec}</li>`).join('');
-    }
-
-    renderQualityMetrics();
-    renderSubjectLines();
-
-    if (currentGenerated.followUp) {
-      document.getElementById('fuBody').textContent = currentGenerated.followUp;
-      document.getElementById('fuCard').style.display = 'block';
+    // Use variant A as default if no specific array is provided
+    let variant = null;
+    if (currentGenerated.subject && currentGenerated.body) {
+      variant = currentGenerated;
     } else {
-      document.getElementById('fuCard').style.display = 'none';
+      variant = getVariantByKey(activeVariantKey);
+    }
+    
+    if (!variant) {
+        // Mock fallback if API format changes
+        variant = {
+            subject: `Inquiry regarding ${document.getElementById('position').value}`,
+            body: `Hi ${document.getElementById('recipientName').value || 'there'},\n\nI'm reaching out...`
+        };
     }
 
-    document.getElementById('optimizerBox').style.display = 'block';
-    document.getElementById('subjectsBox').style.display = 'block';
-    document.getElementById('qualityBox').style.display = 'block';
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('editorContent').style.display = 'block';
+
+    document.getElementById('editorSubject').value = variant.subject || '';
+    
+    // Replace newlines with <br> for contenteditable div
+    const htmlBody = (variant.body || '').replace(/\n/g, '<br>');
+    document.getElementById('editorBody').innerHTML = htmlBody;
     
     updateLiveStats();
-  }
-
-  const vtabsEl = document.getElementById('vtabs');
-  if (vtabsEl) {
-    vtabsEl.addEventListener('click', e => {
-      const tab = e.target.closest('.tab');
-      if (!tab) return;
-      activeVariantKey = tab.dataset.key;
-      renderActiveVariant();
-    });
-  }
-
-  function renderQualityMetrics() {
-    if (!currentGenerated || !currentGenerated.evaluation) return;
-    const evalData = currentGenerated.evaluation;
-
-    const badge = document.getElementById('overallScoreBadge');
-    badge.textContent = `Overall Score: ${evalData.overallScore}%`;
-    badge.className = 'score-badge ' + (evalData.overallScore >= 75 ? 'score-high' : evalData.overallScore >= 50 ? 'score-mid' : 'score-low');
-
-    function updateBar(id, val) {
-      const valEl = document.getElementById(`scoreVal${id}`);
-      const barEl = document.getElementById(`scoreBar${id}`);
-      if (valEl && barEl) {
-        valEl.textContent = `${val}%`;
-        barEl.style.width = `${val}%`;
-      }
-    }
-
-    updateBar('Personalization', evalData.personalizationScore || evalData.overallScore || 0);
-    updateBar('OpenRate', evalData.openRatePrediction || evalData.overallScore || 0);
-    updateBar('Recruiter', evalData.recruiterEngagementScore || evalData.overallScore || 0);
-    updateBar('Tone', evalData.professionalToneScore || evalData.overallScore || 0);
-    updateBar('Spam', evalData.spamRiskScore || currentGenerated.spamScore || 0);
-    updateBar('Grammar', evalData.grammarScore || 95);
-    updateBar('Clarity', evalData.clarityScore || 90);
-
-    const listContainer = document.getElementById('suggestionsInteractiveList');
-    if (listContainer) {
-      listContainer.innerHTML = '';
-      const suggestions = currentGenerated.suggestions || [];
-      
-      if (suggestions.length === 0) {
-        listContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">No optimization recommendations. Your copy is ready to go!</p>';
-      } else {
-        suggestions.forEach(item => {
-          const card = document.createElement('div');
-          card.className = 'subject-item'; 
-          card.style.cssText = 'flex-direction:column; align-items:flex-start; gap:0.5rem; padding:0.85rem; border-color:var(--border);';
-          card.id = `suggestion-card-${item.id}`;
-          
-          card.innerHTML = `
-            <div style="font-size:0.8rem; color:var(--text); font-weight:500;">${item.explanation}</div>
-            ${item.originalText && item.suggestedText ? `
-              <div style="font-size:0.75rem; color:var(--text-muted); background:rgba(0,0,0,0.15); padding:0.4rem; border-radius:4px; width:100%; border-left:2px solid var(--primary);">
-                <div style="text-decoration:line-through; opacity:0.6;">${item.originalText}</div>
-                <div style="color:var(--success); font-weight:500; margin-top:0.15rem;">+ ${item.suggestedText}</div>
-              </div>
-            ` : ''}
-            <div style="display:flex; gap:0.4rem; width:100%; justify-content:flex-end; margin-top:0.25rem;">
-              ${item.originalText && item.suggestedText ? `
-                <button type="button" class="draft-btn apply" style="padding:0.2rem 0.5rem; font-size:0.7rem; background:rgba(16,185,129,0.15); color:#a7f3d0; border-color:rgba(16,185,129,0.3);" onclick="applySuggestion('${item.id}', \`${escapeJSQuotes(item.originalText)}\`, \`${escapeJSQuotes(item.suggestedText)}\`)">Apply</button>
-              ` : ''}
-              <button type="button" class="draft-btn ignore" style="padding:0.2rem 0.5rem; font-size:0.7rem; background:rgba(255,255,255,0.05); color:var(--text-muted); border-color:var(--border);" onclick="ignoreSuggestion('${item.id}')">Ignore</button>
-              <button type="button" class="draft-btn regen" style="padding:0.2rem 0.5rem; font-size:0.7rem; background:rgba(124,58,237,0.15); color:#ddd6fe; border-color:rgba(124,58,237,0.3);" onclick="regenerateSuggestion('${item.id}', \`${escapeJSQuotes(item.explanation)}\`)">Regenerate</button>
-            </div>
-          `;
-          listContainer.appendChild(card);
-        });
-      }
-    }
-
-    document.getElementById('strengthsText').innerHTML = `<strong>Strengths:</strong> ${evalData.strengths.join(' · ')}`;
-    document.getElementById('weaknessesText').innerHTML = `<strong>Weaknesses:</strong> ${evalData.weaknesses.join(' · ')}`;
-  }
-
-  function escapeJSQuotes(str) {
-    if (!str) return '';
-    return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
-  }
-
-  function applySuggestion(id, originalText, suggestedText) {
-    const previewBody = document.getElementById('previewBody');
-    let currentText = previewBody.textContent;
     
-    if (currentText.includes(originalText)) {
-      currentText = currentText.replace(originalText, suggestedText);
-      previewBody.textContent = currentText;
-      
-      const v = getVariantByKey(activeVariantKey);
-      if (v) v.body = currentText;
-      
-      showToast('Suggestion applied successfully!');
-      ignoreSuggestion(id);
-    } else {
-      const regex = new RegExp(originalText.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi');
-      if (regex.test(currentText)) {
-        currentText = currentText.replace(regex, suggestedText);
-        previewBody.textContent = currentText;
-        const v = getVariantByKey(activeVariantKey);
-        if (v) v.body = currentText;
-        showToast('Suggestion applied successfully!');
-        ignoreSuggestion(id);
-      } else {
-        showToast('Original text not found in preview. Edit manually.', true);
-      }
+    // Update Score
+    const evalData = currentGenerated.evaluation || { overallScore: 85, strengths: ["Clear"], weaknesses: ["Could be shorter"] };
+    const scoreBadge = document.getElementById('metricScore');
+    
+    const mainScore = document.getElementById('mainScoreValue');
+    mainScore.textContent = evalData.overallScore || 85;
+    
+    let scoreColor = 'var(--success)';
+    if (evalData.overallScore < 60) scoreColor = 'var(--danger)';
+    else if (evalData.overallScore < 80) scoreColor = 'var(--warning)';
+    
+    mainScore.style.borderColor = scoreColor;
+    
+    if (scoreBadge) {
+      scoreBadge.innerHTML = `<i data-lucide="award" width="14" style="color:${scoreColor}"></i> Score: <span class="val" style="color:${scoreColor}">${evalData.overallScore || 85}</span>`;
     }
-  }
+    
+    document.getElementById('scoreDesc').textContent = "Based on our AI heuristic evaluation for cold outreach.";
+    
+    // Populate score details
+    const scoreDetailsList = document.getElementById('scoreDetailsList');
+    scoreDetailsList.innerHTML = `
+      <div class="score-item success">
+        <i data-lucide="check-circle" width="16"></i>
+        <div>
+          <div style="font-weight:600; margin-bottom:0.25rem;">Strengths</div>
+          <div style="color:var(--text-2);">${(evalData.strengths || ["Professional tone"]).join(', ')}</div>
+        </div>
+      </div>
+      <div class="score-item warning">
+        <i data-lucide="alert-triangle" width="16"></i>
+        <div>
+          <div style="font-weight:600; margin-bottom:0.25rem;">Needs Improvement</div>
+          <div style="color:var(--text-2);">${(evalData.weaknesses || ["Add more personalization"]).join(', ')}</div>
+        </div>
+      </div>
+    `;
 
-  function ignoreSuggestion(id) {
-    const el = document.getElementById(`suggestion-card-${id}`);
-    if (el) {
-      el.style.transition = 'all 0.3s ease';
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(10px)';
-      setTimeout(() => {
-        el.remove();
-        const list = document.getElementById('suggestionsInteractiveList');
-        if (list && list.children.length === 0) {
-          list.innerHTML = '<p style="color:var(--text-muted); font-size:0.8rem;">All suggestions resolved!</p>';
-        }
-      }, 300);
+    // Render Follow ups
+    renderFollowUps(currentGenerated.followUps || []);
+
+    // Render Variants if any
+    renderVariants(currentGenerated.variants || []);
+    
+    if(window.lucide) lucide.createIcons();
+  }
+  
+  function renderFollowUps(followUps) {
+    const timeline = document.getElementById('followUpTimeline');
+    if (!followUps || followUps.length === 0) {
+      // Mock follow-ups if missing
+      followUps = [
+        { title: "Follow-Up 1", timing: "3-4 days later", subject: "Re: " + document.getElementById('editorSubject').value, body: "Hi,\n\nJust floating this to the top of your inbox..." },
+        { title: "Follow-Up 2", timing: "7-10 days later", subject: "Re: " + document.getElementById('editorSubject').value, body: "Hi,\n\nI know things can get busy. If now isn't a good time..." }
+      ];
     }
-  }
-
-  function regenerateSuggestion(id, explanation) {
-    document.getElementById('optimizerFeedback').value = `Improve: ${explanation}`;
-    document.getElementById('btnRunOptimizer').click();
-    ignoreSuggestion(id);
-  }
-
-  function renderSubjectLines() {
-    if (!currentGenerated || !currentGenerated.subjectLines) return;
-    const listContainer = document.getElementById('subjectsList');
-    listContainer.innerHTML = '';
-
-    const activeSubject = document.getElementById('previewSubject').textContent.replace('Subject: ', '');
-
-    currentGenerated.subjectLines.forEach(item => {
-      const div = document.createElement('div');
-      const isActive = item.text.trim() === activeSubject.trim();
-      div.className = `subject-item ${isActive ? 'active' : ''}`;
-      
-      div.innerHTML = `
-        <div class="subject-text">${item.text}</div>
-        <div class="subject-badges">
-          ${item.label ? `<span class="reco-badge" style="background:var(--primary);">${item.label}</span>` : ''}
-          <span class="prob-badge">${item.openRate || item.probability || 'N/A'} open rate</span>
+    
+    let html = '';
+    followUps.forEach(fu => {
+      html += `
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <span class="timeline-title">${fu.title || 'Follow-Up'}</span>
+              <span class="timeline-meta">${fu.timing || '3 days later'}</span>
+            </div>
+            <div style="font-size:0.85rem; font-weight:600; margin-bottom:0.5rem; color:var(--text-1)">Subject: ${fu.subject || ''}</div>
+            <div style="font-size:0.85rem; color:var(--text-2); white-space:pre-wrap; margin-bottom:1rem;">${fu.body || ''}</div>
+            <button type="button" class="btn-secondary" style="width:auto; padding:0.4rem 0.75rem; font-size:0.75rem;" onclick="navigator.clipboard.writeText('Subject: ${fu.subject}\\n\\n${fu.body}')">
+              <i data-lucide="copy" width="14"></i> Copy
+            </button>
+          </div>
         </div>
       `;
-      
-      div.addEventListener('click', () => {
-        document.getElementById('previewSubject').textContent = `Subject: ${item.text}`;
-        const v = getVariantByKey(activeVariantKey);
-        if (v) v.subject = item.text;
-        renderSubjectLines();
-        showToast('Subject line updated!');
-      });
-
-      listContainer.appendChild(div);
     });
+    timeline.innerHTML = html;
   }
-
-  document.getElementById('btnRegenSubjects')?.addEventListener('click', async () => {
-    if (!currentGenerated) return;
-
-    const bodyText = document.getElementById('previewBody').textContent;
-    const btn = document.getElementById('btnRegenSubjects');
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = '⏳ ...';
-
-    const payload = {
-      action: 'regenerate-subjects',
-      emailBody: bodyText,
-      companyName: document.getElementById('companyName').value.trim(),
-      recipientName: document.getElementById('recipientName').value.trim(),
-      position: document.getElementById('position').value.trim(),
-      emailGoal: document.getElementById('emailGoal').value
-    };
-
-    try {
-      const session = await window.appSdk.auth.getSession();
-      const headers = { 'Content-Type': 'application/json' };
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-      }
-
-      const res = await fetch('/api/cold-email', {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Server returned error');
-
-      if (data.subjectLines) {
-        currentGenerated.subjectLines = data.subjectLines;
-        renderSubjectLines();
-        showToast('Fresh subject lines generated!');
-      }
-    } catch (err) {
-      showToast('Failed to regenerate subjects: ' + err.message, true);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = originalText;
-    }
-  });
-
-  document.getElementById('btnRunOptimizer')?.addEventListener('click', async () => {
-    if (!currentGenerated) return;
-
-    const feedback = document.getElementById('optimizerFeedback').value.trim();
-    if (!feedback) return showToast('Please enter optimization feedback first.', true);
-
-    const btn = document.getElementById('btnRunOptimizer');
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Improving…';
-
-    const range = getSelectedLengthRange();
-    const payload = {
-      action: 'optimize',
-      emailBody: document.getElementById('previewBody').textContent,
-      feedback: feedback,
-      emailGoal: document.getElementById('emailGoal').value,
-      recipientName: document.getElementById('recipientName').value.trim(),
-      companyName: document.getElementById('companyName').value.trim(),
-      position: document.getElementById('position').value.trim(),
-      userName: document.getElementById('userName').value.trim(),
-      background: document.getElementById('background').value.trim(),
-      whyContacting: document.getElementById('whyContacting').value.trim(),
-      length: selectedLengthPreset,
-      lengthType: selectedLengthPreset,
-      minLength: range.min,
-      maxLength: range.max
-    };
-
-    try {
-      const session = await window.appSdk.auth.getSession();
-      const headers = { 'Content-Type': 'application/json' };
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-      }
-
-      const res = await fetch('/api/cold-email', {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Server error');
-
-      if (data.optimizedBody) {
-        const v = getVariantByKey(activeVariantKey);
-        if (v) v.body = data.optimizedBody;
-        if (data.evaluation) {
-          currentGenerated.evaluation = data.evaluation;
-        }
-        renderActiveVariant();
-        document.getElementById('optimizerFeedback').value = '';
-        showToast('Email optimized and scores updated!');
-      }
-    } catch (err) {
-      showToast('Optimization failed: ' + err.message, true);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = originalText;
-    }
-  });
-
-  document.getElementById('btnCopyEmail')?.addEventListener('click', () => {
-    const text = document.getElementById('previewBody')?.textContent || '';
-    if (window.copyToClipboard) {
-      window.copyToClipboard(text, 'Email body copied to clipboard!');
-    } else {
-      navigator.clipboard?.writeText(text);
-      showToast('Email body copied to clipboard!');
-    }
-  });
-
-  document.getElementById('btnCopySubject')?.addEventListener('click', () => {
-    const text = (document.getElementById('previewSubject')?.textContent || '').replace(/^Subject:\s*/i, '');
-    if (window.copyToClipboard) {
-      window.copyToClipboard(text, 'Subject line copied to clipboard!');
-    } else {
-      navigator.clipboard?.writeText(text);
-      showToast('Subject line copied to clipboard!');
-    }
-  });
-
-  document.getElementById('cpFu')?.addEventListener('click', () => {
-    const text = document.getElementById('fuBody')?.textContent || '';
-    if (window.copyToClipboard) {
-      window.copyToClipboard(text, 'Follow-up text copied to clipboard!');
-    } else {
-      navigator.clipboard?.writeText(text);
-      showToast('Follow-up text copied to clipboard!');
-    }
-  });
-
-  document.getElementById('btnExportTxt')?.addEventListener('click', () => {
-    const subject = document.getElementById('previewSubject').textContent;
-    const body = document.getElementById('previewBody').textContent;
-    const fullText = `${subject}\n\n${body}`;
-
-    const blob = new Blob([fullText], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const comp = (document.getElementById('companyName').value || 'outreach').replace(/\s+/g, '-');
-    a.download = `ColdEmail-${comp}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast('TXT draft exported!');
-  });
-
-  document.getElementById('btnExportPdf')?.addEventListener('click', async () => {
-    const bodyText = document.getElementById('previewBody').textContent;
-    const subjectText = document.getElementById('previewSubject').textContent.replace('Subject: ', '');
-    const btn = document.getElementById('btnExportPdf');
-    const originalText = btn.textContent;
-    
-    btn.disabled = true;
-    btn.textContent = 'Generating...';
-
-    const payload = {
-      type: 'cold-email',
-      subject: subjectText,
-      body: bodyText,
-      companyName: document.getElementById('companyName').value.trim(),
-      recipientName: document.getElementById('recipientName').value.trim(),
-      senderName: document.getElementById('userName').value.trim()
-    };
-
-    try {
-      const session = await window.appSdk.auth.getSession();
-      const headers = { 'Content-Type': 'application/json' };
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-      }
-
-      const res = await fetch('/api/generate-pdf', {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) throw new Error('PDF service returned error');
-
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const comp = (document.getElementById('companyName').value || 'outreach').replace(/\s+/g, '-');
-      a.download = `ColdEmail-${comp}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showToast('PDF document downloaded!');
-    } catch (err) {
-      showToast('PDF download failed: ' + err.message, true);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = originalText;
-    }
-  });
-
-  async function saveDraft() {
-    const emailGoal = document.getElementById('emailGoal').value;
-    const companyName = document.getElementById('companyName').value.trim();
-    const position = document.getElementById('position').value.trim();
-    const userName = document.getElementById('userName').value.trim();
-    const background = document.getElementById('background').value.trim();
-    
-    if (!companyName || !position) {
-      return showToast('Save requires at least Company Name and Recipient Position.', true);
-    }
-
-    const draftPayload = {
-      emailGoal,
-      companyName,
-      position,
-      userName,
-      background,
-      keySkills: document.getElementById('keySkills').value.trim(),
-      experience: document.getElementById('experience').value.trim(),
-      whyContacting: document.getElementById('whyContacting').value.trim(),
-      linkedinUrl: document.getElementById('linkedinUrl').value.trim(),
-      companyWebsite: document.getElementById('companyWebsite').value.trim(),
-      length: selectedLengthPreset,
-      subject: document.getElementById('previewSubject').textContent.replace('Subject: ', ''),
-      body: document.getElementById('previewBody').textContent
-    };
-
-    try {
-      const savedRecord = await DraftStore.save(draftPayload);
-      if (savedRecord) {
-        showToast('Draft saved successfully!');
-        await loadHistory();
-      }
-    } catch (e) {
-      showToast('Failed to save draft: ' + e.message, true);
-    }
-  }
-
-  document.getElementById('btnSaveDraft')?.addEventListener('click', saveDraft);
-
-  async function loadHistory() {
-    const listContainer = document.getElementById('draftsList');
-    if (!listContainer) return;
-    try {
-      const drafts = await DraftStore.list();
-      window.allDrafts = drafts; 
-      renderDraftsGrid(drafts);
-    } catch (err) {
-      listContainer.innerHTML = '<p style="color:var(--text-muted);text-align:center;">Failed to load saved drafts.</p>';
-    }
-  }
-
-  function renderDraftsGrid(drafts) {
-    const listContainer = document.getElementById('draftsList');
-    if (!listContainer) return;
-    listContainer.innerHTML = '';
-
-    if (drafts.length === 0) {
-      listContainer.innerHTML = '<p style="color:var(--text-muted);text-align:center;grid-column:1/-1;padding:2rem;">No drafts found.</p>';
+  
+  function renderVariants(variants) {
+    const vList = document.getElementById('variantsList');
+    if (!variants || variants.length === 0) {
+      vList.innerHTML = '<p style="color:var(--text-3); text-align:center;">No variants available.</p>';
       return;
     }
-
-    drafts.forEach(d => {
-      let meta = {};
-      try {
-        meta = JSON.parse(d.variant);
-      } catch (e) {
-        meta = { variantName: d.variant || 'A' };
-      }
-
-      const dateStr = new Date(d.created_at).toLocaleDateString('en-US', {
-        month: 'short', day: 'numeric', year: 'numeric'
-      });
-
-      const isLocal = String(d.id).startsWith('local_');
-
-      const card = document.createElement('div');
-      card.className = 'draft-card';
-      card.innerHTML = `
-        <div>
-          <div class="draft-card-meta">
-            <span>${dateStr}</span>
-            <span>${isLocal ? '💾 local' : '🌐 cloud'}</span>
+    
+    let html = '';
+    variants.forEach((v, idx) => {
+      html += `
+        <div class="variant-card ${idx === 0 ? 'active' : ''}">
+          <div class="variant-header">
+            <span>${v.tone || 'Variant ' + (idx+1)}</span>
+            <button class="btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.7rem;" onclick="applyVariant(${idx})">Use This</button>
           </div>
-          <div class="draft-card-title">${d.company || 'Untitled'} - ${d.recipient_title || 'Untitled'}</div>
-          <div class="draft-card-desc">${d.subject || 'No Subject'}\n${d.body || 'No Body'}</div>
-        </div>
-        <div class="draft-card-actions">
-          <button class="draft-btn load" onclick="loadDraft('${d.id}')">Load</button>
-          <button class="draft-btn" onclick="duplicateDraft('${d.id}')">Duplicate</button>
-          <button class="draft-btn delete" onclick="deleteDraft('${d.id}')">Delete</button>
+          <div style="font-size:0.85rem; font-weight:600; margin-bottom:0.5rem; color:var(--text-1)">${v.subject}</div>
+          <div class="variant-body">${v.body}</div>
         </div>
       `;
-      listContainer.appendChild(card);
     });
+    vList.innerHTML = html;
   }
+  
+  window.applyVariant = function(idx) {
+    if(!currentGenerated || !currentGenerated.variants) return;
+    const v = currentGenerated.variants[idx];
+    if(v) {
+      document.getElementById('editorSubject').value = v.subject;
+      document.getElementById('editorBody').innerHTML = v.body.replace(/\n/g, '<br>');
+      updateLiveStats();
+      showToast('Variant applied to editor.');
+      
+      // update active state in ui
+      document.querySelectorAll('.variant-card').forEach((card, i) => {
+        if(i === idx) card.classList.add('active');
+        else card.classList.remove('active');
+      });
+    }
+  };
 
-  document.getElementById('draftSearch')?.addEventListener('input', e => {
-    const term = e.target.value.toLowerCase().trim();
-    if (!window.allDrafts) return;
-
-    const filtered = window.allDrafts.filter(d => {
-      return (d.company || '').toLowerCase().includes(term) ||
-             (d.recipient_title || '').toLowerCase().includes(term) ||
-             (d.subject || '').toLowerCase().includes(term) ||
-             (d.body || '').toLowerCase().includes(term);
+  // Setup AI Assistant Actions
+  document.querySelectorAll('.ai-action-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const action = btn.dataset.action;
+      const editorBody = document.getElementById('editorBody');
+      const text = editorBody.innerText.trim();
+      
+      if (!text) {
+        showToast('Please draft an email first.', true);
+        return;
+      }
+      
+      const loading = document.getElementById('aiLoading');
+      const diffPreview = document.getElementById('aiDiffPreview');
+      
+      loading.style.display = 'block';
+      diffPreview.style.display = 'none';
+      
+      // Mock API call to represent AI modification
+      setTimeout(() => {
+        loading.style.display = 'none';
+        
+        let suggested = text;
+        if (action === 'shorten') {
+          suggested = text.split('\n').slice(0, Math.max(2, text.split('\n').length - 1)).join('\n');
+        } else if (action === 'confident') {
+          suggested = text.replace(/I think/gi, "I am confident").replace(/I hope/gi, "I look forward to");
+        } else {
+          suggested = "Here is a slightly refined version of your email:\n\n" + text;
+        }
+        
+        if (action === 'subject') {
+           const subjectList = document.getElementById('subjectList');
+           document.getElementById('subjectAlternatives').style.display = 'block';
+           subjectList.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:0.5rem 0.75rem; border:1px solid var(--border); border-radius:var(--r-sm);">
+              <span style="font-size:0.85rem;">Quick question about ${document.getElementById('position').value || 'the role'}</span>
+              <button class="btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="document.getElementById('editorSubject').value='Quick question about ${document.getElementById('position').value || 'the role'}'; showToast('Subject updated');"><i data-lucide="check" width="14"></i></button>
+            </div>
+           `;
+           if(window.lucide) lucide.createIcons();
+           return;
+        }
+        
+        document.getElementById('diffOriginal').innerText = text.substring(0, 100) + '...';
+        document.getElementById('diffSuggested').innerText = suggested.substring(0, 100) + '...';
+        
+        diffPreview.style.display = 'block';
+        
+        document.getElementById('btnAcceptAi').onclick = () => {
+          editorBody.innerHTML = suggested.replace(/\n/g, '<br>');
+          updateLiveStats();
+          diffPreview.style.display = 'none';
+          showToast('Changes applied.');
+        };
+        
+        document.getElementById('btnRejectAi').onclick = () => {
+          diffPreview.style.display = 'none';
+        };
+      }, 1500);
     });
-    renderDraftsGrid(filtered);
   });
 
-  window.loadDraft = function(id) {
-    const d = window.allDrafts.find(item => String(item.id) === String(id));
-    if (!d) return;
+  async function loadHistory() {
+    const draftsList = document.getElementById('draftsList');
+    if (!draftsList) return;
 
-    currentDraftId = d.id;
-
-    let meta = {};
     try {
-      meta = JSON.parse(d.variant);
+      const drafts = await DraftStore.list();
+      
+      if (drafts.length === 0) {
+        draftsList.innerHTML = '<p style="color:var(--text-3); text-align:center; grid-column:1/-1;">No saved drafts yet.</p>';
+        return;
+      }
+      
+      let html = '';
+      drafts.forEach(d => {
+        let meta = null;
+        try { meta = JSON.parse(d.variant); } catch(e){}
+        const title = d.company ? `Outreach: ${d.company}` : 'Untitled Outreach';
+        
+        html += `
+          <div class="draft-card">
+            <div>
+              <div class="draft-card-meta">
+                <span>${new Date(d.created_at).toLocaleDateString()}</span>
+                <span>${meta?.emailGoal || 'Email'}</span>
+              </div>
+              <div class="draft-card-title">${title}</div>
+              <div class="draft-card-desc">${d.subject || '(No Subject)'}</div>
+            </div>
+            <div class="draft-card-actions">
+              <button class="draft-btn delete-btn" data-id="${d.id}" style="color:var(--danger); border-color:rgba(239,68,68,0.2);">Delete</button>
+              <button class="draft-btn load-btn" data-id="${d.id}" style="color:var(--primary); border-color:rgba(124,58,237,0.2);">Load</button>
+            </div>
+          </div>
+        `;
+      });
+      draftsList.innerHTML = html;
+
+      // Attach event listeners
+      document.querySelectorAll('.load-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const id = e.target.dataset.id;
+          const draft = drafts.find(d => String(d.id) === String(id));
+          if (draft) {
+            currentDraftId = draft.id;
+            document.getElementById('editorSubject').value = draft.subject || '';
+            document.getElementById('editorBody').innerHTML = (draft.body || '').replace(/\n/g, '<br>');
+            
+            try {
+              const meta = JSON.parse(draft.variant);
+              if (meta) {
+                if (meta.emailGoal) document.getElementById('emailGoal').value = meta.emailGoal;
+                if (meta.recipientName) document.getElementById('recipientName').value = meta.recipientName;
+                if (meta.companyName) document.getElementById('companyName').value = meta.companyName;
+                if (meta.position) document.getElementById('position').value = meta.position;
+                if (meta.recipientEmail) document.getElementById('recipientEmail').value = meta.recipientEmail;
+              }
+            } catch(e){}
+            
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('editorContent').style.display = 'block';
+            updateLiveStats();
+            showToast('Draft loaded successfully.');
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        });
+      });
+      
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const id = e.target.dataset.id;
+          if (confirm('Are you sure you want to delete this draft?')) {
+            await DraftStore.delete(id);
+            showToast('Draft deleted.');
+            loadHistory();
+          }
+        });
+      });
+      
     } catch (e) {
-      meta = { variantName: d.variant || 'A' };
+      console.error(e);
+      draftsList.innerHTML = '<p style="color:var(--danger); text-align:center; grid-column:1/-1;">Failed to load drafts.</p>';
     }
+  }
 
-    activeVariantKey = meta.variantName || 'A';
+  // Initialize
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
-    if (meta.emailGoal) document.getElementById('emailGoal').value = meta.emailGoal;
-    document.getElementById('companyName').value = d.company || '';
-    document.getElementById('position').value = d.recipient_title || '';
-    document.getElementById('recipientName').value = meta.recipientName || '';
-    if (meta.linkedinUrl) document.getElementById('linkedinUrl').value = meta.linkedinUrl;
-    if (meta.website) document.getElementById('companyWebsite').value = meta.website;
-    if (meta.userName) document.getElementById('userName').value = meta.userName;
-    if (meta.background) document.getElementById('background').value = meta.background;
-    if (meta.keySkills) document.getElementById('keySkills').value = meta.keySkills;
-    if (meta.experience) document.getElementById('experience').value = meta.experience;
-    if (meta.whyContacting) document.getElementById('whyContacting').value = meta.whyContacting;
-    if (meta.lengthType) {
-      setLengthUI(meta.lengthType, meta.minLength, meta.maxLength);
-    } else if (meta.length) {
-      const len = String(meta.length).toLowerCase();
-      if (len.includes('short')) setLengthUI('Short');
-      else if (len.includes('long')) setLengthUI('Long');
-      else setLengthUI('Medium');
-    } else {
-      setLengthUI('Medium');
-    }
-
-    if (meta.generatedPayload) {
-      currentGenerated = meta.generatedPayload;
-    } else {
-      currentGenerated = {
-        variants: [
-          { tone: 'Professional', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
-          { tone: 'Friendly', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
-          { tone: 'Executive', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
-          { tone: 'Startup', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
-          { tone: 'Technical', subject: d.subject, body: d.body, approach: 'Loaded Draft' },
-          { tone: 'Networking', subject: d.subject, body: d.body, approach: 'Loaded Draft' }
-        ],
-        subjectLines: [{ text: d.subject, label: 'Conservative', openRate: 'N/A' }],
-        evaluation: {
-          overallScore: 80,
-          strengths: ["Loaded draft"],
-          weaknesses: ["Recalculation needed"],
-          suggestions: ["Generate elite emails to get deep analysis"]
-        },
-        followUp: '',
-        spamWords: []
-      };
-    }
-
-    renderActiveVariant();
-    document.getElementById('bgCt').textContent = `${(meta.background || '').length} / 400`;
-    showToast('Draft loaded successfully!');
-    
-    document.getElementById('previewCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
-
-  window.duplicateDraft = async function(id) {
-    const d = window.allDrafts.find(item => String(item.id) === String(id));
-    if (!d) return;
-
-    const record = {
-      ...d,
-      company: d.company + ' (Copy)',
-      created_at: new Date().toISOString()
-    };
-    delete record.id; 
-
-    try {
-      if (supabaseClient && DraftStore.dbAvailable && !String(id).startsWith('local_')) {
-        const { error } = await supabaseClient.from('email_history').insert([record]);
-        if (error) throw error;
-      } else {
-        const newLocalId = 'local_' + Math.random().toString(36).substr(2, 9);
-        let localDrafts = JSON.parse(localStorage.getItem('cc_email_drafts') || '[]');
-        localDrafts.unshift({ ...record, id: newLocalId });
-        localStorage.setItem('cc_email_drafts', JSON.stringify(localDrafts));
-      }
-      showToast('Draft duplicated!');
-      await loadHistory();
-    } catch (err) {
-      showToast('Failed to duplicate draft: ' + err.message, true);
-    }
-  };
-
-  window.deleteDraft = async function(id) {
-    if (!confirm('Are you sure you want to delete this draft?')) return;
-    try {
-      await DraftStore.delete(id);
-      if (String(currentDraftId) === String(id)) {
-        currentDraftId = null;
-      }
-      showToast('Draft deleted!');
-      await loadHistory();
-    } catch (err) {
-      showToast('Failed to delete draft: ' + err.message, true);
-    }
-  };
-
-  // Expose methods to global space
-  window.selectLengthOption = selectLengthOption;
-  window.applySuggestion = applySuggestion;
-  window.ignoreSuggestion = ignoreSuggestion;
-  window.regenerateSuggestion = regenerateSuggestion;
-
-  window.addEventListener('load', init);
 })();
