@@ -110,10 +110,15 @@
     document.getElementById('generateBtn')?.addEventListener('click', generateCoverLetter);
 
     // Editor Toolbar actions
-    document.querySelectorAll('.editor-toolbar .toolbar-btn').forEach(btn => {
+    document.querySelectorAll('.cl-editor-toolbar-sticky .cl-toolbar-btn').forEach(btn => {
       const cmd = btn.getAttribute('data-command');
       if (cmd) {
-        btn.addEventListener('click', () => executeEditorCommand(cmd));
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const val = btn.getAttribute('data-value');
+          executeEditorCommand(cmd, val);
+          updateToolbarState();
+        });
       }
     });
 
@@ -152,7 +157,38 @@
     });
 
     // Bind editor inputs
-    document.getElementById('editorSheet')?.addEventListener('input', handleEditorInput);
+    const editorSheet = document.getElementById('editorSheet');
+    if (editorSheet) {
+      editorSheet.addEventListener('input', handleEditorInput);
+      editorSheet.addEventListener('keyup', updateToolbarState);
+      editorSheet.addEventListener('mouseup', updateToolbarState);
+    }
+    
+    document.addEventListener('selectionchange', () => {
+      if (document.activeElement === document.getElementById('editorSheet')) {
+        updateToolbarState();
+      }
+    });
+  }
+
+  function updateToolbarState() {
+    const commands = ['bold', 'italic', 'underline', 'insertUnorderedList', 'insertOrderedList', 'justifyLeft', 'justifyCenter', 'justifyRight'];
+    commands.forEach(cmd => {
+      try {
+        const state = document.queryCommandState(cmd);
+        const btn = document.querySelector(`.cl-toolbar-btn[data-command="${cmd}"]`);
+        if (btn) btn.classList.toggle('active', state);
+      } catch (e) {} // Ignore unsupported commands
+    });
+
+    try {
+      const block = document.queryCommandValue('formatBlock');
+      const h3Btn = document.querySelector(`.cl-toolbar-btn[data-command="formatBlock"][data-value="H3"]`);
+      const quoteBtn = document.querySelector(`.cl-toolbar-btn[data-command="formatBlock"][data-value="BLOCKQUOTE"]`);
+      
+      if (h3Btn) h3Btn.classList.toggle('active', block && block.toLowerCase() === 'h3');
+      if (quoteBtn) quoteBtn.classList.toggle('active', block && block.toLowerCase() === 'blockquote');
+    } catch (e) {}
   }
 
   function navigateToNextWizardStep() {
@@ -290,7 +326,7 @@
     historyIndex++;
   }
 
-  function executeEditorCommand(command) {
+  function executeEditorCommand(command, value = null) {
     if (command === 'undo') {
       if (historyIndex > 0) {
         historyIndex--;
@@ -304,7 +340,7 @@
         updateCounts();
       }
     } else {
-      document.execCommand(command, false, null);
+      document.execCommand(command, false, value);
       saveEditorState();
       updateCounts();
     }
