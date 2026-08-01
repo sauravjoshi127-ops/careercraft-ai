@@ -159,6 +159,16 @@
     // Bind editor inputs
     const editorSheet = document.getElementById('editorSheet');
     if (editorSheet) {
+      // Fix: intercept Ctrl+Z/Y before the browser acts, routing to our own undo stack
+      editorSheet.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') {
+          e.preventDefault();
+          executeEditorCommand('undo');
+        } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
+          e.preventDefault();
+          executeEditorCommand('redo');
+        }
+      });
       editorSheet.addEventListener('input', handleEditorInput);
       editorSheet.addEventListener('keyup', updateToolbarState);
       editorSheet.addEventListener('mouseup', updateToolbarState);
@@ -168,6 +178,15 @@
       if (document.activeElement === document.getElementById('editorSheet')) {
         updateToolbarState();
       }
+    });
+    // Accessibility: make accordion step headers keyboard-navigable
+    document.querySelectorAll('.cl-step-header[role="button"]').forEach(header => {
+      header.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          header.click();
+        }
+      });
     });
   }
 
@@ -324,6 +343,11 @@
     editorHistory = editorHistory.slice(0, historyIndex + 1);
     editorHistory.push(html);
     historyIndex++;
+    // Cap undo stack at 50 states to prevent unbounded memory growth
+    if (editorHistory.length > 50) {
+      editorHistory.shift();
+      historyIndex = Math.max(0, historyIndex - 1);
+    }
   }
 
   function executeEditorCommand(command, value = null) {
@@ -346,34 +370,15 @@
     }
   }
 
-  function updateCounts() {
-    const el = document.getElementById('editorSheet');
-    if (!el) return;
-    const text = el.innerText || '';
-    const chars = text.length;
-    const words = text.trim().split(/\s+/).filter(Boolean).length;
-    const readMin = Math.max(1, Math.round(words / 200));
-
-    const updateDOM = () => {
-      const charEl = document.getElementById('charCount');
-      const wordEl = document.getElementById('wordCount');
-      const readEl = document.getElementById('readTime');
-      if (charEl) charEl.textContent = `${chars} characters`;
-      if (wordEl) wordEl.textContent = `${words} words`;
-      if (readEl) readEl.textContent = `${readMin} min read`;
-    };
-
-    if (window.PerformanceManager) {
-      window.PerformanceManager.scheduleUpdate(updateDOM);
-    } else {
-      updateDOM();
-    }
-  }
+  // NOTE: The real updateCounts() is defined later; this stub was removed
+  //       to eliminate the dead-code duplicate that was shadowing it.
 
   async function triggerAutosave() {
     const label = document.getElementById('autosaveLabel');
+    const labelText = document.getElementById('autosaveLabelText');
     if (!label) return;
-    label.innerHTML = '<span style="font-size:0.7rem; color:#f59e0b;">●</span> Saving draft...';
+    if (labelText) labelText.textContent = 'Saving draft...';
+    label.querySelector('span[aria-hidden]').style.color = '#f59e0b';
     
     const letterText = document.getElementById('editorSheet').innerText;
     localStorage.setItem('cc_cover_letter_draft', letterText);
@@ -386,13 +391,16 @@
         }).eq('id', currentSavedLetterId);
 
         if (error) throw error;
-        label.innerHTML = '<span style="font-size:0.7rem; color:#22c55e;">●</span> Saved to cloud';
+        if (labelText) labelText.textContent = 'Saved to cloud';
+        label.querySelector('span[aria-hidden]').style.color = '#22c55e';
       } catch (err) {
         console.error('Autosave error:', err);
-        label.innerHTML = '<span style="font-size:0.7rem; color:#ef4444;">●</span> Saved locally';
+        if (labelText) labelText.textContent = 'Saved locally';
+        label.querySelector('span[aria-hidden]').style.color = '#ef4444';
       }
     } else {
-      label.innerHTML = '<span style="font-size:0.7rem; color:#22c55e;">●</span> Saved locally';
+      if (labelText) labelText.textContent = 'Saved locally';
+      label.querySelector('span[aria-hidden]').style.color = '#22c55e';
     }
   }
 
@@ -852,7 +860,7 @@
 
   function cleanEscapes(txt) {
     if (!txt) return '';
-    return txt.replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\/g, '');
+    return txt.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
   }
 
   function updateGauges(scores) {
@@ -868,14 +876,15 @@
     animateGauge('personalization', personalization);
   }
 
+  // Fix B3: animateGauge was targeting SVG gauge-${id} elements with SVG-only
+  // strokeDashoffset property. The actual HTML uses progress bar divs with
+  // id="fill-${id}". Updated to set width% and update the value label.
   function animateGauge(id, score) {
-    const circle = document.getElementById(`gauge-${id}`);
+    const fill = document.getElementById(`fill-${id}`);
     const textVal = document.getElementById(`val-${id}`);
-    if (!circle) return;
-
-    const strokeDashoffset = 226 - (226 * score) / 100;
-    circle.style.strokeDashoffset = strokeDashoffset;
-    if (textVal) textVal.textContent = `${score}%`;
+    const safeScore = Math.min(100, Math.max(0, Math.round(score || 0)));
+    if (fill) fill.style.width = `${safeScore}%`;
+    if (textVal) textVal.textContent = `${safeScore}%`;
   }
 
   function escapeJSQuotes(str) {
@@ -891,6 +900,13 @@
       reBtn.disabled = true;
       reBtn.textContent = '⏳ Analyzing...';
     }
+    // Show loading state in AI Assistant tab
+    const listEl = document.getElementById('suggestionsList');
+    if (listEl) {
+      listEl.innerHTML = '<p style="color:var(--text-3); font-size:0.85rem; text-align:center; padding:1rem 0;">⏳ Analyzing your cover letter for improvements...</p>';
+    }
+    const countEl = document.getElementById('suggestionsCount');
+    if (countEl) countEl.textContent = '';
     
     try {
       const payload = {
@@ -948,8 +964,12 @@
   }
 
   function reanalyzeATS() {
-    const letterText = document.getElementById('editorSheet').innerText;
-    if (!letterText.trim() || letterText.startsWith('Your generated cover letter will appear here.')) {
+    const sheet = document.getElementById('editorSheet');
+    const letterText = sheet ? (sheet.innerText || '').trim() : '';
+    const isPlaceholder = !letterText ||
+      letterText.startsWith('Your generated cover letter will appear here') ||
+      letterText.startsWith('Preparing your information');
+    if (isPlaceholder) {
       showToast('error', 'Generate a cover letter first to analyze.');
       return;
     }
@@ -1113,6 +1133,8 @@
   let activeCompareOriginal = '';
   let activeCompareReplacement = '';
 
+  let _compareModalPreviousFocus = null;
+
   function openCompareModal(id, original, replacement) {
     activeCompareId = id;
     activeCompareOriginal = original;
@@ -1133,11 +1155,44 @@
       closeCompareModal();
     };
 
-    document.getElementById('compareModal').style.display = 'flex';
+    _compareModalPreviousFocus = document.activeElement;
+    const modal = document.getElementById('compareModal');
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+    // Focus first interactive element
+    const closeBtn = modal.querySelector('.close-modal-btn');
+    if (closeBtn) setTimeout(() => closeBtn.focus(), 50);
+
+    // Focus trap
+    modal.addEventListener('keydown', _compareFocusTrap);
+    document.addEventListener('keydown', _compareEscapeHandler);
+  }
+
+  function _compareFocusTrap(e) {
+    const modal = document.getElementById('compareModal');
+    const focusable = modal.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])');
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.key === 'Tab') {
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    }
+  }
+
+  function _compareEscapeHandler(e) {
+    if (e.key === 'Escape') closeCompareModal();
   }
 
   function closeCompareModal() {
-    document.getElementById('compareModal').style.display = 'none';
+    const modal = document.getElementById('compareModal');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    modal.removeEventListener('keydown', _compareFocusTrap);
+    document.removeEventListener('keydown', _compareEscapeHandler);
+    if (_compareModalPreviousFocus) _compareModalPreviousFocus.focus();
   }
 
   function renderAtsSummary(summary) {
@@ -1220,7 +1275,7 @@
           <div style="font-size:0.8rem; color:var(--text-2); max-height:120px; overflow-y:auto; white-space:pre-wrap; margin-bottom:0.75rem; background:rgba(0,0,0,0.1); padding:0.5rem; border-radius:4px;">${cleanEscapes(vText)}</div>
           <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
             <button class="btn btn-secondary btn-sm" style="min-height:30px; font-size:0.75rem;" onclick="copyVariantText(\`${escapeJSQuotes(vText)}\`)">Copy</button>
-            <button class="btn class-primary btn-sm" style="min-height:30px; font-size:0.75rem; background:var(--cyan); color:#000; font-weight:700;" onclick="applyVariantText(\`${escapeJSQuotes(vText)}\`)">Use this variant</button>
+            <button class="btn btn-primary btn-sm" style="min-height:30px; font-size:0.75rem;" onclick="applyVariantText(\`${escapeJSQuotes(vText)}\`)">Use this variant</button>
           </div>
         </div>
       `;
@@ -1258,12 +1313,12 @@
       user_id: currentUser.id,
       job_title: jobTitleVal,
       company_name: companyNameVal,
-      job_description: document.getElementById('jobDescription').value.trim(),
-      highlights: document.getElementById('highlights').value.trim(),
-      tone: document.getElementById('tone').value,
-      length: document.getElementById('length').value,
-      opening: document.getElementById('opening').value.trim(),
-      closing: document.getElementById('closing').value.trim(),
+      job_description: (document.getElementById('jobDescription')?.value || '').trim(),
+      highlights: (document.getElementById('highlights')?.value || '').trim(),
+      tone: document.getElementById('tone')?.value || 'Professional',
+      length: document.getElementById('length')?.value || 'Medium',
+      opening: (document.getElementById('opening')?.value || '').trim(),
+      closing: (document.getElementById('closing')?.value || '').trim(),
       generated_letter: letterText,
       keywords_used: lastGeneratedData ? lastGeneratedData.keywords_used : [],
       ats_score: lastGeneratedData ? lastGeneratedData.ats_score : null,
@@ -1273,13 +1328,17 @@
         meta: {
           custom_title: `${jobTitleVal} @ ${companyNameVal}`,
           is_archived: false,
-          hiringManager: document.getElementById('hiringManager').value.trim(),
-          industry: document.getElementById('industry').value.trim(),
-          location: document.getElementById('location').value.trim(),
-          experienceLevel: document.getElementById('experienceLevel').value,
-          keySkills: document.getElementById('mustHaveSkills').value.trim(),
-          achievements: document.getElementById('keyAchievements').value.trim(),
-          additionalInstructions: document.getElementById('additionalInstructions').value.trim(),
+          hiringManager: (document.getElementById('hiringManager')?.value || '').trim(),
+          industry: (document.getElementById('industry')?.value || '').trim(),
+          location: (document.getElementById('location')?.value || '').trim(),
+          experienceLevel: document.getElementById('experienceLevel')?.value || 'Mid',
+          keySkills: (document.getElementById('mustHaveSkills')?.value || '').trim(),
+          achievements: (document.getElementById('keyAchievements')?.value || '').trim(),
+          softSkills: (document.getElementById('softSkills')?.value || '').trim(),
+          companyResearch: (document.getElementById('companyResearch')?.value || '').trim(),
+          linkedinUrl: (document.getElementById('linkedinUrl')?.value || '').trim(),
+          portfolio: (document.getElementById('portfolio')?.value || '').trim(),
+          additionalInstructions: (document.getElementById('additionalInstructions')?.value || '').trim(),
           detailed_scores: lastGeneratedData ? lastGeneratedData.detailed_scores : null,
           suggestions: lastGeneratedData ? lastGeneratedData.suggestions : []
         }
@@ -1360,8 +1419,11 @@
     container.innerHTML = filtered.map(c => {
       const meta = c.variants?.meta || {};
       const isArchived = Boolean(meta.is_archived);
-      const displayName = meta.custom_title || `${c.job_title || 'Untitled'} @ ${c.company_name || 'Acme'}`;
+      // HTML-escape displayName to prevent XSS via stored job titles
+      const rawDisplayName = meta.custom_title || `${c.job_title || 'Untitled'} @ ${c.company_name || 'Acme'}`;
+      const displayName = rawDisplayName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       const createdDate = new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const archiveLabel = isArchived ? 'Restore' : 'Archive';
 
       return `
         <div class="history-item-card" id="history-${c.id}">
@@ -1374,11 +1436,11 @@
             </div>
           </div>
           <div class="history-item-actions">
-            <button class="history-action-btn" onclick="previewSavedLetter('${c.id}')">Edit</button>
-            <button class="history-action-btn" onclick="renameSavedLetter('${c.id}')">Rename</button>
-            <button class="history-action-btn" onclick="duplicateSavedLetter('${c.id}')">Clone</button>
-            <button class="history-action-btn" onclick="archiveSavedLetter('${c.id}', ${!isArchived})">${isArchived ? 'Restore' : 'Archive'}</button>
-            <button class="history-action-btn delete" onclick="deleteSavedLetter('${c.id}')">Delete</button>
+            <button class="history-action-btn" onclick="previewSavedLetter('${c.id}')" aria-label="Edit ${displayName}">Edit</button>
+            <button class="history-action-btn" onclick="renameSavedLetter('${c.id}')" aria-label="Rename ${displayName}">Rename</button>
+            <button class="history-action-btn" onclick="duplicateSavedLetter('${c.id}')" aria-label="Clone ${displayName}">Clone</button>
+            <button class="history-action-btn" onclick="archiveSavedLetter('${c.id}', ${!isArchived})" aria-label="${archiveLabel} ${displayName}">${archiveLabel}</button>
+            <button class="history-action-btn delete" onclick="deleteSavedLetter('${c.id}')" aria-label="Delete ${displayName}">Delete</button>
           </div>
         </div>
       `;
@@ -1406,9 +1468,13 @@
     document.getElementById('industry').value = meta.industry || '';
     document.getElementById('location').value = meta.location || '';
     document.getElementById('experienceLevel').value = meta.experienceLevel || 'Mid';
-    document.getElementById('mustHaveSkills').value = meta.keySkills || '';
-    document.getElementById('keyAchievements').value = meta.achievements || '';
-    document.getElementById('additionalInstructions').value = meta.additionalInstructions || '';
+    if (document.getElementById('mustHaveSkills')) document.getElementById('mustHaveSkills').value = meta.keySkills || '';
+    if (document.getElementById('keyAchievements')) document.getElementById('keyAchievements').value = meta.achievements || '';
+    if (document.getElementById('softSkills')) document.getElementById('softSkills').value = meta.softSkills || '';
+    if (document.getElementById('companyResearch')) document.getElementById('companyResearch').value = meta.companyResearch || '';
+    if (document.getElementById('linkedinUrl')) document.getElementById('linkedinUrl').value = meta.linkedinUrl || '';
+    if (document.getElementById('portfolio')) document.getElementById('portfolio').value = meta.portfolio || '';
+    if (document.getElementById('additionalInstructions')) document.getElementById('additionalInstructions').value = meta.additionalInstructions || '';
     document.getElementById('opening').value = item.opening || '';
     document.getElementById('closing').value = item.closing || '';
 
@@ -1432,19 +1498,60 @@
     renderAtsSuggestions(meta.suggestions || []);
     renderVariants(item.variants?.texts || [], item.generated_letter);
 
-    showToast('success', `Loaded ${meta.custom_title || item.job_title}`);
+    showToast('success', `Loaded: ${meta.custom_title || item.job_title}`);
     switchEditorTab('editPane');
     switchWizardTab('jobInfo');
+
+    // Scroll to the workspace so the user sees the editor immediately
+    const workspace = document.querySelector('.cl-workspace');
+    if (workspace) workspace.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   async function renameSavedLetter(id) {
     const item = rawHistoryList.find(c => c.id === id);
     if (!item) return;
 
-    const title = item.variants?.meta?.custom_title || `${item.job_title} @ ${item.company_name}`;
-    const newTitle = prompt('Enter a new title for this cover letter:', title);
-    if (newTitle === null || !newTitle.trim()) return;
+    const modal = document.getElementById('renameConfirmModal');
+    const inputEl = document.getElementById('renameInput');
+    const confirmBtn = document.getElementById('renameConfirmBtn');
 
+    if (!modal || !inputEl || !confirmBtn) {
+      // Fallback
+      const title = item.variants?.meta?.custom_title || `${item.job_title} @ ${item.company_name}`;
+      const newTitle = prompt('Enter a new title for this cover letter:', title);
+      if (newTitle === null || !newTitle.trim()) return;
+      return performRename(id, item, newTitle);
+    }
+
+    const title = item.variants?.meta?.custom_title || `${item.job_title} @ ${item.company_name}`;
+    inputEl.value = title;
+    modal.style.display = 'flex';
+    inputEl.focus();
+    inputEl.select();
+
+    await new Promise(resolve => {
+      const handleConfirm = () => { cleanupModal(); resolve(inputEl.value); };
+      const handleCancel = () => { cleanupModal(); resolve(null); };
+      function cleanupModal() {
+        modal.style.display = 'none';
+        confirmBtn.removeEventListener('click', handleConfirm);
+        modal.querySelector('.btn-secondary').removeEventListener('click', handleCancel);
+        inputEl.removeEventListener('keydown', handleKeydown);
+      }
+      function handleKeydown(e) {
+        if (e.key === 'Enter') handleConfirm();
+      }
+      confirmBtn.addEventListener('click', handleConfirm, { once: true });
+      modal.querySelector('.btn-secondary').addEventListener('click', handleCancel, { once: true });
+      inputEl.addEventListener('keydown', handleKeydown);
+    }).then(newTitle => {
+      if (newTitle !== null && newTitle.trim()) {
+        performRename(id, item, newTitle);
+      }
+    });
+  }
+
+  async function performRename(id, item, newTitle) {
     try {
       const variantsObj = item.variants || {};
       variantsObj.meta = variantsObj.meta || {};
@@ -1521,14 +1628,50 @@
   }
 
   async function deleteSavedLetter(id) {
-    if (!confirm('Are you sure you want to permanently delete this cover letter?')) return;
+    const item = rawHistoryList.find(c => c.id === id);
+    const modal = document.getElementById('deleteConfirmModal');
+    const bodyEl = document.getElementById('deleteModalBody');
+    const confirmBtn = document.getElementById('deleteConfirmBtn');
+    
+    if (!modal || !confirmBtn) {
+      // Fallback if modal not found
+      if (!window.confirm('Permanently delete this cover letter?')) return;
+    } else {
+      const title = item?.variants?.meta?.custom_title || `${item?.job_title || 'this letter'} @ ${item?.company_name || ''}`;
+      if (bodyEl) bodyEl.textContent = `Are you sure you want to permanently delete "${title}"? This action cannot be undone.`;
+      modal.style.display = 'flex';
+      confirmBtn.focus();
+
+      await new Promise(resolve => {
+        const handleConfirm = () => { cleanupModal(); resolve(true); };
+        const handleCancel = () => { cleanupModal(); resolve(false); };
+        function cleanupModal() {
+          modal.style.display = 'none';
+          confirmBtn.removeEventListener('click', handleConfirm);
+          modal.querySelector('.btn-secondary').removeEventListener('click', handleCancel);
+        }
+        confirmBtn.addEventListener('click', handleConfirm, { once: true });
+        modal.querySelector('.btn-secondary').addEventListener('click', handleCancel, { once: true });
+      }).then(async (confirmed) => {
+        if (!confirmed) return;
+        try {
+          const { error } = await client.from('cover_letters').delete().eq('id', id);
+          if (error) throw error;
+          showToast('success', 'Cover letter deleted.');
+          if (currentSavedLetterId === id) currentSavedLetterId = null;
+          await loadHistory();
+        } catch (err) {
+          showToast('error', 'Delete failed: ' + err.message);
+        }
+      });
+      return;
+    }
+
     try {
       const { error } = await client.from('cover_letters').delete().eq('id', id);
       if (error) throw error;
       showToast('success', 'Cover letter deleted.');
-      if (currentSavedLetterId === id) {
-        currentSavedLetterId = null;
-      }
+      if (currentSavedLetterId === id) currentSavedLetterId = null;
       await loadHistory();
     } catch (err) {
       showToast('error', 'Delete failed: ' + err.message);
@@ -1636,7 +1779,7 @@
     const a = document.createElement('a');
     a.href = url;
     const job = (jobTitle || 'letter').replace(/\s+/g, '-');
-    a.download = `CoverLetter-${job}-${new Date().toISOString().split('T')[0]}.doc`;
+    a.download = `CoverLetter-${job}-${new Date().toISOString().split('T')[0]}.docx`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1646,10 +1789,20 @@
   }
 
   // ── Progressive Step Accordion Helper ──
+  const STEP_ORDER = ['jobInfo', 'companyDetails', 'resumeTab', 'writerSettings', 'aiPersonalization'];
   window.toggleStepAccordion = function(stepId) {
     document.querySelectorAll('.cl-step-accordion').forEach(acc => {
-      acc.classList.toggle('active', acc.id === `step-${stepId}`);
+      const isActive = acc.id === `step-${stepId}`;
+      acc.classList.toggle('active', isActive);
+      const header = acc.querySelector('.cl-step-header[role="button"]');
+      if (header) header.setAttribute('aria-expanded', isActive ? 'true' : 'false');
     });
+    // Update step progress label
+    const stepIndex = STEP_ORDER.indexOf(stepId);
+    const progressLabel = document.getElementById('stepProgressLabel');
+    if (progressLabel && stepIndex !== -1) {
+      progressLabel.textContent = `STEP ${stepIndex + 1} OF ${STEP_ORDER.length}`;
+    }
   };
 
   // ── Auto Detect Company Info from Website URL ──
@@ -1712,12 +1865,16 @@
       toolbar.style.top = `${rect.top - sheetRect.top - 45}px`;
       toolbar.style.left = `${rect.left - sheetRect.left + (rect.width / 2) - 80}px`;
       toolbar.classList.add('visible');
+      toolbar.setAttribute('aria-hidden', 'false');
     } else {
       toolbar.classList.remove('visible');
+      toolbar.setAttribute('aria-hidden', 'true');
     }
   });
 
   // ── AI Selection Rewrite Helper ──
+  // Fix: now sends selectedText + context in inline_rewrite mode, rather than
+  // sending letter: selectedText which the server treated as a full generation.
   window.aiImproveSelection = async function(action) {
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed) {
@@ -1725,36 +1882,57 @@
       return;
     }
 
-    const selectedText = selection.toString();
-    showToast('success', `Applying AI ${action}...`);
+    const selectedText = selection.toString().trim();
+    if (!selectedText) { showToast('error', 'Select text in the editor to improve.'); return; }
+
+    const toolbar = document.getElementById('floatingEditorToolbar');
+    if (toolbar) toolbar.classList.remove('visible');
+
+    showToast('success', `⏳ AI ${action === 'persuasive' ? 'making it persuasive' : 'rewriting'}...`);
+
+    // Save selection range so we can restore it
+    const range = selection.getRangeAt(0).cloneRange();
 
     try {
       const payload = {
-        letter: selectedText,
-        action: action,
-        jobTitle: document.getElementById('jobTitle').value.trim()
+        mode: 'inline_rewrite',
+        selectedText,
+        action,
+        jobTitle: (document.getElementById('jobTitle')?.value || '').trim(),
+        companyName: (document.getElementById('companyName')?.value || '').trim(),
+        tone: document.getElementById('tone')?.value || 'Professional'
       };
       
       const session = await window.appSdk.auth.getSession();
       const headers = { 'Content-Type': 'application/json' };
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-      }
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
 
       const res = await fetch('/api/cover-letter', {
         method: 'POST',
-        headers: headers,
+        headers,
         body: JSON.stringify(payload)
       });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'AI rewrite failed');
+      }
+
       const data = await res.json();
       if (data.letter) {
-        document.execCommand('insertHTML', false, `<strong>${data.letter}</strong>`);
+        // Restore selection and replace it with the rewritten text
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        document.execCommand('insertText', false, data.letter);
         saveEditorState();
         updateCounts();
-        showToast('success', 'Selection improved!');
+        showToast('success', '✨ Selection improved!');
+      } else {
+        throw new Error('No rewritten text returned');
       }
     } catch (err) {
-      showToast('error', 'AI rewrite error: ' + err.message);
+      showToast('error', 'AI rewrite failed: ' + err.message);
     }
   };
 
@@ -1813,6 +1991,65 @@
     }
   }
 
+  // ── clearWorkspace: New Letter button handler ──
+  window.clearWorkspace = function() {
+    const formFields = ['jobTitle','companyName','jobDescription','highlights','tone','length',
+      'opening','closing','hiringManager','industry','location','companyWebsite',
+      'referral','experienceLevel','candidateName','additionalInstructions',
+      'mustHaveSkills','keyAchievements','creativityLevel','focusArea',
+      'softSkills', 'companyResearch', 'linkedinUrl', 'portfolio'];
+    formFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.tagName === 'SELECT') { el.selectedIndex = 0; }
+      else { el.value = ''; }
+    });
+    clearResume();
+
+    const sheet = document.getElementById('editorSheet');
+    if (sheet) { sheet.innerHTML = ''; sheet.style.display = 'none'; }
+    const emptyState = document.getElementById('editorEmptyState');
+    if (emptyState) emptyState.style.display = 'block';
+
+    // Reset state
+    currentSavedLetterId = null;
+    lastGeneratedData = null;
+    currentAtsData = null;
+    editorHistory = [''];
+    historyIndex = 0;
+
+    // Reset editor metrics
+    updateCounts();
+
+    // Reset ATS bars
+    ['overallATSScore','keywordMatch','recruiterReadability','professionalTone','personalization'].forEach(id => {
+      animateGauge(id, 0);
+      const valEl = document.getElementById(`val-${id}`);
+      if (valEl) valEl.textContent = '—';
+    });
+
+    // Reset suggestions
+    const listEl = document.getElementById('suggestionsList');
+    if (listEl) listEl.innerHTML = '<p style="color:var(--text-3); font-size:0.85rem;">No recommendations generated yet. Click "Generate Cover Letter" to receive instant feedback.</p>';
+    const sumEl = document.getElementById('suggestionsSummaryContainer');
+    if (sumEl) sumEl.innerHTML = '';
+    const countEl = document.getElementById('suggestionsCount');
+    if (countEl) countEl.textContent = '';
+
+    // Reset variants
+    const varEl = document.getElementById('variantsContainer');
+    if (varEl) varEl.innerHTML = '<p style="color:var(--text-3); font-size:0.85rem;">No variants generated yet.</p>';
+
+    // Reset ATS keywords section
+    const atsKw = document.getElementById('atsKeywordsSection');
+    if (atsKw) atsKw.innerHTML = '<h4 style="margin-bottom:0.5rem; font-size:0.88rem; font-weight:700;">Keyword Breakdown</h4><p style="font-size:0.82rem; color:var(--text-3);">Generate your letter to view matched vs missing job description keywords.</p>';
+
+    // Navigate to step 1
+    toggleStepAccordion('jobInfo');
+    switchEditorTab('editPane');
+    showToast('success', 'Workspace cleared. Ready for a new letter.');
+  };
+
   // Export to window namespace for HTML click bindings
   window.previewSavedLetter = previewSavedLetter;
   window.renameSavedLetter = renameSavedLetter;
@@ -1831,6 +2068,7 @@
   window.switchWizardTab = switchWizardTab;
   window.switchEditorTab = switchEditorTab;
   window.executeEditorCommand = executeEditorCommand;
+  window.clearWorkspace = clearWorkspace;
 
   window.handleCopyCoverLetter = handleCopyCoverLetter;
   window.copyToClipboard = window.copyToClipboard || handleCopyCoverLetter;

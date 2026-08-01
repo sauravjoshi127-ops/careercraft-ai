@@ -86,31 +86,55 @@ module.exports = async function handler(req, res) {
     await authenticateRequest(req);
   } catch (authErr) {
     console.error('[cover-letter] Authentication failure:', authErr.message);
-    console.error('[cover-letter] Original Auth Exception:', authErr);
-    
-    // Check if it's a Supabase/Postgrest error
-    const isSupabaseError = authErr.code || authErr.details || authErr.hint;
-    const msg = isSupabaseError 
-      ? `Supabase DB Error: [${authErr.code || 'UNKNOWN_CODE'}] ${authErr.message}. Details: ${authErr.details || 'None'}. Hint: ${authErr.hint || 'None'}`
-      : authErr.message;
-      
     return res.status(authErr.status || 401).json({
       success: false,
-      error: msg,
-      details: {
-        source: 'supabase_auth',
-        status: authErr.status || 401,
-        message: msg,
-        raw: {
-          code: authErr.code,
-          details: authErr.details,
-          hint: authErr.hint
-        }
-      }
+      error: 'Authentication failed. Please sign in and try again.'
     });
   }
 
   const body = req.body || {};
+  const mode = String(body.mode || '').trim();
+
+  // ── Inline Rewrite Mode (selection toolbar) ──────────────────────────────
+  if (mode === 'inline_rewrite') {
+    const selectedText = String(body.selectedText || '').trim();
+    const action = String(body.action || 'rewrite').trim();
+    const tone = String(body.tone || 'Professional').trim();
+    const jobTitleCtx = String(body.jobTitle || '').trim();
+
+    if (!selectedText) {
+      return res.status(400).json({ error: 'No text selected for rewriting.' });
+    }
+
+    const actionInstruction = action === 'persuasive'
+      ? 'Rewrite the following cover letter excerpt to be significantly more persuasive, compelling, and impactful. Use stronger action verbs and confident language.'
+      : 'Rewrite the following cover letter excerpt to be more professional, polished, and impactful. Improve clarity and remove any filler language.';
+
+    const rewritePrompt = `You are a professional cover letter editor. ${actionInstruction}
+
+Context: ${jobTitleCtx ? 'Position: ' + jobTitleCtx : 'Professional cover letter'}
+Tone: ${tone}
+
+Text to improve:
+${selectedText}
+
+Return ONLY the rewritten text. No explanation, no quotes, no preamble.`;
+
+    try {
+      const rr = await callGemini({
+        contents: [{ parts: [{ text: rewritePrompt }] }],
+        generationConfig: { temperature: 0.65, maxOutputTokens: 512 }
+      });
+      if (!rr.ok) throw new Error('AI rewrite failed');
+      const rResult = await rr.json();
+      const rewritten = rResult?.candidates?.[0]?.content?.parts?.[0]?.text || selectedText;
+      return res.status(200).json({ letter: rewritten.trim() });
+    } catch (err) {
+      console.error('[cover-letter] Rewrite error:', err.message);
+      return res.status(500).json({ error: 'Could not rewrite the selected text. Please try again.' });
+    }
+  }
+
   const jobTitle = String(body.jobTitle || '').trim();
   const companyName = String(body.companyName || '').trim();
   const jobDescription = String(body.jobDescription || '').trim();
@@ -290,12 +314,10 @@ Return ONLY a single valid JSON object. No markdown fences. No explanatory text 
     let r;
     const geminiRequestPayload = {
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.75, maxOutputTokens: 4096 }
+      generationConfig: { temperature: 0.75, maxOutputTokens: 8192 }
     };
 
-    console.log('=== [cover-letter] Gemini Request Start ===');
-    console.log('Payload:', JSON.stringify(geminiRequestPayload, null, 2));
-    console.log('=== [cover-letter] Gemini Request End ===');
+    console.log('[cover-letter] Generation request initiated. jobTitle:', jobTitle, '| company:', companyName);
 
     try {
       r = await callGemini(geminiRequestPayload);
