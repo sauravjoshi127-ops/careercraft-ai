@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="manual-studio.css">
 
   
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
@@ -26,7 +27,7 @@
   <div class="alert-container" id="alertContainer" role="status" aria-live="polite" aria-atomic="false"></div>
 
 
-  <!-- Top Navigation â€” rendered by NavigationManager -->
+  <!-- Top Navigation — rendered by NavigationManager -->
   <nav class="ch-nav" aria-label="Main navigation"></nav>
 
   <div class="container">
@@ -35,7 +36,7 @@
       <p>Build, test, polish, and optimize your application letter with tailored recruiter metrics and keyword scoring.</p>
       <div class="cl-workspace">
       
-      <!-- â”€â”€ LEFT PANEL: Guided Progressive Workflow â”€â”€ -->
+      <!-- -- LEFT PANEL: Guided Progressive Workflow -- -->
       <div class="cl-left-panel">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
           <h2 style="font-size:1.15rem; font-weight:700; color:var(--text-1); margin:0;">Information Collection</h2>
@@ -71,7 +72,7 @@
             </div>
 
             <div style="display:flex; justify-content:flex-end; margin-top:0.75rem;">
-              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('companyDetails')">Next: Company Details â†’</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('companyDetails')">Next: Company Details →</button>
             </div>
           </div>
         </div>
@@ -124,8 +125,8 @@
             </div>
 
             <div style="display:flex; justify-content:space-between; margin-top:0.75rem;">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('jobInfo')">â† Back</button>
-              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('resumeTab')">Next: Resume Integration â†’</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('jobInfo')">← Back</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('resumeTab')">Next: Resume Integration →</button>
             </div>
           </div>
         </div>
@@ -143,7 +144,7 @@
             <div class="input-wrapper">
               <label>Select Saved Resume or Upload</label>
               <select id="savedResumeSelect" class="history-select" style="width:100%; margin-bottom:0.75rem;">
-                <option value="">â€” Choose Existing Resume â€”</option>
+                <option value="">— Choose Existing Resume —</option>
               </select>
 
               <div class="upload-area" id="uploadArea" role="button" tabindex="0" aria-label="Upload PDF or DOCX resume file" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('resumeFile').click();}">
@@ -181,12 +182,12 @@
               </label>
             </div>
             <div id="resumeClearRow" style="display:none; margin-top:0.5rem;">
-              <button type="button" class="btn btn-secondary btn-sm" id="clearResumeBtn" onclick="clearResume()">âœ• Clear Resume</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="clearResumeBtn" onclick="clearResume()"><i data-lucide="x" width="16"></i> Clear Resume</button>
             </div>
 
             <div style="display:flex; justify-content:space-between; margin-top:0.75rem;">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('companyDetails')">â† Back</button>
-              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('writerSettings')">Next: Writing Preferences â†’</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('companyDetails')">← Back</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('writerSettings')">Next: Writing Preferences →</button>
             </div>
           </div>
         </div>
@@ -254,8 +255,8 @@
             </div>
 
             <div style="display:flex; justify-content:space-between; margin-top:0.75rem;">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('resumeTab')">â† Back</button>
-              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('aiPersonalization')">Next: AI Personalization â†’</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('resumeTab')">← Back</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('aiPersonalization')">Next: AI Personalization →</button>
             </div>
           </div>
         </div>
@@ -328,15 +329,15 @@
             </div>
 
             <div style="display:flex; justify-content:space-between; margin-top:1rem;">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('writerSettings')">â† Back</button>
-              <button id="generateBtn" class="btn btn-primary">Generate Cover Letter âœ¨</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('writerSettings')">← Back</button>
+              <button id="generateBtn" class="btn btn-primary">Generate Cover Letter <i data-lucide="sparkles" width="16"></i></button>
             </div>
           </div>
         </div>
 
       </div>
 
-      <!-- â”€â”€ RIGHT PANEL: Notion-Style Live Editor & AI Suite â”€â”€ -->
+      <!-- -- RIGHT PANEL: Notion-Style Live Editor & AI Suite -- -->
       <div class="cl-right-panel">
         <div class="cl-editor-container">
           
@@ -400,8 +401,8 @@
             <div class="cl-floating-toolbar" id="floatingEditorToolbar" aria-hidden="true" aria-label="Quick format toolbar">
               <button type="button" class="cl-toolbar-btn" onclick="executeEditorCommand('bold')" title="Bold" aria-label="Bold selected text"><b>B</b></button>
               <button type="button" class="cl-toolbar-btn" onclick="executeEditorCommand('italic')" title="Italic" aria-label="Italic selected text"><i>I</i></button>
-              <button type="button" class="cl-toolbar-btn" onclick="aiImproveSelection('rewrite')" title="AI Rewrite" aria-label="AI rewrite selected text">âœ¨ Rewrite</button>
-              <button type="button" class="cl-toolbar-btn" onclick="aiImproveSelection('persuasive')" title="Make Persuasive" aria-label="Make selected text more persuasive">ðŸ”¥ Persuasive</button>
+              <button type="button" class="cl-toolbar-btn" onclick="aiImproveSelection('rewrite')" title="AI Rewrite" aria-label="AI rewrite selected text"><i data-lucide="sparkles" width="16"></i> Rewrite</button>
+              <button type="button" class="cl-toolbar-btn" onclick="aiImproveSelection('persuasive')" title="Make Persuasive" aria-label="Make selected text more persuasive"><i data-lucide="flame" width="16"></i> Persuasive</button>
             </div>
 
             <!-- Notion Paper Sheet Container -->
@@ -409,7 +410,7 @@
               
               <!-- Empty State Hero -->
               <div class="cl-empty-state" id="editorEmptyState">
-                <div class="cl-empty-icon">ðŸ“</div>
+                <div class="cl-empty-icon"><i data-lucide="file-text" width="48" height="48"></i></div>
                 <div class="cl-empty-title">No Draft Created Yet</div>
                 <div class="cl-empty-desc">Fill in your job title and click "Generate Cover Letter", or import your resume to start immediately.</div>
                 <div class="cl-empty-actions">
@@ -441,11 +442,11 @@
                 <span class="cl-metric-lbl">Read Time</span>
               </div>
               <div class="cl-metric-item">
-                <span class="cl-metric-num" id="liveAtsScore">â€”</span>
+                <span class="cl-metric-num" id="liveAtsScore">—</span>
                 <span class="cl-metric-lbl">ATS Match</span>
               </div>
               <div class="cl-metric-item">
-                <span class="cl-metric-num" id="readabilityScore">â€”</span>
+                <span class="cl-metric-num" id="readabilityScore">—</span>
                 <span class="cl-metric-lbl">Readability</span>
               </div>
             </div>
@@ -459,7 +460,7 @@
                 <button id="copyTextBtn" class="btn btn-secondary">Copy</button>
               </div>
               <div class="autosave-status" id="autosaveLabel" style="font-size:0.78rem; color:var(--text-3);" aria-live="polite" aria-atomic="true">
-                <span aria-hidden="true">â—</span> <span id="autosaveLabelText">Draft local-saved</span>
+                <span aria-hidden="true"><i data-lucide="check-circle" width="14"></i></span> <span id="autosaveLabelText">Draft local-saved</span>
               </div>
             </div>
 
@@ -472,7 +473,7 @@
                 <h3 style="font-size:1.05rem; font-weight:700; margin:0 0 0.2rem 0;">AI Writing Assistant</h3>
                 <p style="font-size:0.8rem; color:var(--text-3); margin:0;">Contextual improvements with side-by-side diff previews.</p>
               </div>
-              <button id="reanalyzeAtsBtn" class="btn btn-secondary btn-sm" onclick="reanalyzeATS()">ðŸ”„ Re-analyze Draft</button>
+              <button id="reanalyzeAtsBtn" class="btn btn-secondary btn-sm" onclick="reanalyzeATS()"><i data-lucide="refresh-cw" width="16"></i> Re-analyze Draft</button>
             </div>
 
             <div id="suggestionsSummaryContainer"></div>
@@ -490,7 +491,7 @@
               <div class="cl-ats-card">
                 <div class="cl-ats-card-header">
                   <span class="cl-ats-card-title">Overall Score</span>
-                  <span class="cl-ats-card-score" id="val-overallATSScore">â€”</span>
+                  <span class="cl-ats-card-score" id="val-overallATSScore">—</span>
                 </div>
                 <div class="cl-ats-progress-track"><div class="cl-ats-fill" id="fill-overallATSScore" style="width:0%;"></div></div>
               </div>
@@ -498,7 +499,7 @@
               <div class="cl-ats-card">
                 <div class="cl-ats-card-header">
                   <span class="cl-ats-card-title">Keyword Match</span>
-                  <span class="cl-ats-card-score" id="val-keywordMatch">â€”</span>
+                  <span class="cl-ats-card-score" id="val-keywordMatch">—</span>
                 </div>
                 <div class="cl-ats-progress-track"><div class="cl-ats-fill" id="fill-keywordMatch" style="width:0%;"></div></div>
               </div>
@@ -506,7 +507,7 @@
               <div class="cl-ats-card">
                 <div class="cl-ats-card-header">
                   <span class="cl-ats-card-title">Readability</span>
-                  <span class="cl-ats-card-score" id="val-recruiterReadability">â€”</span>
+                  <span class="cl-ats-card-score" id="val-recruiterReadability">—</span>
                 </div>
                 <div class="cl-ats-progress-track"><div class="cl-ats-fill" id="fill-recruiterReadability" style="width:0%;"></div></div>
               </div>
@@ -514,7 +515,7 @@
               <div class="cl-ats-card">
                 <div class="cl-ats-card-header">
                   <span class="cl-ats-card-title">Professional Tone</span>
-                  <span class="cl-ats-card-score" id="val-professionalTone">â€”</span>
+                  <span class="cl-ats-card-score" id="val-professionalTone">—</span>
                 </div>
                 <div class="cl-ats-progress-track"><div class="cl-ats-fill" id="fill-professionalTone" style="width:0%;"></div></div>
               </div>
@@ -546,7 +547,7 @@
 
     </div>
 
-    <!-- â”€â”€ BOTTOM PORTION: SAVED COVER LETTERS â”€â”€ -->
+    <!-- -- BOTTOM PORTION: SAVED COVER LETTERS -- -->
     <div class="history-section">
       <div class="page-header" style="margin-bottom:1rem;">
         <h2 style="font-size:1.35rem; ">Your Saved Letters Dashboard</h2>
@@ -580,7 +581,7 @@
     <div class="compare-modal-content">
       <div class="compare-modal-header">
         <h3 id="compareModalTitle" style=" font-size:1.1rem; margin:0; color:var(--text-1);">Compare Changes</h3>
-        <button class="close-modal-btn" onclick="closeCompareModal()" aria-label="Close compare dialog">Ã—</button>
+        <button class="close-modal-btn" onclick="closeCompareModal()" aria-label="Close compare dialog">&times;</button>
       </div>
       <div class="compare-modal-body">
         <div class="compare-col">

@@ -536,7 +536,7 @@
   const CoverLetterLogger = {
     start() {
       if (typeof console !== 'undefined' && console.group) {
-        console.group('🚀 [Cover Letter Pipeline]');
+        console.group(' [Cover Letter Pipeline]');
       }
     },
     step(stage, details) {
@@ -546,7 +546,7 @@
     },
     error(stage, err) {
       if (typeof console !== 'undefined' && console.error) {
-        console.error(`❌ [Pipeline Error @ ${stage}]`, err);
+        console.error(`Error: [Pipeline Error @ ${stage}]`, err);
       }
     },
     end(success) {
@@ -660,7 +660,7 @@
     if (!sheet) return;
     sheet.innerHTML = `
       <div class="premium-loading-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 4rem 2rem; color:var(--text-1);">
-        <div style="width:40px; height:40px; border-radius:50%; background:var(--success); color:white; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:1.5rem; animation: fadeIn 0.4s ease;">✓</div>
+        <div style="width:40px; height:40px; border-radius:50%; background:var(--success); color:white; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:1.5rem; animation: fadeIn 0.4s ease;"><i data-lucide="check" width="20"></i></div>
         <div style="font-weight:600; font-size:1.15rem; color:var(--text-1); letter-spacing:-0.01em; animation: fadeIn 0.4s ease;">
           Generation Complete
         </div>
@@ -737,7 +737,8 @@
       generateBtn.disabled = true;
 
       // Phase 9: Progressive UX Loading States
-      generateBtn.textContent = '⏳ Generating...';
+      generateBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Generating...';
+      if(window.lucide) lucide.createIcons();
       startPremiumLoading(sheet);
 
       const payload = {
@@ -782,7 +783,8 @@
         length: payload.length
       });
 
-      generateBtn.textContent = '⏳ Analyzing...';
+      generateBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Analyzing...';
+      if(window.lucide) lucide.createIcons();
 
       const session = await window.appSdk.auth.getSession();
       const headers = { 'Content-Type': 'application/json' };
@@ -808,13 +810,15 @@
         throw error;
       }
 
-      generateBtn.textContent = '⏳ Optimizing...';
+      generateBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Optimizing...';
+      if(window.lucide) lucide.createIcons();
 
       lastGeneratedData = data;
       const letterText = cleanEscapes(data.letter);
 
       finishPremiumLoading(sheet);
-      generateBtn.textContent = '⏳ Finalizing...';
+      generateBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Finalizing...';
+      if(window.lucide) lucide.createIcons();
 
       await injectEditorContent(letterText);
 
@@ -844,9 +848,9 @@
       if (sheet) {
         sheet.innerHTML = `
           <div style="text-align:center; padding: 2.5rem 1rem; color: #64748b;">
-            <div style="font-size:1.1rem; font-weight:600; color:#ef4444; margin-bottom:0.75rem;">⚠️ Generation Failed</div>
+            <div style="font-size:1.1rem; font-weight:600; color:#ef4444; margin-bottom:0.75rem;">Warning: Generation Failed</div>
             <div style="font-size:0.9rem; margin-bottom:1.5rem; max-width:420px; margin-left:auto; margin-right:auto; color:var(--text-2); line-height:1.6;">${safeUserMsg}</div>
-            <button onclick="document.getElementById('generateBtn').click()" style="background:var(--accent); color:#fff; border:none; padding:0.5rem 1.5rem; border-radius:8px; font-weight:600; font-size:0.9rem; cursor:pointer;">↺ Try Again</button>
+            <button onclick="document.getElementById('generateBtn').click()" style="background:var(--accent); color:#fff; border:none; padding:0.5rem 1.5rem; border-radius:8px; font-weight:600; font-size:0.9rem; cursor:pointer;"><i data-lucide="rotate-ccw" width="14"></i> Try Again</button>
           </div>
         `;
       }
@@ -898,12 +902,13 @@
     const reBtn = document.getElementById('reanalyzeAtsBtn');
     if (reBtn) {
       reBtn.disabled = true;
-      reBtn.textContent = '⏳ Analyzing...';
+      reBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Analyzing...';
+      if(window.lucide) lucide.createIcons();
     }
     // Show loading state in AI Assistant tab
     const listEl = document.getElementById('suggestionsList');
     if (listEl) {
-      listEl.innerHTML = '<p style="color:var(--text-3); font-size:0.85rem; text-align:center; padding:1rem 0;">⏳ Analyzing your cover letter for improvements...</p>';
+      listEl.innerHTML = '<p style="color:var(--text-3); font-size:0.85rem; text-align:center; padding:1rem 0;"><i data-lucide="loader-2" class="spin" width="14"></i> Analyzing your cover letter for improvements...</p>';
     }
     const countEl = document.getElementById('suggestionsCount');
     if (countEl) countEl.textContent = '';
@@ -958,7 +963,8 @@
     } finally {
       if (reBtn) {
         reBtn.disabled = false;
-        reBtn.textContent = '🔄 Re-analyze ATS';
+        reBtn.innerHTML = '<i data-lucide="refresh-cw" width="16"></i> Re-analyze ATS';
+        if(window.lucide) lucide.createIcons();
       }
     }
   }
@@ -1005,7 +1011,7 @@
     listEl.innerHTML = suggestions.map(s => {
       const normalizedCategory = (s.category || 'Missing Keyword').toLowerCase().replace(/\s+/g, '-');
       const catClass = `badge-${normalizedCategory}`;
-      const priorityColor = s.priority === 'High' ? '🔴' : s.priority === 'Medium' ? '🟡' : '🟢';
+      const priorityColor = s.priority === 'High' ? '<i data-lucide="arrow-up" style="color:var(--danger)" width="14"></i>' : s.priority === 'Medium' ? '<i data-lucide="minus" style="color:var(--warning)" width="14"></i>' : '<i data-lucide="arrow-down" style="color:var(--success)" width="14"></i>';
       const hasDiff = s.currentText && s.suggestedText;
 
       return `
@@ -1689,7 +1695,8 @@
     const originalText = downloadBtn.textContent;
 
     try {
-      downloadBtn.textContent = '⏳ Printing...';
+      downloadBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Printing...';
+        if(window.lucide) lucide.createIcons();
       downloadBtn.disabled = true;
 
       const session = await window.appSdk.auth.getSession();
@@ -1888,7 +1895,7 @@
     const toolbar = document.getElementById('floatingEditorToolbar');
     if (toolbar) toolbar.classList.remove('visible');
 
-    showToast('success', `⏳ AI ${action === 'persuasive' ? 'making it persuasive' : 'rewriting'}...`);
+    showToast('success', `AI ${action === 'persuasive' ? 'making it persuasive' : 'rewriting'}...`);
 
     // Save selection range so we can restore it
     const range = selection.getRangeAt(0).cloneRange();
@@ -1927,7 +1934,7 @@
         document.execCommand('insertText', false, data.letter);
         saveEditorState();
         updateCounts();
-        showToast('success', '✨ Selection improved!');
+        showToast('success', 'Selection improved!');
       } else {
         throw new Error('No rewritten text returned');
       }
