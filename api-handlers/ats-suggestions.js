@@ -119,15 +119,22 @@ module.exports = async function handler(req, res) {
   const industryCtx = industry ? `Industry: ${industry}\n` : '';
   const experienceCtx = experienceLevel ? `Experience Level: ${experienceLevel}\n` : '';
 
+  // Escape user content to prevent prompt injection
+  const safeLetter = letter.replace(/`/g, "'").replace(/---END/g, '---');
+  const safeJobDescription = jobDescription.replace(/`/g, "'").replace(/---END/g, '---');
+
   const prompt = `You are an expert ATS (Applicant Tracking System) analyzer, recruiter, hiring manager, HR specialist, and professional career coach.
 Analyze the following generated cover letter and job description to provide intelligent, actionable ATS optimization suggestions. Do not provide generic advice.
 
 INPUTS TO ANALYZE:
-- Generated Cover Letter:
-"${letter}"
 
-- Target Job Description:
-"${jobDescription}"
+--- BEGIN COVER LETTER ---
+${safeLetter}
+--- END COVER LETTER ---
+
+--- BEGIN JOB DESCRIPTION ---
+${safeJobDescription}
+--- END JOB DESCRIPTION ---
 
 - Job Title: ${jobTitle || 'Not specified'}
 - Company Name: ${companyName || 'Not specified'}
