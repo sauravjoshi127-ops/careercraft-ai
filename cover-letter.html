@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Cover Letter AI Workspace - CareerCraft</title>
+  <meta name="description" content="Build, polish and optimize AI-tailored cover letters with ATS scoring and recruiter metrics on CareerCraft." />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="storage-manager.js" defer></script>
   <script src="auth-manager.js" defer></script>
@@ -17,8 +18,6 @@
   <script src="manual-studio.js" defer></script>
   <link rel="stylesheet" href="styles/premium.css">
   <link rel="stylesheet" href="manual-studio.css">
-
-  
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
@@ -26,24 +25,32 @@
 
   <div class="alert-container" id="alertContainer" role="status" aria-live="polite" aria-atomic="false"></div>
 
-
   <!-- Top Navigation — rendered by NavigationManager -->
   <nav class="ch-nav" aria-label="Main navigation"></nav>
 
-  <div class="container">
-    <div class="page-header" style="margin-bottom:1.5rem;">
-      <h1 class="heading-gradient">Cover Letter Workspace</h1>
-      <p>Build, test, polish, and optimize your application letter with tailored recruiter metrics and keyword scoring.</p>
-      <div class="cl-workspace">
-      
-      <!-- -- LEFT PANEL: Guided Progressive Workflow -- -->
-      <div class="cl-left-panel">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
-          <h2 style="font-size:1.15rem; font-weight:700; color:var(--text-1); margin:0;">Information Collection</h2>
-          <span id="stepProgressLabel" style="font-size:0.72rem; font-weight:700; color:var(--text-3); letter-spacing:0.04em;">STEP 1 OF 5</span>
+  <div class="cl-page-container">
+
+    <!-- Page Header -->
+    <div class="cl-page-header">
+      <div>
+        <h1 class="cl-page-title heading-gradient">Cover Letter Workspace</h1>
+        <p class="cl-page-subtitle">Build, test, polish, and optimize your application letter with tailored recruiter metrics and keyword scoring.</p>
+      </div>
+    </div>
+
+    <!-- Two-column workspace -->
+    <div class="cl-workspace">
+
+      <!-- LEFT PANEL: Guided Progressive Workflow -->
+      <aside class="cl-left-panel" aria-label="Cover letter workflow">
+        <div class="cl-panel-header">
+          <h2 class="cl-panel-title">Information Collection</h2>
+          <span id="stepProgressLabel" class="cl-step-progress-label">STEP 1 OF 5</span>
         </div>
-        <p style="font-size:0.82rem; color:var(--text-3); margin:0 0 0.5rem 0;">Complete the steps below to tailor your AI application letter.</p>
-        <button type="button" class="btn btn-secondary btn-sm" id="newLetterBtn" onclick="clearWorkspace()" title="Clear all fields and start a new cover letter" style="margin-top:0.25rem; width:100%;">+ New Letter</button>
+        <p class="cl-panel-subtitle">Complete the steps below to tailor your AI application letter.</p>
+        <button type="button" class="btn btn-secondary btn-sm cl-new-letter-btn" id="newLetterBtn" onclick="clearWorkspace()" title="Clear all fields and start a new cover letter">
+          + New Letter
+        </button>
 
         <!-- Step 1: Job Information -->
         <div class="cl-step-accordion active" id="step-jobInfo">
@@ -63,7 +70,7 @@
 
             <div class="input-wrapper">
               <label for="jobDescription">Job Description *</label>
-              <textarea id="jobDescription" placeholder="Paste the full job requirements here..." style="min-height:140px; resize: vertical;" required aria-required="true"></textarea>
+              <textarea id="jobDescription" placeholder="Paste the full job requirements here..." style="min-height:130px; resize:vertical;" required aria-required="true"></textarea>
               <div class="validation-err" id="err-jobDescription" role="alert" aria-live="assertive">Please paste the job description.</div>
               <div class="input-helper">
                 <span id="jdWordCount">0 words</span>
@@ -71,7 +78,7 @@
               </div>
             </div>
 
-            <div style="display:flex; justify-content:flex-end; margin-top:0.75rem;">
+            <div class="cl-step-actions cl-step-actions--end">
               <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('companyDetails')">Next: Company Details →</button>
             </div>
           </div>
@@ -124,7 +131,7 @@
               </div>
             </div>
 
-            <div style="display:flex; justify-content:space-between; margin-top:0.75rem;">
+            <div class="cl-step-actions cl-step-actions--between">
               <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('jobInfo')">← Back</button>
               <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('resumeTab')">Next: Resume Integration →</button>
             </div>
@@ -143,7 +150,7 @@
           <div class="cl-step-body">
             <div class="input-wrapper">
               <label>Select Saved Resume or Upload</label>
-              <select id="savedResumeSelect" class="history-select" style="width:100%; margin-bottom:0.75rem;">
+              <select id="savedResumeSelect" class="history-select" style="width:100%; margin-bottom:12px;">
                 <option value="">— Choose Existing Resume —</option>
               </select>
 
@@ -153,39 +160,40 @@
                 <div class="upload-text">Import PDF / DOCX Resume</div>
                 <div class="upload-hint">Extracts skills, achievements &amp; experience automatically</div>
               </div>
-              <!-- Upload Progress Bar (hidden until upload starts) -->
-              <div id="resumeProgress" style="display:none; margin-top:0.5rem;">
+
+              <!-- Upload Progress Bar -->
+              <div id="resumeProgress" style="display:none; margin-top:8px;">
                 <div style="height:4px; background:rgba(255,255,255,0.06); border-radius:2px; overflow:hidden;">
                   <div id="resumeProgressBar" style="height:100%; background:var(--accent); border-radius:2px; width:0%; transition:width 0.3s ease;"></div>
                 </div>
-                <p style="font-size:0.75rem; color:var(--text-3); margin-top:0.25rem;" id="resumeProgressLabel">Uploading...</p>
+                <p style="font-size:0.75rem; color:var(--text-3); margin-top:4px;" id="resumeProgressLabel">Uploading...</p>
               </div>
               <div id="resumeStatus" style="display:none" class="resume-status"></div>
             </div>
 
             <!-- Extracted Resume Chips -->
-            <div id="extractedChipsSection" style="display:none; margin-top:0.75rem;">
+            <div id="extractedChipsSection" style="display:none; margin-top:12px;">
               <label style="font-size:0.78rem; font-weight:700; color:var(--text-2);">Extracted Skills &amp; Highlights (Click to remove)</label>
               <div class="cl-chips-container" id="resumeChipsContainer"></div>
             </div>
 
-            <div class="input-wrapper" style="margin-top:0.875rem;">
+            <div class="input-wrapper" style="margin-top:16px;">
               <label for="highlights">Specific Achievements to Center On</label>
               <textarea id="highlights" placeholder="Mention key projects or metrics you want emphasized..." style="min-height:80px;"></textarea>
             </div>
 
-            <!-- Mirror Resume Structure & Clear Buttons (shown after resume loaded) -->
-            <div id="mirrorRow" style="display:none; margin-top:0.625rem;">
-              <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.82rem; color:var(--text-2); cursor:pointer;">
+            <!-- Mirror Resume Structure & Clear Buttons -->
+            <div id="mirrorRow" style="display:none; margin-top:8px;">
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; color:var(--text-2); cursor:pointer;">
                 <input type="checkbox" id="mirrorStructure" style="width:auto; min-height:auto;" />
                 Mirror resume structure &amp; writing style
               </label>
             </div>
-            <div id="resumeClearRow" style="display:none; margin-top:0.5rem;">
+            <div id="resumeClearRow" style="display:none; margin-top:8px;">
               <button type="button" class="btn btn-secondary btn-sm" id="clearResumeBtn" onclick="clearResume()"><i data-lucide="x" width="16"></i> Clear Resume</button>
             </div>
 
-            <div style="display:flex; justify-content:space-between; margin-top:0.75rem;">
+            <div class="cl-step-actions cl-step-actions--between">
               <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('companyDetails')">← Back</button>
               <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('writerSettings')">Next: Writing Preferences →</button>
             </div>
@@ -240,21 +248,21 @@
               </div>
             </div>
 
-            <!-- Optional: Custom Letter Opening & Closing Lines -->
-            <div id="openingClosingRow" style="margin-top:0.5rem;">
+            <!-- Optional: Custom Opening & Closing -->
+            <div id="openingClosingRow">
               <div class="form-row">
                 <div class="input-wrapper">
-                  <label for="opening">Custom Opening Line <span style="font-weight:400; opacity:0.6;">(optional)</span></label>
+                  <label for="opening">Custom Opening Line <span class="cl-optional-label">(optional)</span></label>
                   <input id="opening" placeholder="e.g. Having built three production APIs at scale..." />
                 </div>
                 <div class="input-wrapper">
-                  <label for="closing">Custom Closing Line <span style="font-weight:400; opacity:0.6;">(optional)</span></label>
+                  <label for="closing">Custom Closing Line <span class="cl-optional-label">(optional)</span></label>
                   <input id="closing" placeholder="e.g. I look forward to discussing this opportunity..." />
                 </div>
               </div>
             </div>
 
-            <div style="display:flex; justify-content:space-between; margin-top:0.75rem;">
+            <div class="cl-step-actions cl-step-actions--between">
               <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('resumeTab')">← Back</button>
               <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('aiPersonalization')">Next: AI Personalization →</button>
             </div>
@@ -298,49 +306,49 @@
               <textarea id="additionalInstructions" placeholder="e.g. Emphasize my remote team leadership and SOC2 compliance experience..." style="min-height:70px;"></textarea>
             </div>
 
-            <!-- Score Optimizer: high-impact fields that enrich the AI prompt -->
-            <div style="margin-top:0.5rem; padding-top:0.75rem; border-top:1px solid var(--border);">
+            <!-- Score Optimizer -->
+            <div class="cl-optimizer-section">
               <div class="input-wrapper">
-                <label for="mustHaveSkills">Must-Have Skills / Requirements <span style="font-weight:400; opacity:0.6;">(from job post)</span></label>
+                <label for="mustHaveSkills">Must-Have Skills / Requirements <span class="cl-optional-label">(from job post)</span></label>
                 <textarea id="mustHaveSkills" placeholder="e.g. React, TypeScript, REST APIs, CI/CD..." style="min-height:60px;"></textarea>
               </div>
               <div class="input-wrapper">
-                <label for="keyAchievements">Your Key Achievements <span style="font-weight:400; opacity:0.6;">(quantified wins)</span></label>
+                <label for="keyAchievements">Your Key Achievements <span class="cl-optional-label">(quantified wins)</span></label>
                 <textarea id="keyAchievements" placeholder="e.g. Reduced load time by 40%, Led team of 8 engineers, shipped 3 products..." style="min-height:60px;"></textarea>
               </div>
-              <div class="input-wrapper" style="margin-top:0.75rem;">
-                <label for="softSkills">Soft Skills &amp; Keywords <span style="font-weight:400; opacity:0.6;">(optional)</span></label>
+              <div class="input-wrapper">
+                <label for="softSkills">Soft Skills &amp; Keywords <span class="cl-optional-label">(optional)</span></label>
                 <input id="softSkills" placeholder="e.g. Leadership, Cross-functional collaboration, Agile..." />
               </div>
               <div class="input-wrapper">
-                <label for="companyResearch">Company Research <span style="font-weight:400; opacity:0.6;">(optional)</span></label>
+                <label for="companyResearch">Company Research <span class="cl-optional-label">(optional)</span></label>
                 <textarea id="companyResearch" placeholder="e.g. Recent product launch, company core values, specific team goals..." style="min-height:60px;"></textarea>
               </div>
-              <div class="form-row" style="margin-top:0.75rem;">
+              <div class="form-row">
                 <div class="input-wrapper">
-                  <label for="linkedinUrl">LinkedIn Profile <span style="font-weight:400; opacity:0.6;">(optional)</span></label>
+                  <label for="linkedinUrl">LinkedIn Profile <span class="cl-optional-label">(optional)</span></label>
                   <input id="linkedinUrl" type="url" placeholder="https://linkedin.com/in/..." />
                 </div>
                 <div class="input-wrapper">
-                  <label for="portfolio">Portfolio / GitHub <span style="font-weight:400; opacity:0.6;">(optional)</span></label>
+                  <label for="portfolio">Portfolio / GitHub <span class="cl-optional-label">(optional)</span></label>
                   <input id="portfolio" type="url" placeholder="https://..." />
                 </div>
               </div>
             </div>
 
-            <div style="display:flex; justify-content:space-between; margin-top:1rem;">
+            <div class="cl-step-actions cl-step-actions--between" style="margin-top:16px;">
               <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('writerSettings')">← Back</button>
               <button id="generateBtn" class="btn btn-primary">Generate Cover Letter <i data-lucide="sparkles" width="16"></i></button>
             </div>
           </div>
         </div>
 
-      </div>
+      </aside>
 
-      <!-- -- RIGHT PANEL: Notion-Style Live Editor & AI Suite -- -->
-      <div class="cl-right-panel">
+      <!-- RIGHT PANEL: Notion-Style Live Editor & AI Suite -->
+      <section class="cl-right-panel" aria-label="Cover letter editor">
         <div class="cl-editor-container">
-          
+
           <!-- Workspace Header Tabs -->
           <div class="tab-header" id="editorTabs" role="tablist" aria-label="Cover letter editor panels">
             <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="pane-editPane" id="tab-editPane" data-editor-tab="editPane">Live Editor</button>
@@ -351,7 +359,7 @@
 
           <!-- Tab Pane 1: Live Editor -->
           <div class="tab-pane active" id="pane-editPane">
-            
+
             <!-- Sticky Toolbar -->
             <div class="cl-editor-toolbar-sticky">
               <div class="cl-toolbar-group">
@@ -405,12 +413,12 @@
               <button type="button" class="cl-toolbar-btn" onclick="aiImproveSelection('persuasive')" title="Make Persuasive" aria-label="Make selected text more persuasive"><i data-lucide="flame" width="16"></i> Persuasive</button>
             </div>
 
-            <!-- Notion Paper Sheet Container -->
-            <div class="cl-editor-paper-wrapper">
-              
-              <!-- Empty State Hero -->
+            <!-- Editor Canvas: single container, two mutually-exclusive inner states -->
+            <div class="cl-editor-canvas" id="editorCanvas">
+
+              <!-- STATE A: Empty State — visible when no draft exists -->
               <div class="cl-empty-state" id="editorEmptyState">
-                <div class="cl-empty-icon"><i data-lucide="file-text" width="48" height="48"></i></div>
+                <div class="cl-empty-icon"><i data-lucide="file-text" width="40" height="40"></i></div>
                 <div class="cl-empty-title">No Draft Created Yet</div>
                 <div class="cl-empty-desc">Fill in your job title and click "Generate Cover Letter", or import your resume to start immediately.</div>
                 <div class="cl-empty-actions">
@@ -419,8 +427,11 @@
                 </div>
               </div>
 
-              <!-- Editable Sheet Page -->
-              <div class="cl-editor-paper" id="editorSheet" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" aria-label="Cover letter editor" data-placeholder="Your generated cover letter will appear here."></div>
+              <!-- STATE B: Document Preview — A4-ratio paper sheet, only when draft exists -->
+              <div class="cl-document-frame" id="editorDocumentFrame">
+                <div class="cl-editor-paper" id="editorSheet" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" aria-label="Cover letter editor" data-placeholder="Your generated cover letter will appear here."></div>
+              </div>
+
             </div>
 
             <!-- Real-time Live Metrics Bar -->
@@ -451,16 +462,17 @@
               </div>
             </div>
 
-            <!-- One-Click Primary Action Bar -->
-            <div style="display:flex; flex-wrap:wrap; gap:0.6rem; margin-top:1.25rem; justify-content:space-between; align-items:center;">
-              <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                <button id="saveLetterBtn" class="btn btn-primary">Save Draft</button>
-                <button id="downloadPdfBtn" class="btn btn-secondary">Download PDF</button>
-                <button id="downloadDocxBtn" class="btn btn-secondary">Download DOCX</button>
-                <button id="copyTextBtn" class="btn btn-secondary">Copy</button>
+            <!-- Primary Action Bar -->
+            <div class="cl-action-bar">
+              <div class="cl-action-bar-left">
+                <button id="saveLetterBtn" class="btn btn-primary btn-sm">Save Draft</button>
+                <button id="downloadPdfBtn" class="btn btn-secondary btn-sm">Download PDF</button>
+                <button id="downloadDocxBtn" class="btn btn-secondary btn-sm">Download DOCX</button>
+                <button id="copyTextBtn" class="btn btn-secondary btn-sm">Copy</button>
               </div>
-              <div class="autosave-status" id="autosaveLabel" style="font-size:0.78rem; color:var(--text-3);" aria-live="polite" aria-atomic="true">
-                <span aria-hidden="true"><i data-lucide="check-circle" width="14"></i></span> <span id="autosaveLabelText">Draft local-saved</span>
+              <div class="autosave-status" id="autosaveLabel" aria-live="polite" aria-atomic="true">
+                <span aria-hidden="true"><i data-lucide="check-circle" width="14"></i></span>
+                <span id="autosaveLabelText">Draft local-saved</span>
               </div>
             </div>
 
@@ -468,24 +480,24 @@
 
           <!-- Tab Pane 2: AI Writing Assistant -->
           <div class="tab-pane" id="pane-suggestionsPane">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <div class="cl-tab-pane-header">
               <div>
-                <h3 style="font-size:1.05rem; font-weight:700; margin:0 0 0.2rem 0;">AI Writing Assistant</h3>
-                <p style="font-size:0.8rem; color:var(--text-3); margin:0;">Contextual improvements with side-by-side diff previews.</p>
+                <h3 class="cl-tab-pane-title">AI Writing Assistant</h3>
+                <p class="cl-tab-pane-subtitle">Contextual improvements with side-by-side diff previews.</p>
               </div>
               <button id="reanalyzeAtsBtn" class="btn btn-secondary btn-sm" onclick="reanalyzeATS()"><i data-lucide="refresh-cw" width="16"></i> Re-analyze Draft</button>
             </div>
 
             <div id="suggestionsSummaryContainer"></div>
             <div id="suggestionsList">
-              <p style="color:var(--text-3); font-size:0.85rem;">No recommendations generated yet. Click "Generate Cover Letter" to receive instant feedback.</p>
+              <p class="cl-empty-hint">No recommendations generated yet. Click "Generate Cover Letter" to receive instant feedback.</p>
             </div>
           </div>
 
           <!-- Tab Pane 3: ATS Analysis -->
           <div class="tab-pane" id="pane-atsPane">
-            <h3 style="font-size:1.05rem; font-weight:700; margin:0 0 0.25rem 0;">ATS Compatibility Scorecard</h3>
-            <p style="font-size:0.8rem; color:var(--text-3); margin:0 0 1rem 0;">Detailed evaluation against ATS parser algorithms.</p>
+            <h3 class="cl-tab-pane-title">ATS Compatibility Scorecard</h3>
+            <p class="cl-tab-pane-subtitle" style="margin-bottom:16px;">Detailed evaluation against ATS parser algorithms.</p>
 
             <div class="cl-ats-card-grid">
               <div class="cl-ats-card">
@@ -521,36 +533,31 @@
               </div>
             </div>
 
-            <div style="margin-top:1.5rem;" id="atsKeywordsSection">
-              <h4 style="margin-bottom:0.5rem; font-size:0.88rem; font-weight:700;">Keyword Breakdown</h4>
-              <p style="font-size:0.82rem; color:var(--text-3);">Generate your letter to view matched vs missing job description keywords.</p>
+            <div class="cl-ats-keywords-section" id="atsKeywordsSection">
+              <h4 class="cl-ats-kw-title">Keyword Breakdown</h4>
+              <p class="cl-empty-hint">Generate your letter to view matched vs missing job description keywords.</p>
             </div>
           </div>
 
           <!-- Tab Pane 4: Variants -->
           <div class="tab-pane" id="pane-variantsPane">
-            <h3 style="font-size:1.05rem; font-weight:700; margin:0 0 0.25rem 0;">Target Archetype Variants</h3>
-            <p style="font-size:0.8rem; color:var(--text-3); margin:0 0 1rem 0;">Select a variant strategy tailored to specific company cultures.</p>
-            
+            <h3 class="cl-tab-pane-title">Target Archetype Variants</h3>
+            <p class="cl-tab-pane-subtitle" style="margin-bottom:16px;">Select a variant strategy tailored to specific company cultures.</p>
+
             <div id="variantsContainer">
-              <p style="color:var(--text-3); font-size:0.85rem;">No variants generated yet.</p>
+              <p class="cl-empty-hint">No variants generated yet.</p>
             </div>
           </div>
 
         </div>
-      </div>
-    </div>
-          </div>
-        </div>
+      </section>
 
-      </div>
+    </div><!-- /.cl-workspace -->
 
-    </div>
-
-    <!-- -- BOTTOM PORTION: SAVED COVER LETTERS -- -->
-    <div class="history-section">
-      <div class="page-header" style="margin-bottom:1rem;">
-        <h2 style="font-size:1.35rem; ">Your Saved Letters Dashboard</h2>
+    <!-- SAVED COVER LETTERS DASHBOARD -->
+    <div class="cl-history-section">
+      <div class="cl-section-header">
+        <h2 class="cl-section-title">Your Saved Letters Dashboard</h2>
       </div>
 
       <div class="history-controls">
@@ -568,19 +575,17 @@
       </div>
 
       <div id="historyList" class="history-grid">
-        <p style="color:var(--text-3); font-size:0.9rem;">Loading history dashboard...</p>
+        <p class="cl-empty-hint">Loading history dashboard...</p>
       </div>
     </div>
 
-  </div>
-
-  <!-- Page logic loaded via cover-letter.js -->
+  </div><!-- /.cl-page-container -->
 
   <!-- Compare Before/After Modal -->
   <div id="compareModal" class="compare-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="compareModalTitle">
     <div class="compare-modal-content">
       <div class="compare-modal-header">
-        <h3 id="compareModalTitle" style=" font-size:1.1rem; margin:0; color:var(--text-1);">Compare Changes</h3>
+        <h3 id="compareModalTitle" style="font-size:1.1rem; margin:0; color:var(--text-1);">Compare Changes</h3>
         <button class="close-modal-btn" onclick="closeCompareModal()" aria-label="Close compare dialog">&times;</button>
       </div>
       <div class="compare-modal-body">
@@ -593,7 +598,7 @@
           <div class="compare-text-box after" id="compareAfterVal"></div>
         </div>
       </div>
-      <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.25rem;">
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
         <button class="btn btn-secondary" onclick="closeCompareModal()">Close</button>
         <button class="btn btn-primary" id="compareApplyBtn">Apply Change</button>
       </div>
@@ -602,28 +607,28 @@
 
   <!-- Delete Confirmation Modal -->
   <div id="deleteConfirmModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); z-index:2200; align-items:center; justify-content:center;" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
-    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-md); padding:1.5rem; max-width:400px; width:90%; box-shadow:var(--shadow-lg);">
-      <h3 id="deleteModalTitle" style="font-size:1.05rem; font-weight:700; margin:0 0 0.75rem 0;">Delete Cover Letter</h3>
-      <p id="deleteModalBody" style="font-size:0.9rem; color:var(--text-2); margin:0 0 1.25rem 0;">Are you sure you want to permanently delete this letter? This action cannot be undone.</p>
-      <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-md); padding:24px; max-width:400px; width:90%; box-shadow:var(--shadow-lg);">
+      <h3 id="deleteModalTitle" style="font-size:1.05rem; font-weight:700; margin:0 0 12px 0;">Delete Cover Letter</h3>
+      <p id="deleteModalBody" style="font-size:0.9rem; color:var(--text-2); margin:0 0 20px 0;">Are you sure you want to permanently delete this letter? This action cannot be undone.</p>
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
         <button class="btn btn-secondary" onclick="document.getElementById('deleteConfirmModal').style.display='none';">Cancel</button>
         <button class="btn btn-danger" id="deleteConfirmBtn">Delete</button>
       </div>
     </div>
   </div>
 
-  <!-- Rename Confirmation Modal -->
+  <!-- Rename Modal -->
   <div id="renameConfirmModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); z-index:2200; align-items:center; justify-content:center;" role="dialog" aria-modal="true" aria-labelledby="renameModalTitle">
-    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-md); padding:1.5rem; max-width:400px; width:90%; box-shadow:var(--shadow-lg);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-md); padding:24px; max-width:400px; width:90%; box-shadow:var(--shadow-lg);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
         <h3 id="renameModalTitle" style="font-size:1.05rem; font-weight:700; margin:0;">Rename Cover Letter</h3>
-        <button class="close-modal-btn" aria-label="Close rename dialog" onclick="document.getElementById('renameConfirmModal').style.display='none'" style="background:none; border:none; color:var(--text-2); font-size:1.2rem; cursor:pointer;">&times;</button>
+        <button class="close-modal-btn" aria-label="Close rename dialog" onclick="document.getElementById('renameConfirmModal').style.display='none'">&times;</button>
       </div>
-      <div class="input-wrapper" style="margin-bottom:1.25rem;">
+      <div class="input-wrapper" style="margin-bottom:20px;">
         <label for="renameInput">Cover Letter Name</label>
         <input type="text" id="renameInput" placeholder="e.g. Software Engineer @ Google" style="width:100%;" />
       </div>
-      <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
         <button class="btn btn-secondary" onclick="document.getElementById('renameConfirmModal').style.display='none';">Cancel</button>
         <button class="btn btn-primary" id="renameConfirmBtn">Save Name</button>
       </div>
@@ -632,4 +637,3 @@
 
 </body>
 </html>
-
