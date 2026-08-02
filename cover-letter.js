@@ -293,21 +293,38 @@
   // Use RAF to prevent forced synchronous reflow on every keystroke.
   // requestAnimationFrame batches the height read+write into the browser's
   // next paint cycle, eliminating layout thrashing in the wizard form.
-  let _resizeRafPending = false;
-  function autoResizeTextarea(textarea) {
-    if (_resizeRafPending) return;
-    _resizeRafPending = true;
-    requestAnimationFrame(() => {
-      _resizeRafPending = false;
-      textarea.style.height = 'auto';
-      textarea.style.height = textarea.scrollHeight + 'px';
+  const _resizeQueue = new Set();
+  let _resizeRafActive = false;
+
+  function processResizes() {
+    // Read phase: capture all scrollHeights first to prevent layout thrashing
+    const metrics = new Map();
+    for (const textarea of _resizeQueue) {
+      textarea.style.height = 'auto'; // Temporarily reset to auto to calculate true scrollHeight
+      metrics.set(textarea, textarea.scrollHeight);
+    }
+
+    // Write phase: apply new heights
+    for (const [textarea, scrollHeight] of metrics) {
+      textarea.style.height = scrollHeight + 'px';
 
       if (textarea.id === 'jobDescription') {
         const words = textarea.value.trim().split(/\s+/).filter(Boolean).length;
         const el = document.getElementById('jdWordCount');
         if (el) el.textContent = `${words} words`;
       }
-    });
+    }
+
+    _resizeQueue.clear();
+    _resizeRafActive = false;
+  }
+
+  function autoResizeTextarea(textarea) {
+    _resizeQueue.add(textarea);
+    if (!_resizeRafActive) {
+      _resizeRafActive = true;
+      requestAnimationFrame(processResizes);
+    }
   }
 
   function showToast(type, message) {
@@ -330,8 +347,103 @@
     }
   }
 
+  // ── Editor Performance Architecture ──
+  function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
+
+  function animateMetricChange(el, newVal) {
+    if (el.textContent != newVal) {
+      el.textContent = newVal;
+      if (el.animate) {
+        el.animate([
+          { opacity: 0.3, transform: 'scale(0.96)' },
+          { opacity: 1, transform: 'scale(1)' }
+        ], { duration: 300, easing: 'ease-out' });
+      } else {
+        // Fallback for older browsers
+        el.classList.remove('metric-changed');
+        requestAnimationFrame(() => el.classList.add('metric-changed'));
+      }
+    }
+  }
+
+  let _basicMetricsRaf = null;
+  function updateBasicMetrics() {
+    if (_basicMetricsRaf) return;
+    _basicMetricsRaf = requestAnimationFrame(() => {
+      _basicMetricsRaf = null;
+      const sheet = document.getElementById('editorSheet');
+      const emptyState = document.getElementById('editorEmptyState');
+      if (!sheet) return;
+
+      const text = sheet.innerText || '';
+      const cleanText = text.trim();
+      
+      const isEmpty = !cleanText || cleanText.startsWith('Your generated cover letter will appear here.');
+      
+      // Never hide the editor, always ensure it is display: block
+      sheet.style.display = 'block';
+
+      if (isEmpty) {
+        sheet.setAttribute('data-empty', 'true');
+        if (emptyState) emptyState.style.display = 'block';
+      } else {
+        sheet.setAttribute('data-empty', 'false');
+        if (emptyState) emptyState.style.display = 'none';
+      }
+
+      const chars = cleanText.length;
+      const words = cleanText ? cleanText.split(/\s+/).filter(Boolean).length : 0;
+      const paragraphs = cleanText ? cleanText.split(/\n\s*\n/).filter(Boolean).length : 0;
+      const readMin = Math.max(1, Math.round(words / 200));
+
+      const charEl = document.getElementById('charCount');
+      const wordEl = document.getElementById('wordCount');
+      const paraEl = document.getElementById('paragraphCount');
+      const readEl = document.getElementById('readTime');
+
+      if (charEl) animateMetricChange(charEl, chars);
+      if (wordEl) animateMetricChange(wordEl, words);
+      if (paraEl) animateMetricChange(paraEl, paragraphs);
+      if (readEl) animateMetricChange(readEl, `${readMin}m`);
+    });
+  }
+
+  const updateComplexMetricsDebounced = debounce(() => {
+    const sheet = document.getElementById('editorSheet');
+    if (!sheet) return;
+    const text = sheet.innerText || '';
+    const cleanText = text.trim();
+    const chars = cleanText.length;
+    const words = cleanText ? cleanText.split(/\s+/).filter(Boolean).length : 0;
+
+    let readability = 85;
+    if (words > 20) {
+      const avgWordLength = chars / words;
+      readability = Math.max(40, Math.min(98, Math.round(100 - (avgWordLength * 6))));
+    }
+
+    const readabEl = document.getElementById('readabilityScore');
+    if (readabEl) animateMetricChange(readabEl, words > 10 ? `${readability}%` : '—');
+  }, 300);
+
+  const updateATSAnalysisDebounced = debounce(() => {
+    const liveAtsEl = document.getElementById('liveAtsScore');
+    if (liveAtsEl && typeof currentAtsData !== 'undefined' && currentAtsData?.overallATSScore) {
+      animateMetricChange(liveAtsEl, `${currentAtsData.overallATSScore}%`);
+    }
+  }, 800);
+
   function handleEditorInput() {
-    updateCounts();
+    updateBasicMetrics();
+    updateComplexMetricsDebounced();
+    updateATSAnalysisDebounced();
+    
     clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(() => {
       saveEditorState();
@@ -1955,58 +2067,9 @@
 
   // ── Updated Live Metrics Calculator & Empty State Handler ──
   function updateCounts() {
-    const sheet = document.getElementById('editorSheet');
-    const emptyState = document.getElementById('editorEmptyState');
-    if (!sheet) return;
-
-    const text = sheet.innerText || '';
-    const cleanText = text.trim();
-    
-    // Toggle Empty State conditionally to prevent flicker
-    const isEmpty = !cleanText || cleanText.startsWith('Your generated cover letter will appear here.');
-    if (isEmpty && sheet.style.display !== 'none') {
-      if (emptyState) emptyState.style.display = 'block';
-      sheet.style.display = 'none';
-    } else if (!isEmpty && sheet.style.display === 'none') {
-      if (emptyState) emptyState.style.display = 'none';
-      sheet.style.display = 'block';
-    }
-
-    const chars = cleanText.length;
-    const words = cleanText ? cleanText.split(/\s+/).filter(Boolean).length : 0;
-    const paragraphs = cleanText ? cleanText.split(/\n\s*\n/).filter(Boolean).length : 0;
-    const readMin = Math.max(1, Math.round(words / 200));
-
-    // Calculate Flesch-Kincaid / Readability score (0-100)
-    let readability = 85;
-    if (words > 20) {
-      const avgWordLength = chars / words;
-      readability = Math.max(40, Math.min(98, Math.round(100 - (avgWordLength * 6))));
-    }
-
-    const updateDOM = () => {
-      const charEl = document.getElementById('charCount');
-      const wordEl = document.getElementById('wordCount');
-      const paraEl = document.getElementById('paragraphCount');
-      const readEl = document.getElementById('readTime');
-      const readabEl = document.getElementById('readabilityScore');
-      const liveAtsEl = document.getElementById('liveAtsScore');
-
-      if (charEl) charEl.textContent = `${chars}`;
-      if (wordEl) wordEl.textContent = `${words}`;
-      if (paraEl) paraEl.textContent = `${paragraphs}`;
-      if (readEl) readEl.textContent = `${readMin}m`;
-      if (readabEl) readabEl.textContent = words > 10 ? `${readability}%` : '—';
-      if (liveAtsEl && currentAtsData?.overallATSScore) {
-        liveAtsEl.textContent = `${currentAtsData.overallATSScore}%`;
-      }
-    };
-
-    if (window.PerformanceManager) {
-      window.PerformanceManager.scheduleUpdate(updateDOM);
-    } else {
-      updateDOM();
-    }
+    updateBasicMetrics();
+    updateComplexMetricsDebounced();
+    updateATSAnalysisDebounced();
   }
 
   // ── clearWorkspace: New Letter button handler ──
@@ -2025,13 +2088,16 @@
     clearResume();
 
     const sheet = document.getElementById('editorSheet');
-    if (sheet) { sheet.innerHTML = ''; sheet.style.display = 'none'; }
-    const emptyState = document.getElementById('editorEmptyState');
-    if (emptyState) emptyState.style.display = 'block';
+    if (sheet) { sheet.innerHTML = ''; sheet.style.display = 'block'; }
+    updateBasicMetrics();
 
     // Reset state
     currentSavedLetterId = null;
     lastGeneratedData = null;
+    
+    // Clear autosave draft
+    localStorage.removeItem('cc_cover_letter_draft');
+
     currentAtsData = null;
     editorHistory = [''];
     historyIndex = 0;
