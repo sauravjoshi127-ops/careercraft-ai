@@ -3168,4 +3168,22 @@ input[type="password"]::-ms-clear { display: none; }
       to { transform: translateY(0); opacity: 1; }
     }
   
+/* --- Cover Letter Editor Optimizations --- */
+#editorSheet[data-placeholder]:empty::before,
+#editorSheet[data-placeholder][data-empty="true"]::before {
+  content: attr(data-placeholder);
+  color: var(--text-3);
+  pointer-events: none;
+  display: block;
+}
+
+/* Metric changed animation (no layout thrashing) */
+.metric-changed {
+  animation: fadeValueOptimized 0.3s ease-out;
+}
+
+@keyframes fadeValueOptimized {
+  0% { opacity: 0.3; transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1); }
+}
 
