@@ -190,24 +190,28 @@
     });
   }
 
+  let _toolbarStateTimeout = null;
   function updateToolbarState() {
-    const commands = ['bold', 'italic', 'underline', 'insertUnorderedList', 'insertOrderedList', 'justifyLeft', 'justifyCenter', 'justifyRight'];
-    commands.forEach(cmd => {
-      try {
-        const state = document.queryCommandState(cmd);
-        const btn = document.querySelector(`.cl-toolbar-btn[data-command="${cmd}"]`);
-        if (btn) btn.classList.toggle('active', state);
-      } catch (e) {} // Ignore unsupported commands
-    });
+    if (_toolbarStateTimeout) cancelAnimationFrame(_toolbarStateTimeout);
+    _toolbarStateTimeout = requestAnimationFrame(() => {
+      const commands = ['bold', 'italic', 'underline', 'insertUnorderedList', 'insertOrderedList', 'justifyLeft', 'justifyCenter', 'justifyRight'];
+      commands.forEach(cmd => {
+        try {
+          const state = document.queryCommandState(cmd);
+          const btn = document.querySelector(`.cl-toolbar-btn[data-command="${cmd}"]`);
+          if (btn) btn.classList.toggle('active', state);
+        } catch (e) {} // Ignore unsupported commands
+      });
 
-    try {
-      const block = document.queryCommandValue('formatBlock');
-      const h3Btn = document.querySelector(`.cl-toolbar-btn[data-command="formatBlock"][data-value="H3"]`);
-      const quoteBtn = document.querySelector(`.cl-toolbar-btn[data-command="formatBlock"][data-value="BLOCKQUOTE"]`);
-      
-      if (h3Btn) h3Btn.classList.toggle('active', block && block.toLowerCase() === 'h3');
-      if (quoteBtn) quoteBtn.classList.toggle('active', block && block.toLowerCase() === 'blockquote');
-    } catch (e) {}
+      try {
+        const block = document.queryCommandValue('formatBlock');
+        const h3Btn = document.querySelector(`.cl-toolbar-btn[data-command="formatBlock"][data-value="H3"]`);
+        const quoteBtn = document.querySelector(`.cl-toolbar-btn[data-command="formatBlock"][data-value="BLOCKQUOTE"]`);
+        
+        if (h3Btn) h3Btn.classList.toggle('active', block && block.toLowerCase() === 'h3');
+        if (quoteBtn) quoteBtn.classList.toggle('active', block && block.toLowerCase() === 'blockquote');
+      } catch (e) {}
+    });
   }
 
   function navigateToNextWizardStep() {
@@ -597,90 +601,97 @@
     throw lastError;
   }
 
-  let premiumLoadingInterval = null;
+  const premiumStages = [
+    'Preparing your information…',
+    'Understanding the job requirements…',
+    'Analyzing your experience…',
+    'Matching your resume with the role…',
+    'Writing your personalized cover letter…',
+    'Optimizing ATS keywords…',
+    'Refining grammar and tone…'
+  ];
 
   function startPremiumLoading(sheet) {
     if (!sheet) return;
-    const stages = [
-      'Preparing your information…',
-      'Understanding the job requirements…',
-      'Analyzing your experience…',
-      'Matching your resume with the role…',
-      'Writing your personalized cover letter…',
-      'Optimizing ATS keywords…',
-      'Refining grammar and tone…'
-    ];
-    let idx = 0;
+    const wrapper = sheet.closest('.cl-editor-paper-wrapper');
+    if (!wrapper) return;
+    
+    let overlay = document.getElementById('premiumLoadingOverlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'premiumLoadingOverlay';
+      overlay.style.position = 'absolute';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.background = 'var(--bg-card, #ffffff)';
+      overlay.style.zIndex = '50';
+      overlay.style.display = 'flex';
+      overlay.style.flexDirection = 'column';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      overlay.style.borderRadius = '4px';
+      wrapper.appendChild(overlay);
+    }
+    overlay.style.display = 'flex';
 
-    // Render the loading skeleton exactly once to prevent continuous remounting/flickering
-    sheet.innerHTML = `
+    const emptyState = document.getElementById('editorEmptyState');
+    if (emptyState) emptyState.style.display = 'none';
+
+    overlay.innerHTML = `
       <div class="premium-loading-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 4rem 2rem; color:var(--text-1);">
-        <div class="spinner-premium" style="width:40px; height:40px; border:3px solid rgba(var(--accent-rgb), 0.1); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite; margin-bottom:1.5rem;"></div>
-        <div id="premiumLoadingText" style="font-weight:600; font-size:1.15rem; color:var(--text-1); letter-spacing:-0.01em; animation: fadeIn 0.4s ease; transition: opacity 0.2s ease;">
-          ${stages[0]}
+        <div class="spinner-premium" style="width:40px; height:40px; border:3px solid rgba(99,102,241, 0.1); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite; margin-bottom:1.5rem;"></div>
+        <div id="premiumLoadingText" style="font-weight:600; font-size:1.15rem; color:var(--text-1); letter-spacing:-0.01em; transition: opacity 0.2s ease;">
+          ${premiumStages[0]}
         </div>
         <div style="width: 240px; height: 4px; background: rgba(0,0,0,0.05); border-radius: 4px; margin-top: 1.5rem; overflow: hidden; position: relative;">
-           <div id="premiumLoadingBar" style="position:absolute; top:0; left:0; height:100%; width: ${Math.round((1 / (stages.length + 1)) * 100)}%; background: var(--accent); transition: width 0.6s ease; border-radius:4px;"></div>
+           <div id="premiumLoadingBar" style="position:absolute; top:0; left:0; height:100%; width: 5%; background: var(--accent); transition: width 0.6s ease; border-radius:4px;"></div>
         </div>
       </div>
       <style>
         @keyframes spin { 100% { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
       </style>
     `;
-
-    const updateStage = (i) => {
-      const pct = Math.round(((i + 1) / (stages.length + 1)) * 100);
-      const textEl = document.getElementById('premiumLoadingText');
-      const barEl = document.getElementById('premiumLoadingBar');
-      
-      if (textEl) {
-        textEl.style.opacity = '0';
-        setTimeout(() => {
-          textEl.textContent = stages[i];
-          textEl.style.opacity = '1';
-        }, 200);
-      }
-      if (barEl) barEl.style.width = pct + '%';
-    };
-
-    if (premiumLoadingInterval) clearInterval(premiumLoadingInterval);
-    premiumLoadingInterval = setInterval(() => {
-      idx++;
-      if (idx >= stages.length) {
-        clearInterval(premiumLoadingInterval);
-        return;
-      }
-      updateStage(idx);
-    }, 1200);
   }
 
-  function finishPremiumLoading(sheet) {
-    if (premiumLoadingInterval) clearInterval(premiumLoadingInterval);
-    if (!sheet) return;
-    sheet.innerHTML = `
+  function updatePremiumStage(text, percent) {
+    const textEl = document.getElementById('premiumLoadingText');
+    const barEl = document.getElementById('premiumLoadingBar');
+    if (!textEl || !barEl) return;
+    
+    textEl.style.opacity = '0';
+    setTimeout(() => {
+      textEl.textContent = text;
+      textEl.style.opacity = '1';
+    }, 200);
+    barEl.style.width = percent + '%';
+  }
+
+  function finishPremiumLoading() {
+    const overlay = document.getElementById('premiumLoadingOverlay');
+    if (!overlay) return;
+    
+    const barEl = document.getElementById('premiumLoadingBar');
+    if (barEl) barEl.style.width = '100%';
+    
+    overlay.innerHTML = `
       <div class="premium-loading-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 4rem 2rem; color:var(--text-1);">
-        <div style="width:40px; height:40px; border-radius:50%; background:var(--success); color:white; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:1.5rem; animation: fadeIn 0.4s ease;"><i data-lucide="check" width="20"></i></div>
-        <div style="font-weight:600; font-size:1.15rem; color:var(--text-1); letter-spacing:-0.01em; animation: fadeIn 0.4s ease;">
+        <div style="width:40px; height:40px; border-radius:50%; background:var(--success); color:white; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:1.5rem;"><i data-lucide="check" width="20"></i></div>
+        <div style="font-weight:600; font-size:1.15rem; color:var(--text-1); letter-spacing:-0.01em;">
           Generation Complete
         </div>
       </div>
     `;
+    if(window.lucide) lucide.createIcons();
+    setTimeout(() => {
+      overlay.style.display = 'none';
+    }, 1200);
   }
 
   async function injectEditorContent(htmlContent) {
-    let editor = document.getElementById('editorSheet');
-    for (let i = 0; i < 3; i++) {
-      if (editor && document.body.contains(editor) && editor.isContentEditable !== false) {
-        break;
-      }
-      await new Promise(r => setTimeout(r, 500));
-      editor = document.getElementById('editorSheet');
-    }
-    
-    if (!editor || !document.body.contains(editor)) {
-      throw new Error('Editor instance was null');
-    }
+    const editor = document.getElementById('editorSheet');
+    if (!editor) throw new Error('Editor instance was null');
     
     editor.innerHTML = htmlContent;
     saveEditorState();
@@ -785,6 +796,7 @@
 
       generateBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Analyzing...';
       if(window.lucide) lucide.createIcons();
+      updatePremiumStage('Analyzing job requirements…', 40);
 
       const session = await window.appSdk.auth.getSession();
       const headers = { 'Content-Type': 'application/json' };
@@ -793,7 +805,10 @@
       }
 
       // Phase 10: Automatic Retry Execution
+      updatePremiumStage('Generating personalized cover letter…', 75);
       const res = await executeCoverLetterRequest(payload, headers, 1);
+      
+      updatePremiumStage('Finalizing grammar and ATS optimization…', 90);
       const data = await res.json();
 
       CoverLetterLogger.step('Network Response', {
@@ -816,7 +831,7 @@
       lastGeneratedData = data;
       const letterText = cleanEscapes(data.letter);
 
-      finishPremiumLoading(sheet);
+      finishPremiumLoading();
       generateBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Finalizing...';
       if(window.lucide) lucide.createIcons();
 
@@ -834,7 +849,8 @@
       CoverLetterLogger.end(true);
 
     } catch (err) {
-      if (premiumLoadingInterval) clearInterval(premiumLoadingInterval);
+      const overlay = document.getElementById('premiumLoadingOverlay');
+      if (overlay) overlay.style.display = 'none';
 
       CoverLetterLogger.error('Generation Failed', {
         stage: 'Cover Letter Generation',
@@ -844,16 +860,6 @@
 
       const safeUserMsg = "We couldn't generate your cover letter. Please try again. If the issue continues, contact support.";
       showToast('error', safeUserMsg);
-
-      if (sheet) {
-        sheet.innerHTML = `
-          <div style="text-align:center; padding: 2.5rem 1rem; color: #64748b;">
-            <div style="font-size:1.1rem; font-weight:600; color:#ef4444; margin-bottom:0.75rem;">Warning: Generation Failed</div>
-            <div style="font-size:0.9rem; margin-bottom:1.5rem; max-width:420px; margin-left:auto; margin-right:auto; color:var(--text-2); line-height:1.6;">${safeUserMsg}</div>
-            <button onclick="document.getElementById('generateBtn').click()" style="background:var(--accent); color:#fff; border:none; padding:0.5rem 1.5rem; border-radius:8px; font-weight:600; font-size:0.9rem; cursor:pointer;"><i data-lucide="rotate-ccw" width="14"></i> Try Again</button>
-          </div>
-        `;
-      }
       CoverLetterLogger.end(false);
     } finally {
       isGenerating = false;
@@ -1853,30 +1859,34 @@
   }
 
   // ── Selection Floating Toolbar Handler ──
+  let _floatingToolbarTimeout = null;
   document.addEventListener('selectionchange', () => {
-    const toolbar = document.getElementById('floatingEditorToolbar');
-    const sheet = document.getElementById('editorSheet');
-    if (!toolbar || !sheet) return;
+    if (_floatingToolbarTimeout) cancelAnimationFrame(_floatingToolbarTimeout);
+    _floatingToolbarTimeout = requestAnimationFrame(() => {
+      const toolbar = document.getElementById('floatingEditorToolbar');
+      const sheet = document.getElementById('editorSheet');
+      if (!toolbar || !sheet) return;
 
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed || !sheet.contains(selection.anchorNode)) {
-      toolbar.classList.remove('visible');
-      return;
-    }
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed || !sheet.contains(selection.anchorNode)) {
+        toolbar.classList.remove('visible');
+        return;
+      }
 
-    const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-    const sheetRect = sheet.getBoundingClientRect();
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const sheetRect = sheet.getBoundingClientRect();
 
-    if (rect.width > 0 && rect.height > 0) {
-      toolbar.style.top = `${rect.top - sheetRect.top - 45}px`;
-      toolbar.style.left = `${rect.left - sheetRect.left + (rect.width / 2) - 80}px`;
-      toolbar.classList.add('visible');
-      toolbar.setAttribute('aria-hidden', 'false');
-    } else {
-      toolbar.classList.remove('visible');
-      toolbar.setAttribute('aria-hidden', 'true');
-    }
+      if (rect.width > 0 && rect.height > 0) {
+        toolbar.style.top = `${rect.top - sheetRect.top - 45}px`;
+        toolbar.style.left = `${rect.left - sheetRect.left + (rect.width / 2) - 80}px`;
+        toolbar.classList.add('visible');
+        toolbar.setAttribute('aria-hidden', 'false');
+      } else {
+        toolbar.classList.remove('visible');
+        toolbar.setAttribute('aria-hidden', 'true');
+      }
+    });
   });
 
   // ── AI Selection Rewrite Helper ──
@@ -1952,11 +1962,12 @@
     const text = sheet.innerText || '';
     const cleanText = text.trim();
     
-    // Toggle Empty State
-    if (!cleanText || cleanText.startsWith('Your generated cover letter will appear here.')) {
+    // Toggle Empty State conditionally to prevent flicker
+    const isEmpty = !cleanText || cleanText.startsWith('Your generated cover letter will appear here.');
+    if (isEmpty && sheet.style.display !== 'none') {
       if (emptyState) emptyState.style.display = 'block';
       sheet.style.display = 'none';
-    } else {
+    } else if (!isEmpty && sheet.style.display === 'none') {
       if (emptyState) emptyState.style.display = 'none';
       sheet.style.display = 'block';
     }
