@@ -378,24 +378,21 @@
     _basicMetricsRaf = requestAnimationFrame(() => {
       _basicMetricsRaf = null;
       const sheet = document.getElementById('editorSheet');
-      const emptyState = document.getElementById('editorEmptyState');
+      const canvas = document.getElementById('editorCanvas');
       if (!sheet) return;
 
       const text = sheet.innerText || '';
       const cleanText = text.trim();
-      
       const isEmpty = !cleanText || cleanText.startsWith('Your generated cover letter will appear here.');
-      
-      // Never hide the editor, always ensure it is display: block
-      sheet.style.display = 'block';
 
-      if (isEmpty) {
-        sheet.setAttribute('data-empty', 'true');
-        if (emptyState) emptyState.style.display = 'block';
-      } else {
-        sheet.setAttribute('data-empty', 'false');
-        if (emptyState) emptyState.style.display = 'none';
+      // ── Exclusive state toggle via CSS class ──
+      // .cl-has-draft shows the document frame, hides the empty state.
+      // Without the class, the empty state shows and the frame is hidden.
+      // This prevents both from ever rendering simultaneously.
+      if (canvas) {
+        canvas.classList.toggle('cl-has-draft', !isEmpty);
       }
+      sheet.setAttribute('data-empty', isEmpty ? 'true' : 'false');
 
       const chars = cleanText.length;
       const words = cleanText ? cleanText.split(/\s+/).filter(Boolean).length : 0;
@@ -725,31 +722,28 @@
 
   function startPremiumLoading(sheet) {
     if (!sheet) return;
-    const wrapper = sheet.closest('.cl-editor-paper-wrapper');
-    if (!wrapper) return;
+    // Overlay sits inside the editor canvas container
+    const canvas = document.getElementById('editorCanvas');
+    if (!canvas) return;
     
     let overlay = document.getElementById('premiumLoadingOverlay');
     if (!overlay) {
       overlay = document.createElement('div');
       overlay.id = 'premiumLoadingOverlay';
       overlay.style.position = 'absolute';
-      overlay.style.top = '0';
-      overlay.style.left = '0';
-      overlay.style.width = '100%';
-      overlay.style.height = '100%';
-      overlay.style.background = 'var(--bg-card, #ffffff)';
+      overlay.style.inset = '0';
+      overlay.style.background = 'rgba(13,15,24,0.92)';
       overlay.style.zIndex = '50';
       overlay.style.display = 'flex';
       overlay.style.flexDirection = 'column';
       overlay.style.alignItems = 'center';
       overlay.style.justifyContent = 'center';
-      overlay.style.borderRadius = '4px';
-      wrapper.appendChild(overlay);
+      overlay.style.borderRadius = 'var(--r-md)';
+      canvas.appendChild(overlay);
     }
     overlay.style.display = 'flex';
-
-    const emptyState = document.getElementById('editorEmptyState');
-    if (emptyState) emptyState.style.display = 'none';
+    // Ensure canvas is in a state that can show the overlay (not empty-state-only)
+    canvas.classList.add('cl-generating');
 
     overlay.innerHTML = `
       <div class="premium-loading-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 4rem 2rem; color:var(--text-1);">
@@ -782,15 +776,16 @@
 
   function finishPremiumLoading() {
     const overlay = document.getElementById('premiumLoadingOverlay');
+    const canvas = document.getElementById('editorCanvas');
     if (!overlay) return;
     
     const barEl = document.getElementById('premiumLoadingBar');
     if (barEl) barEl.style.width = '100%';
     
     overlay.innerHTML = `
-      <div class="premium-loading-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 4rem 2rem; color:var(--text-1);">
-        <div style="width:40px; height:40px; border-radius:50%; background:var(--success); color:white; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:1.5rem;"><i data-lucide="check" width="20"></i></div>
-        <div style="font-weight:600; font-size:1.15rem; color:var(--text-1); letter-spacing:-0.01em;">
+      <div class="premium-loading-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 3rem 2rem; color:var(--text-1);">
+        <div style="width:40px; height:40px; border-radius:50%; background:var(--success); color:white; display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:1.25rem;"><i data-lucide="check" width="20"></i></div>
+        <div style="font-weight:600; font-size:1.1rem; color:var(--text-1); letter-spacing:-0.01em;">
           Generation Complete
         </div>
       </div>
@@ -798,7 +793,10 @@
     if(window.lucide) lucide.createIcons();
     setTimeout(() => {
       overlay.style.display = 'none';
-    }, 1200);
+      if (canvas) canvas.classList.remove('cl-generating');
+      // Refresh state after generation
+      updateBasicMetrics();
+    }, 1000);
   }
 
   async function injectEditorContent(htmlContent) {
