@@ -2785,20 +2785,43 @@ input[type="password"]::-ms-clear { display: none; }
 }
 
 /* ── Floating selection toolbar ── */
+/* Appears near the user's selection. position:fixed so it stays in the
+   viewport while the editor scrolls. JS sets top/left on selection. */
 .cl-floating-toolbar {
   position: fixed;
   z-index: 9000;
   background: #1a1c28;
   border: 1px solid var(--border-md);
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  padding: 4px 6px;
+  padding: 6px 8px;
   display: none;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  flex-wrap: wrap;
+  max-width: 440px;
   animation: fadeIn 0.12s ease-out;
 }
 .cl-floating-toolbar.visible { display: flex; }
+
+/* Buttons inside the floating toolbar need auto width to fit text labels
+   (the shared .cl-toolbar-btn is 30×30 for icon-only formatting buttons). */
+.cl-floating-toolbar .cl-toolbar-btn {
+  width: auto;
+  height: auto;
+  padding: 5px 10px;
+  gap: 4px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.cl-floating-toolbar .cl-toolbar-btn:hover {
+  background: rgba(99,102,241,0.15);
+  border-color: rgba(99,102,241,0.3);
+  color: var(--text-1);
+}
 
 /* ── Live metrics bar ── */
 .cl-live-metrics-bar {

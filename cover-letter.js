@@ -2000,12 +2000,28 @@
 
       const range = selection.getRangeAt(0);
       const rect = range.getBoundingClientRect();
-      const sheetRect = sheet.getBoundingClientRect();
 
       if (rect.width > 0 && rect.height > 0) {
-        toolbar.style.top = `${rect.top - sheetRect.top - 45}px`;
-        toolbar.style.left = `${rect.left - sheetRect.left + (rect.width / 2) - 80}px`;
+        // Toolbar is position:fixed → coordinates are viewport-relative.
+        // Measure the toolbar so we can centre it and clamp to edges.
         toolbar.classList.add('visible');
+        const tbRect = toolbar.getBoundingClientRect();
+        const tbW = tbRect.width;
+        const tbH = tbRect.height;
+
+        // Centre horizontally on the selection, clamp to viewport
+        let left = rect.left + (rect.width / 2) - (tbW / 2);
+        left = Math.max(8, Math.min(left, window.innerWidth - tbW - 8));
+
+        // Position above the selection with a small gap
+        let top = rect.top - tbH - 8;
+        // If no room above, place below instead
+        if (top < 8) {
+          top = rect.bottom + 8;
+        }
+
+        toolbar.style.top = `${top}px`;
+        toolbar.style.left = `${left}px`;
         toolbar.setAttribute('aria-hidden', 'false');
       } else {
         toolbar.classList.remove('visible');
