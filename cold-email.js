@@ -260,7 +260,7 @@
       const btnSaveDraft = document.getElementById('btnSaveDraft');
       if (btnSaveDraft) {
         btnSaveDraft.addEventListener('click', async () => {
-          btnSaveDraft.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Saving...';
+          btnSaveDraft.innerHTML = '<i data-lucide="loader-circle" class="spin" width="16" stroke-width="2"></i> Saving...';
           if(window.lucide) lucide.createIcons();
           try {
             await DraftStore.save({
