@@ -412,11 +412,16 @@
             </div>
 
             <!-- Floating Selection Toolbar -->
-            <div class="cl-floating-toolbar" id="floatingEditorToolbar" aria-hidden="true" aria-label="Quick format toolbar">
+            <div class="cl-floating-toolbar" id="floatingEditorToolbar" aria-hidden="true" aria-label="Quick format toolbar" style="padding: 6px; display: flex; gap: 4px; flex-wrap: wrap; width: max-content; max-width: 300px; justify-content: center;">
               <button type="button" class="cl-toolbar-btn" onclick="executeEditorCommand('bold')" title="Bold" aria-label="Bold selected text"><b>B</b></button>
               <button type="button" class="cl-toolbar-btn" onclick="executeEditorCommand('italic')" title="Italic" aria-label="Italic selected text"><i>I</i></button>
+              <div class="cl-toolbar-divider"></div>
               <button type="button" class="cl-toolbar-btn" onclick="aiImproveSelection('rewrite')" title="AI Rewrite" aria-label="AI rewrite selected text"><i data-lucide="sparkles" width="16"></i> Rewrite</button>
               <button type="button" class="cl-toolbar-btn" onclick="aiImproveSelection('persuasive')" title="Make Persuasive" aria-label="Make selected text more persuasive"><i data-lucide="flame" width="16"></i> Persuasive</button>
+              <button type="button" class="cl-toolbar-btn" onclick="aiImproveSelection('grammar')" title="Fix Grammar" aria-label="Fix Grammar"><i data-lucide="check-check" width="16"></i> Grammar</button>
+              <button type="button" class="cl-toolbar-btn" onclick="aiImproveSelection('concise')" title="Make Concise" aria-label="Make Concise"><i data-lucide="shrink" width="16"></i> Concise</button>
+              <button type="button" class="cl-toolbar-btn" onclick="aiImproveSelection('humanize')" title="Humanize Tone" aria-label="Humanize Tone"><i data-lucide="user" width="16"></i> Humanize</button>
+              <button type="button" class="cl-toolbar-btn" onclick="reviewSelectedParagraph()" title="Review Paragraph" aria-label="Review Paragraph"><i data-lucide="message-square-dashed" width="16"></i> Review</button>
             </div>
 
             <!-- Editor Canvas: single container, two mutually-exclusive inner states -->
@@ -485,18 +490,35 @@
           </div>
 
           <!-- Tab Pane 2: AI Writing Assistant -->
-          <div class="tab-pane" id="pane-suggestionsPane">
-            <div class="cl-tab-pane-header">
+          <div class="tab-pane" id="pane-suggestionsPane" style="display: flex; flex-direction: column; height: 100%;">
+            <div class="cl-tab-pane-header" style="flex-shrink: 0; padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 16px;">
               <div>
-                <h3 class="cl-tab-pane-title">AI Writing Assistant</h3>
-                <p class="cl-tab-pane-subtitle">Contextual improvements with side-by-side diff previews.</p>
+                <h3 class="cl-tab-pane-title">AI Coach</h3>
+                <p class="cl-tab-pane-subtitle">Your personal assistant for improving this letter.</p>
               </div>
-              <button id="reanalyzeAtsBtn" class="btn btn-secondary btn-sm" onclick="reanalyzeATS()"><i data-lucide="refresh-cw" width="16"></i> Re-analyze Draft</button>
+              <button id="undoAiBtn" class="btn btn-secondary btn-sm" onclick="undoLastAiChange()" style="display:none;" title="Undo Last AI Change"><i data-lucide="undo-2" width="16"></i> Undo</button>
             </div>
 
-            <div id="suggestionsSummaryContainer"></div>
-            <div id="suggestionsList">
-              <p class="cl-empty-hint">No recommendations generated yet. Click "Generate Cover Letter" to receive instant feedback.</p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; flex-shrink: 0;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="aiImproveSelection('ats', true)" title="Optimize for ATS"><i data-lucide="target" width="14"></i> ATS Optimize</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="aiImproveSelection('opening', true)" title="Stronger Opening"><i data-lucide="zap" width="14"></i> Stronger Opening</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="aiImproveSelection('closing', true)" title="Stronger Closing"><i data-lucide="flag" width="14"></i> Stronger Closing</button>
+            </div>
+
+            <!-- Scrollable Area for Reviews and Chat -->
+            <div id="aiAssistantScrollArea" style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-bottom: 16px; margin-bottom: 12px;">
+              <div id="suggestionsList">
+                <p class="cl-empty-hint">Highlight text and select "Review" or ask a question below to get started.</p>
+              </div>
+              <div id="aiChatHistory" style="display: flex; flex-direction: column; gap: 12px;"></div>
+            </div>
+
+            <!-- Sticky Chat Input -->
+            <div style="flex-shrink: 0; margin-top: auto; border-top: 1px solid var(--border); padding-top: 12px;">
+              <form id="aiChatForm" onsubmit="handleAiChatSubmit(event)" style="display: flex; gap: 8px;">
+                <input type="text" id="aiChatInput" placeholder="Ask AI to adjust tone, add metrics..." style="flex-grow: 1; padding: 10px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--bg-card); color: var(--text-1);" autocomplete="off" />
+                <button type="submit" class="btn btn-primary" id="aiChatSendBtn" style="padding: 10px; min-width: 44px; display: flex; justify-content: center; align-items: center;"><i data-lucide="send" width="16"></i></button>
+              </form>
             </div>
           </div>
 
@@ -595,13 +617,16 @@
         <button class="close-modal-btn" onclick="closeCompareModal()" aria-label="Close compare dialog">&times;</button>
       </div>
       <div class="compare-modal-body">
-        <div class="compare-col">
-          <div class="compare-col-title">Before</div>
-          <div class="compare-text-box before" id="compareBeforeVal"></div>
-        </div>
-        <div class="compare-col">
-          <div class="compare-col-title">After</div>
-          <div class="compare-text-box after" id="compareAfterVal"></div>
+        <div id="compareExplanationBox" style="background: rgba(var(--accent-rgb), 0.1); border-left: 3px solid var(--accent); padding: 12px; margin-bottom: 16px; font-size: 0.9rem; color: var(--text-2); display: none;"></div>
+        <div style="display: flex; gap: 16px;">
+          <div class="compare-col" style="flex:1;">
+            <div class="compare-col-title">Before</div>
+            <div class="compare-text-box before" id="compareBeforeVal"></div>
+          </div>
+          <div class="compare-col" style="flex:1;">
+            <div class="compare-col-title">After</div>
+            <div class="compare-text-box after" id="compareAfterVal"></div>
+          </div>
         </div>
       </div>
       <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">

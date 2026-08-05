@@ -1257,13 +1257,23 @@
 
   let _compareModalPreviousFocus = null;
 
-  function openCompareModal(id, original, replacement) {
+  function openCompareModal(id, original, replacement, explanation = '') {
     activeCompareId = id;
     activeCompareOriginal = original;
     activeCompareReplacement = replacement;
 
     document.getElementById('compareBeforeVal').textContent = original;
     document.getElementById('compareAfterVal').textContent = replacement;
+    
+    const expBox = document.getElementById('compareExplanationBox');
+    if (expBox) {
+      if (explanation) {
+        expBox.innerHTML = `<strong>Why this suggestion?</strong><br/>${explanation}`;
+        expBox.style.display = 'block';
+      } else {
+        expBox.style.display = 'none';
+      }
+    }
 
     const applyBtn = document.getElementById('compareApplyBtn');
     let gainStr = '+2%';
@@ -1273,7 +1283,12 @@
     }
     
     applyBtn.onclick = () => {
-      applyAtsSuggestion(id, original, replacement, gainStr);
+      // If it is an AI suggestion, we might not have a gainStr, but we handle the replacement
+      if (!id || String(id).startsWith('ai-')) {
+        applyAiSuggestion(original, replacement);
+      } else {
+        applyAtsSuggestion(id, original, replacement, gainStr);
+      }
       closeCompareModal();
     };
 
@@ -1999,30 +2014,211 @@
     });
   });
 
-  // ── AI Selection Rewrite Helper ──
-  // Fix: now sends selectedText + context in inline_rewrite mode, rather than
-  // sending letter: selectedText which the server treated as a full generation.
-  window.aiImproveSelection = async function(action) {
+  // ── AI Selection Rewrite Helper & Coach ──
+  let aiImprovementHistory = [];
+  
+  window.undoLastAiChange = function() {
+    if (aiImprovementHistory.length === 0) return;
+    const lastChange = aiImprovementHistory.pop();
+    const sheet = document.getElementById('editorSheet');
+    if (!sheet) return;
+    
+    let textContent = sheet.innerText;
+    if (textContent.includes(lastChange.replacement)) {
+      sheet.innerText = textContent.replace(lastChange.replacement, lastChange.original);
+      saveEditorState();
+      updateCounts();
+      showToast('success', 'Undid last AI change.');
+    } else {
+      showToast('error', 'Could not locate the text to undo.');
+    }
+    
+    if (aiImprovementHistory.length === 0) {
+      const undoBtn = document.getElementById('undoAiBtn');
+      if (undoBtn) undoBtn.style.display = 'none';
+    }
+  };
+
+  function applyAiSuggestion(original, replacement) {
+    const sheet = document.getElementById('editorSheet');
+    let textContent = sheet.innerText;
+
+    if (textContent.includes(original)) {
+      sheet.innerText = textContent.replace(original, replacement);
+      saveEditorState();
+      updateCounts();
+      
+      aiImprovementHistory.push({ original, replacement });
+      const undoBtn = document.getElementById('undoAiBtn');
+      if (undoBtn) undoBtn.style.display = 'inline-flex';
+      
+      showToast('success', 'AI suggestion applied!');
+    } else {
+      showToast('error', 'Could not locate the text in the editor. Content may have changed.');
+    }
+  }
+  
+  window.reviewSelectedParagraph = async function() {
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed) {
-      showToast('error', 'Select text in the editor to improve.');
+      showToast('error', 'Select a paragraph in the editor to review.');
       return;
     }
-
     const selectedText = selection.toString().trim();
-    if (!selectedText) { showToast('error', 'Select text in the editor to improve.'); return; }
+    if (!selectedText) { showToast('error', 'Select text to review.'); return; }
+    
+    const toolbar = document.getElementById('floatingEditorToolbar');
+    if (toolbar) toolbar.classList.remove('visible');
+    
+    switchEditorTab('suggestionsPane');
+    
+    const listEl = document.getElementById('suggestionsList');
+    if (listEl) {
+      listEl.innerHTML = '<p style="color:var(--text-3); font-size:0.85rem; text-align:center; padding:1rem 0;"><i data-lucide="loader-circle" class="spin" width="16" stroke-width="2"></i> Reviewing paragraph...</p>';
+      if (window.lucide) lucide.createIcons();
+    }
+    
+    try {
+      const payload = {
+        mode: 'review_paragraph',
+        selectedText,
+        jobTitle: (document.getElementById('jobTitle')?.value || '').trim(),
+        companyName: (document.getElementById('companyName')?.value || '').trim(),
+        tone: document.getElementById('tone')?.value || 'Professional'
+      };
+      
+      const session = await window.appSdk.auth.getSession();
+      const headers = { 'Content-Type': 'application/json' };
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+
+      const res = await fetch('/api/cover-letter-assistant', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Paragraph review failed');
+      
+      const data = await res.json();
+      
+      if (listEl) {
+        let keywordsHtml = '';
+        if (data.keywordsInserted && data.keywordsInserted.length > 0) {
+          keywordsHtml = `<div style="margin-top: 8px;"><strong style="font-size: 0.8rem; color: var(--text-2);">Suggested Keywords:</strong> <span style="font-size: 0.8rem; color: var(--text-3);">${data.keywordsInserted.join(', ')}</span></div>`;
+        }
+        
+        listEl.innerHTML = `
+          <div class="suggestion-card">
+            <div class="suggestion-header" style="margin-bottom:0.6rem;">
+              <span class="suggestion-cat-badge badge-impact">Paragraph Review</span>
+            </div>
+            <div class="suggestion-reason"><strong>Why this suggestion?</strong><br/>${data.explanation || 'Provides a more polished, professional alternative.'}</div>
+            ${keywordsHtml}
+            <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.75rem;">
+              <button class="btn btn-secondary btn-sm" style="min-height:30px; font-size:0.75rem; padding:0.2rem 0.5rem;" onclick="copySuggestionText(\`${escapeJSQuotes(data.suggestedText || '')}\`)">Copy</button>
+              <button class="btn btn-primary btn-sm" style="min-height:30px; font-size:0.75rem; padding:0.2rem 0.5rem;" onclick="openCompareModal('ai-review', \`${escapeJSQuotes(selectedText)}\`, \`${escapeJSQuotes(data.suggestedText)}\`, \`${escapeJSQuotes(data.explanation || '')}\`)">Compare & Apply</button>
+            </div>
+          </div>
+        `;
+      }
+    } catch (err) {
+      if (listEl) listEl.innerHTML = `<p style="color:var(--danger); font-size:0.85rem;">Error: ${err.message}</p>`;
+      showToast('error', err.message);
+    }
+  };
+
+  window.handleAiChatSubmit = async function(event) {
+    event.preventDefault();
+    const inputEl = document.getElementById('aiChatInput');
+    const message = inputEl.value.trim();
+    if (!message) return;
+    
+    inputEl.value = '';
+    
+    const historyEl = document.getElementById('aiChatHistory');
+    if (!historyEl) return;
+    
+    // Append user message
+    historyEl.innerHTML += `
+      <div style="align-self: flex-end; background: var(--accent); color: white; padding: 8px 12px; border-radius: var(--r-md); max-width: 85%; font-size: 0.9rem;">
+        ${message}
+      </div>
+    `;
+    
+    // Append AI loading state
+    const loadingId = 'ai-msg-' + Date.now();
+    historyEl.innerHTML += `
+      <div id="${loadingId}" style="align-self: flex-start; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-2); padding: 8px 12px; border-radius: var(--r-md); max-width: 85%; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="loader-circle" class="spin" width="14"></i> Thinking...
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+    
+    const scrollArea = document.getElementById('aiAssistantScrollArea');
+    if (scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
+    
+    try {
+      const sheet = document.getElementById('editorSheet');
+      const payload = {
+        mode: 'chat',
+        message,
+        letterText: sheet ? sheet.innerText : '',
+        jobTitle: (document.getElementById('jobTitle')?.value || '').trim(),
+        companyName: (document.getElementById('companyName')?.value || '').trim(),
+        tone: document.getElementById('tone')?.value || 'Professional'
+      };
+      
+      const session = await window.appSdk.auth.getSession();
+      const headers = { 'Content-Type': 'application/json' };
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+
+      const res = await fetch('/api/cover-letter-assistant', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Chat failed');
+      
+      const data = await res.json();
+      const msgEl = document.getElementById(loadingId);
+      if (msgEl) {
+        msgEl.innerHTML = data.reply;
+        msgEl.style.color = 'var(--text-1)';
+      }
+    } catch (err) {
+      const msgEl = document.getElementById(loadingId);
+      if (msgEl) {
+        msgEl.innerHTML = `<span style="color: var(--danger)">Error: ${err.message}</span>`;
+      }
+    }
+    
+    if (scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
+  };
+
+  window.aiImproveSelection = async function(action, useWholeDocument = false) {
+    const selection = window.getSelection();
+    let selectedText = '';
+    
+    if (useWholeDocument) {
+      const sheet = document.getElementById('editorSheet');
+      if (sheet) selectedText = sheet.innerText.trim();
+    } else {
+      if (!selection || selection.isCollapsed) {
+        showToast('error', 'Select text in the editor to improve.');
+        return;
+      }
+      selectedText = selection.toString().trim();
+    }
+    
+    if (!selectedText) { showToast('error', 'No text to improve.'); return; }
 
     const toolbar = document.getElementById('floatingEditorToolbar');
     if (toolbar) toolbar.classList.remove('visible');
 
-    showToast('success', `AI ${action === 'persuasive' ? 'making it persuasive' : 'rewriting'}...`);
-
-    // Save selection range so we can restore it
-    const range = selection.getRangeAt(0).cloneRange();
+    showToast('success', `AI processing quick action...`);
 
     try {
       const payload = {
-        mode: 'inline_rewrite',
+        mode: 'quick_action',
         selectedText,
         action,
         jobTitle: (document.getElementById('jobTitle')?.value || '').trim(),
@@ -2034,7 +2230,7 @@
       const headers = { 'Content-Type': 'application/json' };
       if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
 
-      const res = await fetch('/api/cover-letter', {
+      const res = await fetch('/api/cover-letter-assistant', {
         method: 'POST',
         headers,
         body: JSON.stringify(payload)
@@ -2046,15 +2242,8 @@
       }
 
       const data = await res.json();
-      if (data.letter) {
-        // Restore selection and replace it with the rewritten text
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
-        document.execCommand('insertText', false, data.letter);
-        saveEditorState();
-        updateCounts();
-        showToast('success', 'Selection improved!');
+      if (data.suggestedText) {
+        openCompareModal('ai-' + Date.now(), selectedText, data.suggestedText, data.explanation);
       } else {
         throw new Error('No rewritten text returned');
       }

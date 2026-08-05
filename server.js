@@ -21,6 +21,7 @@ const generatePdfHandler = require('./api-handlers/generate-pdf');
 const createOrderHandler = require('./api-handlers/create-order');
 const verifyPaymentHandler = require('./api-handlers/verify-payment');
 const debugGeminiHandler = require('./api-handlers/debug-gemini');
+const coverLetterAssistantHandler = require('./api-handlers/cover-letter-assistant');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -77,6 +78,7 @@ app.post('/api/debug/gemini', debugGeminiHandler);
 
 app.post('/api/upload-resume', uploadResumeHandler);
 app.post('/api/cover-letter', aiLimiter, coverLetterHandler);
+app.post('/api/cover-letter-assistant', aiLimiter, coverLetterAssistantHandler);
 app.post('/api/cold-email', aiLimiter, coldEmailHandler);
 app.post('/api/ai-suggestions', aiLimiter, aiSuggestionsHandler);
 app.post('/api/ats-suggestions', aiLimiter, atsSuggestionsHandler);
