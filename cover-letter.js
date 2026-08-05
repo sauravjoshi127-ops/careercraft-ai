@@ -858,7 +858,7 @@
       generateBtn.disabled = true;
 
       // Phase 9: Progressive UX Loading States
-      generateBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Generating...';
+      generateBtn.innerHTML = '<i data-lucide="loader-circle" class="spin" width="16" stroke-width="2"></i> Generating...';
       if(window.lucide) lucide.createIcons();
       startPremiumLoading(sheet);
 
@@ -904,7 +904,7 @@
         length: payload.length
       });
 
-      generateBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Analyzing...';
+      generateBtn.innerHTML = '<i data-lucide="loader-circle" class="spin" width="16" stroke-width="2"></i> Analyzing...';
       if(window.lucide) lucide.createIcons();
       updatePremiumStage('Analyzing job requirements…', 40);
 
@@ -935,14 +935,14 @@
         throw error;
       }
 
-      generateBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Optimizing...';
+      generateBtn.innerHTML = '<i data-lucide="loader-circle" class="spin" width="16" stroke-width="2"></i> Optimizing...';
       if(window.lucide) lucide.createIcons();
 
       lastGeneratedData = data;
       const letterText = cleanEscapes(data.letter);
 
       finishPremiumLoading();
-      generateBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Finalizing...';
+      generateBtn.innerHTML = '<i data-lucide="loader-circle" class="spin" width="16" stroke-width="2"></i> Finalizing...';
       if(window.lucide) lucide.createIcons();
 
       await injectEditorContent(letterText);
@@ -1018,13 +1018,13 @@
     const reBtn = document.getElementById('reanalyzeAtsBtn');
     if (reBtn) {
       reBtn.disabled = true;
-      reBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Analyzing...';
+      reBtn.innerHTML = '<i data-lucide="loader-circle" class="spin" width="16" stroke-width="2"></i> Analyzing...';
       if(window.lucide) lucide.createIcons();
     }
     // Show loading state in AI Assistant tab
     const listEl = document.getElementById('suggestionsList');
     if (listEl) {
-      listEl.innerHTML = '<p style="color:var(--text-3); font-size:0.85rem; text-align:center; padding:1rem 0;"><i data-lucide="loader-2" class="spin" width="14"></i> Analyzing your cover letter for improvements...</p>';
+      listEl.innerHTML = '<p style="color:var(--text-3); font-size:0.85rem; text-align:center; padding:1rem 0;"><i data-lucide="loader-circle" class="spin" width="16" stroke-width="2"></i> Analyzing your cover letter for improvements...</p>';
     }
     const countEl = document.getElementById('suggestionsCount');
     if (countEl) countEl.textContent = '';
@@ -1811,7 +1811,7 @@
     const originalText = downloadBtn.textContent;
 
     try {
-      downloadBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="16"></i> Printing...';
+      downloadBtn.innerHTML = '<i data-lucide="loader-circle" class="spin" width="16" stroke-width="2"></i> Printing...';
         if(window.lucide) lucide.createIcons();
       downloadBtn.disabled = true;
 
