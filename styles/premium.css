@@ -2727,8 +2727,13 @@ input[type="password"]::-ms-clear { display: none; }
 
 /* ── Document / A4 paper ── */
 .cl-editor-paper {
-  background: #ffffff;
-  color: #1a1f2e;
+  background: #ffffff !important;
+  color: #111111 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  backdrop-filter: none !important;
+  visibility: visible !important;
   font-family: 'Georgia', 'Times New Roman', serif;
   font-size: 0.95rem;
   line-height: 1.75;
@@ -2744,6 +2749,15 @@ input[type="password"]::-ms-clear { display: none; }
   white-space: pre-wrap;
   word-wrap: break-word;
   transition: box-shadow 0.2s;
+}
+
+/* Ensure no child elements inherit app dark mode */
+.cl-editor-paper * {
+  color: #111111 !important;
+  background-color: transparent !important;
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
 }
 .cl-editor-paper:focus {
   box-shadow:
