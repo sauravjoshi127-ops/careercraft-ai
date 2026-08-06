@@ -316,8 +316,8 @@ body.workspace-transitioning {
 .manual-paper[data-accent="rose"] { --theme-accent: #f43f5e; }
 
 /* Font Family Classes */
-.font-inter {  }
-.font-outfit {  }
+.font-inter { font-family: 'Inter', sans-serif; }
+.font-outfit { font-family: 'Outfit', sans-serif; }
 .font-georgia { font-family: 'Georgia', serif; }
 .font-roboto { font-family: 'Roboto', sans-serif; }
 
