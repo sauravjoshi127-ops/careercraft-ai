@@ -352,22 +352,12 @@
       </aside>
 
       <!-- RIGHT PANEL: Notion-Style Live Editor & AI Suite -->
-      <section class="cl-right-panel" aria-label="Cover letter editor">
+      <!-- RIGHT PANEL: Notion-Style Live Editor & AI Suite -->
+      <section class="cl-right-panel" aria-label="Cover letter workspace" style="display: flex; flex-direction: column; gap: 24px;">
+        
+        <!-- EDITOR SECTION -->
         <div class="cl-editor-container">
-
-          <!-- Workspace Header Tabs -->
-          <div class="tab-header" id="editorTabs" role="tablist" aria-label="Cover letter editor panels">
-            <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="pane-editPane" id="tab-editPane" data-editor-tab="editPane">Live Editor</button>
-            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="pane-suggestionsPane" id="tab-suggestionsPane" data-editor-tab="suggestionsPane">AI Assistant <span id="suggestionsCount"></span></button>
-            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="pane-atsPane" id="tab-atsPane" data-editor-tab="atsPane">ATS Analysis</button>
-            <button class="tab-btn" role="tab" aria-selected="false" aria-controls="pane-variantsPane" id="tab-variantsPane" data-editor-tab="variantsPane">Variants</button>
-          </div>
-
-          <!-- Tab Pane 1: Live Editor -->
-          <div class="tab-pane active" id="pane-editPane">
-
-            <!-- Sticky Toolbar -->
-            <div class="cl-editor-toolbar-sticky">
+          <div class="cl-editor-toolbar-sticky">
               <div class="cl-toolbar-group">
                 <button type="button" class="cl-toolbar-btn" data-command="undo" title="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg></button>
                 <button type="button" class="cl-toolbar-btn" data-command="redo" title="Redo (Ctrl+Y)" aria-label="Redo"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg></button>
@@ -410,9 +400,7 @@
                 <button type="button" class="cl-toolbar-btn" data-command="removeFormat" title="Clear Formatting" aria-label="Clear Formatting"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M4 7V4h16v3"/><path d="M5 20h6"/><path d="M13 4 8 20"/><path d="m15 15 5 5"/><path d="m20 15-5 5"/></svg></button>
               </div>
             </div>
-
-            <!-- Floating Selection Toolbar -->
-            <div class="cl-floating-toolbar" id="floatingEditorToolbar" aria-hidden="true" aria-label="Quick format toolbar">
+          <div class="cl-floating-toolbar" id="floatingEditorToolbar" aria-hidden="true" aria-label="Quick format toolbar">
               <button type="button" class="cl-toolbar-btn" onclick="executeEditorCommand('bold')" title="Bold" aria-label="Bold selected text"><b>B</b></button>
               <button type="button" class="cl-toolbar-btn" onclick="executeEditorCommand('italic')" title="Italic" aria-label="Italic selected text"><i>I</i></button>
               <div class="cl-toolbar-divider"></div>
@@ -423,9 +411,8 @@
               <button type="button" class="cl-toolbar-btn" onclick="aiImproveSelection('persuasive')" title="Persuasive" aria-label="Make Persuasive"><i data-lucide="flame" width="14"></i> Persuasive</button>
               <button type="button" class="cl-toolbar-btn" onclick="reviewSelectedParagraph()" title="Review" aria-label="Review Paragraph"><i data-lucide="message-square-dashed" width="14"></i> Review</button>
             </div>
-
-            <!-- Editor Canvas: single container, two mutually-exclusive inner states -->
-            <div class="cl-editor-canvas" id="editorCanvas">
+          <!-- Editor Canvas: single container, two mutually-exclusive inner states -->
+          <div class="cl-editor-canvas" id="editorCanvas">
 
               <!-- STATE A: Empty State — visible when no draft exists -->
               <div class="cl-empty-state" id="editorEmptyState">
@@ -444,9 +431,10 @@
               </div>
 
             </div>
+        </div>
 
-            <!-- Real-time Live Metrics Bar -->
-            <div class="cl-live-metrics-bar">
+        <!-- Real-time Live Metrics Bar -->
+        <div class="cl-live-metrics-bar">
               <div class="cl-metric-item">
                 <span class="cl-metric-num" id="wordCount">0</span>
                 <span class="cl-metric-lbl">Words</span>
@@ -473,8 +461,8 @@
               </div>
             </div>
 
-            <!-- Primary Action Bar -->
-            <div class="cl-action-bar">
+        <!-- Primary Action Bar -->
+        <div class="cl-action-bar">
               <div class="cl-action-bar-left">
                 <button id="saveLetterBtn" class="btn btn-primary btn-sm">Save Draft</button>
                 <button id="downloadPdfBtn" class="btn btn-secondary btn-sm">Download PDF</button>
@@ -487,11 +475,9 @@
               </div>
             </div>
 
-          </div>
-
-          <!-- Tab Pane 2: AI Writing Assistant -->
-          <div class="tab-pane" id="pane-suggestionsPane" style="display: flex; flex-direction: column; height: 100%;">
-            <div class="cl-tab-pane-header" style="flex-shrink: 0; padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 16px;">
+        <!-- AI Writing Assistant -->
+        <div class="cl-ai-coach-section" id="pane-suggestionsPane" style="padding: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg);">
+          <div class="cl-tab-pane-header" style="flex-shrink: 0; padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 16px;">
               <div>
                 <h3 class="cl-tab-pane-title">AI Coach</h3>
                 <p class="cl-tab-pane-subtitle">Your personal assistant for improving this letter.</p>
@@ -520,11 +506,11 @@
                 <button type="submit" class="btn btn-primary" id="aiChatSendBtn" style="padding: 10px; min-width: 44px; display: flex; justify-content: center; align-items: center;"><i data-lucide="send" width="16"></i></button>
               </form>
             </div>
-          </div>
+        </div>
 
-          <!-- Tab Pane 3: ATS Analysis -->
-          <div class="tab-pane" id="pane-atsPane">
-            <h3 class="cl-tab-pane-title">ATS Compatibility Scorecard</h3>
+        <!-- ATS Analysis -->
+        <div class="cl-ats-section" id="pane-atsPane" style="padding: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg);">
+          <h3 class="cl-tab-pane-title">ATS Compatibility Scorecard</h3>
             <p class="cl-tab-pane-subtitle" style="margin-bottom:16px;">Detailed evaluation against ATS parser algorithms.</p>
 
             <div class="cl-ats-card-grid">
@@ -565,26 +551,21 @@
               <h4 class="cl-ats-kw-title">Keyword Breakdown</h4>
               <p class="cl-empty-hint">Generate your letter to view matched vs missing job description keywords.</p>
             </div>
-          </div>
+        </div>
 
-          <!-- Tab Pane 4: Variants -->
-          <div class="tab-pane" id="pane-variantsPane">
-            <h3 class="cl-tab-pane-title">Target Archetype Variants</h3>
+        <!-- Variants -->
+        <div class="cl-variants-section" id="pane-variantsPane" style="padding: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg);">
+          <h3 class="cl-tab-pane-title">Target Archetype Variants</h3>
             <p class="cl-tab-pane-subtitle" style="margin-bottom:16px;">Select a variant strategy tailored to specific company cultures.</p>
 
             <div id="variantsContainer">
               <p class="cl-empty-hint">No variants generated yet.</p>
             </div>
-          </div>
-
         </div>
-      </section>
 
-    </div><!-- /.cl-workspace -->
-
-    <!-- SAVED COVER LETTERS DASHBOARD -->
-    <div class="cl-history-section">
-      <div class="cl-section-header">
+        <!-- SAVED COVER LETTERS DASHBOARD -->
+        <div class="cl-history-section" style="padding: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg);">
+          <div class="cl-section-header">
         <h2 class="cl-section-title">Your Saved Letters Dashboard</h2>
       </div>
 
@@ -605,9 +586,12 @@
       <div id="historyList" class="history-grid">
         <p class="cl-empty-hint">Loading history dashboard...</p>
       </div>
-    </div>
+        </div>
 
+      </section>
+    </div><!-- /.cl-workspace -->
   </div><!-- /.cl-page-container -->
+
 
   <!-- Compare Before/After Modal -->
   <div id="compareModal" class="compare-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="compareModalTitle">

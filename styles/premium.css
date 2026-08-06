@@ -2443,10 +2443,6 @@ input[type="password"]::-ms-clear { display: none; }
 /* ── Right panel ── */
 .cl-right-panel {
   min-width: 0; /* prevent overflow past grid */
-  position: sticky;
-  top: 72px;
-  height: calc(100vh - 96px);
-  height: calc(100dvh - 96px);
 }
 
 /* ── Left panel header ── */
@@ -2617,8 +2613,6 @@ input[type="password"]::-ms-clear { display: none; }
   box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  height: 100%;
 }
 
 /* ── Editor toolbar ── */
@@ -2830,9 +2824,6 @@ input[type="password"]::-ms-clear { display: none; }
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
 }
 .cl-action-bar-left { display: flex; gap: 8px; flex-wrap: wrap; }
 .autosave-status {
