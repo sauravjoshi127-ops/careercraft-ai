@@ -961,6 +961,8 @@
     } catch (err) {
       const overlay = document.getElementById('premiumLoadingOverlay');
       if (overlay) overlay.style.display = 'none';
+      const canvas = document.getElementById('editorCanvas');
+      if (canvas) canvas.classList.remove('cl-generating');
 
       CoverLetterLogger.error('Generation Failed', {
         stage: 'Cover Letter Generation',
