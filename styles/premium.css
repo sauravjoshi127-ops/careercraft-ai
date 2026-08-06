@@ -2438,23 +2438,15 @@ input[type="password"]::-ms-clear { display: none; }
 .cl-left-panel {
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 72px;                          /* nav=64px + 8px gap */
-  max-height: calc(100vh - 80px);     /* fallback for browsers without dvh */
-  max-height: calc(100dvh - 80px);    /* dvh: excludes mobile browser chrome */
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-  padding-bottom: 0;
 }
-.cl-left-panel::-webkit-scrollbar { width: 4px; }
-.cl-left-panel::-webkit-scrollbar-track { background: transparent; }
-.cl-left-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 /* ── Right panel ── */
 .cl-right-panel {
   min-width: 0; /* prevent overflow past grid */
+  position: sticky;
+  top: 72px;
+  height: calc(100vh - 96px);
+  height: calc(100dvh - 96px);
 }
 
 /* ── Left panel header ── */
@@ -2575,19 +2567,8 @@ input[type="password"]::-ms-clear { display: none; }
    Works because .cl-left-panel has overflow-y:auto (a scroll container),
    and sticky children stick relative to the scroll container's viewport. */
 .cl-workflow-footer {
-  position: sticky;
-  bottom: 0;
-  background: var(--bg-card);
-  padding: 16px;
-  border-top: 1px solid var(--border);
-  /* margin-top:auto pushes it to the bottom when content is short */
-  margin-top: auto;
-  /* Ensure it layers above accordion scroll content */
-  z-index: 10;
-  box-shadow: 0 -8px 24px rgba(0,0,0,0.3);
-  border-radius: 0 0 var(--r-md) var(--r-md);
-  /* Never shrink — always full width of the panel */
-  flex-shrink: 0;
+  margin-top: 24px;
+  margin-bottom: 32px;
 }
 .cl-generate-primary-btn {
   width: 100%;
@@ -2637,6 +2618,7 @@ input[type="password"]::-ms-clear { display: none; }
   display: flex;
   flex-direction: column;
   min-height: 0;
+  height: 100%;
 }
 
 /* ── Editor toolbar ── */
