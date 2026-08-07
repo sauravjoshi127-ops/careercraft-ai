@@ -133,6 +133,30 @@
     document.getElementById('historySort')?.addEventListener('change', handleHistorySort);
     document.getElementById('historyFilter')?.addEventListener('change', handleHistoryFilter);
 
+    // QA Modal buttons
+    document.getElementById('qaSkipBtn')?.addEventListener('click', () => {
+      document.getElementById('qaClarificationModal').style.display = 'none';
+      if (qaModalResolve) {
+        qaModalResolve(window._qaDraft); 
+        qaModalResolve = null;
+      }
+    });
+
+    document.getElementById('qaSubmitBtn')?.addEventListener('click', async () => {
+      const inputs = document.querySelectorAll('.qa-answer-input');
+      const clarifications = {};
+      inputs.forEach(input => {
+        if (input.value.trim()) {
+          clarifications[input.getAttribute('data-qid')] = input.value.trim();
+        }
+      });
+      document.getElementById('qaClarificationModal').style.display = 'none';
+      if (qaModalResolve) {
+        qaModalResolve({ action: 'RETRY_QA', clarifications });
+        qaModalResolve = null;
+      }
+    });
+
     // Accessibility shortcuts
     window.addEventListener('keydown', (e) => {
       const activeSheet = document.getElementById('editorSheet');
@@ -669,6 +693,103 @@
     }
   };
 
+  let qaModalResolve = null;
+
+  async function runQACheck(payload, letterText, clarifications = null) {
+    const session = await window.appSdk.auth.getSession();
+    const headers = { 'Content-Type': 'application/json' };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    const qaRes = await fetch('/api/qa-engine', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        draftLetter: letterText,
+        resumeText: payload.resumeText,
+        jobTitle: payload.jobTitle,
+        companyName: payload.companyName,
+        jobDescription: payload.jobDescription,
+        hiringManager: payload.hiringManager,
+        location: payload.location,
+        clarifications
+      })
+    });
+    
+    if (!qaRes.ok) throw new Error('QA Engine failed.');
+    return await qaRes.json();
+  }
+
+  async function runExportQACheckIfNeeded() {
+    const sheet = document.getElementById('editorSheet');
+    if (!sheet) return true;
+    const letterText = sheet.innerText;
+    
+    // Skip QA if unchanged since last generation QA pass
+    if (!letterText.trim() || letterText === window._qaDraft) {
+      return true;
+    }
+
+    try {
+      showToast('info', 'Running final QA check before export...');
+      const payload = {
+        jobTitle: document.getElementById('jobTitle')?.value || '',
+        companyName: document.getElementById('companyName')?.value || '',
+        resumeText: resumeText || ''
+      };
+      
+      let qaPassed = false;
+      let currentClarifications = null;
+      let finalLetterText = letterText;
+      
+      while (!qaPassed) {
+        const qaData = await runQACheck(payload, finalLetterText, currentClarifications);
+        if (qaData.status === 'NEEDS_CLARIFICATION' && qaData.clarificationQuestions?.length > 0) {
+          const userResponse = await resolveQAModal(qaData, payload);
+          if (typeof userResponse === 'string') {
+            finalLetterText = userResponse;
+            qaPassed = true;
+          } else if (userResponse?.action === 'RETRY_QA') {
+            currentClarifications = userResponse.clarifications;
+          }
+        } else {
+          finalLetterText = qaData.validatedLetter || finalLetterText;
+          qaPassed = true;
+        }
+      }
+      
+      await injectEditorContent(finalLetterText);
+      window._qaDraft = finalLetterText;
+      return true;
+    } catch(err) {
+      console.error('Export QA error:', err);
+      return true;
+    }
+  }
+
+  function resolveQAModal(qaData, payload) {
+    return new Promise((resolve) => {
+      qaModalResolve = resolve;
+      
+      const modal = document.getElementById('qaClarificationModal');
+      const container = document.getElementById('qaQuestionsContainer');
+      container.innerHTML = '';
+      
+      (qaData.clarificationQuestions || []).forEach(q => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <label style="font-weight:bold; display:block; margin-bottom:4px; color:var(--text-1);">${q.question}</label>
+          <input type="text" class="qa-answer-input" data-qid="${q.id}" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:var(--r-sm); background:var(--bg-body); color:var(--text-1);" placeholder="Your clarification..."/>
+        `;
+        container.appendChild(div);
+      });
+      
+      modal.style.display = 'flex';
+      window._qaDraft = qaData.validatedLetter || qaData.draftLetter || ''; 
+    });
+  }
+
   async function executeCoverLetterRequest(payload, headers, maxRetries = 1) {
     let lastError;
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -939,17 +1060,47 @@
       if(window.lucide) lucide.createIcons();
 
       lastGeneratedData = data;
-      const letterText = cleanEscapes(data.letter);
+      let letterText = cleanEscapes(data.letter);
+
+      updatePremiumStage('Running QA Validation pass...', 92);
+      
+      let qaPassed = false;
+      let currentClarifications = null;
+      let finalLetterText = letterText;
+
+      while (!qaPassed) {
+        try {
+          const qaData = await runQACheck(payload, finalLetterText, currentClarifications);
+
+          if (qaData.status === 'NEEDS_CLARIFICATION' && qaData.clarificationQuestions?.length > 0) {
+            updatePremiumStage('Waiting for user clarification...', 95);
+            const userResponse = await resolveQAModal(qaData, payload);
+            if (typeof userResponse === 'string') {
+              finalLetterText = userResponse;
+              qaPassed = true;
+            } else if (userResponse?.action === 'RETRY_QA') {
+              currentClarifications = userResponse.clarifications;
+              updatePremiumStage('Re-validating with your answers...', 96);
+            }
+          } else {
+            finalLetterText = qaData.validatedLetter || finalLetterText;
+            qaPassed = true;
+          }
+        } catch (qaErr) {
+          console.error('QA Validation Error:', qaErr);
+          qaPassed = true; // Skip QA on error so user isn't blocked
+        }
+      }
 
       finishPremiumLoading();
       generateBtn.innerHTML = '<i data-lucide="loader-circle" class="spin" width="16" stroke-width="2"></i> Finalizing...';
       if(window.lucide) lucide.createIcons();
 
-      await injectEditorContent(letterText);
+      await injectEditorContent(finalLetterText);
 
       updateGauges(data.detailed_scores || {});
       renderATSAnalysis(data);
-      renderVariants(data.variants || [], data.letter);
+      renderVariants(data.variants || [], finalLetterText);
 
       showToast('success', 'Cover letter generated successfully!');
       switchEditorTab('editPane');
@@ -1234,7 +1385,8 @@
     }
   }
 
-  function handleCopyCoverLetter() {
+  async function handleCopyCoverLetter() {
+    await runExportQACheckIfNeeded();
     const editorSheet = document.getElementById('editorSheet');
     const text = editorSheet ? (editorSheet.innerText || editorSheet.textContent || '') : '';
     if (window.copyToClipboard) {
@@ -1818,6 +1970,7 @@
   }
 
   async function downloadPDF() {
+    await runExportQACheckIfNeeded();
     const letterText = document.getElementById('editorSheet').innerText;
     if (!letterText.trim()) {
       showToast('error', 'No letter text content to export.');
@@ -1874,7 +2027,8 @@
     }
   }
 
-  function downloadDOCX() {
+  async function downloadDOCX() {
+    await runExportQACheckIfNeeded();
     const letterText = document.getElementById('editorSheet').innerText;
     if (!letterText.trim()) {
       showToast('error', 'No letter content to export.');
