@@ -143,6 +143,7 @@ Return ONLY the rewritten text. No explanation, no quotes, no preamble.`;
   const length = String(body.length || 'Medium').trim();
   const opening = String(body.opening || '').trim();
   const closing = String(body.closing || '').trim();
+  const letterDate = String(body.letterDate || '').trim();
 
   const resumeText = String(body.resumeText || '').trim();
   const mirrorStructure = Boolean(body.mirrorStructure);
@@ -220,7 +221,7 @@ QUALITY STANDARDS:
 - Tailor the language and style based on the candidate's Experience Level: ${experienceLevel}
 
 REQUIRED LETTER STRUCTURE (follow this exactly, in order):
-1. DATE: Write today's date on its own line (e.g. "${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}")
+1. DATE: Write the provided date on its own line: "${letterDate || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}". Do not add any other date or duplicate the date.
 2. GREETING: Formal salutation — use "Dear ${hiringManager || 'Hiring Manager'}," and end with a comma.
 3. OPENING PARAGRAPH: Introduce yourself, name the exact role you are applying for, name the company, and express genuine enthusiasm for the opportunity. Make a strong first impression — do NOT open with "I am writing to apply…"
 4. SKILLS & EXPERIENCE PARAGRAPH: Highlight 2–3 of the most relevant technical skills, accomplishments, or experiences that directly match the job requirements. Quantify achievements where possible (e.g. "reduced load time by 40%"). Connect your background to the role's core needs.

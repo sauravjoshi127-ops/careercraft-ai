@@ -69,6 +69,11 @@
             </div>
 
             <div class="input-wrapper">
+              <label for="letterDate">Date</label>
+              <input type="date" id="letterDate" />
+            </div>
+
+            <div class="input-wrapper">
               <label for="jobDescription">Job Description *</label>
               <textarea id="jobDescription" placeholder="Paste the full job requirements here..." style="min-height:130px; resize:vertical;" required aria-required="true"></textarea>
               <div class="validation-err" id="err-jobDescription" role="alert" aria-live="assertive">Please paste the job description.</div>
@@ -616,6 +621,47 @@
       <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
         <button class="btn btn-secondary" onclick="closeCompareModal()">Close</button>
         <button class="btn btn-primary" id="compareApplyBtn">Apply Change</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ATS Compare Modal -->
+  <div id="atsCompareModal" class="compare-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="atsCompareModalTitle">
+    <div class="compare-modal-content">
+      <div class="compare-modal-header">
+        <h3 id="atsCompareModalTitle" style="font-size:1.1rem; margin:0; color:var(--text-1);">ATS Optimization Results</h3>
+        <button class="close-modal-btn" onclick="closeAtsCompareModal()" aria-label="Close ATS compare dialog">&times;</button>
+      </div>
+      <div class="compare-modal-body">
+        <div style="display: flex; gap: 20px; margin-bottom: 20px; align-items: center; justify-content: center;">
+          <div style="text-align: center;">
+            <div style="font-size: 0.85rem; color: var(--text-2);">Current Score</div>
+            <div id="atsScoreBefore" style="font-size: 1.5rem; font-weight: bold; color: var(--text-1);">--</div>
+          </div>
+          <i data-lucide="arrow-right" width="24" style="color: var(--text-3);"></i>
+          <div style="text-align: center;">
+            <div style="font-size: 0.85rem; color: var(--text-2);">Optimized Score</div>
+            <div id="atsScoreAfter" style="font-size: 1.5rem; font-weight: bold; color: var(--success);">--</div>
+          </div>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 5px;">Keywords Added:</div>
+          <div id="atsKeywordsAdded" style="font-size: 0.85rem; color: var(--text-2); display: flex; flex-wrap: wrap; gap: 5px;"></div>
+        </div>
+        <div class="compare-diff-container">
+          <div class="diff-pane">
+            <h4>Current</h4>
+            <div id="atsDiffOriginal" class="diff-text original"></div>
+          </div>
+          <div class="diff-pane">
+            <h4>Optimized</h4>
+            <div id="atsDiffSuggested" class="diff-text suggested"></div>
+          </div>
+        </div>
+      </div>
+      <div class="compare-modal-footer">
+        <button class="btn btn-secondary" onclick="closeAtsCompareModal()">Reject</button>
+        <button class="btn btn-primary" id="applyAtsChangesBtn">Apply Changes</button>
       </div>
     </div>
   </div>

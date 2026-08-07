@@ -59,6 +59,12 @@
   }
 
   function wireEvents() {
+    // Initialize date field to today
+    const dateEl = document.getElementById('letterDate');
+    if (dateEl) {
+      dateEl.valueAsDate = new Date();
+    }
+
     // Wizard Navigation Tab Switcher
     document.querySelectorAll('#wizardTabs .tab-btn').forEach(btn => {
       const tabId = btn.getAttribute('data-wizard-tab');
@@ -986,6 +992,7 @@
       const payload = {
         jobTitle: document.getElementById('jobTitle').value.trim(),
         companyName: document.getElementById('companyName').value.trim(),
+        letterDate: document.getElementById('letterDate') ? document.getElementById('letterDate').value : '',
         jobDescription: document.getElementById('jobDescription').value.trim(),
         highlights: document.getElementById('highlights') ? document.getElementById('highlights').value.trim() : '',
         tone: document.getElementById('tone').value,
@@ -1410,6 +1417,39 @@
   let activeCompareReplacement = '';
 
   let _compareModalPreviousFocus = null;
+
+  window.closeAtsCompareModal = function() {
+    const modal = document.getElementById('atsCompareModal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  function openAtsCompareModal(original, suggested, scoreBefore, scoreAfter, keywords) {
+    activeCompareOriginal = original;
+    activeCompareReplacement = suggested;
+
+    document.getElementById('atsScoreBefore').textContent = scoreBefore;
+    document.getElementById('atsScoreAfter').textContent = scoreAfter;
+    document.getElementById('atsDiffOriginal').textContent = original;
+    document.getElementById('atsDiffSuggested').textContent = suggested;
+
+    const kwContainer = document.getElementById('atsKeywordsAdded');
+    if (kwContainer) {
+      if (keywords && keywords.length) {
+        kwContainer.innerHTML = keywords.map(kw => `<span style="background:var(--accent); color:white; padding:2px 8px; border-radius:12px;">${kw}</span>`).join('');
+      } else {
+        kwContainer.innerHTML = '<span style="color:var(--text-3);">None</span>';
+      }
+    }
+
+    const modal = document.getElementById('atsCompareModal');
+    if (modal) modal.style.display = 'flex';
+
+    document.getElementById('applyAtsChangesBtn').onclick = () => {
+      applyAiSuggestion(original, suggested);
+      closeAtsCompareModal();
+    };
+  }
+
 
   function openCompareModal(id, original, replacement, explanation = '') {
     activeCompareId = id;
@@ -2256,6 +2296,8 @@
         selectedText,
         jobTitle: (document.getElementById('jobTitle')?.value || '').trim(),
         companyName: (document.getElementById('companyName')?.value || '').trim(),
+        jobDescription: (document.getElementById('jobDescription')?.value || '').trim(),
+        resumeText: resumeText,
         tone: document.getElementById('tone')?.value || 'Professional'
       };
       
@@ -2366,13 +2408,54 @@
     if (scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
   };
 
+  function extractClosingSection(text) {
+    const lines = text.split('\n');
+    let splitIndex = lines.length;
+    const closingKeywords = ['sincerely', 'best regards', 'warm regards', 'thank you', 'respectfully', 'yours truly'];
+    
+    // Look for common sign-offs from the bottom up
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i].trim().toLowerCase();
+      if (closingKeywords.some(kw => line.startsWith(kw))) {
+        // Found a sign-off. Let's try to grab the paragraph right before it too.
+        let pIndex = i - 1;
+        while (pIndex >= 0 && lines[pIndex].trim() === '') pIndex--;
+        while (pIndex >= 0 && lines[pIndex].trim() !== '') pIndex--;
+        splitIndex = pIndex + 1;
+        break;
+      }
+    }
+
+    // Fallback: If no sign-off found, just grab the last 25% of the lines
+    if (splitIndex >= lines.length) {
+      splitIndex = Math.floor(lines.length * 0.75);
+    }
+    
+    const body = lines.slice(0, splitIndex).join('\n');
+    const closing = lines.slice(splitIndex).join('\n');
+    
+    return { body, closing };
+  }
+
   window.aiImproveSelection = async function(action, useWholeDocument = false) {
     const selection = window.getSelection();
     let selectedText = '';
+    let letterBodyCtx = '';
     
     if (useWholeDocument) {
       const sheet = document.getElementById('editorSheet');
-      if (sheet) selectedText = sheet.innerText.trim();
+      if (sheet) {
+        if (action === 'closing') {
+          const parts = extractClosingSection(sheet.innerText);
+          letterBodyCtx = parts.body;
+          selectedText = parts.closing.trim();
+        } else if (action === 'opening') {
+          // Future proofing: could extract opening
+          selectedText = sheet.innerText.trim();
+        } else {
+          selectedText = sheet.innerText.trim();
+        }
+      }
     } else {
       if (!selection || selection.isCollapsed) {
         showToast('error', 'Select text in the editor to improve.');
@@ -2392,9 +2475,12 @@
       const payload = {
         mode: 'quick_action',
         selectedText,
+        letterText: letterBodyCtx, // Send the body as context if it's a closing rewrite
         action,
         jobTitle: (document.getElementById('jobTitle')?.value || '').trim(),
         companyName: (document.getElementById('companyName')?.value || '').trim(),
+        jobDescription: (document.getElementById('jobDescription')?.value || '').trim(),
+        resumeText: resumeText,
         tone: document.getElementById('tone')?.value || 'Professional'
       };
       
@@ -2415,7 +2501,17 @@
 
       const data = await res.json();
       if (data.suggestedText) {
-        openCompareModal('ai-' + Date.now(), selectedText, data.suggestedText, data.explanation);
+        if (action === 'ats') {
+          openAtsCompareModal(
+            selectedText, 
+            data.suggestedText, 
+            data.atsScoreBefore || '--', 
+            data.atsScoreAfter || '--', 
+            data.keywordsAdded || []
+          );
+        } else {
+          openCompareModal('ai-' + Date.now(), selectedText, data.suggestedText, data.explanation);
+        }
       } else {
         throw new Error('No rewritten text returned');
       }
