@@ -650,5 +650,27 @@
     </div>
   </div>
 
+  <!-- QA Clarification Modal -->
+  <div id="qaClarificationModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); z-index:2300; align-items:center; justify-content:center;" role="dialog" aria-modal="true" aria-labelledby="qaModalTitle">
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-md); padding:24px; max-width:500px; width:90%; box-shadow:var(--shadow-lg); display:flex; flex-direction:column; max-height:90vh;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 id="qaModalTitle" style="font-size:1.15rem; font-weight:700; margin:0; display:flex; align-items:center; gap:8px;">
+          <i data-lucide="shield-alert" style="color:var(--warning);"></i> QA Clarification Needed
+        </h3>
+        <button class="close-modal-btn" aria-label="Close QA dialog" onclick="document.getElementById('qaClarificationModal').style.display='none'">&times;</button>
+      </div>
+      <p style="font-size:0.9rem; color:var(--text-2); margin:0 0 16px 0;">We found some conflicting information. Please clarify the following to ensure a flawless cover letter:</p>
+      
+      <div id="qaQuestionsContainer" style="overflow-y:auto; flex:1; margin-bottom:20px; display:flex; flex-direction:column; gap:16px;">
+        <!-- Dynamic Questions Injected Here -->
+      </div>
+
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button class="btn btn-secondary" id="qaSkipBtn">Skip & Edit Manually</button>
+        <button class="btn btn-primary" id="qaSubmitBtn">Update & Finalize</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
