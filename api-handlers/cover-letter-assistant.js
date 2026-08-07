@@ -22,7 +22,7 @@ module.exports = async function handler(req, res) {
     return res.status(authErr.status || 401).json({ error: authErr.message });
   }
 
-  const { mode, selectedText, letterText, action, jobTitle, companyName, tone, message } = req.body || {};
+  const { mode, selectedText, letterText, action, jobTitle, companyName, jobDescription, resumeText, tone, message } = req.body || {};
 
   if (!mode) {
     return res.status(400).json({ error: 'Missing required field: mode' });
@@ -83,7 +83,7 @@ Provide a helpful, actionable, and encouraging response as a career coach. If su
           actionInstruction = 'Rewrite this text to be a much stronger, more captivating opening statement for a cover letter. It should grab the reader\'s attention and show immediate enthusiasm and value.';
           break;
         case 'closing':
-          actionInstruction = 'Rewrite this text to be a stronger, more confident closing statement. It should reiterate interest, propose next steps (like an interview), and leave a lasting positive impression.';
+          actionInstruction = 'Rewrite this closing section to be a stronger, more confident closing statement. It should reiterate interest, propose next steps (like an interview), and leave a lasting positive impression. Context of the letter is provided so you know what was said, but ONLY output the rewritten closing section.';
           break;
         case 'persuasive':
           actionInstruction = 'Rewrite to be significantly more persuasive, compelling, and impactful. Use stronger action verbs and confident language.';
@@ -98,6 +98,9 @@ Context:
 Job Title: ${jobTitle || 'Not specified'}
 Company: ${companyName || 'Not specified'}
 Target Tone: ${tone || 'Professional'}
+${letterText ? `\nRest of the Letter (For Context Only):\n${letterText}\n` : ''}
+${jobDescription ? `\nJob Description:\n${jobDescription}\n` : ''}
+${resumeText ? `\nCandidate Resume:\n${resumeText.substring(0, 3000)}\n` : ''}
 
 Original Text:
 ${selectedText}
@@ -105,7 +108,8 @@ ${selectedText}
 You must return your response as a valid JSON object with the following fields:
 {
   "suggestedText": "The fully rewritten text",
-  "explanation": "A one or two sentence explanation of why this suggestion improves the text (e.g., 'Removed passive voice and added stronger action verbs.')"
+  "explanation": "A one or two sentence explanation of why this suggestion improves the text"
+${action === 'ats' ? ',\n  "atsScoreBefore": 65,\n  "atsScoreAfter": 85,\n  "keywordsAdded": ["Keyword 1", "Keyword 2"]' : ''}
 }
 
 Do not include any other text or markdown formatting outside the JSON object.`;
@@ -140,6 +144,8 @@ Context:
 Job Title: ${jobTitle || 'Not specified'}
 Company: ${companyName || 'Not specified'}
 Target Tone: ${tone || 'Professional'}
+${jobDescription ? `\nJob Description:\n${jobDescription}\n` : ''}
+${resumeText ? `\nCandidate Resume:\n${resumeText.substring(0, 3000)}\n` : ''}
 
 Original Paragraph:
 ${selectedText}
