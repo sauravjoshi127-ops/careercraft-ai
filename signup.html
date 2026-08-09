@@ -168,8 +168,8 @@
         <div class="divider">Or sign up with</div>
 
         <div class="social-login">
-            <button class="social-btn" type="button">Google</button>
-            <button class="social-btn" type="button">GitHub</button>
+            <button class="social-btn" type="button" onclick="handleOAuthLogin(event, 'google')">Google</button>
+            <button class="social-btn" type="button" onclick="handleOAuthLogin(event, 'github')">GitHub</button>
         </div>
 
         <p class="auth-link">
@@ -383,6 +383,36 @@
                 errorMsg.style.display = 'block';
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Create Account';
+            }
+        }
+
+        async function handleOAuthLogin(event, provider) {
+            event.preventDefault();
+            const btn = event.currentTarget;
+            if (btn.disabled) return;
+            
+            const originalText = btn.textContent;
+            
+            const allSocialBtns = document.querySelectorAll('.social-btn');
+            allSocialBtns.forEach(b => b.disabled = true);
+            
+            btn.textContent = 'Connecting...';
+            
+            const errorMsg = document.getElementById('errorMsg');
+            if(errorMsg) errorMsg.style.display = 'none';
+            
+            try {
+                if (!window.appSdk || !window.appSdk.client) {
+                    await window.appSdk.ready;
+                }
+                await window.appSdk.auth.oauthLogin(provider);
+            } catch (err) {
+                if(errorMsg) {
+                    errorMsg.textContent = `${provider === 'github' ? 'GitHub' : 'Google'} sign-in could not be completed. Please try again.`;
+                    errorMsg.style.display = 'block';
+                }
+                allSocialBtns.forEach(b => b.disabled = false);
+                btn.textContent = originalText;
             }
         }
     </script>
