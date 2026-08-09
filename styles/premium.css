@@ -3220,3 +3220,509 @@ input[type="password"]::-ms-clear { display: none; }
   from { transform: translateY(16px); opacity: 0; }
   to   { transform: translateY(0); opacity: 1; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   COVER LETTER POLISH — Production-Readiness Additions
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── ATS Keyword Chips (Part 5) ── */
+.tag-matched, .tag-missing {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin: 3px 4px 3px 0;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.tag-matched {
+  background: rgba(34,197,94,0.10);
+  border: 1px solid rgba(34,197,94,0.28);
+  color: #4ade80;
+}
+.tag-matched::before { content: "✓"; margin-right: 2px; font-size: 0.7rem; }
+.tag-matched:hover {
+  background: rgba(34,197,94,0.18);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(34,197,94,0.15);
+}
+.tag-missing {
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.24);
+  color: #fbbf24;
+}
+.tag-missing::before { content: "○"; margin-right: 2px; font-size: 0.7rem; }
+.tag-missing:hover {
+  background: rgba(245,158,11,0.16);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(245,158,11,0.15);
+}
+.tag-matched:focus-visible, .tag-missing:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.cl-ats-kw-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: 16px;
+}
+.cl-ats-kw-group-title {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--text-2);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cl-ats-kw-count {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: rgba(255,255,255,0.06);
+  padding: 1px 6px;
+  border-radius: 8px;
+  color: var(--text-3);
+}
+
+/* ── AI Copilot Section (Part 2) ── */
+.cl-copilot-section {
+  padding: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+}
+
+/* Quality Score Dashboard */
+.cl-copilot-score-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.cl-copilot-overall {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+.cl-copilot-overall-num {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-1);
+  line-height: 1;
+}
+.cl-copilot-overall-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+.cl-copilot-header-info { flex: 1; }
+.cl-copilot-header-info h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-1);
+  margin: 0 0 4px;
+}
+.cl-copilot-header-info p {
+  font-size: 0.8rem;
+  color: var(--text-3);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Dimension Bars */
+.cl-copilot-dimensions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+@media (max-width: 600px) {
+  .cl-copilot-dimensions { grid-template-columns: 1fr; }
+}
+.cl-copilot-dim {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cl-copilot-dim-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-2);
+  width: 95px;
+  flex-shrink: 0;
+}
+.cl-copilot-dim-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.cl-copilot-dim-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+  background: var(--accent);
+}
+.cl-copilot-dim-fill[data-score-high] { background: #22c55e; }
+.cl-copilot-dim-fill[data-score-mid] { background: #f59e0b; }
+.cl-copilot-dim-fill[data-score-low] { background: #ef4444; }
+.cl-copilot-dim-val {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-1);
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Action Cards */
+.cl-action-cards-title {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+  margin-bottom: 10px;
+}
+.cl-action-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+  gap: 8px;
+}
+.cl-action-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-2);
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 40px;
+}
+.cl-action-card:hover {
+  background: rgba(99,102,241,0.08);
+  border-color: rgba(99,102,241,0.3);
+  color: var(--text-1);
+  transform: translateY(-1px);
+}
+.cl-action-card:active { transform: translateY(0); }
+.cl-action-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.cl-action-card.loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+.cl-action-card .cl-action-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* Copilot Undo button */
+.cl-copilot-undo-btn {
+  display: none;
+  align-items: center;
+  gap: 4px;
+}
+.cl-copilot-undo-btn.visible { display: inline-flex; }
+
+/* ── Professional Error Card (Part 7) ── */
+.cl-error-card {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.18);
+  border-radius: var(--r-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cl-error-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cl-error-card-icon {
+  width: 20px;
+  height: 20px;
+  color: #fca5a5;
+  flex-shrink: 0;
+}
+.cl-error-card-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-1);
+}
+.cl-error-card-message {
+  font-size: 0.82rem;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.cl-error-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* ── Compare Modal Enhancements (Part 4) ── */
+.cl-compare-impact {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.cl-compare-impact-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.cl-compare-impact-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.cl-compare-impact-val {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.cl-compare-impact-val.positive { color: #4ade80; }
+.cl-compare-impact-val.neutral { color: var(--text-3); }
+.cl-compare-impact-val.negative { color: #fca5a5; }
+
+.cl-compare-reason {
+  background: rgba(var(--accent-rgb), 0.08);
+  border-left: 3px solid var(--accent);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.85rem;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+.cl-compare-reason strong {
+  color: var(--text-1);
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+}
+
+.cl-compare-confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 8px;
+}
+.cl-compare-confidence.high {
+  background: rgba(34,197,94,0.10);
+  color: #4ade80;
+  border: 1px solid rgba(34,197,94,0.25);
+}
+.cl-compare-confidence.medium {
+  background: rgba(245,158,11,0.10);
+  color: #fbbf24;
+  border: 1px solid rgba(245,158,11,0.25);
+}
+.cl-compare-confidence.low {
+  background: rgba(239,68,68,0.10);
+  color: #fca5a5;
+  border: 1px solid rgba(239,68,68,0.25);
+}
+
+/* ── Loading Overlay (Part 12) ── */
+.cl-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(13,15,24,0.92);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-md);
+}
+.cl-loading-overlay .cl-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(99,102,241, 0.1);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1.5rem;
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+.cl-loading-overlay .cl-loading-text {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text-1);
+  letter-spacing: -0.01em;
+  transition: opacity 0.2s ease;
+}
+.cl-loading-overlay .cl-loading-bar-track {
+  width: 240px;
+  height: 4px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  margin-top: 1.5rem;
+  overflow: hidden;
+}
+.cl-loading-overlay .cl-loading-bar-fill {
+  height: 100%;
+  width: 5%;
+  background: var(--accent);
+  transition: width 0.6s ease;
+  border-radius: 4px;
+}
+.cl-loading-complete-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--success);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 1.25rem;
+}
+
+/* ── Left Panel Sticky Scroll (Part 11) ── */
+.cl-left-panel {
+  position: sticky;
+  top: 72px;
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* ── Custom Scrollbar (Part 11) ── */
+.cl-left-panel::-webkit-scrollbar,
+.cl-copilot-section::-webkit-scrollbar,
+.compare-text-box::-webkit-scrollbar {
+  width: 5px;
+}
+.cl-left-panel::-webkit-scrollbar-track,
+.cl-copilot-section::-webkit-scrollbar-track,
+.compare-text-box::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cl-left-panel::-webkit-scrollbar-thumb,
+.cl-copilot-section::-webkit-scrollbar-thumb,
+.compare-text-box::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+.cl-left-panel::-webkit-scrollbar-thumb:hover,
+.cl-copilot-section::-webkit-scrollbar-thumb:hover,
+.compare-text-box::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.18);
+}
+
+/* Firefox scrollbar */
+.cl-left-panel,
+.cl-copilot-section,
+.compare-text-box {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+/* ── Section Cards (replace inline styles — Part 10) ── */
+.cl-section-card {
+  padding: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+}
+
+/* ── AI Chat Input Styles (for Custom Request) ── */
+.cl-custom-request-input {
+  flex-grow: 1;
+  padding: 10px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-1);
+  font-size: 0.88rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.cl-custom-request-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.14);
+}
+.cl-custom-request-send {
+  padding: 10px;
+  min-width: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ── Copilot Empty State ── */
+.cl-copilot-empty {
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--text-3);
+}
+.cl-copilot-empty-icon {
+  opacity: 0.4;
+  margin-bottom: 12px;
+}
+.cl-copilot-empty-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-2);
+  margin-bottom: 4px;
+}
+.cl-copilot-empty-desc {
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+/* ── Compare modal footer ── */
+.compare-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}

@@ -278,45 +278,111 @@
     return !hasErr;
   }
 
+  // switchWizardTab and switchEditorTab are now stubs —
+  // wizard uses step accordions, editor tabs were removed.
   function switchWizardTab(tabId) {
-    if (activeWizardTabId === 'jobInfo' && tabId !== 'jobInfo') {
-      if (!validateJobInfoStep()) {
-        showToast('error', 'Please fill in all required fields marked with *');
-        return;
-      }
-    }
-
-    activeWizardTabId = tabId;
-
-    document.querySelectorAll('#wizardTabs .tab-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.getAttribute('data-wizard-tab') === tabId);
-    });
-    document.querySelectorAll('.tab-pane').forEach(pane => {
-      if (pane.id.startsWith('pane-') && !pane.id.includes('Pane')) {
-        pane.classList.toggle('active', pane.id === `pane-${tabId}`);
-      }
-    });
-
-    const progressMap = {
-      'jobInfo': '25%',
-      'resumeTab': '50%',
-      'writerSettings': '75%',
-      'optimizerTab': '100%'
-    };
-    const bar = document.getElementById('wizardProgressBar');
-    if (bar && progressMap[tabId]) {
-      bar.style.width = progressMap[tabId];
-    }
+    if (typeof toggleStepAccordion === 'function') toggleStepAccordion(tabId);
+  }
+  function switchEditorTab(/* tabId */) {
+    // No-op: editor pane tabs removed in Copilot redesign.
   }
 
-  function switchEditorTab(tabId) {
-    document.querySelectorAll('#editorTabs .tab-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.getAttribute('data-editor-tab') === tabId);
-    });
-    document.querySelectorAll('.tab-pane').forEach(pane => {
-      if (pane.id.startsWith('pane-') && pane.id.endsWith('Pane')) {
-        pane.classList.toggle('active', pane.id === `pane-${tabId}`);
+  // ── User-Friendly Error Message Map ──
+  const ERROR_MESSAGES = {
+    network: 'Unable to reach our servers. Please check your connection and try again.',
+    auth: 'Your session has expired. Please sign in again to continue.',
+    rateLimit: 'Our AI is processing many requests right now. Please wait a moment and try again.',
+    server: "We couldn't complete this request. Please try again in a moment.",
+    atsAnalysis: 'ATS analysis could not be completed right now. Please try again.',
+    pdfExport: 'PDF export could not be completed. Please try again.',
+    dbSave: 'Your cover letter could not be saved. Please try again.',
+    aiRewrite: 'The AI could not process this request. Please try again.',
+    default: "Something unexpected happened. Please try again."
+  };
+
+  function getSafeErrorMessage(err) {
+    if (!err) return ERROR_MESSAGES.default;
+    const status = err.status || 0;
+    const msg = (err.message || '').toLowerCase();
+    if (msg.includes('network') || msg.includes('fetch') || msg.includes('failed to fetch')) return ERROR_MESSAGES.network;
+    if (status === 401 || status === 403 || msg.includes('auth') || msg.includes('token')) return ERROR_MESSAGES.auth;
+    if (status === 429 || msg.includes('rate') || msg.includes('limit')) return ERROR_MESSAGES.rateLimit;
+    if (status >= 500 || msg.includes('server')) return ERROR_MESSAGES.server;
+    return ERROR_MESSAGES.default;
+  }
+
+  // ── AI Copilot State Management ──
+  function activateCopilot() {
+    const empty = document.getElementById('copilotEmptyState');
+    const header = document.getElementById('copilotScoreHeader');
+    const dims = document.getElementById('copilotDimensions');
+    const actions = document.getElementById('copilotActions');
+    const customReq = document.getElementById('copilotCustomRequest');
+    if (empty) empty.style.display = 'none';
+    if (header) header.style.display = 'flex';
+    if (dims) dims.style.display = 'grid';
+    if (actions) actions.style.display = 'block';
+    if (customReq) customReq.style.display = 'block';
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function deactivateCopilot() {
+    const empty = document.getElementById('copilotEmptyState');
+    const header = document.getElementById('copilotScoreHeader');
+    const dims = document.getElementById('copilotDimensions');
+    const actions = document.getElementById('copilotActions');
+    const customReq = document.getElementById('copilotCustomRequest');
+    if (empty) empty.style.display = 'block';
+    if (header) header.style.display = 'none';
+    if (dims) dims.style.display = 'none';
+    if (actions) actions.style.display = 'none';
+    if (customReq) customReq.style.display = 'none';
+  }
+
+  function renderCopilotScores(data) {
+    if (!data) return;
+    activateCopilot();
+
+    // Calculate overall from dimension scores
+    const dims = {
+      grammar: data.recruiterReadability || data.grammar || 80,
+      ats: data.keywordMatch || data.overallATSScore || 75,
+      tone: data.professionalTone || data.tone || 80,
+      persuasion: data.personalization || data.persuasion || 75,
+      readability: data.recruiterReadability || data.readability || 80,
+      evidence: data.evidence || data.personalization || 70,
+      structure: data.structure || 80
+    };
+
+    const values = Object.values(dims);
+    const overall = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+
+    // Update overall score
+    const overallEl = document.getElementById('copilotOverallScore');
+    if (overallEl) overallEl.textContent = overall;
+
+    // Update dimension bars
+    const dimMap = {
+      Grammar: 'grammar', ATS: 'ats', Tone: 'tone', Persuasion: 'persuasion',
+      Readability: 'readability', Evidence: 'evidence', Structure: 'structure'
+    };
+
+    Object.entries(dimMap).forEach(([label, key]) => {
+      const score = Math.min(100, Math.max(0, Math.round(dims[key] || 0)));
+      const fill = document.getElementById(`dim${label}`);
+      const val = document.getElementById(`dim${label}Val`);
+      if (fill) {
+        fill.style.width = `${score}%`;
+        // Remove old data attrs
+        fill.removeAttribute('data-score-high');
+        fill.removeAttribute('data-score-mid');
+        fill.removeAttribute('data-score-low');
+        // Set color-coding attr
+        if (score >= 75) fill.setAttribute('data-score-high', '');
+        else if (score >= 50) fill.setAttribute('data-score-mid', '');
+        else fill.setAttribute('data-score-low', '');
       }
+      if (val) val.textContent = `${score}%`;
     });
   }
 
@@ -1112,6 +1178,9 @@
       showToast('success', 'Cover letter generated successfully!');
       switchEditorTab('editPane');
 
+      // Activate AI Copilot
+      activateCopilot();
+
       runAtsAnalysisOnText(letterText);
       CoverLetterLogger.step('Completed', 'Document rendered into editor.');
       CoverLetterLogger.end(true);
@@ -1232,10 +1301,13 @@
       renderAtsSuggestions(data.suggestions || []);
       renderAtsSummary(data.summary || {});
 
+      // Update AI Copilot quality scores
+      renderCopilotScores(data);
+
       if (reBtn) reBtn.style.display = 'inline-block';
     } catch (err) {
       console.error('ATS Analysis error:', err);
-      showToast('error', 'ATS Analysis failed: ' + err.message);
+      showToast('error', ERROR_MESSAGES.atsAnalysis);
     } finally {
       if (reBtn) {
         reBtn.disabled = false;
@@ -1419,35 +1491,16 @@
   let _compareModalPreviousFocus = null;
 
   window.closeAtsCompareModal = function() {
-    const modal = document.getElementById('atsCompareModal');
-    if (modal) modal.style.display = 'none';
+    // Consolidated into unified compare modal
+    closeCompareModal();
   };
 
+  // openAtsCompareModal — now redirects to unified compare modal with ATS impact metadata
   function openAtsCompareModal(original, suggested, scoreBefore, scoreAfter, keywords) {
-    activeCompareOriginal = original;
-    activeCompareReplacement = suggested;
-
-    document.getElementById('atsScoreBefore').textContent = scoreBefore;
-    document.getElementById('atsScoreAfter').textContent = scoreAfter;
-    document.getElementById('atsDiffOriginal').textContent = original;
-    document.getElementById('atsDiffSuggested').textContent = suggested;
-
-    const kwContainer = document.getElementById('atsKeywordsAdded');
-    if (kwContainer) {
-      if (keywords && keywords.length) {
-        kwContainer.innerHTML = keywords.map(kw => `<span style="background:var(--accent); color:white; padding:2px 8px; border-radius:12px;">${kw}</span>`).join('');
-      } else {
-        kwContainer.innerHTML = '<span style="color:var(--text-3);">None</span>';
-      }
-    }
-
-    const modal = document.getElementById('atsCompareModal');
-    if (modal) modal.style.display = 'flex';
-
-    document.getElementById('applyAtsChangesBtn').onclick = () => {
-      applyAiSuggestion(original, suggested);
-      closeAtsCompareModal();
-    };
+    const explanation = keywords && keywords.length
+      ? `<strong>ATS Optimization</strong>Added keywords: ${keywords.join(', ')}. Score: ${scoreBefore} → ${scoreAfter}.`
+      : `<strong>ATS Optimization</strong>Score: ${scoreBefore} → ${scoreAfter}.`;
+    openCompareModal('ats-' + Date.now(), original, suggested, explanation);
   }
 
 
@@ -1459,13 +1512,35 @@
     document.getElementById('compareBeforeVal').textContent = original;
     document.getElementById('compareAfterVal').textContent = replacement;
     
-    const expBox = document.getElementById('compareExplanationBox');
-    if (expBox) {
+    // Reason box
+    const reasonBox = document.getElementById('compareReasonBox');
+    if (reasonBox) {
       if (explanation) {
-        expBox.innerHTML = `<strong>Why this suggestion?</strong><br/>${explanation}`;
-        expBox.style.display = 'block';
+        reasonBox.innerHTML = `<strong>Why this suggestion?</strong>${explanation}`;
+        reasonBox.style.display = 'block';
       } else {
-        expBox.style.display = 'none';
+        reasonBox.style.display = 'none';
+      }
+    }
+
+    // Confidence badge
+    const confBadge = document.getElementById('compareConfidenceBadge');
+    if (confBadge) confBadge.style.display = 'none'; // Default hidden unless set by caller
+
+    // Impact metadata — show if we have ATS data
+    const impactEl = document.getElementById('compareImpact');
+    if (impactEl) {
+      const isAts = id && String(id).startsWith('ats-');
+      if (isAts || (currentAtsData && currentAtsData.overallATSScore)) {
+        impactEl.style.display = 'grid';
+        const atsImpact = document.getElementById('compareAtsImpact');
+        const toneImpact = document.getElementById('compareToneImpact');
+        const readImpact = document.getElementById('compareReadabilityImpact');
+        if (atsImpact) { atsImpact.textContent = isAts ? 'Positive' : 'Neutral'; atsImpact.className = 'cl-compare-impact-val ' + (isAts ? 'positive' : 'neutral'); }
+        if (toneImpact) { toneImpact.textContent = 'Neutral'; toneImpact.className = 'cl-compare-impact-val neutral'; }
+        if (readImpact) { readImpact.textContent = 'Neutral'; readImpact.className = 'cl-compare-impact-val neutral'; }
+      } else {
+        impactEl.style.display = 'none';
       }
     }
 
@@ -1477,8 +1552,7 @@
     }
     
     applyBtn.onclick = () => {
-      // If it is an AI suggestion, we might not have a gainStr, but we handle the replacement
-      if (!id || String(id).startsWith('ai-')) {
+      if (!id || String(id).startsWith('ai-') || String(id).startsWith('ats-')) {
         applyAiSuggestion(original, replacement);
       } else {
         applyAtsSuggestion(id, original, replacement, gainStr);
@@ -1490,11 +1564,9 @@
     const modal = document.getElementById('compareModal');
     modal.style.display = 'flex';
     modal.setAttribute('aria-hidden', 'false');
-    // Focus first interactive element
     const closeBtn = modal.querySelector('.close-modal-btn');
     if (closeBtn) setTimeout(() => closeBtn.focus(), 50);
 
-    // Focus trap
     modal.addEventListener('keydown', _compareFocusTrap);
     document.addEventListener('keydown', _compareEscapeHandler);
   }
@@ -1691,7 +1763,8 @@
       }
       await loadHistory();
     } catch (err) {
-      showToast('error', 'Database save error: ' + err.message);
+      showToast('error', ERROR_MESSAGES.dbSave);
+      console.error('[cover-letter] Database save error:', err.message);
     }
   }
 
@@ -2060,7 +2133,8 @@
 
       showToast('success', 'Cover letter PDF exported!');
     } catch (err) {
-      showToast('error', 'PDF export failed: ' + err.message);
+      showToast('error', ERROR_MESSAGES.pdfExport);
+      console.error('[cover-letter] PDF export error:', err.message);
     } finally {
       downloadBtn.textContent = originalText;
       downloadBtn.disabled = false;
@@ -2335,8 +2409,9 @@
         `;
       }
     } catch (err) {
-      if (listEl) listEl.innerHTML = `<p style="color:var(--danger); font-size:0.85rem;">Error: ${err.message}</p>`;
-      showToast('error', err.message);
+      console.error('[cover-letter] Paragraph review error:', err);
+      if (listEl) listEl.innerHTML = `<div class="cl-error-card"><div class="cl-error-card-header"><span class="cl-error-card-title">Review could not be completed</span></div><div class="cl-error-card-message">${getSafeErrorMessage(err)}</div><div class="cl-error-card-actions"><button class="btn btn-secondary btn-sm" onclick="reviewSelectedParagraph()">Retry</button></div></div>`;
+      showToast('error', getSafeErrorMessage(err));
     }
   };
 
@@ -2348,27 +2423,23 @@
     
     inputEl.value = '';
     
-    const historyEl = document.getElementById('aiChatHistory');
-    if (!historyEl) return;
-    
-    // Append user message
-    historyEl.innerHTML += `
-      <div style="align-self: flex-end; background: var(--accent); color: white; padding: 8px 12px; border-radius: var(--r-md); max-width: 85%; font-size: 0.9rem;">
-        ${message}
-      </div>
-    `;
-    
-    // Append AI loading state
-    const loadingId = 'ai-msg-' + Date.now();
-    historyEl.innerHTML += `
-      <div id="${loadingId}" style="align-self: flex-start; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-2); padding: 8px 12px; border-radius: var(--r-md); max-width: 85%; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="loader-circle" class="spin" width="14"></i> Thinking...
+    // Render into suggestions list area (custom request results)
+    const listEl = document.getElementById('suggestionsList');
+    if (!listEl) return;
+
+    // Show loading state
+    const loadingId = 'ai-custom-' + Date.now();
+    listEl.innerHTML = `
+      <div class="suggestion-card" id="${loadingId}">
+        <div class="suggestion-header" style="margin-bottom:0.6rem;">
+          <span class="suggestion-cat-badge badge-impact">Custom Request</span>
+        </div>
+        <div class="suggestion-desc" style="display:flex; align-items:center; gap:8px;">
+          <i data-lucide="loader-circle" class="spin" width="14"></i> Processing your request...
+        </div>
       </div>
     `;
     if (window.lucide) lucide.createIcons();
-    
-    const scrollArea = document.getElementById('aiAssistantScrollArea');
-    if (scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
     
     try {
       const sheet = document.getElementById('editorSheet');
@@ -2390,18 +2461,28 @@
         headers,
         body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error('Chat failed');
+      if (!res.ok) { const e = new Error('AI request failed'); e.status = res.status; throw e; }
       
       const data = await res.json();
-      const msgEl = document.getElementById(loadingId);
-      if (msgEl) {
-        msgEl.innerHTML = data.reply;
-        msgEl.style.color = 'var(--text-1)';
+      const cardEl = document.getElementById(loadingId);
+      if (cardEl) {
+        cardEl.innerHTML = `
+          <div class="suggestion-header" style="margin-bottom:0.6rem;">
+            <span class="suggestion-cat-badge badge-impact">Custom Request</span>
+          </div>
+          <div class="suggestion-desc">${data.reply || 'No response received.'}</div>
+        `;
       }
     } catch (err) {
-      const msgEl = document.getElementById(loadingId);
-      if (msgEl) {
-        msgEl.innerHTML = `<span style="color: var(--danger)">Error: ${err.message}</span>`;
+      console.error('[cover-letter] Custom request error:', err);
+      const cardEl = document.getElementById(loadingId);
+      if (cardEl) {
+        cardEl.innerHTML = `
+          <div class="cl-error-card-header"><span class="cl-error-card-title">Request could not be completed</span></div>
+          <div class="cl-error-card-message">${getSafeErrorMessage(err)}</div>
+          <div class="cl-error-card-actions"><button class="btn btn-secondary btn-sm" onclick="document.getElementById('aiChatInput').focus()">Try Again</button></div>
+        `;
+        cardEl.className = 'cl-error-card';
       }
     }
     
@@ -2516,7 +2597,8 @@
         throw new Error('No rewritten text returned');
       }
     } catch (err) {
-      showToast('error', 'AI rewrite failed: ' + err.message);
+      console.error('[cover-letter] AI rewrite error:', err);
+      showToast('error', ERROR_MESSAGES.aiRewrite);
     }
   };
 
@@ -2556,6 +2638,9 @@
     currentAtsData = null;
     editorHistory = [''];
     historyIndex = 0;
+
+    // Reset Copilot
+    deactivateCopilot();
 
     // Reset editor metrics
     updateCounts();
@@ -2611,6 +2696,15 @@
 
   window.handleCopyCoverLetter = handleCopyCoverLetter;
   window.copyToClipboard = window.copyToClipboard || handleCopyCoverLetter;
+
+  // Keyboard shortcut: Ctrl+Enter to Generate
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      const genBtn = document.getElementById('generateBtn');
+      if (genBtn && !genBtn.disabled) genBtn.click();
+    }
+  });
 
   // Initialize
   window.addEventListener('load', init);
