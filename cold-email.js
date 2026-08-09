@@ -295,7 +295,11 @@
   function wireUpLivePreview() {
     const editorBody = document.getElementById('editorBody');
     if (editorBody) {
-      editorBody.addEventListener('input', updateLiveStats);
+      let debounceTimer;
+      editorBody.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(updateLiveStats, 500);
+      });
     }
   }
 
@@ -481,6 +485,20 @@
     
     const loadingState = document.getElementById('loadingState');
     loadingState.style.display = 'block';
+    
+    // Meaningful loading state
+    const loadingText = document.getElementById('loadingText');
+    let loadingInterval = null;
+    if (loadingText) {
+      const messages = ['Preparing context...', 'Analyzing recipient...', 'Crafting opening...', 'Optimizing CTA...'];
+      let msgIdx = 0;
+      loadingText.innerText = messages[msgIdx];
+      loadingInterval = setInterval(() => {
+        msgIdx = (msgIdx + 1) % messages.length;
+        if (loadingText) loadingText.innerText = messages[msgIdx];
+      }, 2000);
+    }
+    
     const btn = document.getElementById('genBtn');
     btn.disabled = true;
 
@@ -492,29 +510,29 @@
     const controller = new AbortController();
     activeGenerationController = controller;
 
+    const goal = document.getElementById('emailGoal').value;
+    const companyContext = document.getElementById('companyContext')?.value.trim() || '';
+    const whyContactingStr = goal + (companyContext ? ' - ' + companyContext : '');
+
     const payload = {
       action: 'generate',
-      emailGoal: document.getElementById('emailGoal').value,
+      emailGoal: goal,
       recipient: {
-        name: document.getElementById('recipientName').value.trim(),
-        company: document.getElementById('companyName').value.trim(),
-        position: document.getElementById('position').value.trim(),
-        email: document.getElementById('recipientEmail').value.trim()
-      },
-      context: {
-        companyContext: document.getElementById('companyContext').value.trim(),
-        relevantTrigger: document.getElementById('relevantTrigger').value.trim()
+        name: document.getElementById('recipientName')?.value.trim() || '',
+        company: document.getElementById('companyName')?.value.trim() || '',
+        position: document.getElementById('position')?.value.trim() || '',
+        email: document.getElementById('recipientEmail')?.value.trim() || ''
       },
       userContext: {
-        name: document.getElementById('userName').value.trim(),
-        background: document.getElementById('background').value.trim(),
-        keySkills: document.getElementById('keySkills').value.trim()
+        name: document.getElementById('userName')?.value.trim() || '',
+        background: document.getElementById('background')?.value.trim() || '',
+        keySkills: document.getElementById('keySkills')?.value.trim() || '',
+        whyContacting: whyContactingStr || 'Job Inquiry'
       },
       personalization: {
-        tone: document.getElementById('tone').value,
-        length: document.getElementById('length').value,
-        ctaStyle: document.getElementById('ctaStyle').value,
-        level: document.getElementById('personalizationLevel').value
+        tone: document.getElementById('tone')?.value || 'Professional',
+        length: document.getElementById('length')?.value || 'Short',
+        ctaStyle: document.getElementById('ctaStyle')?.value || 'Soft Ask'
       }
     };
 
@@ -591,6 +609,7 @@
         showToast(userMsg, true);
       }
     } finally {
+      if (loadingInterval) clearInterval(loadingInterval);
       if (activeGenerationController === controller) {
         loadingState.style.display = 'none';
         btn.disabled = false;
@@ -775,34 +794,83 @@
       loading.style.display = 'block';
       diffPreview.style.display = 'none';
       
-      // Mock API call to represent AI modification
-      setTimeout(() => {
-        loading.style.display = 'none';
-        
-        let suggested = text;
-        if (action === 'shorten') {
-          suggested = text.split('\n').slice(0, Math.max(2, text.split('\n').length - 1)).join('\n');
-        } else if (action === 'confident') {
-          suggested = text.replace(/I think/gi, "I am confident").replace(/I hope/gi, "I look forward to");
-        } else {
-          suggested = "Here is a slightly refined version of your email:\n\n" + text;
+      // Call real API for AI optimization
+      try {
+        const session = window.appSdk ? await window.appSdk.auth.getSession() : null;
+        const headers = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
         }
         
         if (action === 'subject') {
-           const subjectList = document.getElementById('subjectList');
-           document.getElementById('subjectAlternatives').style.display = 'block';
-           subjectList.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:0.5rem 0.75rem; border:1px solid var(--border); border-radius:var(--r-sm);">
-              <span style="font-size:0.85rem;">Quick question about ${document.getElementById('position').value || 'the role'}</span>
-              <button class="btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="document.getElementById('editorSubject').value='Quick question about ${document.getElementById('position').value || 'the role'}'; showToast('Subject updated');"><i data-lucide="check" width="14"></i></button>
+          const res = await fetch('/api/cold-email', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              action: 'regenerate-subjects',
+              emailBody: text,
+              emailGoal: document.getElementById('emailGoal').value,
+              companyName: document.getElementById('companyName').value,
+              recipientName: document.getElementById('recipientName').value,
+              position: document.getElementById('position').value
+            })
+          });
+          const data = await res.json();
+          loading.style.display = 'none';
+          
+          if (!res.ok) throw new Error(data.error || 'Failed to generate subjects');
+          
+          const subjectList = document.getElementById('subjectList');
+          document.getElementById('subjectAlternatives').style.display = 'block';
+          
+          let html = '';
+          (data.subjectLines || []).forEach(sub => {
+            html += `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:0.5rem 0.75rem; border:1px solid var(--border); border-radius:var(--r-sm); margin-bottom: 0.5rem;">
+              <span style="font-size:0.85rem;">${sub.text}</span>
+              <button class="btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="document.getElementById('editorSubject').value='${sub.text.replace(/'/g, "\\'")}'; showToast('Subject updated');"><i data-lucide="check" width="14"></i> Use</button>
             </div>
-           `;
-           if(window.lucide) lucide.createIcons();
-           return;
+            `;
+          });
+          subjectList.innerHTML = html;
+          if(window.lucide) lucide.createIcons();
+          return;
         }
+
+        // Mapping actions to feedback prompts
+        let feedback = '';
+        if (action === 'shorten') feedback = 'Make this email more concise and shorter.';
+        else if (action === 'confident') feedback = 'Make this email sound more confident and professional.';
+        else feedback = 'Improve the grammar, flow, and overall quality of this email.';
+
+        const payload = {
+          action: 'optimize',
+          emailBody: text,
+          feedback,
+          emailGoal: document.getElementById('emailGoal').value,
+          companyName: document.getElementById('companyName').value,
+          recipientName: document.getElementById('recipientName').value,
+          position: document.getElementById('position').value,
+          userName: document.getElementById('userName').value,
+          background: document.getElementById('background').value,
+          minLength: 80,
+          maxLength: 170
+        };
+
+        const res = await fetch('/api/cold-email', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        loading.style.display = 'none';
         
-        document.getElementById('diffOriginal').innerText = text.substring(0, 100) + '...';
-        document.getElementById('diffSuggested').innerText = suggested.substring(0, 100) + '...';
+        if (!res.ok) throw new Error(data.error || 'Failed to optimize email');
+        
+        const suggested = data.optimizedBody || data.emailBody;
+        
+        document.getElementById('diffOriginal').innerText = text.substring(0, 150) + '...';
+        document.getElementById('diffSuggested').innerText = suggested.substring(0, 150) + '...';
         
         diffPreview.style.display = 'block';
         
@@ -816,9 +884,44 @@
         document.getElementById('btnRejectAi').onclick = () => {
           diffPreview.style.display = 'none';
         };
-      }, 1500);
+
+      } catch (err) {
+        loading.style.display = 'none';
+        console.error('AI Optimize Error:', err);
+        showToast('AI service is currently busy. Try again in a moment.', true);
+      }
     });
   });
+
+  // Normalization logic for older drafts
+  function normalizeSavedEmail(draft) {
+    if (!draft) return null;
+    let meta = {};
+    try {
+      meta = typeof draft.variant === 'string' ? JSON.parse(draft.variant) : (draft.variant || {});
+    } catch(e) {
+      console.warn("Failed to parse draft variant", e);
+    }
+
+    return {
+      id: draft.id,
+      subject: draft.subject || '',
+      body: draft.body || '',
+      company: draft.company || meta.companyName || '',
+      recipient_title: draft.recipient_title || meta.position || '',
+      emailGoal: meta.emailGoal || 'Job Inquiry',
+      recipientName: meta.recipientName || '',
+      recipientEmail: meta.recipientEmail || '',
+      companyContext: meta.companyContext || meta.relevantTrigger || '',
+      userName: meta.userName || '',
+      background: meta.background || '',
+      keySkills: meta.keySkills || '',
+      tone: meta.tone || 'Professional',
+      length: meta.length || 'Short',
+      ctaStyle: meta.ctaStyle || 'Soft Ask',
+      created_at: draft.created_at
+    };
+  }
 
   async function loadHistory() {
     const draftsList = document.getElementById('draftsList');
@@ -861,22 +964,28 @@
       document.querySelectorAll('.load-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           const id = e.target.dataset.id;
-          const draft = drafts.find(d => String(d.id) === String(id));
-          if (draft) {
+          const rawDraft = drafts.find(d => String(d.id) === String(id));
+          if (rawDraft) {
+            const draft = normalizeSavedEmail(rawDraft);
             currentDraftId = draft.id;
-            document.getElementById('editorSubject').value = draft.subject || '';
-            document.getElementById('editorBody').innerHTML = (draft.body || '').replace(/\n/g, '<br>');
+            document.getElementById('editorSubject').value = draft.subject;
+            document.getElementById('editorBody').innerHTML = draft.body.replace(/\n/g, '<br>');
             
-            try {
-              const meta = JSON.parse(draft.variant);
-              if (meta) {
-                if (meta.emailGoal) document.getElementById('emailGoal').value = meta.emailGoal;
-                if (meta.recipientName) document.getElementById('recipientName').value = meta.recipientName;
-                if (meta.companyName) document.getElementById('companyName').value = meta.companyName;
-                if (meta.position) document.getElementById('position').value = meta.position;
-                if (meta.recipientEmail) document.getElementById('recipientEmail').value = meta.recipientEmail;
-              }
-            } catch(e){}
+            document.getElementById('emailGoal').value = draft.emailGoal;
+            document.getElementById('recipientName').value = draft.recipientName;
+            document.getElementById('companyName').value = draft.company;
+            document.getElementById('position').value = draft.recipient_title;
+            document.getElementById('recipientEmail').value = draft.recipientEmail;
+            document.getElementById('companyContext').value = draft.companyContext;
+            document.getElementById('userName').value = draft.userName;
+            document.getElementById('background').value = draft.background;
+            
+            const keySkillsEl = document.getElementById('keySkills');
+            if (keySkillsEl) keySkillsEl.value = draft.keySkills;
+            
+            document.getElementById('tone').value = draft.tone;
+            document.getElementById('length').value = draft.length;
+            document.getElementById('ctaStyle').value = draft.ctaStyle;
             
             document.getElementById('emptyState').style.display = 'none';
             document.getElementById('editorContent').style.display = 'block';
