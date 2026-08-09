@@ -357,7 +357,6 @@
       </aside>
 
       <!-- RIGHT PANEL: Notion-Style Live Editor & AI Suite -->
-      <!-- RIGHT PANEL: Notion-Style Live Editor & AI Suite -->
       <section class="cl-right-panel" aria-label="Cover letter workspace" style="display: flex; flex-direction: column; gap: 24px;">
         
         <!-- EDITOR SECTION -->
@@ -480,41 +479,74 @@
               </div>
             </div>
 
-        <!-- AI Writing Assistant -->
-        <div class="cl-ai-coach-section" id="pane-suggestionsPane" style="padding: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg);">
-          <div class="cl-tab-pane-header" style="flex-shrink: 0; padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 16px;">
-              <div>
-                <h3 class="cl-tab-pane-title">AI Coach</h3>
-                <p class="cl-tab-pane-subtitle">Your personal assistant for improving this letter.</p>
-              </div>
-              <button id="undoAiBtn" class="btn btn-secondary btn-sm" onclick="undoLastAiChange()" style="display:none;" title="Undo Last AI Change"><i data-lucide="undo-2" width="16"></i> Undo</button>
-            </div>
+        <!-- AI Copilot —— Quality Scores + Action Cards -->
+        <div class="cl-copilot-section" id="pane-suggestionsPane" aria-label="AI Copilot">
 
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; flex-shrink: 0;">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="aiImproveSelection('ats', true)" title="Optimize for ATS"><i data-lucide="target" width="14"></i> ATS Optimize</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="aiImproveSelection('opening', true)" title="Stronger Opening"><i data-lucide="zap" width="14"></i> Stronger Opening</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="aiImproveSelection('closing', true)" title="Stronger Closing"><i data-lucide="flag" width="14"></i> Stronger Closing</button>
+          <!-- Copilot Header with Overall Score -->
+          <div class="cl-copilot-score-header" id="copilotScoreHeader" style="display:none;">
+            <div class="cl-copilot-overall">
+              <span class="cl-copilot-overall-num" id="copilotOverallScore">—</span>
+              <span class="cl-copilot-overall-label">Quality</span>
             </div>
+            <div class="cl-copilot-header-info">
+              <h3>AI Copilot</h3>
+              <p>Real-time quality analysis and actionable improvements.</p>
+            </div>
+            <button id="undoAiBtn" class="btn btn-secondary btn-sm cl-copilot-undo-btn" onclick="undoLastAiChange()" title="Undo Last AI Change" aria-label="Undo last AI change"><i data-lucide="undo-2" width="16"></i> Undo</button>
+          </div>
 
-            <!-- Scrollable Area for Reviews and Chat -->
-            <div id="aiAssistantScrollArea" style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-bottom: 16px; margin-bottom: 12px;">
-              <div id="suggestionsList">
-                <p class="cl-empty-hint">Highlight text and select "Review" or ask a question below to get started.</p>
-              </div>
-              <div id="aiChatHistory" style="display: flex; flex-direction: column; gap: 12px;"></div>
-            </div>
+          <!-- Empty State (shown before generation) -->
+          <div id="copilotEmptyState" class="cl-copilot-empty">
+            <div class="cl-copilot-empty-icon"><i data-lucide="sparkles" width="32" height="32"></i></div>
+            <div class="cl-copilot-empty-title">AI Copilot</div>
+            <div class="cl-copilot-empty-desc">Generate a cover letter to activate real-time quality scoring and AI-powered improvement actions.</div>
+          </div>
 
-            <!-- Sticky Chat Input -->
-            <div style="flex-shrink: 0; margin-top: auto; border-top: 1px solid var(--border); padding-top: 12px;">
-              <form id="aiChatForm" onsubmit="handleAiChatSubmit(event)" style="display: flex; gap: 8px;">
-                <input type="text" id="aiChatInput" placeholder="Ask AI to adjust tone, add metrics..." style="flex-grow: 1; padding: 10px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--bg-card); color: var(--text-1);" autocomplete="off" />
-                <button type="submit" class="btn btn-primary" id="aiChatSendBtn" style="padding: 10px; min-width: 44px; display: flex; justify-content: center; align-items: center;"><i data-lucide="send" width="16"></i></button>
-              </form>
+          <!-- Quality Dimension Bars -->
+          <div class="cl-copilot-dimensions" id="copilotDimensions" style="display:none;">
+            <div class="cl-copilot-dim"><span class="cl-copilot-dim-label">Grammar</span><div class="cl-copilot-dim-track"><div class="cl-copilot-dim-fill" id="dimGrammar" style="width:0%;"></div></div><span class="cl-copilot-dim-val" id="dimGrammarVal">—</span></div>
+            <div class="cl-copilot-dim"><span class="cl-copilot-dim-label">ATS</span><div class="cl-copilot-dim-track"><div class="cl-copilot-dim-fill" id="dimAts" style="width:0%;"></div></div><span class="cl-copilot-dim-val" id="dimAtsVal">—</span></div>
+            <div class="cl-copilot-dim"><span class="cl-copilot-dim-label">Tone</span><div class="cl-copilot-dim-track"><div class="cl-copilot-dim-fill" id="dimTone" style="width:0%;"></div></div><span class="cl-copilot-dim-val" id="dimToneVal">—</span></div>
+            <div class="cl-copilot-dim"><span class="cl-copilot-dim-label">Persuasion</span><div class="cl-copilot-dim-track"><div class="cl-copilot-dim-fill" id="dimPersuasion" style="width:0%;"></div></div><span class="cl-copilot-dim-val" id="dimPersuasionVal">—</span></div>
+            <div class="cl-copilot-dim"><span class="cl-copilot-dim-label">Readability</span><div class="cl-copilot-dim-track"><div class="cl-copilot-dim-fill" id="dimReadability" style="width:0%;"></div></div><span class="cl-copilot-dim-val" id="dimReadabilityVal">—</span></div>
+            <div class="cl-copilot-dim"><span class="cl-copilot-dim-label">Evidence</span><div class="cl-copilot-dim-track"><div class="cl-copilot-dim-fill" id="dimEvidence" style="width:0%;"></div></div><span class="cl-copilot-dim-val" id="dimEvidenceVal">—</span></div>
+            <div class="cl-copilot-dim"><span class="cl-copilot-dim-label">Structure</span><div class="cl-copilot-dim-track"><div class="cl-copilot-dim-fill" id="dimStructure" style="width:0%;"></div></div><span class="cl-copilot-dim-val" id="dimStructureVal">—</span></div>
+          </div>
+
+          <!-- Action Cards -->
+          <div id="copilotActions" style="display:none;">
+            <div class="cl-action-cards-title">Quick Actions</div>
+            <div class="cl-action-cards">
+              <button type="button" class="cl-action-card" onclick="aiImproveSelection('grammar', true)" aria-label="Improve Grammar"><i data-lucide="check-check" width="16" class="cl-action-icon"></i> Grammar</button>
+              <button type="button" class="cl-action-card" onclick="aiImproveSelection('ats', true)" aria-label="Improve ATS Keywords"><i data-lucide="target" width="16" class="cl-action-icon"></i> ATS Keywords</button>
+              <button type="button" class="cl-action-card" onclick="aiImproveSelection('tone', true)" aria-label="Improve Tone"><i data-lucide="volume-2" width="16" class="cl-action-icon"></i> Prof. Tone</button>
+              <button type="button" class="cl-action-card" onclick="aiImproveSelection('persuasive', true)" aria-label="Make More Persuasive"><i data-lucide="flame" width="16" class="cl-action-icon"></i> Persuasive</button>
+              <button type="button" class="cl-action-card" onclick="aiImproveSelection('opening', true)" aria-label="Rewrite Opening"><i data-lucide="zap" width="16" class="cl-action-icon"></i> Opening</button>
+              <button type="button" class="cl-action-card" onclick="aiImproveSelection('closing', true)" aria-label="Rewrite Closing"><i data-lucide="flag" width="16" class="cl-action-icon"></i> Closing</button>
+              <button type="button" class="cl-action-card" onclick="aiImproveSelection('metrics', true)" aria-label="Add Metrics"><i data-lucide="bar-chart-3" width="16" class="cl-action-icon"></i> Add Metrics</button>
+              <button type="button" class="cl-action-card" onclick="aiImproveSelection('executive', true)" aria-label="Executive Tone"><i data-lucide="briefcase" width="16" class="cl-action-icon"></i> Executive</button>
+              <button type="button" class="cl-action-card" onclick="aiImproveSelection('humanize', true)" aria-label="Humanize Tone"><i data-lucide="user" width="16" class="cl-action-icon"></i> Humanize</button>
+              <button type="button" class="cl-action-card" onclick="aiImproveSelection('legal', true)" aria-label="Legal Tone"><i data-lucide="scale" width="16" class="cl-action-icon"></i> Legal Tone</button>
+              <button type="button" class="cl-action-card" onclick="aiImproveSelection('concise', true)" aria-label="Shorten"><i data-lucide="shrink" width="16" class="cl-action-icon"></i> Shorten</button>
+              <button type="button" class="cl-action-card" onclick="aiImproveSelection('expand', true)" aria-label="Expand"><i data-lucide="expand" width="16" class="cl-action-icon"></i> Expand</button>
             </div>
+          </div>
+
+          <!-- Suggestions List (populated by ATS analysis) -->
+          <div id="suggestionsSummaryContainer" style="margin-top:16px;"></div>
+          <div id="suggestionsList" style="margin-top:12px;"></div>
+
+          <!-- Custom Request (collapsed) -->
+          <div id="copilotCustomRequest" style="display:none; margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px;">
+            <form id="aiChatForm" onsubmit="handleAiChatSubmit(event)" style="display: flex; gap: 8px;">
+              <input type="text" id="aiChatInput" class="cl-custom-request-input" placeholder="Custom request — e.g. 'Add more metrics to paragraph 2'" autocomplete="off" aria-label="Custom AI request" />
+              <button type="submit" class="btn btn-primary cl-custom-request-send" id="aiChatSendBtn" aria-label="Send custom request"><i data-lucide="send" width="16"></i></button>
+            </form>
+          </div>
         </div>
 
         <!-- ATS Analysis -->
-        <div class="cl-ats-section" id="pane-atsPane" style="padding: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg);">
+        <div class="cl-ats-section cl-section-card" id="pane-atsPane">
           <h3 class="cl-tab-pane-title">ATS Compatibility Scorecard</h3>
             <p class="cl-tab-pane-subtitle" style="margin-bottom:16px;">Detailed evaluation against ATS parser algorithms.</p>
 
@@ -559,7 +591,7 @@
         </div>
 
         <!-- Variants -->
-        <div class="cl-variants-section" id="pane-variantsPane" style="padding: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg);">
+        <div class="cl-variants-section cl-section-card" id="pane-variantsPane">
           <h3 class="cl-tab-pane-title">Target Archetype Variants</h3>
             <p class="cl-tab-pane-subtitle" style="margin-bottom:16px;">Select a variant strategy tailored to specific company cultures.</p>
 
@@ -569,7 +601,7 @@
         </div>
 
         <!-- SAVED COVER LETTERS DASHBOARD -->
-        <div class="cl-history-section" style="padding: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg);">
+        <div class="cl-history-section cl-section-card">
           <div class="cl-section-header">
         <h2 class="cl-section-title">Your Saved Letters Dashboard</h2>
       </div>
@@ -598,73 +630,44 @@
   </div><!-- /.cl-page-container -->
 
 
-  <!-- Compare Before/After Modal -->
+  <!-- Compare Before/After Modal (Unified) -->
   <div id="compareModal" class="compare-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="compareModalTitle">
     <div class="compare-modal-content">
       <div class="compare-modal-header">
-        <h3 id="compareModalTitle" style="font-size:1.1rem; margin:0; color:var(--text-1);">Compare Changes</h3>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <h3 id="compareModalTitle" style="font-size:1.1rem; margin:0; color:var(--text-1);">Compare Changes</h3>
+          <span id="compareConfidenceBadge" class="cl-compare-confidence high" style="display:none;"></span>
+        </div>
         <button class="close-modal-btn" onclick="closeCompareModal()" aria-label="Close compare dialog">&times;</button>
       </div>
+      <!-- Reason -->
+      <div id="compareReasonBox" class="cl-compare-reason" style="display:none;"></div>
+      <!-- Side-by-side -->
       <div class="compare-modal-body">
-        <div id="compareExplanationBox" style="background: rgba(var(--accent-rgb), 0.1); border-left: 3px solid var(--accent); padding: 12px; margin-bottom: 16px; font-size: 0.9rem; color: var(--text-2); display: none;"></div>
-        <div style="display: flex; gap: 16px;">
-          <div class="compare-col" style="flex:1;">
-            <div class="compare-col-title">Before</div>
-            <div class="compare-text-box before" id="compareBeforeVal"></div>
-          </div>
-          <div class="compare-col" style="flex:1;">
-            <div class="compare-col-title">After</div>
-            <div class="compare-text-box after" id="compareAfterVal"></div>
-          </div>
+        <div class="compare-col">
+          <div class="compare-col-title">Original</div>
+          <div class="compare-text-box before" id="compareBeforeVal"></div>
+        </div>
+        <div class="compare-col">
+          <div class="compare-col-title">Improved</div>
+          <div class="compare-text-box after" id="compareAfterVal"></div>
         </div>
       </div>
-      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
-        <button class="btn btn-secondary" onclick="closeCompareModal()">Close</button>
-        <button class="btn btn-primary" id="compareApplyBtn">Apply Change</button>
+      <!-- Impact Metadata -->
+      <div class="cl-compare-impact" id="compareImpact" style="display:none;">
+        <div class="cl-compare-impact-row"><span class="cl-compare-impact-label">ATS Impact</span><span class="cl-compare-impact-val" id="compareAtsImpact">—</span></div>
+        <div class="cl-compare-impact-row"><span class="cl-compare-impact-label">Tone Impact</span><span class="cl-compare-impact-val" id="compareToneImpact">—</span></div>
+        <div class="cl-compare-impact-row"><span class="cl-compare-impact-label">Readability Impact</span><span class="cl-compare-impact-val" id="compareReadabilityImpact">—</span></div>
+      </div>
+      <!-- Actions -->
+      <div class="compare-modal-footer">
+        <button class="btn btn-secondary" onclick="closeCompareModal()">Reject</button>
+        <button class="btn btn-primary" id="compareApplyBtn">Accept</button>
       </div>
     </div>
   </div>
 
-  <!-- ATS Compare Modal -->
-  <div id="atsCompareModal" class="compare-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="atsCompareModalTitle">
-    <div class="compare-modal-content">
-      <div class="compare-modal-header">
-        <h3 id="atsCompareModalTitle" style="font-size:1.1rem; margin:0; color:var(--text-1);">ATS Optimization Results</h3>
-        <button class="close-modal-btn" onclick="closeAtsCompareModal()" aria-label="Close ATS compare dialog">&times;</button>
-      </div>
-      <div class="compare-modal-body">
-        <div style="display: flex; gap: 20px; margin-bottom: 20px; align-items: center; justify-content: center;">
-          <div style="text-align: center;">
-            <div style="font-size: 0.85rem; color: var(--text-2);">Current Score</div>
-            <div id="atsScoreBefore" style="font-size: 1.5rem; font-weight: bold; color: var(--text-1);">--</div>
-          </div>
-          <i data-lucide="arrow-right" width="24" style="color: var(--text-3);"></i>
-          <div style="text-align: center;">
-            <div style="font-size: 0.85rem; color: var(--text-2);">Optimized Score</div>
-            <div id="atsScoreAfter" style="font-size: 1.5rem; font-weight: bold; color: var(--success);">--</div>
-          </div>
-        </div>
-        <div style="margin-bottom: 15px;">
-          <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 5px;">Keywords Added:</div>
-          <div id="atsKeywordsAdded" style="font-size: 0.85rem; color: var(--text-2); display: flex; flex-wrap: wrap; gap: 5px;"></div>
-        </div>
-        <div class="compare-diff-container">
-          <div class="diff-pane">
-            <h4>Current</h4>
-            <div id="atsDiffOriginal" class="diff-text original"></div>
-          </div>
-          <div class="diff-pane">
-            <h4>Optimized</h4>
-            <div id="atsDiffSuggested" class="diff-text suggested"></div>
-          </div>
-        </div>
-      </div>
-      <div class="compare-modal-footer">
-        <button class="btn btn-secondary" onclick="closeAtsCompareModal()">Reject</button>
-        <button class="btn btn-primary" id="applyAtsChangesBtn">Apply Changes</button>
-      </div>
-    </div>
-  </div>
+  <!-- ATS Compare Modal removed — consolidated into unified #compareModal above -->
 
   <!-- Delete Confirmation Modal -->
   <div id="deleteConfirmModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); z-index:2200; align-items:center; justify-content:center;" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
