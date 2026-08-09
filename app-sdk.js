@@ -60,6 +60,29 @@
         localStorage.removeItem('userId');
         localStorage.removeItem('userToken');
         window.location.href = 'index.html';
+      },
+
+      async oauthLogin(provider) {
+        await appSdk.ready;
+        if (!appSdk.client) {
+          appSdk.ui.showToast('Authentication service is not available.', 'error');
+          throw new Error('Supabase client not initialized');
+        }
+        
+        // Dynamically get the redirect URL based on current environment
+        const redirectUrl = window.location.origin + '/dashboard.html';
+        
+        const { error } = await appSdk.client.auth.signInWithOAuth({
+          provider: provider,
+          options: {
+            redirectTo: redirectUrl
+          }
+        });
+        
+        if (error) {
+          console.error(`[OAuth] ${provider} login error:`, error);
+          throw error;
+        }
       }
     },
 
