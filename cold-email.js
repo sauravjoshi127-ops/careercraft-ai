@@ -55,19 +55,15 @@
     const chars = text.length;
     const readingTimeSec = Math.ceil((words / 200) * 60);
     
-    const metricWords = document.getElementById('metricWords');
-    const metricChars = document.getElementById('metricChars');
-    const metricTime = document.getElementById('metricTime');
+    const metricWords = document.querySelector('#metricWords .val');
+    const metricChars = document.querySelector('#metricChars .val');
+    const metricTime = document.querySelector('#metricTime .val');
     
-    if (metricWords) metricWords.innerHTML = `<i data-lucide="file-text" width="14"></i> <span class="val">${words}</span> words`;
-    if (metricChars) metricChars.innerHTML = `<i data-lucide="hash" width="14"></i> <span class="val">${chars}</span> characters`;
+    if (metricWords) metricWords.textContent = words;
+    if (metricChars) metricChars.textContent = chars;
     if (metricTime) {
       const timeStr = readingTimeSec < 60 ? '<1 min' : `${Math.ceil(readingTimeSec/60)} min`;
-      metricTime.innerHTML = `<i data-lucide="clock" width="14"></i> <span class="val">${timeStr}</span> read`;
-    }
-    
-    if (window.lucide) {
-      lucide.createIcons();
+      metricTime.textContent = timeStr;
     }
   }
 
@@ -240,7 +236,7 @@
 
       await loadHistory();
       wireUpLivePreview();
-      loadSavedResumes();
+      setupResumeImport();
 
       // Initialize tabs
       setupTabs();
@@ -378,16 +374,16 @@
     return isValid;
   }
 
-  async function loadSavedResumes() {
-    if (!supabaseClient) return;
-    document.getElementById('btnSelectSaved').addEventListener('click', async e => {
+  function setupResumeImport() {
+    const btnSelectSaved = document.getElementById('btnSelectSaved');
+    if (!btnSelectSaved) return;
+    
+    btnSelectSaved.addEventListener('click', async e => {
       e.stopPropagation();
-      if (!currentUser) return showToast('Please log in first to access saved resumes.', true);
+      if (!currentUser || !supabaseClient) return showToast('Please log in first to access saved resumes.', true);
       
       const modal = document.getElementById('nexusModal');
       modal.style.display = 'flex';
-      // Force reflow
-      void modal.offsetWidth;
       modal.classList.add('show');
       
       const list = document.getElementById('rlist');
@@ -458,18 +454,29 @@
     if (r.full_name) document.getElementById('userName').value = r.full_name;
     
     let bg = '';
+    if (r.title) bg += `${r.title}. `;
     if (r.professional_summary) bg += r.professional_summary + ' ';
-    document.getElementById('background').value = bg.trim().substring(0, 400);
+
+    if (r.experience && Array.isArray(r.experience) && r.experience.length > 0) {
+      bg += '\nExperience: ';
+      r.experience.slice(0, 2).forEach(ex => {
+        bg += `${ex.title} at ${ex.company}. `;
+      });
+    }
+    
+    const backgroundInput = document.getElementById('background');
+    if (backgroundInput) {
+       // Append if there's already text, otherwise replace
+       const currentVal = backgroundInput.value.trim();
+       if (currentVal) {
+          backgroundInput.value = currentVal + '\n\n' + bg.trim().substring(0, 600);
+       } else {
+          backgroundInput.value = bg.trim().substring(0, 600);
+       }
+    }
 
     if (r.skills && Array.isArray(r.skills)) {
       document.getElementById('keySkills').value = r.skills.slice(0, 8).join(', ');
-    }
-
-    let expStr = '';
-    if (r.experience && Array.isArray(r.experience) && r.experience.length > 0) {
-      r.experience.slice(0, 2).forEach(ex => {
-        expStr += `${ex.title} at ${ex.company}: ${ex.description || ''}\n`;
-      });
     }
     
     document.getElementById('nexusModal').classList.remove('show');
