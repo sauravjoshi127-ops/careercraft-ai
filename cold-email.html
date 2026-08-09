@@ -714,11 +714,7 @@
                 <input id="position" required placeholder="e.g. VP of Engineering">
               </div>
               <div class="input-wrapper">
-                <label for="companyName">Company Name</label>
-                <input id="companyName" required placeholder="e.g. Stripe, OpenAI">
-              </div>
-              <div class="input-wrapper">
-                <label for="recipientEmail">Recipient Email <span class="optional">Optional</span></label>
+                <label for="recipientEmail">Email Address <span class="optional">Optional</span></label>
                 <input id="recipientEmail" type="email" placeholder="e.g. sarah@company.com">
               </div>
             </div>
@@ -732,68 +728,57 @@
             </div>
             <div class="accordion-content">
               <div class="input-wrapper">
-                <label for="companyContext">Company Context <span class="optional">Optional</span></label>
-                <textarea id="companyContext" placeholder="e.g. They just raised Series B and are expanding the engineering team..."></textarea>
+                <label for="companyName">Company Name</label>
+                <input id="companyName" required placeholder="e.g. Stripe, OpenAI">
               </div>
               <div class="input-wrapper">
-                <label for="relevantTrigger">Relevant Trigger / Event <span class="optional">Optional</span></label>
-                <input id="relevantTrigger" placeholder="e.g. Hiring announcement, new product launch">
+                <label for="companyContext">Company Context / Initiative <span class="optional">Optional</span></label>
+                <textarea id="companyContext" placeholder="e.g. They just raised Series B and are expanding the engineering team..."></textarea>
               </div>
             </div>
           </div>
 
-          <!-- Section 3: Your Background -->
+          <!-- Section 3: Background & Goal -->
           <div class="accordion-item" id="sec-background">
             <div class="accordion-header" onclick="toggleAccordion('sec-background')">
-              <span>3. Your Background <i data-lucide="check-circle" class="status-icon" width="16"></i></span>
+              <span>3. Background & Goal <i data-lucide="check-circle" class="status-icon" width="16"></i></span>
               <i data-lucide="chevron-down" class="icon-right" width="18"></i>
             </div>
             <div class="accordion-content">
               <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-                <button type="button" class="btn-secondary" id="btnSelectSaved" style="flex:1;"><i data-lucide="file-text" width="16"></i> Choose Resume</button>
+                <button type="button" class="btn-secondary" id="btnSelectSaved" style="flex:1;"><i data-lucide="file-text" width="16"></i> Use My Resume</button>
               </div>
               <div class="input-wrapper">
                 <label for="userName">Your Name</label>
                 <input id="userName" required placeholder="e.g. John Doe">
               </div>
               <div class="input-wrapper">
-                <label for="background">Professional Summary</label>
-                <textarea id="background" required placeholder="Brief description of your background..."></textarea>
+                <label for="background">Relevant Background / Value Prop</label>
+                <textarea id="background" required placeholder="Brief description of your background and key skills..."></textarea>
+                <!-- Hidden input for legacy keySkills compatibility -->
+                <input type="hidden" id="keySkills" value="">
               </div>
               <div class="input-wrapper">
-                <label for="keySkills">Key Skills</label>
-                <input id="keySkills" required placeholder="e.g. React, Node.js, Leadership">
-              </div>
-            </div>
-          </div>
-
-          <!-- Section 4: Email Goal -->
-          <div class="accordion-item" id="sec-goal">
-            <div class="accordion-header" onclick="toggleAccordion('sec-goal')">
-              <span>4. Email Goal <i data-lucide="check-circle" class="status-icon" width="16"></i></span>
-              <i data-lucide="chevron-down" class="icon-right" width="18"></i>
-            </div>
-            <div class="accordion-content">
-              <div class="input-wrapper">
-                <label for="emailGoal">Goal</label>
+                <label for="emailGoal">Email Goal</label>
                 <select id="emailGoal" required>
-                  <option value="">— Select Goal —</option>
+                  <option value="Networking">Networking</option>
                   <option value="Job Inquiry">Job Inquiry</option>
                   <option value="Referral Request">Referral Request</option>
-                  <option value="Recruiter Outreach">Recruiter Outreach</option>
-                  <option value="Networking">Networking</option>
-                  <option value="Informational Interview">Informational Interview</option>
-                  <option value="Freelance / Consulting">Freelance / Consulting</option>
+                  <option value="Mentorship">Mentorship</option>
+                  <option value="Partnership">Partnership</option>
+                  <option value="Introduction">Introduction</option>
+                  <option value="Follow-up">Follow-up</option>
+                  <option value="Information Request">Information Request</option>
                   <option value="Custom">Custom</option>
                 </select>
               </div>
             </div>
           </div>
 
-          <!-- Section 5: Personalization -->
+          <!-- Section 4: Personalization -->
           <div class="accordion-item" id="sec-personalization">
             <div class="accordion-header" onclick="toggleAccordion('sec-personalization')">
-              <span>5. Personalization <i data-lucide="check-circle" class="status-icon" width="16"></i></span>
+              <span>4. Personalization <i data-lucide="check-circle" class="status-icon" width="16"></i></span>
               <i data-lucide="chevron-down" class="icon-right" width="18"></i>
             </div>
             <div class="accordion-content">
@@ -801,41 +786,31 @@
                 <div class="input-wrapper">
                   <label for="tone">Tone</label>
                   <select id="tone">
-                    <option value="Professional">Professional</option>
-                    <option value="Confident">Confident</option>
+                    <option value="Professional" selected>Professional</option>
                     <option value="Warm">Warm</option>
-                    <option value="Concise">Concise</option>
-                    <option value="Executive">Executive</option>
+                    <option value="Confident">Confident</option>
+                    <option value="Direct">Direct</option>
                     <option value="Conversational">Conversational</option>
                   </select>
                 </div>
                 <div class="input-wrapper">
                   <label for="length">Length</label>
                   <select id="length">
-                    <option value="Short">Short (Recommended)</option>
+                    <option value="Short" selected>Short</option>
                     <option value="Standard">Standard</option>
                     <option value="Detailed">Detailed</option>
                   </select>
                 </div>
               </div>
-              <div class="grid-2">
-                <div class="input-wrapper">
-                  <label for="ctaStyle">CTA Style</label>
-                  <select id="ctaStyle">
-                    <option value="Soft Ask">Soft Ask</option>
-                    <option value="Direct Ask">Direct Ask</option>
-                    <option value="Meeting Request">Meeting Request</option>
-                    <option value="Reply Request">Reply Request</option>
-                  </select>
-                </div>
-                <div class="input-wrapper">
-                  <label for="personalizationLevel">Personalization Level</label>
-                  <select id="personalizationLevel">
-                    <option value="Balanced">Balanced</option>
-                    <option value="Light">Light</option>
-                    <option value="High">High</option>
-                  </select>
-                </div>
+              <div class="input-wrapper" style="margin-bottom:0;">
+                <label for="ctaStyle">Call to Action</label>
+                <select id="ctaStyle">
+                  <option value="Soft Ask" selected>Soft Ask</option>
+                  <option value="Direct Ask">Direct Ask</option>
+                  <option value="Meeting Request">Meeting Request</option>
+                  <option value="Advice Request">Advice Request</option>
+                  <option value="Referral Ask">Referral Ask</option>
+                </select>
               </div>
             </div>
           </div>
@@ -848,7 +823,7 @@
           
           <div id="loadingState" style="display:none; text-align:center; margin-top: 1rem; color: var(--text-2); font-size: 0.9rem;">
             <i data-lucide="loader-circle" class="spin" width="16" stroke-width="2" style="margin-right:0.5rem; vertical-align:middle;"></i>
-            <span id="loadingText">Understanding your outreach goal...</span>
+            <span id="loadingText">Generating...</span>
           </div>
 
         </form>
