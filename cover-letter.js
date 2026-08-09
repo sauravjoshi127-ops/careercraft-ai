@@ -1752,8 +1752,15 @@
           linkedinUrl: (document.getElementById('linkedinUrl')?.value || '').trim(),
           portfolio: (document.getElementById('portfolio')?.value || '').trim(),
           additionalInstructions: (document.getElementById('additionalInstructions')?.value || '').trim(),
-          detailed_scores: lastGeneratedData ? lastGeneratedData.detailed_scores : null,
-          suggestions: lastGeneratedData ? lastGeneratedData.suggestions : []
+          detailed_scores: currentAtsData ? {
+            overall: currentAtsData.overallATSScore,
+            keywordMatch: currentAtsData.keywordMatch,
+            readability: currentAtsData.recruiterReadability,
+            professionalism: currentAtsData.professionalTone,
+            personalization: currentAtsData.personalization
+          } : (lastGeneratedData ? lastGeneratedData.detailed_scores : null),
+          suggestions: (currentAtsData && currentAtsData.suggestions) ? currentAtsData.suggestions : (lastGeneratedData ? lastGeneratedData.suggestions : []),
+          summary: (currentAtsData && currentAtsData.summary) ? currentAtsData.summary : (lastGeneratedData ? lastGeneratedData.summary : null)
         }
       }
     };
@@ -1865,9 +1872,60 @@
   function handleHistorySort() { renderHistoryList(rawHistoryList); }
   function handleHistoryFilter() { renderHistoryList(rawHistoryList); }
 
+  function normalizeSavedCoverLetter(item) {
+    if (!item) return item;
+    const meta = item.variants?.meta || {};
+    
+    // Normalize suggestions
+    let rawSuggestions = meta.suggestions || [];
+    if (!Array.isArray(rawSuggestions)) rawSuggestions = [];
+    
+    const normalizedSuggestions = rawSuggestions.map(s => {
+      return {
+        id: s.id || `sug-${Math.random().toString(36).substr(2, 9)}`,
+        category: s.category || 'Missing Keyword',
+        priority: s.priority || 'Medium',
+        title: s.title || s.category || 'Improvement Opportunity',
+        description: s.description || s.explanation || '',
+        reason: s.reason || '',
+        currentText: s.currentText || s.originalText || '',
+        suggestedText: s.suggestedText || '',
+        estimatedATSGain: s.estimatedATSGain || '+2%',
+        oneClickApplicable: s.oneClickApplicable !== undefined ? s.oneClickApplicable : !!(s.originalText && s.suggestedText)
+      };
+    });
+
+    const summary = meta.summary || {
+      overallATSScore: item.ats_score || 0,
+      topImprovements: ["Consider running ATS analysis to discover more improvements."],
+      estimatedATSAfterApplying: Math.min(100, (item.ats_score || 0) + 10),
+      recruiterLikelihood: "Medium",
+      confidenceLevel: "Medium"
+    };
+
+    const detailed_scores = meta.detailed_scores || {};
+    const normalizedAtsData = {
+      overallATSScore: detailed_scores.overall || item.ats_score || 0,
+      keywordMatch: detailed_scores.keywordMatch || item.ats_score || 0,
+      recruiterReadability: detailed_scores.readability || detailed_scores.recruiterReadability || 0,
+      professionalTone: detailed_scores.professionalism || detailed_scores.professionalTone || 0,
+      personalization: detailed_scores.personalization || 0,
+      suggestions: normalizedSuggestions,
+      summary: summary
+    };
+
+    return {
+      ...item,
+      normalizedAtsData,
+      normalizedSuggestions
+    };
+  }
+
   async function previewSavedLetter(id) {
-    const item = rawHistoryList.find(c => c.id === id);
-    if (!item) return;
+    const rawItem = rawHistoryList.find(c => c.id === id);
+    if (!rawItem) return;
+
+    const item = normalizeSavedCoverLetter(rawItem);
 
     currentSavedLetterId = item.id;
     document.getElementById('jobTitle').value = item.job_title || '';
@@ -1904,12 +1962,15 @@
       relevance_score: item.relevance_score,
       keywords_used: item.keywords_used || [],
       detailed_scores: meta.detailed_scores || {},
-      suggestions: meta.suggestions || []
+      suggestions: item.normalizedSuggestions
     };
+    
+    currentAtsData = item.normalizedAtsData;
 
     updateGauges(meta.detailed_scores || {});
     renderATSAnalysis(lastGeneratedData);
-    renderAtsSuggestions(meta.suggestions || []);
+    renderAtsSuggestions(item.normalizedSuggestions);
+    renderAtsSummary(item.normalizedAtsData.summary);
     renderVariants(item.variants?.texts || [], item.generated_letter);
 
     showToast('success', `Loaded: ${meta.custom_title || item.job_title}`);
