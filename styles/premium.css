@@ -2483,7 +2483,6 @@ input[type="password"]::-ms-clear { display: none; }
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   margin-bottom: 8px;
-  overflow: hidden;
   transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
 .cl-step-accordion:last-of-type { margin-bottom: 0; }
@@ -2493,6 +2492,7 @@ input[type="password"]::-ms-clear { display: none; }
   box-shadow: 0 0 0 1px rgba(99,102,241,0.12);
 }
 .cl-step-header {
+  min-height: 56px;
   padding: 12px 16px;
   display: flex;
   align-items: center;
@@ -3623,12 +3623,10 @@ input[type="password"]::-ms-clear { display: none; }
   margin-bottom: 1.25rem;
 }
 
-/* ── Left Panel Sticky Scroll (Part 11) ── */
+/* ── Left Panel Scroll (Part 11) ── */
 .cl-left-panel {
-  position: sticky;
-  top: 72px;
-  max-height: calc(100dvh - 80px);
-  overflow-y: auto;
+  height: auto;
+  min-height: 0;
   padding-right: 4px;
 }
 
