@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Cold Email Workspace - CareerCraft</title>
+  <meta name="description" content="Build, polish and optimize personalized cold emails on CareerCraft." />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="storage-manager.js" defer></script>
   <script src="auth-manager.js" defer></script>
   <script src="workspace-manager.js" defer></script>
@@ -15,218 +15,24 @@
   <script src="app-sdk.js" defer></script>
   <script src="layout-manager.js" defer></script>
   <script src="cold-email.js" defer></script>
+  <script src="manual-studio.js" defer></script>
   <link rel="stylesheet" href="styles/premium.css">
+  <link rel="stylesheet" href="manual-studio.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
   
   <style>
-    :root {
-      --bg-base: #0f172a;
-      --bg-surface: #1e293b;
-      --bg-soft: #334155;
-      --text-1: #f8fafc;
-      --text-2: #cbd5e1;
-      --text-3: #94a3b8;
-      --primary: #6366f1;
-      --primary-hover: #4f46e5;
-      --border: #334155;
-      --border-focus: #6366f1;
-      --danger: #ef4444;
-      --success: #10b981;
-      --r-sm: 6px;
-      --r-md: 10px;
-      --r-lg: 16px;
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-      --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    }
-    
-    body { background: var(--bg-base); color: var(--text-1); font-family: 'Inter', sans-serif; margin: 0; }
-    
-    .workspace-layout {
-      display: grid;
-      grid-template-columns: 450px 1fr;
-      height: calc(100vh - 64px);
-      overflow: hidden;
-    }
-    
-    @media (max-width: 1024px) {
-      .workspace-layout {
-        grid-template-columns: 1fr;
-        height: auto;
-        overflow: auto;
-      }
-    }
-    
-    .left-pane {
-      background: var(--bg-surface);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      overflow-y: auto;
-    }
-    
-    .pane-header {
-      padding: 1.5rem;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg-surface);
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-    
-    .progress-indicator {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--primary);
-      margin-bottom: 0.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .progress-bar-bg {
-      height: 4px;
-      background: var(--bg-soft);
-      border-radius: 2px;
-      width: 100%;
-      overflow: hidden;
-    }
-    
-    .progress-bar-fill {
-      height: 100%;
-      background: var(--primary);
-      width: 0%;
-      transition: width 0.3s ease;
-    }
-    
-    .mode-toggle {
-      display: flex;
-      background: var(--bg-soft);
-      border-radius: var(--r-sm);
-      padding: 0.25rem;
-      margin-top: 1rem;
-    }
-    
-    .mode-btn {
-      flex: 1;
-      padding: 0.5rem;
-      text-align: center;
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--text-2);
-      border-radius: calc(var(--r-sm) - 2px);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .mode-btn.active {
-      background: var(--primary);
-      color: white;
-    }
-    
-    .form-content {
-      padding: 1.5rem;
-    }
-    
-    .section-block {
-      margin-bottom: 2rem;
-      position: relative;
-    }
-    
-    .section-header {
-      margin-bottom: 1rem;
-    }
-    
-    .step-number {
-      font-size: 0.75rem;
-      color: var(--primary);
-      font-weight: 700;
-      letter-spacing: 1px;
-      margin-bottom: 0.25rem;
-      display: block;
-    }
-    
-    .section-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--text-1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .section-desc {
-      font-size: 0.85rem;
-      color: var(--text-2);
-      margin-top: 0.25rem;
-    }
-    
-    .status-badge {
-      font-size: 0.75rem;
-      padding: 0.2rem 0.5rem;
-      border-radius: 12px;
-      background: var(--bg-soft);
-      color: var(--text-3);
-    }
-    
-    .status-badge.complete {
-      background: rgba(16, 185, 129, 0.1);
-      color: var(--success);
-    }
-    
-    .input-group {
-      margin-bottom: 1rem;
-    }
-    
-    .input-group label {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--text-2);
-      margin-bottom: 0.5rem;
-    }
-    
-    .input-group label .optional {
-      color: var(--text-3);
-      font-weight: 400;
-      font-size: 0.75rem;
-    }
-    
-    .input-control {
-      width: 100%;
-      background: var(--bg-base);
-      border: 1px solid var(--border);
-      border-radius: var(--r-sm);
-      padding: 0.75rem;
-      color: var(--text-1);
-      font-family: inherit;
-      font-size: 0.9rem;
-      transition: all 0.2s;
-      box-sizing: border-box;
-    }
-    
-    .input-control:focus {
-      outline: none;
-      border-color: var(--border-focus);
-      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-    }
-    
-    textarea.input-control {
-      min-height: 80px;
-      resize: vertical;
-    }
-    
+    /* Minimal specific overrides for custom inputs, otherwise reusing Cover Letter classes */
     .goal-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.5rem;
+      gap: 8px;
+      margin-top: 4px;
     }
-    
     .goal-card {
-      background: var(--bg-base);
+      background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--border);
-      border-radius: var(--r-sm);
-      padding: 0.75rem;
+      border-radius: var(--radius-sm);
+      padding: 10px;
       cursor: pointer;
       font-size: 0.85rem;
       font-weight: 500;
@@ -234,406 +40,177 @@
       transition: all 0.2s;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 8px;
     }
-    
     .goal-card:hover {
       border-color: var(--text-3);
     }
-    
     .goal-card.active {
       background: rgba(99, 102, 241, 0.1);
-      border-color: var(--primary);
-      color: var(--primary);
-    }
-    
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1rem;
-      border-radius: var(--r-sm);
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      border: none;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-    }
-    
-    .btn-primary:hover:not(:disabled) {
-      background: var(--primary-hover);
-    }
-    
-    .btn-secondary {
-      background: var(--bg-soft);
-      color: var(--text-1);
-      border: 1px solid var(--border);
-    }
-    
-    .btn-secondary:hover:not(:disabled) {
-      background: var(--border);
-    }
-    
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .btn-resume {
-      background: rgba(16, 185, 129, 0.1);
-      color: var(--success);
-      border: 1px solid rgba(16, 185, 129, 0.2);
-    }
-    .btn-resume:hover {
-      background: rgba(16, 185, 129, 0.2);
-    }
-    
-    .right-pane {
-      padding: 2rem;
-      height: 100%;
-      overflow-y: auto;
-      background: var(--bg-base);
-    }
-    
-    .workspace-empty {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      text-align: center;
-      color: var(--text-2);
-      max-width: 400px;
-      margin: 0 auto;
-    }
-    
-    .workspace-empty h2 {
-      font-size: 1.25rem;
-      color: var(--text-1);
-      margin-top: 1rem;
-      margin-bottom: 0.5rem;
-    }
-    
-    .workspace-empty p {
-      font-size: 0.95rem;
-      line-height: 1.5;
-      margin-bottom: 2rem;
-    }
-    
-    .editor-layout {
-      display: none;
-      grid-template-columns: 1fr 300px;
-      gap: 1.5rem;
-      align-items: start;
-    }
-    
-    @media (max-width: 1200px) {
-      .editor-layout {
-        grid-template-columns: 1fr;
-      }
-    }
-    
-    .main-editor-area {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r-md);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .subjects-bar {
-      padding: 1rem;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg-base);
+      border-color: var(--accent);
+      color: var(--accent);
     }
     
     .subject-pill {
-      display: inline-block;
-      padding: 0.4rem 0.75rem;
-      background: var(--bg-soft);
+      display: inline-flex;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--border);
       border-radius: 16px;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       cursor: pointer;
-      margin-right: 0.5rem;
-      margin-bottom: 0.5rem;
+      margin-right: 8px;
+      margin-bottom: 8px;
       transition: all 0.2s;
+      color: var(--text-2);
     }
-    
     .subject-pill:hover {
       border-color: var(--text-3);
     }
     .subject-pill.active {
       background: rgba(99, 102, 241, 0.1);
-      border-color: var(--primary);
-      color: var(--primary);
+      border-color: var(--accent);
+      color: var(--accent);
     }
-    
-    .email-body {
-      padding: 1.5rem;
-      min-height: 400px;
-      font-size: 0.95rem;
-      line-height: 1.6;
-      color: var(--text-1);
-      outline: none;
-      white-space: pre-wrap;
-    }
-    
-    .editor-actions {
-      padding: 1rem;
-      border-top: 1px solid var(--border);
-      display: flex;
-      gap: 0.5rem;
-      background: var(--bg-base);
-    }
-    
-    .analytics-sidebar {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-    
-    .card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--r-md);
-      padding: 1.25rem;
-    }
-    
-    .card-title {
-      font-size: 0.95rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    
-    .checklist-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.75rem;
-      margin-bottom: 0.75rem;
-      font-size: 0.85rem;
-      color: var(--text-2);
-    }
-    
-    .checklist-item i {
-      color: var(--success);
-      margin-top: 2px;
-    }
-    
-    .score-banner {
-      background: rgba(16, 185, 129, 0.1);
-      color: var(--success);
-      padding: 0.75rem;
-      border-radius: var(--r-sm);
-      font-weight: 600;
-      font-size: 0.9rem;
-      text-align: center;
-      margin-top: 1rem;
-    }
-    
-    .copilot-action {
-      background: var(--bg-base);
-      border: 1px solid var(--border);
-      padding: 0.75rem;
-      border-radius: var(--r-sm);
-      font-size: 0.85rem;
-      color: var(--text-1);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-      transition: all 0.2s;
-    }
-    
-    .copilot-action:hover {
-      border-color: var(--primary);
-    }
-    
-    .diff-view {
-      display: none;
-      margin-top: 1rem;
-      border-top: 1px solid var(--border);
-      padding-top: 1rem;
-    }
-    
-    .diff-original { text-decoration: line-through; color: var(--danger); margin-bottom: 0.5rem; font-size: 0.85rem; }
-    .diff-suggested { color: var(--success); margin-bottom: 1rem; font-size: 0.85rem;}
-    
-    .hidden { display: none !important; }
-    
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100;
-      display: none; align-items: center; justify-content: center;
-    }
-    .modal-overlay.active { display: flex; }
-    .modal-content {
-      background: var(--bg-surface); border: 1px solid var(--border);
-      border-radius: var(--r-md); padding: 1.5rem; width: 90%; max-width: 500px;
-    }
-    
-    .resume-item {
-      padding: 1rem; border: 1px solid var(--border); border-radius: var(--r-sm);
-      margin-bottom: 0.5rem; cursor: pointer; transition: 0.2s; background: var(--bg-base);
-    }
-    .resume-item:hover { border-color: var(--primary); }
-    
-    .tabs-header {
-      display: flex; gap: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem;
-    }
-    .tab-item {
-      padding: 0.75rem 0; font-size: 0.9rem; color: var(--text-2); cursor: pointer;
-      border-bottom: 2px solid transparent; font-weight: 500;
-    }
-    .tab-item.active { color: var(--text-1); border-bottom-color: var(--primary); }
-    
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    
-    .variant-card {
-        background: var(--bg-base); border: 1px solid var(--border); border-radius: var(--r-sm);
-        padding: 1rem; margin-bottom: 1rem;
-    }
-    .variant-card.active { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
-    
-    .loading-overlay {
-        position: absolute; inset: 0; background: rgba(30, 41, 59, 0.8);
-        display: none; flex-direction: column; align-items: center; justify-content: center;
-        z-index: 50; backdrop-filter: blur(2px);
-    }
-    .loading-overlay.active { display: flex; }
   </style>
 </head>
 <body>
 
+  <div class="alert-container" id="alertContainer" role="status" aria-live="polite" aria-atomic="false"></div>
+
+  <!-- Top Navigation -->
   <nav class="ch-nav" aria-label="Main navigation"></nav>
 
-  <div class="workspace-layout">
-    
-    <!-- LEFT PANE: GUIDED WORKSPACE -->
-    <div class="left-pane">
-      <div class="pane-header">
-        <div class="progress-indicator">
-          <span id="progressText">EMAIL BRIEF &bull; 0%</span>
-          <span id="sectionsCompleteText">0 of 4 complete</span>
-        </div>
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="progressBar"></div>
-        </div>
-        
-        <div class="mode-toggle">
-          <div class="mode-btn active" id="modeGuided">Guided Brief</div>
-          <div class="mode-btn" id="modeQuick">Quick Start</div>
-        </div>
+  <div class="cl-page-container">
+
+    <!-- Page Header -->
+    <div class="cl-page-header">
+      <div>
+        <h1 class="cl-page-title heading-gradient">Cold Email Workspace</h1>
+        <p class="cl-page-subtitle">Create concise, personalized outreach that gets noticed and encourages a response.</p>
       </div>
-      
-      <div class="form-content">
-        <!-- Error Alert -->
-        <div id="errorAlert" class="hidden" style="background: rgba(239,68,68,0.1); border: 1px solid var(--danger); padding: 1rem; border-radius: var(--r-sm); margin-bottom: 1.5rem; color: #fca5a5;">
-            <p id="errorMsg" style="font-size: 0.9rem;"></p>
+    </div>
+
+    <!-- Two-column workspace -->
+    <div class="cl-workspace">
+
+      <!-- LEFT PANEL: Guided Progressive Workflow -->
+      <aside class="cl-left-panel" aria-label="Cold email workflow">
+        <div class="cl-panel-header">
+          <h2 class="cl-panel-title">Email Brief</h2>
+          <span id="stepProgressLabel" class="cl-step-progress-label">STEP 1 OF 4</span>
+        </div>
+        <p class="cl-panel-subtitle">Complete the steps below to craft your message.</p>
+        
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; background: rgba(255,255,255,0.02); padding: 4px; border-radius: var(--radius-sm);">
+           <button type="button" class="btn btn-primary btn-sm" id="modeGuided" style="flex:1;">Guided Brief</button>
+           <button type="button" class="btn btn-secondary btn-sm" id="modeQuick" style="flex:1; background: transparent; border: none;">Quick Start</button>
         </div>
 
-        <form id="emailForm" novalidate>
-          
-          <!-- SECTION 1: Recipient -->
-          <div class="section-block" id="sec-recipient">
-            <div class="section-header">
-              <span class="step-number">01</span>
-              <div class="section-title">Recipient <span class="status-badge" id="status-1">Not started</span></div>
-              <div class="section-desc">Who are you reaching out to?</div>
+        <!-- Step 1: Recipient -->
+        <div class="cl-step-accordion active" id="step-recipient">
+          <div class="cl-step-header" role="button" tabindex="0" aria-expanded="true" onclick="toggleStepAccordion('recipient')">
+            <div class="cl-step-title-group">
+              <div class="cl-step-num" aria-hidden="true">1</div>
+              <div class="cl-step-title">Recipient</div>
             </div>
-            
-            <div class="input-group">
-              <label>Name <span class="optional">Optional</span></label>
-              <input type="text" id="recipientName" class="input-control" placeholder="e.g. Adam">
+            <span class="cl-step-badge" aria-hidden="true">Required *</span>
+          </div>
+          <div class="cl-step-body">
+            <div class="input-wrapper">
+              <label for="recipientName">Name <span class="cl-optional-label">(optional)</span></label>
+              <input id="recipientName" placeholder="e.g. Adam" />
             </div>
-            <div class="input-group">
-              <label>Role / Title</label>
-              <input type="text" id="position" class="input-control" required placeholder="e.g. VP of Engineering">
+            <div class="input-wrapper">
+              <label for="position">Role / Title *</label>
+              <input id="position" placeholder="e.g. VP of Engineering" required />
             </div>
-            <div class="input-group" id="relationshipGroup">
-              <label>Relationship / Context <span class="optional">Optional</span></label>
-              <input type="text" id="relationship" class="input-control" placeholder="e.g. We met at TechCrunch Disrupt">
+            <div class="input-wrapper" id="relationshipGroup">
+              <label for="relationship">Relationship / Context <span class="cl-optional-label">(optional)</span></label>
+              <input id="relationship" placeholder="e.g. We met at TechCrunch Disrupt" />
+            </div>
+            <div class="cl-step-actions cl-step-actions--end">
+              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('company')">Next: Company &amp; Context →</button>
             </div>
           </div>
-          
-          <!-- SECTION 2: Company -->
-          <div class="section-block" id="sec-company">
-            <div class="section-header">
-              <span class="step-number">02</span>
-              <div class="section-title">Company & Context <span class="status-badge" id="status-2">Not started</span></div>
-              <div class="section-desc">What do you know about them?</div>
+        </div>
+
+        <!-- Step 2: Company -->
+        <div class="cl-step-accordion" id="step-company">
+          <div class="cl-step-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleStepAccordion('company')">
+            <div class="cl-step-title-group">
+              <div class="cl-step-num" aria-hidden="true">2</div>
+              <div class="cl-step-title">Company &amp; Context</div>
             </div>
-            
-            <div class="input-group">
-              <label>Company Name</label>
-              <input type="text" id="companyName" class="input-control" required placeholder="e.g. Acme Corp">
+            <span class="cl-step-badge" aria-hidden="true">Target</span>
+          </div>
+          <div class="cl-step-body">
+            <div class="input-wrapper">
+              <label for="companyName">Company Name *</label>
+              <input id="companyName" placeholder="e.g. Acme Corp" required />
             </div>
-            <div class="input-group">
-              <label>What caught your attention? <span class="optional">Optional</span></label>
-              <textarea id="companyContext" class="input-control" placeholder="e.g. Your recent expansion into legal technology..."></textarea>
+            <div class="input-wrapper" id="companyContextGroup">
+              <label for="companyContext">What caught your attention? <span class="cl-optional-label">(optional)</span></label>
+              <textarea id="companyContext" placeholder="e.g. Your recent expansion into legal technology..." style="min-height:80px; resize:vertical;"></textarea>
+            </div>
+            <div class="cl-step-actions cl-step-actions--between">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('recipient')">← Back</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('value')">Next: Your Value →</button>
             </div>
           </div>
-          
-          <!-- SECTION 3: Your Value -->
-          <div class="section-block" id="sec-value">
-            <div class="section-header">
-              <span class="step-number">03</span>
-              <div class="section-title">Your Value <span class="status-badge" id="status-3">Not started</span></div>
-              <div class="section-desc">Why should they care?</div>
+        </div>
+
+        <!-- Step 3: Your Value (Resume Integration) -->
+        <div class="cl-step-accordion" id="step-value">
+          <div class="cl-step-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleStepAccordion('value')">
+            <div class="cl-step-title-group">
+              <div class="cl-step-num" aria-hidden="true">3</div>
+              <div class="cl-step-title">Your Value</div>
+            </div>
+            <span class="cl-step-badge" aria-hidden="true">Smart Import</span>
+          </div>
+          <div class="cl-step-body">
+            
+            <div class="input-wrapper">
+              <label>Select Saved Resume</label>
+              <select id="savedResumeSelect" class="history-select" style="width:100%; margin-bottom:12px;">
+                <option value="">— Choose Existing Resume —</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="userName">Your Name *</label>
+              <input id="userName" required />
             </div>
             
-            <div id="resumeImportBlock" style="margin-bottom: 1rem;">
-              <button type="button" class="btn btn-resume" id="btnUseResume">
-                <i data-lucide="file-text" width="18"></i> Use My Resume
-              </button>
+            <div class="input-wrapper">
+              <label for="background">Value Proposition *</label>
+              <textarea id="background" placeholder="e.g. I have 3 years of experience in React and recently built..." style="min-height:100px; resize:vertical;" required></textarea>
+              <div class="input-helper">Keep it concise. Highlight your strongest angle.</div>
             </div>
             
-            <div id="importedValueBlock" class="hidden" style="background: var(--bg-base); padding: 1rem; border-radius: var(--r-sm); border: 1px solid var(--border); margin-bottom: 1rem;">
-                <p style="font-size: 0.8rem; color: var(--success); margin-bottom: 0.5rem;"><i data-lucide="check" width="14"></i> Resume imported successfully</p>
-                <div class="input-group" style="margin-bottom: 0;">
-                  <label>Your Name</label>
-                  <input type="text" id="userName" class="input-control" style="margin-bottom: 0.5rem;" required>
-                  <label>Value Proposition (Editable)</label>
-                  <textarea id="background" class="input-control" required></textarea>
-                </div>
-            </div>
-            
-            <div id="manualValueBlock">
-                <div class="input-group">
-                  <label>Your Name</label>
-                  <input type="text" id="userNameManual" class="input-control">
-                </div>
-                <div class="input-group">
-                  <label>Value Proposition</label>
-                  <textarea id="backgroundManual" class="input-control" placeholder="e.g. I have 3 years of experience in React and recently built..."></textarea>
-                </div>
+            <div class="cl-step-actions cl-step-actions--between">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('company')">← Back</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('goal')">Next: Goal &amp; Tone →</button>
             </div>
           </div>
-          
-          <!-- SECTION 4: Goal & Tone -->
-          <div class="section-block" id="sec-goal">
-            <div class="section-header">
-              <span class="step-number">04</span>
-              <div class="section-title">Goal & Tone <span class="status-badge" id="status-4">Not started</span></div>
-              <div class="section-desc">What do you want from them?</div>
+        </div>
+
+        <!-- Step 4: Goal & Tone -->
+        <div class="cl-step-accordion" id="step-goal">
+          <div class="cl-step-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleStepAccordion('goal')">
+            <div class="cl-step-title-group">
+              <div class="cl-step-num" aria-hidden="true">4</div>
+              <div class="cl-step-title">Goal &amp; Tone</div>
             </div>
+            <span class="cl-step-badge" aria-hidden="true">Strategy</span>
+          </div>
+          <div class="cl-step-body">
             
-            <div class="input-group">
-              <label>Goal</label>
+            <div class="input-wrapper">
+              <label>Goal *</label>
               <div class="goal-grid" id="goalGrid">
-                <div class="goal-card" data-value="Networking"><i data-lucide="users" width="16"></i> Networking</div>
+                <div class="goal-card active" data-value="Networking"><i data-lucide="users" width="16"></i> Networking</div>
                 <div class="goal-card" data-value="Job Opportunity"><i data-lucide="briefcase" width="16"></i> Job Opportunity</div>
                 <div class="goal-card" data-value="Referral"><i data-lucide="link" width="16"></i> Referral</div>
                 <div class="goal-card" data-value="Internship"><i data-lucide="graduation-cap" width="16"></i> Internship</div>
@@ -642,158 +219,217 @@
                 <div class="goal-card" data-value="Information Request"><i data-lucide="info" width="16"></i> Info Request</div>
                 <div class="goal-card" data-value="Introduction"><i data-lucide="user-plus" width="16"></i> Introduction</div>
               </div>
-              <input type="hidden" id="emailGoal" required>
+              <input type="hidden" id="emailGoal" value="Networking" required />
             </div>
             
-            <div class="grid-2 advanced-options">
-                <div class="input-group">
-                  <label>Tone</label>
-                  <select id="tone" class="input-control">
-                    <option value="Professional" selected>Professional</option>
-                    <option value="Warm">Warm</option>
-                    <option value="Confident">Confident</option>
-                    <option value="Conversational">Conversational</option>
-                    <option value="Direct">Direct</option>
-                  </select>
+            <div id="advancedOptions">
+                <div class="form-row" style="margin-top: 16px;">
+                  <div class="input-wrapper">
+                    <label for="tone">Tone</label>
+                    <select id="tone">
+                      <option selected>Professional</option>
+                      <option>Warm</option>
+                      <option>Confident</option>
+                      <option>Conversational</option>
+                      <option>Direct</option>
+                    </select>
+                  </div>
+                  <div class="input-wrapper">
+                    <label for="length">Length</label>
+                    <select id="length">
+                      <option selected>Short</option>
+                      <option>Standard</option>
+                      <option>Detailed</option>
+                    </select>
+                  </div>
                 </div>
-                <div class="input-group">
-                  <label>Length</label>
-                  <select id="length" class="input-control">
-                    <option value="Short" selected>Short</option>
-                    <option value="Standard">Standard</option>
-                    <option value="Detailed">Detailed</option>
-                  </select>
-                </div>
-                <div class="input-group" style="grid-column: span 2;">
-                  <label>Call to Action (CTA)</label>
-                  <select id="ctaStyle" class="input-control">
-                    <option value="Soft Ask" selected>Soft Ask</option>
-                    <option value="Meeting Request">Meeting Request</option>
-                    <option value="Referral Ask">Referral Ask</option>
-                    <option value="Advice Request">Advice Request</option>
-                    <option value="Direct Ask">Direct Ask</option>
+                
+                <div class="input-wrapper">
+                  <label for="ctaStyle">Call to Action (CTA)</label>
+                  <select id="ctaStyle">
+                    <option selected>Soft Ask</option>
+                    <option>Meeting Request</option>
+                    <option>Referral Ask</option>
+                    <option>Advice Request</option>
+                    <option>Direct Ask</option>
                   </select>
                 </div>
             </div>
+
+            <div class="cl-step-actions cl-step-actions--between" style="margin-top:16px;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('value')">← Back</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sticky Workflow Footer -->
+        <div class="cl-workflow-footer">
+          <button id="generateBtn" class="btn btn-primary btn-lg cl-generate-primary-btn">
+            Generate Email <i data-lucide="sparkles" width="16"></i>
+          </button>
+        </div>
+
+      </aside>
+
+      <!-- RIGHT PANEL: Notion-Style Live Editor & AI Suite -->
+      <section class="cl-right-panel" aria-label="Cold email workspace" style="display: flex; flex-direction: column; gap: 24px;">
+        
+        <!-- EDITOR SECTION -->
+        <div class="cl-editor-container">
+          <div class="cl-editor-toolbar-sticky" id="editorToolbar">
+              <div class="cl-toolbar-group">
+                <button type="button" class="cl-toolbar-btn" data-command="undo" title="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg></button>
+                <button type="button" class="cl-toolbar-btn" data-command="redo" title="Redo (Ctrl+Y)" aria-label="Redo"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg></button>
+              </div>
+
+              <div class="cl-toolbar-divider"></div>
+
+              <div class="cl-toolbar-group">
+                <button type="button" class="cl-toolbar-btn" data-command="bold" title="Bold (Ctrl+B)" aria-label="Bold"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M14 12a4 4 0 0 0 0-8H6v8"/><path d="M15 20a4 4 0 0 0 0-8H6v8Z"/></svg></button>
+                <button type="button" class="cl-toolbar-btn" data-command="italic" title="Italic (Ctrl+I)" aria-label="Italic"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg></button>
+                <button type="button" class="cl-toolbar-btn" data-command="underline" title="Underline (Ctrl+U)" aria-label="Underline"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg></button>
+              </div>
+
+              <div class="cl-toolbar-divider"></div>
+
+              <div class="cl-toolbar-group">
+                <button type="button" class="cl-toolbar-btn" data-command="removeFormat" title="Clear Formatting" aria-label="Clear Formatting"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M4 7V4h16v3"/><path d="M5 20h6"/><path d="M13 4 8 20"/><path d="m15 15 5 5"/><path d="m20 15-5 5"/></svg></button>
+              </div>
           </div>
           
-          <div style="margin-top: 2rem; position: relative;">
-            <button type="button" class="btn btn-primary" id="btnGenerate" style="padding: 1rem; font-size: 1rem;">
-              <i data-lucide="sparkles" width="20"></i> Generate Personalized Email
-            </button>
-            <div class="loading-overlay" id="genOverlay" style="border-radius: var(--r-sm);">
-                <i data-lucide="loader-circle" class="spin" style="color: white; margin-bottom: 0.5rem;" width="24"></i>
-                <span style="color: white; font-size: 0.85rem;" id="genLoadingText">Crafting email...</span>
-            </div>
+          <!-- Editor Canvas -->
+          <div class="cl-editor-canvas" id="editorCanvas">
+
+              <!-- Empty State -->
+              <div class="cl-empty-state" id="editorEmptyState">
+                <div class="cl-empty-icon"><i data-lucide="mail-open" width="40" height="40"></i></div>
+                <div class="cl-empty-title">Email Workspace</div>
+                <div class="cl-empty-desc">Your personalized email will appear here.<br>Complete the brief on the left to get started.</div>
+                <div class="cl-empty-actions">
+                  <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('recipient')">Fill Brief</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('value')">Import Resume</button>
+                </div>
+              </div>
+
+              <!-- Document Preview -->
+              <div class="cl-document-frame" id="editorDocumentFrame" style="display:none; flex-direction:column;">
+                
+                <div style="margin-bottom: 1rem; padding: 0 48px; padding-top: 48px;">
+                    <div style="font-size: 0.75rem; color: var(--text-3); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; font-weight:600;">Subject Lines</div>
+                    <div id="subjectContainer">
+                        <!-- Pill buttons generated here -->
+                    </div>
+                </div>
+
+                <div class="cl-editor-paper" id="editorSheet" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" aria-label="Email editor" data-placeholder="Your generated email will appear here." style="padding-top: 16px; min-height: 400px;"></div>
+              </div>
+
           </div>
+        </div>
+
+        <!-- Real-time Live Metrics Bar -->
+        <div class="cl-live-metrics-bar">
+          <div class="cl-metric-item">
+            <span class="cl-metric-num" id="wordCount">0</span>
+            <span class="cl-metric-lbl">Words</span>
+          </div>
+          <div class="cl-metric-item">
+            <span class="cl-metric-num" id="charCount">0</span>
+            <span class="cl-metric-lbl">Characters</span>
+          </div>
+          <div class="cl-metric-item">
+            <span class="cl-metric-num" id="readTime">0m</span>
+            <span class="cl-metric-lbl">Read Time</span>
+          </div>
+        </div>
+
+        <!-- Primary Action Bar -->
+        <div class="cl-action-bar">
+          <div class="cl-action-bar-left">
+            <button id="saveDraftBtn" class="btn btn-primary btn-sm">Save Draft</button>
+            <button id="copyBtn" class="btn btn-secondary btn-sm">Copy Email</button>
+          </div>
+          <div class="autosave-status" id="autosaveLabel" aria-live="polite" aria-atomic="true" style="opacity:0;">
+            <span aria-hidden="true"><i data-lucide="check-circle" width="14"></i></span>
+            <span id="autosaveLabelText">Saved</span>
+          </div>
+        </div>
+
+        <!-- AI Copilot Section -->
+        <div class="cl-copilot-section" id="pane-copilotPane" aria-label="AI Copilot">
           
-        </form>
-      </div>
-    </div>
-    
-    <!-- RIGHT PANE: WORKSPACE -->
-    <div class="right-pane">
-        
-        <!-- Empty State -->
-        <div id="workspaceEmpty" class="workspace-empty">
-            <i data-lucide="mail-open" width="48" style="color: var(--text-3); margin-bottom: 1rem;"></i>
-            <h2>EMAIL WORKSPACE</h2>
-            <p>Your personalized email will appear here.<br>Complete the brief on the left or use your resume to get started.</p>
-            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                <button type="button" class="btn btn-secondary" onclick="document.getElementById('btnUseResume').click()">Use My Resume</button>
+          <div class="cl-copilot-score-header" id="copilotScoreHeader" style="display:none;">
+            <div class="cl-copilot-overall">
+              <span class="cl-copilot-overall-num" id="copilotOverallScore"><i data-lucide="check-circle" style="color:var(--success);" width="28"></i></span>
+              <span class="cl-copilot-overall-label" style="color:var(--success);">Strong</span>
             </div>
-        </div>
-        
-        <!-- Editor Layout -->
-        <div id="workspaceEditor" class="editor-layout">
-            
-            <div class="main-content">
-                <div class="tabs-header">
-                    <div class="tab-item active" data-tab="tab-editor">Email Editor</div>
-                    <div class="tab-item" data-tab="tab-variants">Variants</div>
-                    <div class="tab-item" data-tab="tab-followups">Follow-Ups</div>
-                </div>
-                
-                <div id="tab-editor" class="tab-content">
-                    <div class="main-editor-area">
-                        <div class="subjects-bar">
-                            <div style="font-size: 0.75rem; color: var(--text-3); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">Subject Lines</div>
-                            <div id="subjectContainer">
-                                <!-- Populated dynamically -->
-                            </div>
-                        </div>
-                        <div class="email-body" id="emailBody" contenteditable="true" spellcheck="false"></div>
-                        <div class="editor-actions">
-                            <button class="btn btn-primary" id="btnCopy"><i data-lucide="copy" width="16"></i> Copy</button>
-                            <button class="btn btn-secondary" id="btnSave"><i data-lucide="save" width="16"></i> Save</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="tab-variants" class="tab-content hidden">
-                    <div id="variantsContainer"></div>
-                </div>
-                
-                <div id="tab-followups" class="tab-content hidden">
-                    <div id="followUpsContainer"></div>
-                </div>
+            <div class="cl-copilot-header-info">
+              <h3>AI Copilot</h3>
+              <p>Real-time quality analysis and actionable improvements.</p>
             </div>
-            
-            <div class="analytics-sidebar">
-                
-                <div class="card">
-                    <div class="card-title"><i data-lucide="check-circle" width="18" style="color: var(--primary);"></i> Why This Works</div>
-                    <div id="whyWorksList">
-                        <div class="checklist-item"><i data-lucide="check"></i> <div><strong>Personalized opening</strong><br><span style="font-size:0.8rem;">References context</span></div></div>
-                        <div class="checklist-item"><i data-lucide="check"></i> <div><strong>Value proposition</strong><br><span style="font-size:0.8rem;">Communicates relevance</span></div></div>
-                        <div class="checklist-item"><i data-lucide="check"></i> <div><strong>CTA</strong><br><span style="font-size:0.8rem;">Low-friction request</span></div></div>
-                    </div>
-                    <div class="score-banner" id="overallScore">Strong outreach potential</div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-title"><i data-lucide="bot" width="18" style="color: var(--primary);"></i> Writing Copilot</div>
-                    <p style="font-size: 0.8rem; color: var(--text-2); margin-bottom: 1rem;">Improve your current draft.</p>
-                    <div class="copilot-action" data-action="improve"><i data-lucide="zap" width="16"></i> Improve opening</div>
-                    <div class="copilot-action" data-action="persuasive"><i data-lucide="trending-up" width="16"></i> Make more persuasive</div>
-                    <div class="copilot-action" data-action="concise"><i data-lucide="minimize" width="16"></i> Make more concise</div>
-                    <div class="copilot-action" data-action="warm"><i data-lucide="smile" width="16"></i> Make warmer</div>
-                    
-                    <div class="diff-view" id="aiDiffView">
-                        <div style="font-size: 0.75rem; color: var(--text-3); margin-bottom: 0.5rem;">Suggested Change:</div>
-                        <div class="diff-original" id="diffOrig"></div>
-                        <div class="diff-suggested" id="diffSug"></div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button class="btn btn-secondary" id="btnRejectAi" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Discard</button>
-                            <button class="btn btn-primary" id="btnAcceptAi" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Apply</button>
-                        </div>
-                    </div>
-                </div>
-                
-            </div>
-            
-        </div>
-        
-    </div>
-  </div>
-  
-  <!-- Resume Modal -->
-  <div class="modal-overlay" id="resumeModal">
-      <div class="modal-content">
-          <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Select Resume</h3>
-          <div id="resumeList" style="max-height: 300px; overflow-y: auto;">
-              <p style="text-align: center; color: var(--text-3); font-size: 0.9rem;">Loading...</p>
           </div>
-          <div style="margin-top: 1.5rem; text-align: right;">
-              <button class="btn btn-secondary" style="width: auto;" id="btnCloseResumeModal">Cancel</button>
+
+          <div id="copilotEmptyState" class="cl-copilot-empty">
+            <div class="cl-copilot-empty-icon"><i data-lucide="sparkles" width="32" height="32"></i></div>
+            <div class="cl-copilot-empty-title">AI Copilot</div>
+            <div class="cl-copilot-empty-desc">Generate an email to activate real-time quality scoring and AI-powered improvement actions.</div>
           </div>
-      </div>
+
+          <div id="copilotContent" style="display:none;">
+            <div class="cl-action-cards-title" style="margin-top:24px;">Why This Works</div>
+            <div class="cl-action-cards" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+               <div style="display:flex; align-items:flex-start; gap:12px; font-size:0.85rem; color:var(--text-2);">
+                  <i data-lucide="check" width="16" style="color:var(--success); margin-top:2px;"></i> <div><strong style="color:var(--text-1);">Personalized opening</strong><br>References context to build rapport</div>
+               </div>
+               <div style="display:flex; align-items:flex-start; gap:12px; font-size:0.85rem; color:var(--text-2);">
+                  <i data-lucide="check" width="16" style="color:var(--success); margin-top:2px;"></i> <div><strong style="color:var(--text-1);">Value proposition</strong><br>Communicates relevance clearly and concisely</div>
+               </div>
+               <div style="display:flex; align-items:flex-start; gap:12px; font-size:0.85rem; color:var(--text-2);">
+                  <i data-lucide="check" width="16" style="color:var(--success); margin-top:2px;"></i> <div><strong style="color:var(--text-1);">Clear CTA</strong><br>Low-friction request for higher conversion</div>
+               </div>
+            </div>
+
+            <div class="cl-action-cards-title">Quick Actions</div>
+            <div class="cl-action-cards">
+              <button type="button" class="cl-action-card" onclick="triggerAiAction('improve')" aria-label="Improve Opening"><i data-lucide="zap" width="16" class="cl-action-icon"></i> Improve Opening</button>
+              <button type="button" class="cl-action-card" onclick="triggerAiAction('persuasive')" aria-label="Persuasive"><i data-lucide="flame" width="16" class="cl-action-icon"></i> Persuasive</button>
+              <button type="button" class="cl-action-card" onclick="triggerAiAction('concise')" aria-label="Shorten"><i data-lucide="shrink" width="16" class="cl-action-icon"></i> Shorten</button>
+              <button type="button" class="cl-action-card" onclick="triggerAiAction('warm')" aria-label="Warmer"><i data-lucide="smile" width="16" class="cl-action-icon"></i> Warmer</button>
+            </div>
+
+            <div id="aiDiffView" style="display:none; margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px;">
+                <div style="font-size: 0.75rem; color: var(--text-3); margin-bottom: 8px;">Suggested Change:</div>
+                <div id="diffOrig" style="text-decoration: line-through; color: var(--danger); margin-bottom: 8px; font-size: 0.85rem;"></div>
+                <div id="diffSug" style="color: var(--success); margin-bottom: 16px; font-size: 0.85rem;"></div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-secondary btn-sm" onclick="rejectAiAction()">Discard</button>
+                    <button class="btn btn-primary btn-sm" onclick="applyAiAction()">Apply</button>
+                </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Variants & Follow-Ups -->
+        <div class="cl-variants-section cl-section-card" id="pane-variantsPane">
+          <h3 class="cl-tab-pane-title">Variants &amp; Follow-Ups</h3>
+          <p class="cl-tab-pane-subtitle" style="margin-bottom:16px;">Alternative strategies and recommended sequence.</p>
+          
+          <div id="variantsEmptyState" class="cl-empty-hint">Generate an email to see variants and follow-up sequences.</div>
+          
+          <div id="variantsContent" style="display:none;">
+              <h4 style="font-size:0.9rem; font-weight:600; margin-bottom:12px; margin-top:8px; color:var(--text-1);">Alternative Variants</h4>
+              <div id="variantsContainer" style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px;"></div>
+              
+              <h4 style="font-size:0.9rem; font-weight:600; margin-bottom:12px; color:var(--text-1);">Follow-up Sequence</h4>
+              <div id="followUpsContainer" style="display:flex; flex-direction:column; gap:12px;"></div>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
   </div>
 
-  <style>
-      .spin { animation: spin 1s linear infinite; }
-      @keyframes spin { 100% { transform: rotate(360deg); } }
-  </style>
   <script>if (window.lucide) { lucide.createIcons(); }</script>
 </body>
 </html>
