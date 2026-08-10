@@ -627,18 +627,6 @@
     const file = (input.files && input.files[0]) || null;
     if (!file) return;
 
-    const allowed = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    const allowedExts = ['.pdf', '.docx'];
-    const ext = (file.name || '').toLowerCase().match(/\.[^.]+$/)?.[0] || '';
-    if (!allowed.includes(file.type) && !allowedExts.includes(ext)) {
-      setResumeStatus('error', 'Only PDF or DOCX files are accepted.');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setResumeStatus('error', 'File size exceeds the 5 MB limit.');
-      return;
-    }
-
     setResumeStatus('loading', `Parsing ${file.name}...`);
     document.getElementById('resumeProgress').style.display = 'block';
     let progress = 0;
@@ -647,36 +635,21 @@
       document.getElementById('resumeProgressBar').style.width = progress + '%';
     }, 150);
 
-    const form = new FormData();
-    form.append('resume', file);
-
-    const session = await window.appSdk.auth.getSession();
-    const headers = {};
-    if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
-    }
-
     try {
-      const res = await fetch('/api/upload-resume', { method: 'POST', headers: headers, body: form });
-      const data = await res.json().catch(() => ({}));
+      const extractedText = await window.appSdk.resume.uploadAndParse(file);
+      
       clearInterval(progressIv);
       document.getElementById('resumeProgressBar').style.width = '100%';
       setTimeout(() => document.getElementById('resumeProgress').style.display = 'none', 300);
 
-      if (!res.ok) {
-        setResumeStatus('error', data.error || 'Failed to parse resume.');
-        resumeText = '';
-        return;
-      }
-
-      resumeText = data.resumeText || '';
+      resumeText = extractedText || '';
       setResumeStatus('success', `Parsed: ${file.name}`);
       document.getElementById('mirrorRow').style.display = 'block';
       document.getElementById('resumeClearRow').style.display = 'block';
     } catch (err) {
       clearInterval(progressIv);
       document.getElementById('resumeProgress').style.display = 'none';
-      setResumeStatus('error', 'Parsing connection error: ' + err.message);
+      setResumeStatus('error', err.message || 'Parsing connection error');
       resumeText = '';
     }
   }

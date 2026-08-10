@@ -595,28 +595,13 @@
     const file = els.resumeFile.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('resume', file);
     els.resumeUploadHint.textContent = 'Reading resume...';
     setStatus(els.setupStatus, 'Reading file content...', 'loading');
 
     try {
-      const session = await window.appSdk.auth.getSession();
-      const headers = {};
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-      }
+      const extractedText = await window.appSdk.resume.uploadAndParse(file);
 
-      const response = await fetch(apiUrl('/api/upload-resume'), {
-        method: 'POST',
-        headers: headers,
-        body: formData
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to extract text.');
-
-      els.resumeText.value = data.resumeText || '';
+      els.resumeText.value = extractedText || '';
       els.resumeUploadHint.textContent = `Loaded ${file.name}.`;
       setStatus(els.setupStatus, 'Resume content loaded.', 'success');
       saveDraft();

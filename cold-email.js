@@ -67,6 +67,14 @@
   async function loadSavedResumesDropdown() {
     const container = document.getElementById('resumeImportActionContainer');
     if (!container) return;
+    
+    // Attach the file input listener once
+    const fileInput = document.getElementById('resumeFileInput');
+    if (fileInput && !fileInput.hasAttribute('data-bound')) {
+      fileInput.setAttribute('data-bound', 'true');
+      fileInput.addEventListener('change', handleComputerImport);
+    }
+
     try {
       const { data, error } = await client.from('resumes')
         .select('*')
@@ -76,29 +84,93 @@
       if (error) throw error;
       savedResumes = data || [];
       
+      let html = '';
       if (savedResumes.length > 0) {
-        container.innerHTML = `
+        html += `
           <button type="button" class="btn btn-secondary btn-sm" id="btnUseResume">
             <i data-lucide="file-text" width="16" height="16" style="margin-right:6px;"></i> Use My Resume
           </button>
         `;
-        document.getElementById('btnUseResume').addEventListener('click', handleUseMyResume);
       } else {
-        container.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 12px; font-size: 0.9rem; color: var(--text-3);">
-            <span>No resume found.</span>
-            <button type="button" class="btn btn-secondary btn-sm" id="btnImportResume">
-              Import Resume
-            </button>
-          </div>
+        html += `
+          <span style="font-size: 0.9rem; color: var(--text-3);">No saved resume found. Import one from your computer to continue.</span>
         `;
-        document.getElementById('btnImportResume').addEventListener('click', () => {
-          window.location.href = 'resume.html';
-        });
       }
+
+      html += `
+        <button type="button" class="btn btn-secondary btn-sm" id="btnImportResume">
+          <i data-lucide="upload" width="16" height="16" style="margin-right:6px;"></i> Import Resume
+        </button>
+      `;
+
+      container.innerHTML = html;
+
+      if (document.getElementById('btnUseResume')) {
+        document.getElementById('btnUseResume').addEventListener('click', handleUseMyResume);
+      }
+      document.getElementById('btnImportResume').addEventListener('click', () => {
+        document.getElementById('resumeFileInput').click();
+      });
+
       if (window.lucide) window.lucide.createIcons();
     } catch (err) {
       console.error(err);
+    }
+  }
+
+  async function handleComputerImport(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const backgroundInput = document.getElementById('background');
+    if (backgroundInput.value.trim().length > 0) {
+        const confirmed = confirm("Replace your current value proposition with information from this resume?");
+        if (!confirmed) {
+            e.target.value = '';
+            return;
+        }
+    }
+
+    const btn = document.getElementById('btnImportResume');
+    const originalText = btn.innerHTML;
+    const originalWidth = btn.offsetWidth;
+    
+    btn.style.width = originalWidth + 'px';
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" width="16" height="16" style="margin-right:6px;"></i> Reading Resume...`;
+    btn.disabled = true;
+    if (window.lucide) window.lucide.createIcons();
+
+    try {
+        const extractedText = await window.appSdk.resume.uploadAndParse(file);
+        
+        const token = await window.AuthManager.getToken();
+        const response = await fetch('/api/ai-suggestions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                section: 'cold-email-value',
+                content: extractedText
+            })
+        });
+
+        if (!response.ok) throw new Error('Failed to generate value proposition');
+        const data = await response.json();
+        
+        backgroundInput.value = data.suggestions || '';
+        trackProgress();
+        showToast("Resume imported successfully.", false);
+    } catch (err) {
+        console.error(err);
+        showToast("Couldn't read this resume. Please check the file and try again.", true);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.style.width = '';
+        btn.disabled = false;
+        e.target.value = ''; // reset file input
+        if (window.lucide) window.lucide.createIcons();
     }
   }
 
@@ -142,6 +214,7 @@
         
         backgroundInput.value = data.suggestions || '';
         trackProgress();
+        showToast("Resume imported successfully.", false);
     } catch (err) {
         console.error(err);
         showToast("Couldn't import your resume. You can enter your background manually.", true);

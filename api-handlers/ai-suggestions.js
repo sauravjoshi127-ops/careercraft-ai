@@ -237,10 +237,10 @@ ${formatGuidance}
             `Return ONLY the improved summary text with no extra commentary, chat preambles, or formatting markup.${markdownInstruction}`;
     }
 
-    const userContent =
-        (section === 'skills' || section === 'headline' || section === 'cold-email-value')
-            ? JSON.stringify(resumeData || {})
-            : (content || '');
+    let userContent = content || '';
+    if ((section === 'skills' || section === 'headline' || section === 'cold-email-value') && resumeData) {
+        userContent = JSON.stringify(resumeData);
+    }
 
     if (!userContent) {
         return res.status(400).json({ error: 'No content provided to improve.' });
