@@ -65,45 +65,91 @@
 
   // --- Resume Integration ---
   async function loadSavedResumesDropdown() {
-    const select = document.getElementById('savedResumeSelect');
-    if (!select) return;
+    const container = document.getElementById('resumeImportActionContainer');
+    if (!container) return;
     try {
       const { data, error } = await client.from('resumes')
-        .select('id, full_name, title, experience, skills, created_at')
+        .select('*')
         .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false });
         
       if (error) throw error;
       savedResumes = data || [];
       
-      select.innerHTML = '<option value="">— Choose Existing Resume —</option>';
-      savedResumes.forEach(r => {
-        const opt = document.createElement('option');
-        opt.value = r.id;
-        opt.textContent = `${r.full_name || 'Untitled'} - ${r.title || 'Resume'}`;
-        select.appendChild(opt);
-      });
+      if (savedResumes.length > 0) {
+        container.innerHTML = `
+          <button type="button" class="btn btn-secondary btn-sm" id="btnUseResume">
+            <i data-lucide="file-text" width="16" height="16" style="margin-right:6px;"></i> Use My Resume
+          </button>
+        `;
+        document.getElementById('btnUseResume').addEventListener('click', handleUseMyResume);
+      } else {
+        container.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 12px; font-size: 0.9rem; color: var(--text-3);">
+            <span>No resume found.</span>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnImportResume">
+              Import Resume
+            </button>
+          </div>
+        `;
+        document.getElementById('btnImportResume').addEventListener('click', () => {
+          window.location.href = 'resume.html';
+        });
+      }
+      if (window.lucide) window.lucide.createIcons();
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
-      select.addEventListener('change', (e) => {
-        const id = e.target.value;
-        if (!id) return;
-        const r = savedResumes.find(x => x.id === id);
-        if (r) {
-          document.getElementById('userName').value = r.full_name || '';
-          let prop = `Experience in ${r.title || 'the industry'}. `;
-          if(r.experience && r.experience.length > 0) {
-              prop += `Strong background at ${r.experience[0].company} focusing on ${r.experience[0].title}. `;
-          }
-          if(r.skills && r.skills.length > 0) {
-              prop += `Key skills: ${r.skills.slice(0,3).join(', ')}.`;
-          }
-          document.getElementById('background').value = prop;
-          trackProgress();
-          showToast('Resume data imported.');
-        }
-      });
-    } catch(err) {
-      console.warn('Could not load resumes:', err);
+  async function handleUseMyResume() {
+    if (!savedResumes || savedResumes.length === 0) return;
+    
+    const backgroundInput = document.getElementById('background');
+    if (backgroundInput.value.trim().length > 0) {
+        const confirmed = confirm("Replace existing content with resume information?");
+        if (!confirmed) return;
+    }
+
+    const btn = document.getElementById('btnUseResume');
+    const originalText = btn.innerHTML;
+    const originalWidth = btn.offsetWidth;
+    
+    btn.style.width = originalWidth + 'px';
+    btn.innerHTML = `<i data-lucide="loader-2" class="spin" width="16" height="16" style="margin-right:6px;"></i> Loading...`;
+    btn.disabled = true;
+    if (window.lucide) window.lucide.createIcons();
+
+    try {
+        const resumeData = savedResumes[0];
+        document.getElementById('userName').value = resumeData.full_name || '';
+
+        const token = await window.AuthManager.getToken();
+        const response = await fetch('/api/ai-suggestions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                section: 'cold-email-value',
+                resumeData: resumeData
+            })
+        });
+
+        if (!response.ok) throw new Error('Failed to extract resume');
+        const data = await response.json();
+        
+        backgroundInput.value = data.suggestions || '';
+        trackProgress();
+    } catch (err) {
+        console.error(err);
+        showToast("Couldn't import your resume. You can enter your background manually.", true);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.style.width = '';
+        btn.disabled = false;
+        if (window.lucide) window.lucide.createIcons();
     }
   }
 
