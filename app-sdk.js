@@ -224,6 +224,48 @@
       }
     },
 
+    // Resume Pipeline Module
+    resume: {
+      async uploadAndParse(file) {
+        if (!file) throw new Error("No file provided.");
+        
+        const allowed = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        const allowedExts = ['.pdf', '.docx'];
+        const ext = (file.name || '').toLowerCase().match(/\.[^.]+$/)?.[0] || '';
+        
+        if (!allowed.includes(file.type) && !allowedExts.includes(ext)) {
+          throw new Error('Only PDF or DOCX files are accepted.');
+        }
+        
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error('File size exceeds the 5 MB limit.');
+        }
+
+        const form = new FormData();
+        form.append('resume', file);
+
+        const session = await appSdk.auth.getSession();
+        const headers = {};
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        const res = await fetch('/api/upload-resume', { 
+            method: 'POST', 
+            headers: headers, 
+            body: form 
+        });
+        
+        const data = await res.json().catch(() => ({}));
+        
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to parse resume.');
+        }
+        
+        return data.resumeText || '';
+      }
+    },
+
     // Billing Module (Razorpay Checkout)
     billing: {
       async initiateCheckout(planId, amount) {
