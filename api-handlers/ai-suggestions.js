@@ -94,6 +94,16 @@ module.exports = async function handler(req, res) {
             'Use recruiter-recognized professional keywords.\n' +
             'Return plain text only.\n' +
             'Example:\nIBC • Contract Drafting • Corporate Compliance • Legal Research',
+        'cold-email-value':
+            'You are an expert career coach and cold email strategist.\n' +
+            'Analyze the provided resume data and extract the most compelling, relevant professional background ' +
+            'and value proposition to be used as context for a cold email.\n' +
+            'Prioritize the candidate\'s current/relevant role, strongest relevant experience, measurable achievements, ' +
+            'domain expertise, and unique value proposition.\n' +
+            'Return a concise, highly readable summary paragraph (approx 3-5 sentences).\n' +
+            'Do not use bullet points or formatting.\n' +
+            'Do not include any preamble, intro, or commentary.\n' +
+            'Return ONLY the extracted summary paragraph.',
     };
 
     let systemPrompt = systemPrompts[section];
@@ -228,7 +238,7 @@ ${formatGuidance}
     }
 
     const userContent =
-        (section === 'skills' || section === 'headline')
+        (section === 'skills' || section === 'headline' || section === 'cold-email-value')
             ? JSON.stringify(resumeData || {})
             : (content || '');
 
