@@ -104,6 +104,17 @@ module.exports = async function handler(req, res) {
             'Do not use bullet points or formatting.\n' +
             'Do not include any preamble, intro, or commentary.\n' +
             'Return ONLY the extracted summary paragraph.',
+        'cold-email-extract':
+            'You are an expert career coach and cold email strategist.\n' +
+            'Analyze the provided resume text and extract two things:\n' +
+            '1. The candidate\'s full name (if available).\n' +
+            '2. A compelling professional background/value proposition suitable for a cold email (3-5 sentences, highlighting strongest relevant experience and achievements).\n' +
+            'Return ONLY a valid JSON object in the exact following format:\n' +
+            '{\n' +
+            '  "name": "Candidate Full Name or empty string",\n' +
+            '  "valueProposition": "Your extracted paragraph here"\n' +
+            '}\n' +
+            'Do not wrap the response in markdown blocks. Output raw JSON only.',
     };
 
     let systemPrompt = systemPrompts[section];
@@ -238,7 +249,7 @@ ${formatGuidance}
     }
 
     let userContent = content || '';
-    if ((section === 'skills' || section === 'headline' || section === 'cold-email-value') && resumeData) {
+    if ((section === 'skills' || section === 'headline' || section === 'cold-email-value' || section === 'cold-email-extract') && resumeData) {
         userContent = JSON.stringify(resumeData);
     }
 

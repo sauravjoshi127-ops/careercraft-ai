@@ -141,17 +141,26 @@
     if (window.lucide) window.lucide.createIcons();
 
     try {
+        console.group('[ResumeImport]');
+        console.log(`File selected: ${file.name}`);
+        console.log(`Type: ${file.type || 'unknown'}`);
+        console.log(`Size: ${(file.size / 1024).toFixed(2)} KB`);
+        
         const extractedText = await window.appSdk.resume.uploadAndParse(file);
         
-        const token = await window.AuthManager.getToken();
+        console.log(`Result: SUCCESS`);
+        console.log(`Extracted characters: ${extractedText.length}`);
+        
+        const session = await window.appSdk.auth.getSession();
+        const token = session?.access_token;
         const response = await fetch('/api/ai-suggestions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             },
             body: JSON.stringify({
-                section: 'cold-email-value',
+                section: 'cold-email-extract',
                 content: extractedText
             })
         });
@@ -159,12 +168,44 @@
         if (!response.ok) throw new Error('Failed to generate value proposition');
         const data = await response.json();
         
-        backgroundInput.value = data.suggestions || '';
+        let extractedData = {};
+        try {
+            const raw = (data.suggestions || '').replace(/```json/gi, '').replace(/```/g, '').trim();
+            extractedData = JSON.parse(raw);
+        } catch (parseErr) {
+            console.warn('[ResumeImport] JSON parse failed, falling back to raw text', parseErr);
+            extractedData = { valueProposition: data.suggestions };
+        }
+        
+        backgroundInput.value = extractedData.valueProposition || '';
+        
+        const nameInput = document.getElementById('userName');
+        if (!nameInput.value.trim() && extractedData.name) {
+            nameInput.value = extractedData.name;
+        }
+        
         trackProgress();
         showToast("Resume imported successfully.", false);
+        console.groupEnd();
     } catch (err) {
-        console.error(err);
-        showToast("Couldn't read this resume. Please check the file and try again.", true);
+        console.error('[ResumeImport Error]', err);
+        let userMsg = "Couldn't read this resume. Please check the file and try again.";
+        const msg = (err.message || '').toLowerCase();
+        
+        if (msg.includes('accepted') || msg.includes('support') || msg.includes('format')) {
+            userMsg = "That file type isn't supported. Please choose a supported resume file.";
+        } else if (msg.includes('extract text') || msg.includes('image-only') || msg.includes('unreadable')) {
+            userMsg = "We couldn't extract text from this resume. Please try another copy of the file.";
+        } else if (msg.includes('empty')) {
+            userMsg = "We couldn't find readable text in this resume.";
+        } else if (msg.includes('limit') || msg.includes('too large')) {
+            userMsg = "File is too large. Maximum size is 5 MB.";
+        } else if (msg.includes('fetch') || msg.includes('network') || msg.includes('failed to generate')) {
+            userMsg = "We couldn't import this resume right now. Please try again.";
+        }
+        
+        showToast(userMsg, true);
+        if (typeof console.groupEnd !== 'undefined') console.groupEnd();
     } finally {
         btn.innerHTML = originalText;
         btn.style.width = '';
@@ -194,14 +235,19 @@
 
     try {
         const resumeData = savedResumes[0];
-        document.getElementById('userName').value = resumeData.full_name || '';
+        
+        const nameInput = document.getElementById('userName');
+        if (!nameInput.value.trim() && resumeData.full_name) {
+            nameInput.value = resumeData.full_name;
+        }
 
-        const token = await window.AuthManager.getToken();
+        const session = await window.appSdk.auth.getSession();
+        const token = session?.access_token;
         const response = await fetch('/api/ai-suggestions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             },
             body: JSON.stringify({
                 section: 'cold-email-value',
