@@ -1,13 +1,47 @@
 /**
  * cold-email.js
  * Cold Email generation and editing controller logic, unified with Cover Letter UI.
+ * Architecture: Unidirectional data flow from state -> UI, explicit cancellation.
  */
 (function () {
   let client = null;
   let currentUser = null;
-  let currentEmailData = null;
-  let isGenerating = false;
   
+  // -- Architecture: Single Source of Truth --
+  let state = {
+    brief: {
+      recipientName: '',
+      position: '',
+      relationship: '',
+      companyName: '',
+      companyContext: '',
+      userName: '',
+      background: '',
+      emailGoal: 'Networking',
+      tone: 'Professional',
+      length: 'Short',
+      ctaStyle: 'Soft Ask'
+    },
+    generation: {
+      status: 'idle', // 'idle' | 'generating' | 'error'
+      controller: null,
+      requestId: 0,
+      error: null
+    },
+    data: {
+      variants: [],
+      subjectLines: [],
+      evaluation: null,
+      suggestions: [],
+      followUps: [],
+      activeVariantIndex: 0
+    },
+    editor: {
+      subject: '',
+      body: ''
+    }
+  };
+
   let savedResumes = [];
   let debounceTimer = null;
   let autosaveTimer = null;
@@ -26,8 +60,9 @@
       await loadSavedResumesDropdown();
       setupUI();
       setupEditorToolbar();
+      await hydrateState();
       
-      // Global attachment for inline onclick handlers
+      // Global attachment for inline onclick handlers in HTML
       window.toggleStepAccordion = toggleStepAccordion;
       window.triggerAiAction = triggerAiAction;
       window.rejectAiAction = rejectAiAction;
@@ -39,15 +74,37 @@
     }
   }
 
+  async function hydrateState() {
+      if (window.StorageManager) {
+          const saved = window.StorageManager.get('careercraft_cold_email_draft');
+          if (saved) {
+              try {
+                  const parsed = JSON.parse(saved);
+                  state = { ...state, ...parsed };
+                  syncDOMFromState();
+                  if (state.data.variants.length > 0) {
+                      renderWorkspace();
+                  }
+              } catch(e) { console.warn("Failed to hydrate draft", e); }
+          }
+      }
+  }
+
+  function saveDraftToStorage() {
+      if (window.StorageManager) {
+          window.StorageManager.set('careercraft_cold_email_draft', JSON.stringify(state));
+      }
+  }
+
   function showToast(msg, isError = false) {
-    if (window.LayoutManager && typeof window.LayoutManager.showToast === 'function') {
+    if (window.appSdk && window.appSdk.ui && typeof window.appSdk.ui.showToast === 'function') {
+      window.appSdk.ui.showToast(msg, isError ? 'error' : 'success');
+    } else if (window.LayoutManager && typeof window.LayoutManager.showToast === 'function') {
       window.LayoutManager.showToast(msg, isError ? 'error' : 'success');
-    } else {
-      window.appSdk.ui.showToast(msg, isError);
     }
   }
 
-  // --- Accordion Logic (Copied from Cover Letter) ---
+  // --- Accordion Logic ---
   function toggleStepAccordion(stepId) {
     document.querySelectorAll('.cl-step-accordion').forEach(acc => {
       const isActive = acc.id === `step-${stepId}`;
@@ -68,7 +125,6 @@
     const container = document.getElementById('resumeImportActionContainer');
     if (!container) return;
     
-    // Attach the file input listener once
     const fileInput = document.getElementById('resumeFileInput');
     if (fileInput && !fileInput.hasAttribute('data-bound')) {
       fileInput.setAttribute('data-bound', 'true');
@@ -123,7 +179,7 @@
     if (!file) return;
     
     const backgroundInput = document.getElementById('background');
-    if (backgroundInput.value.trim().length > 0) {
+    if ((backgroundInput.value || '').trim().length > 0) {
         const confirmed = confirm("Replace your current value proposition with information from this resume?");
         if (!confirmed) {
             e.target.value = '';
@@ -141,15 +197,7 @@
     if (window.lucide) window.lucide.createIcons();
 
     try {
-        console.group('[ResumeImport]');
-        console.log(`File selected: ${file.name}`);
-        console.log(`Type: ${file.type || 'unknown'}`);
-        console.log(`Size: ${(file.size / 1024).toFixed(2)} KB`);
-        
         const extractedText = await window.appSdk.resume.uploadAndParse(file);
-        
-        console.log(`Result: SUCCESS`);
-        console.log(`Extracted characters: ${extractedText.length}`);
         
         const session = await window.appSdk.auth.getSession();
         const token = session?.access_token;
@@ -180,32 +228,15 @@
         backgroundInput.value = extractedData.valueProposition || '';
         
         const nameInput = document.getElementById('userName');
-        if (!nameInput.value.trim() && extractedData.name) {
+        if (!(nameInput.value || '').trim() && extractedData.name) {
             nameInput.value = extractedData.name;
         }
         
         trackProgress();
         showToast("Resume imported successfully.", false);
-        console.groupEnd();
     } catch (err) {
         console.error('[ResumeImport Error]', err);
-        let userMsg = "Couldn't read this resume. Please check the file and try again.";
-        const msg = (err.message || '').toLowerCase();
-        
-        if (msg.includes('accepted') || msg.includes('support') || msg.includes('format')) {
-            userMsg = "That file type isn't supported. Please choose a supported resume file.";
-        } else if (msg.includes('extract text') || msg.includes('image-only') || msg.includes('unreadable')) {
-            userMsg = "We couldn't extract text from this resume. Please try another copy of the file.";
-        } else if (msg.includes('empty')) {
-            userMsg = "We couldn't find readable text in this resume.";
-        } else if (msg.includes('limit') || msg.includes('too large')) {
-            userMsg = "File is too large. Maximum size is 5 MB.";
-        } else if (msg.includes('fetch') || msg.includes('network') || msg.includes('failed to generate')) {
-            userMsg = "We couldn't import this resume right now. Please try again.";
-        }
-        
-        showToast(userMsg, true);
-        if (typeof console.groupEnd !== 'undefined') console.groupEnd();
+        showToast("We couldn't import this resume right now. Please try again.", true);
     } finally {
         btn.innerHTML = originalText;
         btn.style.width = '';
@@ -219,7 +250,7 @@
     if (!savedResumes || savedResumes.length === 0) return;
     
     const backgroundInput = document.getElementById('background');
-    if (backgroundInput.value.trim().length > 0) {
+    if ((backgroundInput.value || '').trim().length > 0) {
         const confirmed = confirm("Replace existing content with resume information?");
         if (!confirmed) return;
     }
@@ -237,7 +268,7 @@
         const resumeData = savedResumes[0];
         
         const nameInput = document.getElementById('userName');
-        if (!nameInput.value.trim() && resumeData.full_name) {
+        if (!(nameInput.value || '').trim() && resumeData.full_name) {
             nameInput.value = resumeData.full_name;
         }
 
@@ -281,29 +312,31 @@
     const relGroup = document.getElementById('relationshipGroup');
     const ctxGroup = document.getElementById('companyContextGroup');
     
-    modeGuided.addEventListener('click', () => {
-        modeGuided.classList.replace('btn-secondary', 'btn-primary');
-        modeGuided.style.background = '';
-        modeQuick.classList.replace('btn-primary', 'btn-secondary');
-        modeQuick.style.background = 'transparent';
-        modeQuick.style.border = 'none';
+    if (modeGuided && modeQuick) {
+        modeGuided.addEventListener('click', () => {
+            modeGuided.classList.replace('btn-secondary', 'btn-primary');
+            modeGuided.style.background = '';
+            modeQuick.classList.replace('btn-primary', 'btn-secondary');
+            modeQuick.style.background = 'transparent';
+            modeQuick.style.border = 'none';
+            
+            if (advOptions) advOptions.style.display = 'block';
+            if (relGroup) relGroup.style.display = 'block';
+            if (ctxGroup) ctxGroup.style.display = 'block';
+        });
         
-        advOptions.style.display = 'block';
-        relGroup.style.display = 'block';
-        ctxGroup.style.display = 'block';
-    });
-    
-    modeQuick.addEventListener('click', () => {
-        modeQuick.classList.replace('btn-secondary', 'btn-primary');
-        modeQuick.style.background = '';
-        modeGuided.classList.replace('btn-primary', 'btn-secondary');
-        modeGuided.style.background = 'transparent';
-        modeGuided.style.border = 'none';
-        
-        advOptions.style.display = 'none';
-        relGroup.style.display = 'none';
-        ctxGroup.style.display = 'none';
-    });
+        modeQuick.addEventListener('click', () => {
+            modeQuick.classList.replace('btn-secondary', 'btn-primary');
+            modeQuick.style.background = '';
+            modeGuided.classList.replace('btn-primary', 'btn-secondary');
+            modeGuided.style.background = 'transparent';
+            modeGuided.style.border = 'none';
+            
+            if (advOptions) advOptions.style.display = 'none';
+            if (relGroup) relGroup.style.display = 'none';
+            if (ctxGroup) ctxGroup.style.display = 'none';
+        });
+    }
 
     // Goal Grid
     const goals = document.querySelectorAll('.goal-card');
@@ -312,13 +345,13 @@
         g.addEventListener('click', () => {
             goals.forEach(c => c.classList.remove('active'));
             g.classList.add('active');
-            goalInput.value = g.dataset.value;
+            if (goalInput) goalInput.value = g.dataset.value;
             trackProgress();
         });
     });
 
     // Input Tracking for Step Badges
-    document.querySelectorAll('input, textarea, select').forEach(el => {
+    document.querySelectorAll('.cl-left-panel input, .cl-left-panel textarea, .cl-left-panel select').forEach(el => {
         el.addEventListener('input', () => {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(trackProgress, 300);
@@ -326,35 +359,110 @@
     });
     
     // Copy Action
-    document.getElementById('copyBtn').addEventListener('click', async () => {
-        const text = document.getElementById('emailBody').innerText;
-        if (!text) return;
-        try {
-            await navigator.clipboard.writeText(text);
-            showToast('Copied to clipboard!');
-        } catch(e) {
-            showToast('Failed to copy', true);
-        }
-    });
+    const copyBtn = document.getElementById('copyBtn');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', async () => {
+            const text = `Subject: ${state.editor.subject}\n\n${state.editor.body}`;
+            if (!text || text.trim() === 'Subject:') return;
+            try {
+                if (window.appSdk && window.appSdk.ui && typeof window.appSdk.ui.copyToClipboard === 'function') {
+                    window.appSdk.ui.copyToClipboard(text, 'Copied to clipboard!');
+                } else {
+                    await navigator.clipboard.writeText(text);
+                    showToast('Copied to clipboard!');
+                }
+            } catch(e) {
+                showToast('Failed to copy', true);
+            }
+        });
+    }
+
+    // Save Draft Action
+    const saveDraftBtn = document.getElementById('saveDraftBtn');
+    if (saveDraftBtn) {
+        saveDraftBtn.addEventListener('click', async () => {
+            saveDraftToStorage();
+            showToast('Draft saved successfully.');
+        });
+    }
 
     // Generate Action
-    document.getElementById('generateBtn').addEventListener('click', handleGenerate);
+    const genBtn = document.getElementById('generateBtn');
+    if (genBtn) genBtn.addEventListener('click', handleGenerate);
+    
+    // Editor Input
+    const editorSheet = document.getElementById('editorSheet');
+    if (editorSheet) {
+        editorSheet.addEventListener('input', () => {
+            state.editor.body = editorSheet.innerText;
+            clearTimeout(autosaveTimer);
+            autosaveTimer = setTimeout(() => {
+                saveDraftToStorage();
+                const label = document.getElementById('autosaveLabel');
+                if (label) {
+                    label.style.opacity = '1';
+                    setTimeout(() => label.style.opacity = '0', 2000);
+                }
+                updateLiveMetrics();
+            }, 1000);
+        });
+    }
+  }
+
+  function syncStateFromInputs() {
+    const getVal = (id) => {
+        const el = document.getElementById(id);
+        return el ? (el.value || '').trim() : '';
+    };
+    
+    state.brief.recipientName = getVal('recipientName');
+    state.brief.position = getVal('position');
+    state.brief.relationship = getVal('relationship');
+    state.brief.companyName = getVal('companyName');
+    state.brief.companyContext = getVal('companyContext');
+    state.brief.userName = getVal('userName');
+    state.brief.background = getVal('background');
+    state.brief.emailGoal = getVal('emailGoal');
+    state.brief.tone = getVal('tone');
+    state.brief.length = getVal('length');
+    state.brief.ctaStyle = getVal('ctaStyle');
+  }
+
+  function syncDOMFromState() {
+      const setVal = (id, val) => {
+          const el = document.getElementById(id);
+          if (el) el.value = val || '';
+      };
+      
+      setVal('recipientName', state.brief.recipientName);
+      setVal('position', state.brief.position);
+      setVal('relationship', state.brief.relationship);
+      setVal('companyName', state.brief.companyName);
+      setVal('companyContext', state.brief.companyContext);
+      setVal('userName', state.brief.userName);
+      setVal('background', state.brief.background);
+      setVal('emailGoal', state.brief.emailGoal);
+      setVal('tone', state.brief.tone);
+      setVal('length', state.brief.length);
+      setVal('ctaStyle', state.brief.ctaStyle);
+      
+      const goals = document.querySelectorAll('.goal-card');
+      goals.forEach(g => {
+          g.classList.toggle('active', g.dataset.value === state.brief.emailGoal);
+      });
+      
+      trackProgress();
   }
 
   function trackProgress() {
-    // Check required fields per step
-    const s1 = document.getElementById('position').value.trim();
-    updateBadge('status-1', s1 ? 'Complete' : 'In progress', !!s1);
+    syncStateFromInputs();
     
-    const s2 = document.getElementById('companyName').value.trim();
-    updateBadge('status-2', s2 ? 'Complete' : 'Not started', !!s2);
+    updateBadge('status-1', state.brief.position ? 'Complete' : 'In progress', !!state.brief.position);
+    updateBadge('status-2', state.brief.companyName ? 'Complete' : 'Not started', !!state.brief.companyName);
     
-    const uName = document.getElementById('userName').value.trim();
-    const bg = document.getElementById('background').value.trim();
-    updateBadge('status-3', (uName && bg) ? 'Complete' : 'Not started', !!(uName && bg));
-    
-    const s4 = document.getElementById('emailGoal').value;
-    updateBadge('status-4', s4 ? 'Complete' : 'Not started', !!s4);
+    const hasValue = state.brief.userName && state.brief.background;
+    updateBadge('status-3', hasValue ? 'Complete' : 'Not started', !!hasValue);
+    updateBadge('status-4', state.brief.emailGoal ? 'Complete' : 'Not started', !!state.brief.emailGoal);
   }
 
   function updateBadge(id, text, isComplete) {
@@ -371,42 +479,299 @@
   }
 
   async function handleGenerate() {
-    if (isGenerating) return;
+    syncStateFromInputs();
     
-    const company = document.getElementById('companyName').value;
-    const position = document.getElementById('position').value;
-    const userName = document.getElementById('userName').value;
-    const bg = document.getElementById('background').value;
-    
-    if(!company || !position || !userName || !bg) {
+    if(!state.brief.companyName || !state.brief.position || !state.brief.userName || !state.brief.background) {
         showToast('Please complete all required fields.', true);
-        toggleStepAccordion( !position ? 'recipient' : (!company ? 'company' : 'value') );
+        toggleStepAccordion( !state.brief.position ? 'recipient' : (!state.brief.companyName ? 'company' : 'value') );
         return;
     }
     
-    isGenerating = true;
+    // Abort previous generation if any
+    if (state.generation.controller) {
+        state.generation.controller.abort();
+    }
+    
+    state.generation.controller = new AbortController();
+    state.generation.requestId += 1;
+    const currentReqId = state.generation.requestId;
+    
+    state.generation.status = 'generating';
     const btn = document.getElementById('generateBtn');
-    btn.innerHTML = `<i data-lucide="loader-circle" class="spin" width="16"></i> Generating...`;
+    if (btn) {
+        btn.innerHTML = `<i data-lucide="loader-circle" class="spin" width="16"></i> Generating...`;
+        btn.disabled = true;
+    }
     if (window.lucide) lucide.createIcons();
 
     const payload = {
         action: 'generate',
-        emailGoal: document.getElementById('emailGoal').value,
+        emailGoal: state.brief.emailGoal,
         recipient: {
-            name: document.getElementById('recipientName').value,
-            company: company,
-            position: position
+            name: state.brief.recipientName,
+            company: state.brief.companyName,
+            position: state.brief.position
         },
         userContext: {
-            name: userName,
-            background: bg,
-            whyContacting: document.getElementById('companyContext').value
+            name: state.brief.userName,
+            background: state.brief.background,
+            whyContacting: state.brief.companyContext || state.brief.relationship
         },
         personalization: {
-            tone: document.getElementById('tone').value,
-            length: document.getElementById('length').value,
-            ctaStyle: document.getElementById('ctaStyle').value
+            tone: state.brief.tone,
+            length: state.brief.length,
+            ctaStyle: state.brief.ctaStyle
         }
+    };
+    
+    try {
+        const session = await window.appSdk.auth.getSession();
+        const headers = { 'Content-Type': 'application/json' };
+        if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+        
+        const res = await fetch('/api/cold-email', { 
+            method: 'POST', 
+            headers, 
+            body: JSON.stringify(payload),
+            signal: state.generation.controller.signal
+        });
+        
+        const data = await res.json();
+        
+        if (currentReqId !== state.generation.requestId) {
+            console.log("Stale request aborted implicitly.");
+            return; // A newer request was started
+        }
+        
+        if(!res.ok) throw new Error(data.error || 'Failed to generate email');
+        
+        // Normalize and update state safely
+        state.data.variants = Array.isArray(data.variants) ? data.variants : [];
+        state.data.subjectLines = Array.isArray(data.subjectLines) ? data.subjectLines : [];
+        state.data.evaluation = data.evaluation || null;
+        state.data.suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+        
+        if (state.data.variants.length > 0) {
+            const activeVariant = state.data.variants[0];
+            state.editor.subject = (activeVariant.subject || '').replace(/subject:/i, '').trim();
+            state.editor.body = (activeVariant.body || '').trim();
+            state.data.activeVariantIndex = 0;
+            saveDraftToStorage();
+            renderWorkspace();
+        } else {
+            throw new Error("No variants generated.");
+        }
+        
+    } catch(e) {
+        if (e.name === 'AbortError') {
+            console.log('Generation aborted by user.');
+        } else {
+            console.error(e);
+            showToast(e.message, true);
+        }
+    } finally {
+        if (currentReqId === state.generation.requestId) {
+            state.generation.status = 'idle';
+            state.generation.controller = null;
+            if (btn) {
+                btn.innerHTML = `Generate Email <i data-lucide="sparkles" width="16"></i>`;
+                btn.disabled = false;
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+    }
+  }
+
+  // --- Rendering UI based on State ---
+  function renderWorkspace() {
+    if (state.data.variants.length === 0) return;
+    
+    // Hide empty states, show real content
+    const elEditorEmpty = document.getElementById('editorEmptyState');
+    const elEditorDoc = document.getElementById('editorDocumentFrame');
+    const elCopilotEmpty = document.getElementById('copilotEmptyState');
+    const elCopilotScore = document.getElementById('copilotScoreHeader');
+    const elCopilotContent = document.getElementById('copilotContent');
+    const elVariantsEmpty = document.getElementById('variantsEmptyState');
+    const elVariantsContent = document.getElementById('variantsContent');
+    
+    if (elEditorEmpty) elEditorEmpty.style.display = 'none';
+    if (elEditorDoc) elEditorDoc.style.display = 'flex';
+    if (elCopilotEmpty) elCopilotEmpty.style.display = 'none';
+    if (elCopilotScore) elCopilotScore.style.display = 'flex';
+    if (elCopilotContent) elCopilotContent.style.display = 'block';
+    if (elVariantsEmpty) elVariantsEmpty.style.display = 'none';
+    if (elVariantsContent) elVariantsContent.style.display = 'block';
+    
+    // Render Subject Pills
+    const subContainer = document.getElementById('subjectContainer');
+    if (subContainer) {
+        subContainer.innerHTML = '';
+        
+        let subjectsToRender = [];
+        
+        if (state.data.subjectLines.length > 0) {
+            subjectsToRender = state.data.subjectLines.slice(0, 4).map(s => s.text || s);
+        } else {
+            // Fallbacks
+            subjectsToRender = [
+                state.editor.subject || 'Introduction',
+                `Quick question regarding ${state.brief.companyName || 'your work'}`,
+                `Connecting: ${state.brief.userName || 'Networking'}`
+            ];
+        }
+        
+        // Ensure the active editor subject is in the list
+        if (!subjectsToRender.includes(state.editor.subject)) {
+            subjectsToRender.unshift(state.editor.subject);
+            subjectsToRender = subjectsToRender.slice(0, 4);
+        }
+
+        subjectsToRender.forEach((txt, i) => {
+            const cleanTxt = (txt.text || txt).replace(/subject:/i, '').trim();
+            const el = document.createElement('div');
+            el.className = 'subject-pill' + (cleanTxt === state.editor.subject ? ' active' : '');
+            el.textContent = cleanTxt;
+            el.addEventListener('click', () => {
+                document.querySelectorAll('.subject-pill').forEach(p => p.classList.remove('active'));
+                el.classList.add('active');
+                state.editor.subject = cleanTxt;
+            });
+            subContainer.appendChild(el);
+        });
+    }
+    
+    // Editor Content
+    const editor = document.getElementById('editorSheet');
+    if (editor && editor.innerText !== state.editor.body) {
+        editor.innerText = state.editor.body;
+    }
+    
+    updateLiveMetrics();
+    
+    // Render Variants
+    const varCont = document.getElementById('variantsContainer');
+    if (varCont) {
+        varCont.innerHTML = '';
+        // Skip the currently active one
+        state.data.variants.forEach((v, index) => {
+            if (index === state.data.activeVariantIndex) return;
+            
+            const card = document.createElement('div');
+            card.className = 'cl-section-card';
+            card.style.background = 'rgba(255,255,255,0.02)';
+            
+            const safeTone = v.tone || `Variant ${index + 1}`;
+            const safeSubject = (v.subject || '').replace(/subject:/i, '').trim();
+            const safeBody = (v.body || '').trim();
+            
+            card.innerHTML = `
+                <div style="font-weight:600; margin-bottom:4px; font-size:0.85rem; color:var(--text-1);">${safeTone}</div>
+                <div style="font-size:0.75rem; color:var(--text-3); margin-bottom:8px;">Subj: ${safeSubject}</div>
+                <div style="font-size:0.85rem; color:var(--text-2); white-space:pre-wrap; max-height:100px; overflow:hidden; position:relative;">
+                  ${safeBody}
+                  <div style="position:absolute; bottom:0; left:0; right:0; height:40px; background:linear-gradient(transparent, var(--bg));"></div>
+                </div>
+                <button class="btn btn-secondary btn-sm" style="margin-top:12px;">Use this version</button>
+            `;
+            
+            const btn = card.querySelector('button');
+            btn.addEventListener('click', () => {
+                state.data.activeVariantIndex = index;
+                state.editor.subject = safeSubject;
+                state.editor.body = safeBody;
+                saveDraftToStorage();
+                renderWorkspace();
+            });
+            
+            varCont.appendChild(card);
+        });
+    }
+
+    // Render Follow-ups
+    const folCont = document.getElementById('followUpsContainer');
+    if (folCont) {
+        const recip = state.brief.recipientName || 'there';
+        const comp = state.brief.companyName || 'your team';
+        folCont.innerHTML = `
+            <div class="cl-section-card" style="background:rgba(255,255,255,0.02);">
+                <div style="font-weight:600; margin-bottom:4px; font-size:0.85rem; color:var(--text-1);">Follow-up 1 <span style="font-weight:400; font-size:0.75rem; color:var(--text-3); float:right;">3-5 business days</span></div>
+                <div style="font-size:0.85rem; color:var(--text-2); margin-top:8px;">Hi ${recip},\n\nJust floating this to the top of your inbox. I know things are busy at ${comp}. Let me know if you have a moment to connect.</div>
+            </div>
+            <div class="cl-section-card" style="background:rgba(255,255,255,0.02);">
+                <div style="font-weight:600; margin-bottom:4px; font-size:0.85rem; color:var(--text-1);">Final Follow-up <span style="font-weight:400; font-size:0.75rem; color:var(--text-3); float:right;">7-10 business days</span></div>
+                <div style="font-size:0.85rem; color:var(--text-2); margin-top:8px;">Hi ${recip},\n\nI won't follow up again as I assume priorities are elsewhere right now. I'll keep following ${comp}'s progress!</div>
+            </div>
+        `;
+    }
+    
+    // Render Copilot Evaluation Score
+    if (state.data.evaluation) {
+       const scoreEl = document.getElementById('copilotOverallScore');
+       if (scoreEl) {
+           const score = state.data.evaluation.overallScore || 0;
+           let iconHtml = '';
+           let color = '';
+           let label = '';
+           
+           if (score >= 90) { color = 'var(--success)'; iconHtml = '<i data-lucide="check-circle" style="color:'+color+';" width="28"></i>'; label = 'Strong'; }
+           else if (score >= 75) { color = 'var(--warning)'; iconHtml = '<i data-lucide="alert-circle" style="color:'+color+';" width="28"></i>'; label = 'Good'; }
+           else { color = 'var(--danger)'; iconHtml = '<i data-lucide="x-circle" style="color:'+color+';" width="28"></i>'; label = 'Needs Work'; }
+           
+           scoreEl.innerHTML = iconHtml;
+           
+           const lblEl = document.querySelector('.cl-copilot-overall-label');
+           if (lblEl) {
+               lblEl.textContent = label;
+               lblEl.style.color = color;
+           }
+       }
+    }
+    
+    if (window.lucide) window.lucide.createIcons();
+  }
+  
+  function updateLiveMetrics() {
+    const text = state.editor.body || '';
+    const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).filter(Boolean).length;
+    
+    const elWord = document.getElementById('wordCount');
+    const elChar = document.getElementById('charCount');
+    const elRead = document.getElementById('readTime');
+    
+    if (elWord) elWord.textContent = words;
+    if (elChar) elChar.textContent = text.length;
+    if (elRead) elRead.textContent = Math.ceil(words / 200) + 'm';
+  }
+
+  // --- AI Actions ---
+  async function triggerAiAction(action) {
+    const orig = state.editor.body || '';
+    if (!orig) {
+        showToast("Please generate an email first.", true);
+        return;
+    }
+    
+    const diffView = document.getElementById('aiDiffView');
+    const diffOrig = document.getElementById('diffOrig');
+    const diffSug = document.getElementById('diffSug');
+    
+    if (diffOrig) diffOrig.innerText = orig;
+    if (diffSug) diffSug.innerHTML = `<i data-lucide="loader-2" class="spin" width="16" style="margin-right:8px;"></i> Improving your email...`;
+    if (diffView) diffView.style.display = 'block';
+    if (window.lucide) lucide.createIcons();
+    
+    const payload = {
+        action: 'optimize',
+        emailGoal: state.brief.emailGoal,
+        emailBody: orig,
+        feedback: `Action: ${action}. Please optimize this email body accordingly.`,
+        recipientName: state.brief.recipientName,
+        companyName: state.brief.companyName,
+        position: state.brief.position,
+        userName: state.brief.userName,
+        background: state.brief.background,
+        whyContacting: state.brief.companyContext || state.brief.relationship
     };
     
     try {
@@ -417,130 +782,34 @@
         const res = await fetch('/api/cold-email', { method: 'POST', headers, body: JSON.stringify(payload) });
         const data = await res.json();
         
-        if(!res.ok) throw new Error(data.error || 'Failed to generate email');
+        if (!res.ok) throw new Error(data.error || 'Optimization failed');
         
-        currentEmailData = data;
-        renderWorkspace(data);
-        
-    } catch(e) {
-        showToast(e.message, true);
-    } finally {
-        isGenerating = false;
-        btn.innerHTML = `Generate Email <i data-lucide="sparkles" width="16"></i>`;
-        if (window.lucide) lucide.createIcons();
+        if (diffSug) diffSug.innerText = data.optimizedBody || "No changes proposed.";
+    } catch (e) {
+        if (diffSug) diffSug.innerText = "Error applying AI suggestion: " + e.message;
     }
-  }
-
-  function renderWorkspace(data) {
-    // Hide empty states, show real content
-    document.getElementById('editorEmptyState').style.display = 'none';
-    document.getElementById('editorDocumentFrame').style.display = 'flex';
-    document.getElementById('copilotEmptyState').style.display = 'none';
-    document.getElementById('copilotScoreHeader').style.display = 'flex';
-    document.getElementById('copilotContent').style.display = 'block';
-    document.getElementById('variantsEmptyState').style.display = 'none';
-    document.getElementById('variantsContent').style.display = 'block';
-    
-    // Parse Variant A
-    let lines = data.variantA.split('\n');
-    let subject = lines.find(l => l.toLowerCase().startsWith('subject:'));
-    if(subject) {
-        subject = subject.replace(/subject:/i, '').trim();
-        lines = lines.filter(l => !l.toLowerCase().startsWith('subject:'));
-    } else {
-        subject = 'Introduction / ' + document.getElementById('userName').value;
-    }
-    const body = lines.join('\n').trim();
-    
-    // Setup Subjects
-    const subContainer = document.getElementById('subjectContainer');
-    subContainer.innerHTML = '';
-    const subs = [
-        subject,
-        'Quick question regarding ' + document.getElementById('companyName').value,
-        'Connecting: ' + document.getElementById('userName').value
-    ];
-    subs.forEach((txt, i) => {
-        const el = document.createElement('div');
-        el.className = 'subject-pill' + (i === 0 ? ' active' : '');
-        el.textContent = txt;
-        el.addEventListener('click', () => {
-            document.querySelectorAll('.subject-pill').forEach(p => p.classList.remove('active'));
-            el.classList.add('active');
-        });
-        subContainer.appendChild(el);
-    });
-    
-    // Editor
-    const editor = document.getElementById('emailBody');
-    editor.innerText = body;
-    updateLiveMetrics();
-    
-    editor.addEventListener('input', () => {
-        clearTimeout(autosaveTimer);
-        autosaveTimer = setTimeout(() => {
-            const label = document.getElementById('autosaveLabel');
-            label.style.opacity = '1';
-            setTimeout(() => label.style.opacity = '0', 2000);
-            updateLiveMetrics();
-        }, 1000);
-    });
-
-    // Variants
-    const varCont = document.getElementById('variantsContainer');
-    varCont.innerHTML = '';
-    ['B', 'C'].forEach(k => {
-        if(data['variant'+k]) {
-            const card = document.createElement('div');
-            card.className = 'cl-section-card';
-            card.style.background = 'rgba(255,255,255,0.02)';
-            card.innerHTML = `
-                <div style="font-weight:600; margin-bottom:8px; font-size:0.85rem; color:var(--text-1);">Variant ${k}</div>
-                <div style="font-size:0.85rem; color:var(--text-2); white-space:pre-wrap; max-height:80px; overflow:hidden;">${data['variant'+k]}</div>
-                <button class="btn btn-secondary btn-sm" style="margin-top:12px;">Use this version</button>
-            `;
-            varCont.appendChild(card);
-        }
-    });
-
-    // Follow-ups
-    const folCont = document.getElementById('followUpsContainer');
-    folCont.innerHTML = `
-        <div class="cl-section-card" style="background:rgba(255,255,255,0.02);">
-            <div style="font-weight:600; margin-bottom:4px; font-size:0.85rem; color:var(--text-1);">Follow-up 1 <span style="font-weight:400; font-size:0.75rem; color:var(--text-3); float:right;">3-5 business days</span></div>
-            <div style="font-size:0.85rem; color:var(--text-2); margin-top:8px;">Hi ${document.getElementById('recipientName').value || 'there'},\n\nJust floating this to the top of your inbox. I know things are busy at ${document.getElementById('companyName').value}. Let me know if you have a moment to connect.</div>
-        </div>
-        <div class="cl-section-card" style="background:rgba(255,255,255,0.02);">
-            <div style="font-weight:600; margin-bottom:4px; font-size:0.85rem; color:var(--text-1);">Final Follow-up <span style="font-weight:400; font-size:0.75rem; color:var(--text-3); float:right;">7-10 business days</span></div>
-            <div style="font-size:0.85rem; color:var(--text-2); margin-top:8px;">Hi ${document.getElementById('recipientName').value || 'there'},\n\nI won't follow up again as I assume priorities are elsewhere right now. I'll keep following ${document.getElementById('companyName').value}'s progress!</div>
-        </div>
-    `;
-  }
-  
-  function updateLiveMetrics() {
-    const text = document.getElementById('emailBody').innerText || '';
-    const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-    document.getElementById('wordCount').textContent = words;
-    document.getElementById('charCount').textContent = text.length;
-    document.getElementById('readTime').textContent = Math.ceil(words / 200) + 'm';
-  }
-
-  // --- AI Actions ---
-  function triggerAiAction(action) {
-    const orig = document.getElementById('emailBody').innerText;
-    const diffView = document.getElementById('aiDiffView');
-    document.getElementById('diffOrig').innerText = orig.substring(0, 100) + '...';
-    document.getElementById('diffSug').innerText = "Simulated " + action + " suggestion applied by AI...\n\n" + orig.substring(0, 80);
-    diffView.style.display = 'block';
   }
   
   function rejectAiAction() {
-    document.getElementById('aiDiffView').style.display = 'none';
+    const diffView = document.getElementById('aiDiffView');
+    if (diffView) diffView.style.display = 'none';
   }
   
   function applyAiAction() {
-    document.getElementById('emailBody').innerText = document.getElementById('diffSug').innerText;
-    document.getElementById('aiDiffView').style.display = 'none';
+    const diffSug = document.getElementById('diffSug');
+    const diffView = document.getElementById('aiDiffView');
+    const editor = document.getElementById('editorSheet');
+    
+    if (!diffSug || !editor) return;
+    
+    // Ignore if it's the loading text or error
+    if (diffSug.innerText.includes('Improving your email...') || diffSug.innerText.includes('Error applying')) return;
+    
+    state.editor.body = diffSug.innerText;
+    editor.innerText = state.editor.body;
+    saveDraftToStorage();
+    
+    if (diffView) diffView.style.display = 'none';
     updateLiveMetrics();
     showToast('AI suggestion applied.');
   }
@@ -553,7 +822,12 @@
         const command = btn.getAttribute('data-command');
         if (command) {
             document.execCommand(command, false, null);
-            document.getElementById('emailBody').focus();
+            const editor = document.getElementById('editorSheet');
+            if (editor) {
+                editor.focus();
+                // trigger an input event to sync state
+                editor.dispatchEvent(new Event('input', { bubbles: true }));
+            }
         }
       });
     });
