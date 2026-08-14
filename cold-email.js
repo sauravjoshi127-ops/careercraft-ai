@@ -26,6 +26,7 @@
       status: 'idle', // 'idle' | 'generating' | 'error'
       controller: null,
       requestId: 0,
+      copilotRequestId: 0,
       error: null
     },
     data: {
@@ -744,6 +745,50 @@
     if (elRead) elRead.textContent = Math.ceil(words / 200) + 'm';
   }
 
+  function normalizeEmailText(text) {
+      if (!text) return '';
+      return text.trim().replace(/\s+/g, ' ');
+  }
+
+  function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+          tag => ({
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              "'": '&#39;',
+              '"': '&quot;'
+          }[tag] || tag)
+      );
+  }
+
+  function renderWordDiff(oldText, newText) {
+      const oldWords = oldText.split(/(\s+)/);
+      const newWords = newText.split(/(\s+)/);
+      
+      let start = 0;
+      while (start < oldWords.length && start < newWords.length && oldWords[start] === newWords[start]) {
+          start++;
+      }
+      let oldEnd = oldWords.length - 1;
+      let newEnd = newWords.length - 1;
+      while (oldEnd >= start && newEnd >= start && oldWords[oldEnd] === newWords[newEnd]) {
+          oldEnd--;
+          newEnd--;
+      }
+      
+      const prefix = oldWords.slice(0, start).join('');
+      const suffix = oldWords.slice(oldEnd + 1).join('');
+      const removed = oldWords.slice(start, oldEnd + 1).join('');
+      const added = newWords.slice(start, newEnd + 1).join('');
+      
+      let html = '<span>' + escapeHTML(prefix) + '</span>';
+      if (removed) html += '<span class="diff-del" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; text-decoration: line-through;">' + escapeHTML(removed) + '</span>';
+      if (added) html += '<span class="diff-ins" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">' + escapeHTML(added) + '</span>';
+      html += '<span>' + escapeHTML(suffix) + '</span>';
+      return html;
+  }
+
   // --- AI Actions ---
   async function triggerAiAction(action) {
     const orig = state.editor.body || '';
@@ -752,12 +797,22 @@
         return;
     }
     
+    // Disable buttons
+    document.querySelectorAll('.cl-action-card').forEach(btn => btn.disabled = true);
+    
+    state.generation.copilotRequestId = (state.generation.copilotRequestId || 0) + 1;
+    const currentReqId = state.generation.copilotRequestId;
+    
     const diffView = document.getElementById('aiDiffView');
     const diffOrig = document.getElementById('diffOrig');
     const diffSug = document.getElementById('diffSug');
     
-    if (diffOrig) diffOrig.innerText = orig;
-    if (diffSug) diffSug.innerHTML = `<i data-lucide="loader-2" class="spin" width="16" style="margin-right:8px;"></i> Improving your email...`;
+    if (diffOrig) diffOrig.style.display = 'none'; // We'll combine the diff in diffSug
+    if (diffSug) {
+        diffSug.style.color = 'var(--text-1)';
+        diffSug.style.whiteSpace = 'pre-wrap';
+        diffSug.innerHTML = `<i data-lucide="loader-2" class="spin" width="16" style="margin-right:8px;"></i> Improving your email...`;
+    }
     if (diffView) diffView.style.display = 'block';
     if (window.lucide) lucide.createIcons();
     
@@ -782,11 +837,30 @@
         const res = await fetch('/api/cold-email', { method: 'POST', headers, body: JSON.stringify(payload) });
         const data = await res.json();
         
+        if (currentReqId !== state.generation.copilotRequestId) {
+            return; // Stale request
+        }
+        
         if (!res.ok) throw new Error(data.error || 'Optimization failed');
         
-        if (diffSug) diffSug.innerText = data.optimizedBody || "No changes proposed.";
+        const proposedText = data.revisedText;
+        if (!proposedText || normalizeEmailText(orig) === normalizeEmailText(proposedText)) {
+            if (diffSug) diffSug.innerHTML = `<span style="color:var(--warning);">The AI did not produce a meaningful revision. Please try a more specific instruction.</span>`;
+            return;
+        }
+        
+        // Store valid suggestion text for applyAiAction to use
+        diffSug.dataset.proposedText = proposedText;
+        diffSug.innerHTML = renderWordDiff(orig, proposedText);
+        
     } catch (e) {
-        if (diffSug) diffSug.innerText = "Error applying AI suggestion: " + e.message;
+        if (currentReqId === state.generation.copilotRequestId) {
+            if (diffSug) diffSug.innerHTML = `<span style="color:var(--danger);">Error applying AI suggestion: ${e.message}</span>`;
+        }
+    } finally {
+        if (currentReqId === state.generation.copilotRequestId) {
+            document.querySelectorAll('.cl-action-card').forEach(btn => btn.disabled = false);
+        }
     }
   }
   
@@ -803,9 +877,9 @@
     if (!diffSug || !editor) return;
     
     // Ignore if it's the loading text or error
-    if (diffSug.innerText.includes('Improving your email...') || diffSug.innerText.includes('Error applying')) return;
+    if (diffSug.innerHTML.includes('Improving your email...') || diffSug.innerHTML.includes('Error applying') || diffSug.innerHTML.includes('did not produce')) return;
     
-    state.editor.body = diffSug.innerText;
+    state.editor.body = diffSug.dataset.proposedText || diffSug.innerText;
     editor.innerText = state.editor.body;
     saveDraftToStorage();
     

@@ -114,12 +114,12 @@ function validateColdEmailOutput(data, minLength, maxLength) {
 }
 
 function validateOptimizeOutput(data, minLength, maxLength) {
-  if (!data || !data.optimizedBody) {
-    console.warn('[cold-email validation] Failed: Missing optimizedBody field.');
-    return { isValid: false, reason: 'Missing optimizedBody field' };
+  if (!data || !data.revisedText) {
+    console.warn('[cold-email validation] Failed: Missing revisedText field.');
+    return { isValid: false, reason: 'Missing revisedText field' };
   }
   
-  const words = data.optimizedBody.trim().split(/\s+/).filter(Boolean).length;
+  const words = data.revisedText.trim().split(/\s+/).filter(Boolean).length;
   if (words < minLength || words > maxLength) {
     console.warn(`[cold-email validation] Failed: Optimized body has ${words} words, which is outside the range [${minLength}, ${maxLength}].`);
     return {
@@ -129,12 +129,12 @@ function validateOptimizeOutput(data, minLength, maxLength) {
   }
   
   const placeholderRegex = /\[[A-Za-z0-9\s_-]+\]|<[A-Za-z0-9\s_-]+>|{your\s|your_placeholder/i;
-  if (placeholderRegex.test(data.optimizedBody)) {
+  if (placeholderRegex.test(data.revisedText)) {
     console.warn('[cold-email validation] Failed: Placeholders found in optimized body.');
     return { isValid: false, reason: 'Placeholder tags found in optimized body' };
   }
   
-  if (data.optimizedBody.includes('```') || data.optimizedBody.includes('<html>')) {
+  if (data.revisedText.includes('```') || data.revisedText.includes('<html>')) {
     console.warn('[cold-email validation] Failed: Markdown/HTML code blocks found in optimized body.');
     return { isValid: false, reason: 'Markdown/HTML code blocks found in optimized body' };
   }
@@ -312,46 +312,28 @@ User Instructions for improvement:
 "${data.feedback}"
 
 Goal: ${data.emailGoal}
-Recipient: ${data.recipientName || 'Hi there'} at ${data.companyName} (${data.position})
+
+Recipient Context:
+- Name: ${data.recipientName || 'Hi there'}
+- Company: ${data.companyName}
+- Position: ${data.position}
+
 User Context:
 - Name: ${data.userName}
 - Background: ${data.background}
 - Why Contacting: ${data.whyContacting}
 
 RULES:
-1. Revise the email to improve grammar, length, flow, tone, and CTA strength based on the instructions.
-2. The optimized email body must strictly contain between ${data.minLength} and ${data.maxLength} words. Never exceed or fall below this range.
-   - If the current email is too long: Condense repetitive sentences while preserving meaning.
-   - If the current email is too short: Expand with relevant achievements or personalization. Never pad with filler text.
+1. Revise the email to address the user instructions. ONLY modify the parts of the email requested by the user instruction. Do NOT rewrite the entire email unless specifically requested. Preserve the original meaning and structure for unrequested parts.
+2. The revised email body must strictly contain between ${data.minLength} and ${data.maxLength} words. Never exceed or fall below this range.
 3. Keep it punchy and mobile-friendly.
-4. Re-evaluate the optimized email, returning updated metrics (Overall Score, Strengths, Weaknesses, Suggestions).
+4. DO NOT invent factual information that is not present in the User Context.
+5. Prevent Self-Injection/Duplication: Ensure the user's name or background is not duplicated redundantly (e.g., "My name is X. My name is X").
 
 Return ONLY valid JSON in this exact format (no markdown code blocks, no backticks, no other text):
 {
-  "optimizedBody": "optimized email body...",
-  "evaluation": {
-    "overallScore": 92,
-    "personalizationScore": 90,
-    "openRatePrediction": 88,
-    "recruiterEngagementScore": 95,
-    "professionalToneScore": 90,
-    "spamRiskScore": 5,
-    "grammarScore": 98,
-    "clarityScore": 95,
-    "strengths": ["strength 1"],
-    "weaknesses": ["weakness 1"],
-    "suggestions": ["suggestion 1"]
-  },
-  "suggestions": [
-    {
-      "id": "s1",
-      "explanation": "Add clear call to action.",
-      "originalText": "Let me know.",
-      "suggestedText": "Are you open to a brief 2-minute look?"
-    }
-  ],
-  "spamScore": 8,
-  "spamRecommendations": []
+  "revisedText": "The fully revised email body...",
+  "reason": "Brief explanation of what was changed and why."
 }`;
 }
 
@@ -477,27 +459,9 @@ function buildFallbackSubjects(data, reason) {
 }
 
 function buildFallbackOptimize(data, reason) {
-  return {
-    optimizedBody: data.emailBody + '\n\n(Optimized for clarity and brevity - AI fallback applied)',
-    evaluation: {
-      overallScore: 85,
-      personalizationScore: 80,
-      openRatePrediction: 82,
-      recruiterEngagementScore: 85,
-      professionalToneScore: 90,
-      spamRiskScore: 8,
-      grammarScore: 98,
-      clarityScore: 92,
-      strengths: ["Improved readability", "Direct call-to-action"],
-      weaknesses: ["Standardized formatting"],
-      suggestions: ["Try editing context fields further"]
-    },
-    suggestions: [],
-    spamScore: 8,
-    spamRecommendations: [],
-    fallbackUsed: true,
-    fallbackReason: reason
-  };
+  // We no longer provide a string fallback for optimize to avoid
+  // silently appending error text to the user's document.
+  return null;
 }
 
 module.exports = async function handler(req, res) {
@@ -666,10 +630,12 @@ module.exports = async function handler(req, res) {
   // ── Gemini call execution ──────────────────────────────────────────────────
   const keys = getApiKeys();
   if (keys.length === 0) {
+    if (action === 'optimize') {
+      return res.status(500).json({ error: 'AI Provider API Key is not set. Cannot perform modification.' });
+    }
     let fallback;
     if (action === 'generate') fallback = buildFallbackColdEmail(dataFields, 'AI Provider API Key is not set.');
     else if (action === 'regenerate-subjects') fallback = buildFallbackSubjects(dataFields, 'AI Provider API Key is not set.');
-    else fallback = buildFallbackOptimize(dataFields, 'AI Provider API Key is not set.');
     return res.status(200).json(fallback);
   }
 
@@ -760,11 +726,15 @@ module.exports = async function handler(req, res) {
 
   // Fallback to high quality template if all retries fail
   if (!validatedData) {
-    console.warn('[cold-email] Quality validation failed or retries exhausted. Applying local template fallbacks.');
+    console.warn('[cold-email] Quality validation failed or retries exhausted. Applying local template fallbacks where applicable.');
+    
+    if (action === 'optimize') {
+      return res.status(500).json({ error: `Could not create a revised version. Validation failure: ${validationErrorMsg}` });
+    }
+
     let fallback;
     if (action === 'generate') fallback = buildFallbackColdEmail(dataFields, `Validation failure: ${validationErrorMsg}`);
     else if (action === 'regenerate-subjects') fallback = buildFallbackSubjects(dataFields, `Validation failure: ${validationErrorMsg}`);
-    else fallback = buildFallbackOptimize(dataFields, `Validation failure: ${validationErrorMsg}`);
     return res.status(200).json(fallback);
   }
 
