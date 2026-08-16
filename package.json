@@ -2,7 +2,7 @@
   "name": "careercraft-ai",
   "version": "1.0.0",
   "engines": {
-    "node": "20.x"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "start": "node server.js",
@@ -15,7 +15,6 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "mammoth": "^1.12.0",
-    "multer": "^2.1.1",
     "pdf-parse": "^1.1.1",
     "pdfkit": "^0.18.0",
     "puppeteer": "^24.41.0",

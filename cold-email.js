@@ -122,6 +122,8 @@
   }
 
   // --- Resume Integration ---
+  // Queries the canonical `resumes` Supabase table (same table used by resume.js,
+  // cover-letter.js and dashboard-manager.js). No separate storage system.
   async function loadSavedResumesDropdown() {
     const container = document.getElementById('resumeImportActionContainer');
     if (!container) return;
@@ -142,15 +144,52 @@
       savedResumes = data || [];
       
       let html = '';
-      if (savedResumes.length > 0) {
+
+      if (savedResumes.length === 0) {
+        // Empty state: no resumes saved yet
         html += `
-          <button type="button" class="btn btn-secondary btn-sm" id="btnUseResume">
-            <i data-lucide="file-text" width="16" height="16" style="margin-right:6px;"></i> Use My Resume
+          <span style="font-size: 0.9rem; color: var(--text-3);">
+            No saved resumes found.
+            <a href="resume.html" style="color: var(--accent); text-decoration: none; margin-left: 4px;">Build your resume →</a>
+          </span>
+        `;
+      } else if (savedResumes.length === 1) {
+        // Single resume: show a direct-action button
+        html += `
+          <button type="button" class="btn btn-secondary btn-sm" id="btnUseResume" data-resume-id="${savedResumes[0].id}">
+            <i data-lucide="file-text" width="16" height="16" style="margin-right:6px;"></i>
+            Use My Resume
           </button>
         `;
       } else {
+        // Multiple resumes: show a select dropdown + action button (mirrors cover-letter.js pattern)
         html += `
-          <span style="font-size: 0.9rem; color: var(--text-3);">No saved resume found. Import one from your computer to continue.</span>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <select id="savedResumeSelect" style="
+              background: var(--input-bg, rgba(255,255,255,0.05));
+              border: 1px solid var(--border);
+              border-radius: var(--radius-sm);
+              color: var(--text-1);
+              font-size: 0.85rem;
+              padding: 6px 10px;
+              max-width: 220px;
+              cursor: pointer;
+            ">
+              <option value="">— Select a Resume —</option>
+        `;
+        savedResumes.forEach(r => {
+          const label = r.full_name
+            ? `${r.full_name}${r.professional_headline ? ' · ' + r.professional_headline.substring(0, 30) : ''}`
+            : ('Resume – ' + new Date(r.created_at).toLocaleDateString());
+          html += `<option value="${r.id}">${label}</option>`;
+        });
+        html += `
+            </select>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnUseResume">
+              <i data-lucide="file-text" width="16" height="16" style="margin-right:6px;"></i>
+              Use Resume
+            </button>
+          </div>
         `;
       }
 
@@ -162,8 +201,9 @@
 
       container.innerHTML = html;
 
-      if (document.getElementById('btnUseResume')) {
-        document.getElementById('btnUseResume').addEventListener('click', handleUseMyResume);
+      const useBtn = document.getElementById('btnUseResume');
+      if (useBtn) {
+        useBtn.addEventListener('click', handleUseMyResume);
       }
       document.getElementById('btnImportResume').addEventListener('click', () => {
         document.getElementById('resumeFileInput').click();
@@ -171,7 +211,20 @@
 
       if (window.lucide) window.lucide.createIcons();
     } catch (err) {
-      console.error(err);
+      console.error('[ColdEmail] Failed to load saved resumes:', err);
+      // Non-fatal: show import-from-file option only
+      const container = document.getElementById('resumeImportActionContainer');
+      if (container) {
+        container.innerHTML = `
+          <span style="font-size: 0.9rem; color: var(--text-3);">Could not load saved resumes. Use Import Resume below.</span>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnImportResume">
+            <i data-lucide="upload" width="16" height="16" style="margin-right:6px;"></i> Import Resume
+          </button>
+        `;
+        const fb = document.getElementById('btnImportResume');
+        if (fb) fb.addEventListener('click', () => document.getElementById('resumeFileInput').click());
+        if (window.lucide) window.lucide.createIcons();
+      }
     }
   }
 
@@ -198,6 +251,7 @@
     if (window.lucide) window.lucide.createIcons();
 
     try {
+        // Uses the shared appSdk.resume.uploadAndParse pipeline (upload-resume handler)
         const extractedText = await window.appSdk.resume.uploadAndParse(file);
         
         const session = await window.appSdk.auth.getSession();
@@ -226,7 +280,11 @@
             extractedData = { valueProposition: data.suggestions };
         }
         
-        backgroundInput.value = extractedData.valueProposition || '';
+        if (!extractedData.valueProposition) {
+            throw new Error('No value proposition could be extracted from this resume.');
+        }
+
+        backgroundInput.value = extractedData.valueProposition;
         
         const nameInput = document.getElementById('userName');
         if (!(nameInput.value || '').trim() && extractedData.name) {
@@ -249,10 +307,36 @@
 
   async function handleUseMyResume() {
     if (!savedResumes || savedResumes.length === 0) return;
+
+    // Resolve which resume the user selected
+    // With multiple resumes: read from the select dropdown (mirrors cover-letter.js)
+    // With exactly one resume: use it directly (no dropdown exists)
+    let resumeData = null;
+    const selectEl = document.getElementById('savedResumeSelect');
+    if (selectEl) {
+      const selectedId = selectEl.value;
+      if (!selectedId) {
+        showToast('Please select a resume from the dropdown first.', true);
+        return;
+      }
+      resumeData = savedResumes.find(r => r.id === selectedId) || null;
+      if (!resumeData) {
+        showToast('Selected resume not found. Please try again.', true);
+        return;
+      }
+    } else {
+      // Single-resume path: no dropdown, use the only available resume
+      resumeData = savedResumes[0];
+    }
+
+    if (!resumeData) {
+      showToast('No resume data available. Please import a resume from your computer.', true);
+      return;
+    }
     
     const backgroundInput = document.getElementById('background');
     if ((backgroundInput.value || '').trim().length > 0) {
-        const confirmed = confirm("Replace existing content with resume information?");
+        const confirmed = confirm('Replace existing content with resume information?');
         if (!confirmed) return;
     }
 
@@ -266,13 +350,14 @@
     if (window.lucide) window.lucide.createIcons();
 
     try {
-        const resumeData = savedResumes[0];
-        
+        // Pre-populate name immediately — no need to wait for AI
         const nameInput = document.getElementById('userName');
         if (!(nameInput.value || '').trim() && resumeData.full_name) {
             nameInput.value = resumeData.full_name;
         }
 
+        // Reuse the same AI endpoint (cold-email-value) already used in this file
+        // to convert structured resume data into a cold-email value proposition paragraph
         const session = await window.appSdk.auth.getSession();
         const token = session?.access_token;
         const response = await fetch('/api/ai-suggestions', {
@@ -287,14 +372,18 @@
             })
         });
 
-        if (!response.ok) throw new Error('Failed to extract resume');
+        if (!response.ok) throw new Error('Failed to extract value proposition from resume');
         const data = await response.json();
+
+        if (!data.suggestions) {
+            throw new Error('No content could be generated from this resume.');
+        }
         
-        backgroundInput.value = data.suggestions || '';
+        backgroundInput.value = data.suggestions;
         trackProgress();
-        showToast("Resume imported successfully.", false);
+        showToast('Resume imported successfully.', false);
     } catch (err) {
-        console.error(err);
+        console.error('[UseMyResume Error]', err);
         showToast("Couldn't import your resume. You can enter your background manually.", true);
     } finally {
         btn.innerHTML = originalText;
