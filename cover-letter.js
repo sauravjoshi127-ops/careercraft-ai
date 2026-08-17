@@ -1330,44 +1330,56 @@
 
   function renderAtsSuggestions(suggestions) {
     const countEl = document.getElementById('suggestionsCount');
-    if (countEl) countEl.textContent = suggestions.length ? `(${suggestions.length})` : '';
-
     const listEl = document.getElementById('suggestionsList');
     if (!listEl) return;
-    if (!suggestions.length) {
-      listEl.innerHTML = '<p style="color:var(--text-3); font-size:0.85rem;">No suggestions found. Your letter is optimized!</p>';
+
+    // Validate each suggestion before rendering — skip nulls/undefined/"undefined" fields
+    const validSuggestions = (suggestions || []).filter(s => {
+      if (!s || typeof s !== 'object') return false;
+      const hasTitle = s.title && s.title !== 'undefined' && s.title !== 'null';
+      const hasDesc  = s.description && s.description !== 'undefined' && s.description !== 'null';
+      const hasReason = s.reason && s.reason !== 'undefined' && s.reason !== 'null';
+      return hasTitle && hasDesc && hasReason;
+    });
+
+    if (countEl) countEl.textContent = validSuggestions.length ? `(${validSuggestions.length})` : '';
+
+    if (!validSuggestions.length) {
+      listEl.innerHTML = '<p class="cl-empty-hint">No suggestions found. Your letter looks well-optimized.</p>';
       return;
     }
 
-    listEl.innerHTML = suggestions.map(s => {
+    listEl.innerHTML = validSuggestions.map(s => {
       const normalizedCategory = (s.category || 'Missing Keyword').toLowerCase().replace(/\s+/g, '-');
       const catClass = `badge-${normalizedCategory}`;
       const priorityColor = s.priority === 'High' ? '<i data-lucide="arrow-up" style="color:var(--danger)" width="14"></i>' : s.priority === 'Medium' ? '<i data-lucide="minus" style="color:var(--warning)" width="14"></i>' : '<i data-lucide="arrow-down" style="color:var(--success)" width="14"></i>';
-      const hasDiff = s.currentText && s.suggestedText;
+      const hasDiff = s.currentText && s.suggestedText &&
+                      s.currentText !== 'undefined' && s.suggestedText !== 'undefined';
 
       return `
         <div class="suggestion-card" id="sug-${s.id}">
-          <div class="suggestion-header" style="margin-bottom:0.6rem;">
+          <div class="suggestion-header">
             <span class="suggestion-cat-badge ${catClass}">${s.category || 'Missing Keyword'}</span>
-            <div style="display:flex; gap:0.5rem; align-items:center;">
+            <div style="display:flex; gap:6px; align-items:center;">
               <span class="suggestion-gain-badge">${s.estimatedATSGain || '+2%'} Gain</span>
-              <span class="priority-badge priority-${(s.priority || 'Medium').toLowerCase()}" style="font-weight:700;">${priorityColor} ${s.priority || 'Medium'}</span>
+              <span class="priority-badge priority-${(s.priority || 'Medium').toLowerCase()}">${priorityColor} ${s.priority || 'Medium'}</span>
             </div>
           </div>
-          
-          <div class="suggestion-title">${s.title || 'Improvement Opportunity'}</div>
-          <div class="suggestion-desc" style="margin-bottom:0.5rem;">${s.description}</div>
+
+          <div class="suggestion-title">${s.title}</div>
+          <div class="suggestion-desc">${s.description}</div>
           <div class="suggestion-reason">${s.reason}</div>
-          
-          <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.75rem;">
-            <button class="btn btn-secondary btn-sm" style="min-height:30px; font-size:0.75rem; padding:0.2rem 0.5rem;" onclick="ignoreSuggestion('${s.id}')">Ignore</button>
-            <button class="btn btn-secondary btn-sm" style="min-height:30px; font-size:0.75rem; padding:0.2rem 0.5rem;" onclick="copySuggestionText(\`${escapeJSQuotes(s.suggestedText || '')}\`)">Copy</button>
-            ${hasDiff ? `
-              <button class="btn btn-secondary btn-sm" style="min-height:30px; font-size:0.75rem; padding:0.2rem 0.5rem;" onclick="openCompareModal('${s.id}', \`${escapeJSQuotes(s.currentText)}\`, \`${escapeJSQuotes(s.suggestedText)}\`)">Compare</button>
-            ` : ''}
-            ${s.oneClickApplicable && hasDiff ? `
-              <button class="btn btn-primary btn-sm" style="min-height:30px; font-size:0.75rem; padding:0.2rem 0.5rem;" onclick="applyAtsSuggestion('${s.id}', \`${escapeJSQuotes(s.currentText)}\`, \`${escapeJSQuotes(s.suggestedText)}\`, '${s.estimatedATSGain || '+2%'}')">Apply</button>
-            ` : ''}
+
+          ${hasDiff ? `
+          <div class="suggestion-diff">
+            <span class="diff-del">${s.currentText}</span>
+            <span class="diff-ins">${s.suggestedText}</span>
+          </div>` : ''}
+
+          <div style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap; margin-top:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="ignoreSuggestion('${s.id}')">Ignore</button>
+            ${hasDiff ? `<button class="btn btn-secondary btn-sm" onclick="openCompareModal('${s.id}', \`${escapeJSQuotes(s.currentText)}\`, \`${escapeJSQuotes(s.suggestedText)}\`)">Compare</button>` : ''}
+            ${s.oneClickApplicable && hasDiff ? `<button class="btn btn-primary btn-sm" onclick="applyAtsSuggestion('${s.id}', \`${escapeJSQuotes(s.currentText)}\`, \`${escapeJSQuotes(s.suggestedText)}\`, '${s.estimatedATSGain || '+2%'}')">Apply</button>` : ''}
           </div>
         </div>
       `;
@@ -1488,12 +1500,42 @@
 
 
   function openCompareModal(id, original, replacement, explanation = '') {
+    /**
+     * Normalize text for display in the compare modal.
+     * If the value is a JSON string (AI accidentally returned structured output),
+     * extract the most useful text field. Never render raw JSON or "undefined".
+     */
+    function normalizeCompareText(raw) {
+      if (!raw || raw === 'undefined' || raw === 'null') return '(No text provided)';
+      const s = String(raw).trim();
+      if (s.startsWith('{') || s.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(s);
+          // Try common AI-response field names, in priority order
+          const candidates = [
+            parsed.revisedText, parsed.body, parsed.text, parsed.content,
+            parsed.improvedText, parsed.suggestion, parsed.letter, parsed.value
+          ];
+          const hit = candidates.find(v => typeof v === 'string' && v.trim().length > 0);
+          if (hit) return hit.trim();
+          // Fall back to stringifying only primitive values from the object
+          const flat = Object.values(parsed)
+            .filter(v => typeof v === 'string' && v.trim().length > 0)
+            .join('\n\n');
+          return flat || s;
+        } catch (_) {
+          // Not valid JSON — display as-is
+        }
+      }
+      return s;
+    }
+
     activeCompareId = id;
     activeCompareOriginal = original;
     activeCompareReplacement = replacement;
 
-    document.getElementById('compareBeforeVal').textContent = original;
-    document.getElementById('compareAfterVal').textContent = replacement;
+    document.getElementById('compareBeforeVal').textContent = normalizeCompareText(original);
+    document.getElementById('compareAfterVal').textContent = normalizeCompareText(replacement);
     
     // Reason box
     const reasonBox = document.getElementById('compareReasonBox');
@@ -1648,20 +1690,32 @@
   function renderVariants(variants, mainText) {
     const container = document.getElementById('variantsContainer');
     if (!container) return;
-    if (!variants.length) {
-      container.innerHTML = '<p style="color:var(--text-3); font-size:0.85rem;">No alternate variants returned.</p>';
+
+    const validVariants = (variants || []).filter(v => typeof v === 'string' && v.trim().length > 0);
+
+    if (!validVariants.length) {
+      container.innerHTML = '<p class="cl-empty-hint">No alternate variants returned by AI.</p>';
       return;
     }
 
-    container.innerHTML = variants.map((vText, idx) => {
-      const title = idx === 0 ? 'Variant A: Bold & Impactful' : idx === 1 ? 'Variant B: Technical & Detailed' : 'Variant C: Story-Driven';
+    const VARIANT_META = [
+      { label: 'Variant A', tag: 'Bold & Impactful' },
+      { label: 'Variant B', tag: 'Technical & Detailed' },
+      { label: 'Variant C', tag: 'Story-Driven' }
+    ];
+
+    container.innerHTML = validVariants.map((vText, idx) => {
+      const meta = VARIANT_META[idx] || { label: `Variant ${String.fromCharCode(65 + idx)}`, tag: 'Alternate' };
       return `
-        <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:var(--r-md); padding:1rem; margin-bottom:1rem;">
-          <h4 style="font-size:0.88rem; color:var(--text-1); margin-bottom:0.5rem;">${title}</h4>
-          <div style="font-size:0.8rem; color:var(--text-2); max-height:120px; overflow-y:auto; white-space:pre-wrap; margin-bottom:0.75rem; background:rgba(0,0,0,0.1); padding:0.5rem; border-radius:4px;">${cleanEscapes(vText)}</div>
-          <div style="display:flex; justify-content:flex-end; gap:0.5rem;">
-            <button class="btn btn-secondary btn-sm" style="min-height:30px; font-size:0.75rem;" onclick="copyVariantText(\`${escapeJSQuotes(vText)}\`)">Copy</button>
-            <button class="btn btn-primary btn-sm" style="min-height:30px; font-size:0.75rem;" onclick="applyVariantText(\`${escapeJSQuotes(vText)}\`)">Use this variant</button>
+        <div class="cl-variant-card">
+          <div class="cl-variant-header">
+            <span class="cl-variant-label">${meta.label}</span>
+            <span class="cl-variant-tag">${meta.tag}</span>
+          </div>
+          <div class="cl-variant-body">${cleanEscapes(vText)}</div>
+          <div class="cl-variant-actions">
+            <button class="btn btn-secondary btn-sm" onclick="copyVariantText(\`${escapeJSQuotes(vText)}\`)">Copy</button>
+            <button class="btn btn-primary btn-sm" onclick="applyVariantText(\`${escapeJSQuotes(vText)}\`)">Use this version</button>
           </div>
         </div>
       `;
