@@ -50,7 +50,7 @@
       border-color: var(--accent);
       color: var(--accent);
     }
-    
+
     .subject-pill {
       display: inline-flex;
       padding: 6px 12px;
@@ -71,6 +71,32 @@
       background: rgba(99, 102, 241, 0.1);
       border-color: var(--accent);
       color: var(--accent);
+    }
+
+    /* Variant card body scroll area — thin, themed scrollbar */
+    .variant-body-scroll {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.12) transparent;
+    }
+    .variant-body-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .variant-body-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .variant-body-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+    }
+    .variant-body-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    /* Variant cards in the panel always stack vertically */
+    #variantsContainer {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
   </style>
 </head>
