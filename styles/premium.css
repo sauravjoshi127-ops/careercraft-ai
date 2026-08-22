@@ -2386,9 +2386,10 @@ input[type="password"]::-ms-clear { display: none; }
 
 /* ── Page-level container ── */
 .cl-page-container {
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 24px 24px 48px;
+  overflow-x: hidden;
 }
 
 /* ── Page header (sits ABOVE workspace grid) ── */
@@ -2419,7 +2420,10 @@ input[type="password"]::-ms-clear { display: none; }
 @media (max-width: 1200px) {
   .cl-workspace { grid-template-columns: 360px 1fr; }
 }
-@media (max-width: 1000px) {
+@media (max-width: 1024px) {
+  .cl-workspace { grid-template-columns: 340px 1fr; }
+}
+@media (max-width: 900px) {
   .cl-workspace { grid-template-columns: 1fr; }
 }
 
@@ -3169,7 +3173,7 @@ input[type="password"]::-ms-clear { display: none; }
 }
 .compare-modal-content {
   background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--r-md); width: 90%; max-width: 650px;
+  border-radius: var(--r-md); width: 90%; max-width: 740px;
   padding: 24px; box-shadow: 0 12px 40px rgba(0,0,0,0.55);
   animation: slideUp 0.2s ease;
 }
@@ -3194,8 +3198,9 @@ input[type="password"]::-ms-clear { display: none; }
 }
 .compare-text-box {
   background: rgba(0,0,0,0.18); border: 1px solid var(--border);
-  border-radius: 6px; padding: 10px; font-size: 0.8rem; line-height: 1.5;
-  min-height: 120px; max-height: 250px; overflow-y: auto; white-space: pre-wrap;
+  border-radius: 6px; padding: 10px 12px; font-size: 0.8rem; line-height: 1.6;
+  min-height: 120px; max-height: 280px; overflow-y: auto;
+  white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;
 }
 .compare-text-box.before { border-left: 3px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text-2); }
 .compare-text-box.after  { border-left: 3px solid var(--success); background: rgba(34,197,94,0.04); color: #86efac; }
@@ -3291,6 +3296,76 @@ input[type="password"]::-ms-clear { display: none; }
   border-radius: 8px;
   color: var(--text-3);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   VARIANT CARDS — Uniform component replacing scattered inline styles
+   ═══════════════════════════════════════════════════════════════ */
+
+.cl-variant-card {
+  background: rgba(255,255,255,0.022);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color var(--t-fast);
+}
+.cl-variant-card:hover {
+  border-color: var(--border-hover);
+}
+.cl-variant-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cl-variant-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.01em;
+}
+.cl-variant-tag {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  background: var(--accent-soft-bg);
+  border: 1px solid var(--accent-soft-border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+.cl-variant-body {
+  font-size: 0.8rem;
+  color: var(--text-2);
+  line-height: 1.55;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  background: rgba(0,0,0,0.15);
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+.cl-variant-body::-webkit-scrollbar { width: 4px; }
+.cl-variant-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.cl-variant-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AI COPILOT SECTION — complete design system
+   ═══════════════════════════════════════════════════════════════ */
 
 /* ── AI Copilot Section (Part 2) ── */
 .cl-copilot-section {
@@ -3395,12 +3470,17 @@ input[type="password"]::-ms-clear { display: none; }
   flex-shrink: 0;
 }
 
-/* Action Cards */
+/* Action Cards — with separator above */
+.cl-copilot-actions-section {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  margin-top: 4px;
+}
 .cl-action-cards-title {
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   color: var(--text-3);
   margin-bottom: 10px;
 }
@@ -3723,4 +3803,23 @@ input[type="password"]::-ms-clear { display: none; }
   margin-top: 20px;
   padding-top: 16px;
   border-top: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE — 768px: compact padding for smaller screens
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .cl-page-container { padding: 16px 16px 32px; }
+  .cl-section-card,
+  .cl-copilot-section,
+  .cl-ats-section,
+  .cl-variants-section,
+  .cl-history-section { padding: 16px; }
+  .cl-editor-container { padding: 14px; }
+  .cl-live-metrics-bar { grid-template-columns: repeat(3, 1fr); padding: 10px 12px; }
+  .compare-modal-content { padding: 16px; }
+  .compare-modal-body { grid-template-columns: 1fr; }
+  .cl-variant-card { padding: 12px; }
+  .cl-action-cards { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
 }
