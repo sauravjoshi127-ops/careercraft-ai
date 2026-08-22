@@ -746,34 +746,56 @@
         // Skip the currently active one
         state.data.variants.forEach((v, index) => {
             if (index === state.data.activeVariantIndex) return;
-            
+
             const card = document.createElement('div');
             card.className = 'cl-section-card';
-            card.style.background = 'rgba(255,255,255,0.02)';
-            
-            const safeTone = v.tone || `Variant ${index + 1}`;
+            card.style.cssText = 'background:rgba(255,255,255,0.02); display:flex; flex-direction:column;';
+
+            const safeTone    = (v.tone    || `Variant ${index + 1}`).trim();
             const safeSubject = (v.subject || '').replace(/subject:/i, '').trim();
-            const safeBody = (v.body || '').trim();
-            
+            const safeBody    = (v.body    || '').trim();
+
+            // Approach badge (italic, subdued) — shown if API provided it
+            const safeApproach = (v.approach || '').trim();
+
+            // Estimate body length to decide if we need capped scroll
+            // (>400 chars is roughly 60+ words — cap at max-height with internal scroll)
+            const bodyWordCount = safeBody ? safeBody.split(/\s+/).filter(Boolean).length : 0;
+            const bodyStyle = bodyWordCount > 120
+                ? 'overflow-y:auto; max-height:340px;'   // long email — scrollable
+                : 'overflow:visible;';                   // short/normal — grows naturally
+
+            // Tone badge colour mapping
+            const toneColors = {
+                professional: '#6366f1',
+                friendly:     '#10b981',
+                executive:    '#f59e0b',
+                startup:      '#ef4444',
+                technical:    '#3b82f6',
+                networking:   '#8b5cf6',
+            };
+            const toneKey = safeTone.toLowerCase();
+            const badgeColor = toneColors[toneKey] || 'var(--accent)';
+
             card.innerHTML = `
-                <div style="font-weight:600; margin-bottom:4px; font-size:0.85rem; color:var(--text-1);">${safeTone}</div>
-                <div style="font-size:0.75rem; color:var(--text-3); margin-bottom:8px;">Subj: ${safeSubject}</div>
-                <div style="font-size:0.85rem; color:var(--text-2); white-space:pre-wrap; max-height:100px; overflow:hidden; position:relative;">
-                  ${safeBody}
-                  <div style="position:absolute; bottom:0; left:0; right:0; height:40px; background:linear-gradient(transparent, var(--bg));"></div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; gap:8px; flex-wrap:wrap;">
+                  <span style="font-weight:700; font-size:0.82rem; color:${badgeColor}; background:${badgeColor}1a; padding:2px 8px; border-radius:10px; white-space:nowrap;">${safeTone}</span>
+                  <span style="font-size:0.75rem; color:var(--text-3); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${safeSubject}">Subj: ${safeSubject}</span>
                 </div>
-                <button class="btn btn-secondary btn-sm" style="margin-top:12px;">Use this version</button>
+                ${safeApproach ? `<div style="font-size:0.72rem; color:var(--text-3); font-style:italic; margin-bottom:8px; line-height:1.4;">${safeApproach}</div>` : ''}
+                <div class="variant-body-scroll" style="font-size:0.85rem; color:var(--text-2); white-space:pre-wrap; line-height:1.65; flex:1; ${bodyStyle} padding-right:2px;">${safeBody}</div>
+                <button class="btn btn-secondary btn-sm variant-use-btn" style="margin-top:14px; width:100%; flex-shrink:0;">Use this version</button>
             `;
-            
-            const btn = card.querySelector('button');
+
+            const btn = card.querySelector('.variant-use-btn');
             btn.addEventListener('click', () => {
                 state.data.activeVariantIndex = index;
                 state.editor.subject = safeSubject;
-                state.editor.body = safeBody;
+                state.editor.body    = safeBody;
                 saveDraftToStorage();
                 renderWorkspace();
             });
-            
+
             varCont.appendChild(card);
         });
     }
