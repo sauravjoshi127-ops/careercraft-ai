@@ -552,8 +552,10 @@ module.exports = async function handler(req, res) {
   };
 
   // ── Validation ───────────────────────────────────────────────────────────
+  // Note: whyContacting (companyContext / "What caught your attention?") is
+  // explicitly optional — it must NEVER block generation.
   if (action === 'generate') {
-    if (!companyName || !position || !userName || !background || !whyContacting || !emailGoal) {
+    if (!companyName || !position || !userName || !background || !emailGoal) {
       return res.status(400).json({ error: 'Missing required fields.' });
     }
   } else if (action === 'regenerate-subjects') {
