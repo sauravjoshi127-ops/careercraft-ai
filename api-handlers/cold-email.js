@@ -44,9 +44,9 @@ function cleanResumeInputs(text) {
  * Checks if the generated email output satisfies all production quality rules.
  */
 function validateColdEmailOutput(data, minLength, maxLength) {
-  if (!data || !Array.isArray(data.variants) || data.variants.length < 6) {
-    console.warn('[cold-email validation] Failed: Missing or insufficient variants (expected 6).');
-    return { isValid: false, reason: 'Missing or insufficient variants (expected 6)' };
+  if (!data || !Array.isArray(data.variants) || data.variants.length < 3) {
+    console.warn('[cold-email validation] Failed: Missing or insufficient variants (expected at least 3).');
+    return { isValid: false, reason: 'Missing or insufficient variants (expected at least 3)' };
   }
   
   const placeholderRegex = /\[[A-Za-z0-9\s_-]+\]|<[A-Za-z0-9\s_-]+>|{your\s|your_placeholder/i;
@@ -147,131 +147,114 @@ function buildGeneratePrompt(data) {
   const cleanSkills = cleanResumeInputs(data.keySkills);
   const cleanExp = cleanResumeInputs(data.experience);
   const cleanWhy = cleanResumeInputs(data.whyContacting);
-  
-  return `You are an elite B2B sales copywriter, outreach coach, and conversion optimizer. Generate a highly personalized cold email outreach package based on the following context.
+
+  const greeting = data.recipientName ? `Hi ${data.recipientName},` : 'Hi there,';
+
+  return `You are an elite B2B cold outreach copywriter and career coach. Generate a highly personalized cold email outreach package based on the following context.
 
 Email Goal: ${data.emailGoal}
 
 RECIPIENT DETAILS:
-- Name: ${data.recipientName || 'not provided'}
+- Name: ${data.recipientName || 'not provided (use a professional greeting like "Hi there,")'}
 - Company: ${data.companyName}
 - Position: ${data.position}
-- LinkedIn URL: ${data.linkedinUrl || 'not provided'}
-- Company Website: ${data.website || 'not provided'}
 
-USER CONTEXT (strictly use for custom value propositions, NEVER paste raw text or templates):
+SENDER CONTEXT (use strictly to weave a natural value proposition — NEVER paste raw resume text):
 - Name: ${data.userName}
-- Background: ${cleanBg}
-- Key Skills: ${cleanSkills}
-- Experience/Achievements: ${cleanExp}
-- Reason for Contacting: ${cleanWhy}
+- Background / Value Proposition: ${cleanBg}
+- Key Skills: ${cleanSkills || 'not provided'}
+- Relevant Experience: ${cleanExp || 'not provided'}
+- Reason for Reaching Out: ${cleanWhy || 'not provided'}
 
-Length Constraint: The body of each of the 6 generated email variants must contain between ${data.minLength} and ${data.maxLength} words. Never exceed or fall below this range.
-
-CRITICAL INSTRUCTIONS FOR TARGET LENGTH:
-Each of the 6 generated email bodies must strictly consist of a total word count between ${data.minLength} and ${data.maxLength} words.
+LENGTH REQUIREMENT (CRITICAL — ALL 6 VARIANTS MUST COMPLY):
+Each email body must contain between ${data.minLength} and ${data.maxLength} words.
 ${data.lengthType === 'Short' ? `
-- This is a Short email (target 80-100 words).
-- Best for recruiter outreach, busy hiring managers, and networking.
-- Characteristics: Direct, high impact, one call-to-action (CTA), and zero unnecessary details.
-` : data.lengthType === 'Medium' ? `
-- This is a Medium email (target 120-170 words).
-- Best for standard cold outreach.
-- Characteristics: Brief introduction, strong value proposition, one key achievement, and one CTA.
-` : data.lengthType === 'Long' ? `
-- This is a Long email (target 180-250 words).
-- Best for senior professionals and executive outreach.
-- Characteristics: Detailed introduction, more personalization, two key achievements, a strong narrative, and clear motivation.
+- SHORT email: 80–100 words. One punchy paragraph. Single CTA. Zero filler.
+` : data.lengthType === 'Standard' || data.lengthType === 'Medium' ? `
+- STANDARD email: 120–170 words. Brief intro, one key value point, one achievement, one CTA.
+` : data.lengthType === 'Detailed' || data.lengthType === 'Long' ? `
+- DETAILED email: 180–250 words. Rich context, two achievements, strong narrative arc, clear motivation.
 ` : `
-- This is a Custom length email (target ${data.minLength}-${data.maxLength} words).
-- Adjust narrative depth, personalization, achievements, and detail to fit within this range without adding filler content or leaving incomplete thoughts.
+- CUSTOM length: ${data.minLength}–${data.maxLength} words. Fit narrative depth to this range without filler.
 `}
-Ensure each sentence is complete and natural, while strictly adhering to this length range.
 
+QUALITY RULES:
+1. NEVER include raw resume section headers (Education, Skills, Work Experience, Certifications, Languages, References).
+2. NEVER include contact details (email addresses, phone numbers, URLs) in email bodies.
+3. NEVER use clichés: "I hope this finds you well", "My name is X", "I am writing to you because", "seasoned professional".
+4. NEVER use placeholder tags like [Recipient Name] or [Your Name] — use the actual provided names.
+5. CTAs must be low-friction: "Open to a quick chat?", "Worth 10 minutes?", "Happy to share more if useful."
+6. Each variant must have a genuinely different tone, opening strategy, and structure — not just slightly reworded.
+7. Subject lines must be specific to the context — never generic like "Following up" or "Quick question".
 
-QUALITY STANDARDS & LEAKAGE PREVENTION:
-1. The generated email must NEVER include raw resume sections (like "Education", "Skills", "Languages", "Certifications"), contact details (emails, phones), markdown fences, HTML code, internal prompts, or AI fallback messages.
-2. Use the user's background and skills strictly as context to weave a natural conversation. Convert achievements into natural language (e.g. "I helped optimize..." instead of bullet points).
-3. Write human-like, conversational copy. Avoid clichés like "I hope this finds you well", "My name is...", "I am writing to you because", "I'm a seasoned developer", etc.
-4. CTAs must be low-friction and direct (e.g. "Open to learning more?", "Worth a 2-minute look?", "Do you have 5 minutes next Tuesday?").
-5. No placeholder text like "[Recipient Name]" or "[Your Name]" inside the final bodies - generate real text using the provided details. If recipient name is not provided, use a professional greeting like "Hi there" or "Hi ${data.companyName} Team".
-
-OUTPUT SCHEMA:
-Return ONLY a valid JSON object matching the schema below. No explanation, no backticks, no code block wrapper.
+OUTPUT SCHEMA — Return ONLY valid JSON, no backticks, no markdown, no extra text:
 
 {
   "variants": [
     {
       "tone": "Professional",
-      "subject": "quick question about [topic]",
-      "body": "Hi [Name],\\n\\n[Body text...]",
-      "approach": "PAS: Problem, Agitate, Solution framework. Warm and professional."
+      "subject": "[concise specific subject]",
+      "body": "${greeting}\\n\\n[professional email body]",
+      "approach": "PAS framework. Addresses a pain point, agitates it, offers solution."
     },
     {
       "tone": "Friendly",
-      "subject": "hello from a fellow [industry] enthusiast",
-      "body": "Hi [Name],\\n\\n[Body text...]",
-      "approach": "AIDA: Attention, Interest, Desire, Action. warm, peer-to-peer and approachable."
+      "subject": "[conversational specific subject]",
+      "body": "${greeting}\\n\\n[warm peer-to-peer email body]",
+      "approach": "AIDA framework. Attention-grabbing opener, builds interest, creates desire, soft CTA."
     },
     {
       "tone": "Executive",
-      "subject": "optimizing [companyName]'s [system]",
-      "body": "Hi [Name],\\n\\n[Body text...]",
-      "approach": "High-level strategic focus. Direct value-driven proposition aimed at decision makers."
+      "subject": "[direct strategic subject]",
+      "body": "${greeting}\\n\\n[high-level business-focused email body]",
+      "approach": "Direct value proposition for decision-makers. No fluff, ROI-focused."
     },
     {
       "tone": "Startup",
-      "subject": "building [product/system] at [companyName]",
-      "body": "Hi [Name],\\n\\n[Body text...]",
-      "approach": "Fast-paced, pattern-interrupt, startup-friendly language. Focus on growth and innovation."
+      "subject": "[energetic growth-focused subject]",
+      "body": "${greeting}\\n\\n[fast-paced startup-friendly email body]",
+      "approach": "Pattern interrupt opening. Growth and innovation language. High energy."
     },
     {
       "tone": "Technical",
-      "subject": "developer question regarding [technology/framework]",
-      "body": "Hi [Name],\\n\\n[Body text...]",
-      "approach": "Deep detail, specific tech stacks, peer-level engineering focus. No fluff."
+      "subject": "[specific technical subject]",
+      "body": "${greeting}\\n\\n[peer-level technical email body]",
+      "approach": "Engineering peer perspective. Specific tech detail. No sales language."
     },
     {
       "tone": "Networking",
-      "subject": "connecting with [companyName]'s team",
-      "body": "Hi [Name],\\n\\n[Body text...]",
-      "approach": "Relation-building, career interest, advice-seeking. Warm and low pressure."
+      "subject": "[relationship-building subject]",
+      "body": "${greeting}\\n\\n[warm low-pressure relationship email body]",
+      "approach": "Genuine curiosity and admiration. Advice-seeking. No hard ask."
     }
   ],
   "subjectLines": [
-    { "text": "[subject text]", "label": "Conservative", "openRate": "72%" },
-    { "text": "[subject text]", "label": "Curiosity", "openRate": "84%" },
-    { "text": "[subject text]", "label": "Executive", "openRate": "78%" },
-    { "text": "[subject text]", "label": "Friendly", "openRate": "75%" },
-    { "text": "[subject text]", "label": "High Open Rate", "openRate": "92%" }
+    { "text": "[specific subject — strategy A]", "label": "Direct", "openRate": "72%" },
+    { "text": "[specific subject — strategy B]", "label": "Curiosity", "openRate": "84%" },
+    { "text": "[specific subject — strategy C]", "label": "Value", "openRate": "78%" },
+    { "text": "[specific subject — strategy D]", "label": "Personal", "openRate": "75%" }
   ],
   "evaluation": {
     "overallScore": 88,
-    "personalizationScore": 92,
-    "openRatePrediction": 85,
-    "recruiterEngagementScore": 90,
-    "professionalToneScore": 95,
-    "spamRiskScore": 12,
-    "grammarScore": 98,
-    "clarityScore": 90,
-    "strengths": ["list strength 1", "list strength 2"],
-    "weaknesses": ["list weakness 1"],
-    "suggestions": ["suggestion 1", "suggestion 2"]
+    "strengths": ["Concrete value proposition backed by specific experience", "Low-friction CTA appropriate for cold outreach"],
+    "weaknesses": ["Could reference a specific recent company achievement for deeper personalization"],
+    "suggestions": ["Add a specific data point (e.g. % improvement, revenue impact) to the value prop"]
   },
-  "suggestions": [
+  "followUps": [
     {
-      "id": "s1",
-      "explanation": "Reference their recent open source work in the introduction for better personalization.",
-      "originalText": "I saw your company online.",
-      "suggestedText": "I've been following your open-source projects on GitHub, especially your recent work on high-speed API gateways."
+      "index": 1,
+      "timing": "3–5 business days after initial email",
+      "subject": "[follow-up subject referencing original context]",
+      "body": "${greeting}\\n\\n[A strategically different follow-up — adds new value or a different angle. NOT just 'circling back'. 60–80 words max.]\\n\\nBest,\\n${data.userName}"
+    },
+    {
+      "index": 2,
+      "timing": "7–10 business days after follow-up 1",
+      "subject": "[final follow-up subject — graceful close]",
+      "body": "${greeting}\\n\\n[Respectful final message — acknowledges they may not be interested, leaves door open, no pressure. 50–70 words max.]\\n\\nBest,\\n${data.userName}"
     }
   ],
-  "spamScore": 15,
-  "spamRecommendations": [
-    "Ensure subject line stays under 5 words to prevent spam filters.",
-    "Ensure no spam triggers like 'guaranteed' or 'free' are used in followups."
-  ],
-  "followUp": "Hi [Name],\\n\\nJust circling back on this... [Value-first bump sequence]\\n\\nBest,\\n[UserName]",
+  "spamScore": 10,
   "spamWords": []
 }`;
 }
@@ -360,6 +343,7 @@ function buildFallbackColdEmail(data, reason) {
   const exp = data.experience || 'driving technical excellence';
   const why = data.whyContacting || 'how I can support your team';
   const sender = data.userName || 'Alex';
+  const position = data.position || 'your team';
   
   const variants = [
     {
@@ -412,31 +396,26 @@ function buildFallbackColdEmail(data, reason) {
     variants,
     subjectLines,
     evaluation: {
-      overallScore: 85,
-      personalizationScore: 88,
-      openRatePrediction: 82,
-      recruiterEngagementScore: 85,
-      professionalToneScore: 90,
-      spamRiskScore: 10,
-      grammarScore: 99,
-      clarityScore: 95,
-      strengths: ["Clean template-based structure", "Clear, low-friction calls to action", "No spam trigger words"],
-      weaknesses: ["Requires further customization to match specific company research"],
-      suggestions: ["Add a specific detail about a recent product release of theirs", "Mention a common contact or group if applicable"]
+      overallScore: 82,
+      strengths: ["Clear, low-friction call to action", "Concise value proposition", "No spam trigger words"],
+      weaknesses: ["Generated from template — add specific company research for higher impact"],
+      suggestions: ["Reference a specific recent achievement or product launch at " + company]
     },
-    suggestions: [
+    followUps: [
       {
-        "id": "fs1",
-        "explanation": "Include a link to your portfolio or relevant project to show proof of work.",
-        "originalText": `specialize in ${skills}`,
-        "suggestedText": `specialize in ${skills} (which you can check out on my portfolio)`
+        index: 1,
+        timing: '3–5 business days after initial email',
+        subject: `re: ${company} — a thought`,
+        body: `${greeting}\n\nI wanted to share one more thought since I reached out last week.\n\nGiven your focus on ${why}, I recently worked on something similar and saw strong results. Happy to share a quick outline if that's useful.\n\nOpen to a brief call?\n\nBest,\n${sender}`
+      },
+      {
+        index: 2,
+        timing: '7–10 business days after follow-up 1',
+        subject: `closing the loop — ${company}`,
+        body: `${greeting}\n\nI'll leave it here so I'm not filling your inbox. If the timing is ever right to connect around ${why} at ${company}, I'd genuinely welcome that conversation.\n\nAll the best with what you're building.\n\nWarmly,\n${sender}`
       }
     ],
     spamScore: 10,
-    spamRecommendations: [
-      "Keep copy concise and double check that emails are not sent on weekends for best placement."
-    ],
-    followUp: `${greeting}\n\nJust circling back on this. I know you're busy, but if you're open to it, I can share a short outline of how I might help with ${why}.\n\nLet me know if that's worth a look.\n\nBest,\n${sender}`,
     spamWords: [],
     fallbackUsed: true,
     fallbackReason: reason
@@ -481,13 +460,17 @@ module.exports = async function handler(req, res) {
   const website = String(recipient.website || '').trim();
 
   const userContext = body.userContext || {};
+  const personalization = body.personalization || {};
   const userName = String(userContext.name || body.senderName || body.userName || '').trim();
   const background = String(userContext.background || body.background || '').trim();
   const keySkills = String(userContext.keySkills || '').trim();
   const experience = String(userContext.experience || '').trim();
   const whyContacting = String(userContext.whyContacting || body.valueProposition || '').trim();
 
-  let lengthType = body.lengthType || body.length || 'Medium';
+  // FIX: Read length from personalization wrapper (new shape) OR top-level (old shape)
+  // The frontend sends { personalization: { tone, length, ctaStyle } } so we must
+  // check personalization.length first, then fall back to body.length / body.lengthType.
+  let lengthType = personalization.length || body.lengthType || body.length || 'Standard';
   let minLength = parseInt(body.minLength, 10);
   let maxLength = parseInt(body.maxLength, 10);
 
