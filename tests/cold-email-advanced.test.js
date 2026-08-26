@@ -171,7 +171,7 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
     global.fetch = async () => {
       fetchCallCount++;
       if (fetchCallCount === 1) {
-        // First attempt: bodies too short — will fail validation with minLength=80
+        // First attempt: bodies too short — will fail validation with minLength=55
         return {
           ok: true,
           status: 200,
@@ -181,10 +181,10 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
                 parts: [{
                   text: JSON.stringify({
                     variants: [
-                      { tone: 'Professional', subject: 'sub A', body: 'too short.', approach: 'PAS' },
-                      { tone: 'Friendly', subject: 'sub B', body: 'too short.', approach: 'AIDA' },
-                      { tone: 'Direct', subject: 'sub C', body: 'too short.', approach: 'PAS' },
-                      { tone: 'Networking', subject: 'sub D', body: 'too short.', approach: 'PAS' }
+                      { tone: 'Context', subject: 'sub A', body: 'too short.', approach: 'Recipient-first' },
+                      { tone: 'Question', subject: 'sub B', body: 'too short.', approach: 'Question-first' },
+                      { tone: 'Direct', subject: 'sub C', body: 'too short.', approach: 'Direct' },
+                      { tone: 'Curiosity', subject: 'sub D', body: 'too short.', approach: 'Curiosity' }
                     ],
                     subjectLines: [{ text: 'sub A', label: 'Direct' }],
                     evaluation: { overallScore: 85, strengths: ['s'], weaknesses: ['w'], suggestions: ['s'] },
@@ -196,8 +196,8 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
           })
         };
       } else {
-        // Second attempt: exactly 90 words — passes validation (80–100 word Standard range)
-        const validBody = Array(89).fill('word').join(' ') + '.';
+        // Second attempt: 70 words — passes Standard validation (55–85 words)
+        const validBody = Array(69).fill('word').join(' ') + '.';
         return {
           ok: true,
           status: 200,
@@ -207,10 +207,10 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
                 parts: [{
                   text: JSON.stringify({
                     variants: [
-                      { tone: 'Professional', subject: 'sub A', body: validBody, approach: 'PAS' },
-                      { tone: 'Friendly', subject: 'sub B', body: validBody, approach: 'AIDA' },
-                      { tone: 'Direct', subject: 'sub C', body: validBody, approach: 'PAS' },
-                      { tone: 'Networking', subject: 'sub D', body: validBody, approach: 'PAS' }
+                      { tone: 'Context', subject: 'sub A', body: validBody, approach: 'Recipient-first' },
+                      { tone: 'Question', subject: 'sub B', body: validBody, approach: 'Question-first' },
+                      { tone: 'Direct', subject: 'sub C', body: validBody, approach: 'Direct' },
+                      { tone: 'Curiosity', subject: 'sub D', body: validBody, approach: 'Curiosity' }
                     ],
                     subjectLines: [{ text: 'sub A', label: 'Direct' }],
                     evaluation: { overallScore: 85, strengths: ['s'], weaknesses: ['w'], suggestions: ['s'] },
@@ -229,7 +229,6 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
       .send({
         action: 'generate',
         emailGoal: 'Job Application',
-        // Standard length = 80–100 words; first attempt returns 2 words → fails → retries
         recipient: {
           name: 'Sarah',
           company: 'Stripe',
@@ -247,8 +246,8 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
     assert.ok(res.body.variants);
     // 4 variants returned
     assert.equal(res.body.variants.length, 4);
-    // Word count: 89 words + '.' at end = body ends with period (valid)
+    // Word count: 70 words (within Standard 55–85) ending with period
     const wordCount = res.body.variants[0].body.trim().split(/\s+/).length;
-    assert.ok(wordCount >= 80 && wordCount <= 100, `Expected 80–100 words, got ${wordCount}`);
+    assert.ok(wordCount >= 55 && wordCount <= 85, `Expected 55–85 words (Standard), got ${wordCount}`);
   });
 });

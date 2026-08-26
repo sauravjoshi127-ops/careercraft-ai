@@ -639,7 +639,7 @@
       state.data.variants = variants.map(v => ({
         tone: sanitizeText(v.tone) || 'Variant',
         subject: sanitizeSubject(v.subject),
-        body: sanitizeEmailBody(v.body),
+        body: finalSanitize(sanitizeEmailBody(v.body)),
         approach: sanitizeText(v.approach) || ''
       }));
 
@@ -655,7 +655,7 @@
             index: f.index || 1,
             timing: sanitizeText(f.timing) || '',
             subject: sanitizeSubject(f.subject),
-            body: sanitizeEmailBody(f.body)
+            body: finalSanitize(sanitizeEmailBody(f.body))
           }))
         : [];
 
@@ -664,7 +664,8 @@
 
       const activeVariant = state.data.variants[0];
       state.editor.subject = activeVariant.subject;
-      state.editor.bodyHtml = plainTextToHtml(activeVariant.body);
+      // Apply finalSanitize before converting to HTML so <br> never appears as text in editor
+      state.editor.bodyHtml = plainTextToHtml(finalSanitize(activeVariant.body));
 
       saveDraftToStorage();
       renderWorkspace();
@@ -714,18 +715,60 @@
   function sanitizeEmailBody(str) {
     if (!str || typeof str !== 'string') return '';
     let clean = str
-      .replace(/```[\s\S]*?```/g, '')        // strip code fences
-      .replace(/<[^>]+>/g, '')               // strip HTML tags
-      .replace(/\*\*(.*?)\*\*/g, '$1')       // strip bold markdown
-      .replace(/__(.*?)__/g, '$1')           // strip underline markdown
-      .replace(/\[object Object\]/gi, '')    // strip debug artifacts
-      .replace(/undefined|null\b/g, '');     // strip literal undefined/null
+      // CRITICAL: Convert HTML line-break variants to actual newlines BEFORE stripping tags.
+      // This preserves paragraph structure when AI uses <br> or </p><p> instead of \n.
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<p[^>]*>/gi, '')
+      // Strip all remaining HTML tags
+      .replace(/<[^>]*>/g, '')
+      // Decode common HTML entities that AI may produce
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, ' ')
+      // Strip markdown formatting
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/__(.*?)__/g, '$1')
+      // Strip debug artifacts
+      .replace(/\[object Object\]/gi, '')
+      .replace(/\bundefined\b/g, '')
+      .replace(/\bnull\b/g, '');
 
-    // Remove resume section headers if they leaked
+    // Remove resume section headers if they leaked through
     const resumeHeaders = /^(education|skills|work experience|experience|summary|certifications|languages|references)\s*:?\s*$/gim;
     clean = clean.replace(resumeHeaders, '');
 
+    // Collapse 3+ consecutive blank lines to 2
+    clean = clean.replace(/\n{3,}/g, '\n\n');
+
     return clean.trim();
+  }
+
+  /**
+   * Final sanitization pass applied immediately before any text goes into
+   * plainTextToHtml() or innerHTML. Acts as a last-line defense against:
+   * - Residual HTML tags that survived sanitizeEmailBody (e.g., escaped entities
+   *   that got decoded to tags in a second pass)
+   * - Literal strings like "<br>" appearing as text in the editor
+   * - Any undefined/null/object artifacts from variant rendering
+   */
+  function finalSanitize(text) {
+    if (!text || typeof text !== 'string') return '';
+    return text
+      // Strip any tags that are literally the text <br>, <p>, etc. (not already stripped)
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]{0,200}>/g, '')
+      // Remove literal escape sequences that might appear as text
+      .replace(/\\n/g, '\n')
+      .replace(/\\t/g, ' ')
+      .replace(/\[object Object\]/gi, '')
+      .replace(/\bundefined\b/g, '')
+      .trim();
   }
 
   function escapeHtml(str) {
@@ -1239,7 +1282,8 @@
       return;
     }
 
-    state.editor.bodyHtml = plainTextToHtml(proposed);
+    // Apply finalSanitize before converting to HTML so <br> never appears as text
+    state.editor.bodyHtml = plainTextToHtml(finalSanitize(proposed));
     editor.innerHTML = state.editor.bodyHtml;
     hideDiffView();
     saveDraftToStorage();
