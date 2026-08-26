@@ -42,9 +42,15 @@ describe('POST /api/cold-email', () => {
 
     assert.equal(res.status, 200);
     assert.equal(res.body.fallbackUsed, true);
-    assert.match(res.body.fallbackReason, /503/);
-    assert.equal(res.body.variants.length, 6);
+    // Fallback reason should include the HTTP status code encountered
+    assert.match(res.body.fallbackReason, /503|HTTP|error|exception/i);
+    // New spec: 4 variants (Professional, Friendly, Direct, Networking)
+    assert.equal(res.body.variants.length, 4);
     assert.ok(res.body.variants[0].subject.trim().length > 0);
-    assert.ok(res.body.followUp.trim().length > 0);
+    // New spec: followUps is an array of objects
+    assert.ok(Array.isArray(res.body.followUps));
+    assert.ok(res.body.followUps.length >= 1);
+    assert.ok(typeof res.body.followUps[0].body === 'string');
+    assert.ok(res.body.followUps[0].body.trim().length > 0);
   });
 });

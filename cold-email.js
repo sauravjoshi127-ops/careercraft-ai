@@ -8,9 +8,16 @@
  *  - Editor stores HTML (preserves rich-text formatting); plain-text copy
  *    uses innerText at copy time only.
  *  - Generation is guarded by `state.generation.status` to prevent duplicates.
- *  - Resume import uses the shared /api/ai-suggestions pipeline.
+ *  - Resume auto-loading: if exactly 1 saved resume exists, it is silently
+ *    applied on page load without requiring user interaction.
  *  - Follow-ups come from the API response (AI-generated, not hard-coded).
  *  - AI Copilot diff uses dataset.proposedText exclusively — never innerText.
+ *
+ * AI Actions (spec-compliant):
+ *  - Improve    : rewrite only the opening sentence to be more specific
+ *  - Shorten    : remove 20–30% of words while preserving core message
+ *  - Change Angle: completely different opening strategy, same facts
+ *  - Regenerate : re-run the full generation with current form state
  */
 (function () {
   'use strict';
@@ -34,7 +41,7 @@
       ctaStyle: 'Soft Ask'
     },
     generation: {
-      status: 'idle', // 'idle' | 'generating' | 'error'
+      status: 'idle', // 'idle' | 'generating' | 'copilot-busy' | 'error'
       controller: null,
       requestId: 0,
       copilotRequestId: 0
@@ -52,7 +59,8 @@
     },
     resume: {
       loadedId: null,
-      loadedName: null
+      loadedName: null,
+      autoLoaded: false
     }
   };
 
@@ -60,8 +68,8 @@
   let debounceTimer = null;
   let autosaveTimer = null;
 
-  // Variant tones to show as "alternatives" — the active one is excluded
-  const DISPLAY_VARIANT_TONES = ['Friendly', 'Executive', 'Startup'];
+  // Variant tones displayed as "alternatives" (active tone is excluded from this list)
+  const DISPLAY_VARIANT_TONES = ['Friendly', 'Direct', 'Networking'];
   const STEP_ORDER = ['recipient', 'company', 'value', 'goal'];
 
   // ── Initialization ──────────────────────────────────────────────────────
@@ -166,7 +174,7 @@
       });
     });
 
-    // Track other inputs with debounce
+    // Debounced state sync on all panel inputs
     document.querySelectorAll('.cl-left-panel input:not([type=file]), .cl-left-panel textarea, .cl-left-panel select').forEach(el => {
       el.addEventListener('input', () => {
         clearTimeout(debounceTimer);
@@ -176,21 +184,21 @@
   }
 
   // ── Resume Integration ───────────────────────────────────────────────────
-  // All resume controls live inside #resumeImportActionContainer which is
-  // rebuilt by this function. Event listeners are attached after innerHTML is
-  // set, avoiding stale reference bugs.
+  // Auto-loads the user's single saved resume silently on page init.
+  // If multiple resumes exist, shows a selection dropdown.
+  // All resume controls live inside #resumeImportActionContainer.
   async function loadResumeControls() {
     const container = document.getElementById('resumeImportActionContainer');
     if (!container) return;
 
-    // Bind the hidden file input once
+    // Bind hidden file input once
     const fileInput = document.getElementById('resumeFileInput');
     if (fileInput && !fileInput.dataset.bound) {
       fileInput.dataset.bound = 'true';
       fileInput.addEventListener('change', handleComputerImport);
     }
 
-    // If a resume is already loaded (from hydrated state), show that chip
+    // If a resume was already loaded from hydrated state, just show the chip
     if (state.resume.loadedId || state.resume.loadedName) {
       renderResumeChip(state.resume.loadedName || 'Resume', container);
       return;
@@ -206,10 +214,66 @@
       if (error) throw error;
       savedResumes = data || [];
 
+      // Auto-load if exactly 1 resume exists — silent, no dialog, no toast
+      if (savedResumes.length === 1) {
+        await autoLoadResume(savedResumes[0], container);
+        return;
+      }
+
       renderResumeImportUI(container);
     } catch (err) {
       console.error('[ColdEmail] Failed to load saved resumes:', err);
-      renderResumeImportUI(container, true /* fallback */);
+      renderResumeImportUI(container, true /* fallback mode */);
+    }
+  }
+
+  /**
+   * Silently pre-populates name and triggers background value-prop extraction
+   * for the given resume. Does NOT block the UI.
+   */
+  async function autoLoadResume(resumeData, container) {
+    // Pre-populate name immediately (no API call needed)
+    const nameInput = document.getElementById('userName');
+    if (nameInput && !(nameInput.value || '').trim() && resumeData.full_name) {
+      nameInput.value = resumeData.full_name;
+      state.brief.userName = resumeData.full_name;
+    }
+
+    state.resume.loadedId = resumeData.id;
+    state.resume.loadedName = resumeData.full_name || 'Resume';
+    state.resume.autoLoaded = true;
+
+    // Show chip immediately with loading indicator
+    renderResumeChip(`${state.resume.loadedName} (loading…)`, container);
+
+    try {
+      const session = await window.appSdk.auth.getSession();
+      const headers = { 'Content-Type': 'application/json' };
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+
+      const res = await fetch('/api/ai-suggestions', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ section: 'cold-email-value', resumeData })
+      });
+
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const result = await res.json();
+      const valueText = (result.suggestions || '').trim();
+      if (!valueText) throw new Error('Empty value proposition from server.');
+
+      const backgroundInput = document.getElementById('background');
+      if (backgroundInput && !(backgroundInput.value || '').trim()) {
+        backgroundInput.value = valueText;
+        state.brief.background = valueText;
+      }
+
+      renderResumeChip(state.resume.loadedName, container);
+      saveDraftToStorage();
+    } catch (err) {
+      console.warn('[ColdEmail] Auto-load value-prop failed (non-blocking):', err.message);
+      // Show chip without loading indicator — user can still generate
+      renderResumeChip(state.resume.loadedName, container);
     }
   }
 
@@ -250,7 +314,6 @@
 
     container.innerHTML = html;
 
-    // Bind listeners after DOM update
     const useBtn = document.getElementById('btnUseResume');
     if (useBtn) useBtn.addEventListener('click', handleUseMyResume);
 
@@ -270,11 +333,15 @@
         <button class="ce-resume-chip-change" id="btnChangeResume" type="button">Change</button>
       </div>`;
 
-    document.getElementById('btnChangeResume').addEventListener('click', () => {
-      state.resume.loadedId = null;
-      state.resume.loadedName = null;
-      renderResumeImportUI(container);
-    });
+    const changeBtn = document.getElementById('btnChangeResume');
+    if (changeBtn) {
+      changeBtn.addEventListener('click', () => {
+        state.resume.loadedId = null;
+        state.resume.loadedName = null;
+        state.resume.autoLoaded = false;
+        renderResumeImportUI(container);
+      });
+    }
 
     if (window.lucide) window.lucide.createIcons();
   }
@@ -305,7 +372,6 @@
       if (!confirm('Replace your current value proposition with information from this resume?')) return;
     }
 
-    // Show loading state in the button
     const useBtn = document.getElementById('btnUseResume');
     const origHTML = useBtn ? useBtn.innerHTML : '';
     if (useBtn) {
@@ -315,14 +381,12 @@
     }
 
     try {
-      // Pre-populate name immediately
       const nameInput = document.getElementById('userName');
       if (nameInput && !(nameInput.value || '').trim() && resumeData.full_name) {
         nameInput.value = resumeData.full_name;
         state.brief.userName = resumeData.full_name;
       }
 
-      // Use the shared ai-suggestions endpoint to synthesize a value proposition
       const session = await window.appSdk.auth.getSession();
       const headers = { 'Content-Type': 'application/json' };
       if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
@@ -335,14 +399,12 @@
 
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const result = await res.json();
-
       const valueText = (result.suggestions || '').trim();
       if (!valueText) throw new Error('No value proposition could be generated from this resume.');
 
       if (backgroundInput) backgroundInput.value = valueText;
       state.brief.background = valueText;
 
-      // Update resume selection state
       state.resume.loadedId = resumeData.id;
       state.resume.loadedName = resumeData.full_name || 'Resume';
       renderResumeChip(state.resume.loadedName, container);
@@ -351,7 +413,6 @@
     } catch (err) {
       console.error('[ColdEmail] handleUseMyResume error:', err);
       showToast("Couldn't import your resume. Try entering your background manually.", true);
-      // Restore button on error
       if (useBtn) {
         useBtn.innerHTML = origHTML;
         useBtn.disabled = false;
@@ -364,7 +425,6 @@
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     const allowed = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     const allowedExt = ['.pdf', '.docx'];
     const fileExt = '.' + (file.name.split('.').pop() || '').toLowerCase();
@@ -382,8 +442,6 @@
       }
     }
 
-    // We need to find the import button AFTER it may have been re-rendered
-    // Use a container-level query each time, never cache across renders
     const importBtn = document.getElementById('btnImportResume');
     if (importBtn) {
       importBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="15" height="15" style="margin-right:5px;"></i>Reading…';
@@ -392,7 +450,6 @@
     }
 
     try {
-      // Use the shared uploadAndParse pipeline from app-sdk
       const extractedText = await window.appSdk.resume.uploadAndParse(file);
 
       const session = await window.appSdk.auth.getSession();
@@ -428,7 +485,6 @@
         state.brief.userName = extracted.name;
       }
 
-      // Mark as imported file (no saved resume ID)
       state.resume.loadedId = 'imported-file';
       state.resume.loadedName = file.name.replace(/\.[^.]+$/, '');
       const container = document.getElementById('resumeImportActionContainer');
@@ -438,7 +494,6 @@
     } catch (err) {
       console.error('[ColdEmail] handleComputerImport error:', err);
       showToast(`Import failed: ${err.message || 'Please try again.'}`, true);
-      // Re-render import UI to restore the button
       const container = document.getElementById('resumeImportActionContainer');
       if (container) renderResumeImportUI(container);
     } finally {
@@ -482,7 +537,7 @@
     set('length', state.brief.length);
     set('ctaStyle', state.brief.ctaStyle);
 
-    // Sync goal grid
+    // Sync goal grid active state
     document.querySelectorAll('.goal-card').forEach(g => {
       g.classList.toggle('active', g.dataset.value === state.brief.emailGoal);
     });
@@ -490,21 +545,20 @@
 
   // ── Generation ──────────────────────────────────────────────────────────
   async function handleGenerate() {
-    // Guard: prevent duplicate requests
+    // Guard: single-flight lock
     if (state.generation.status === 'generating') return;
 
     syncStateFromInputs();
 
-    // Validate required fields
+    // Validate required fields — send server-side errors rather than blocking client-side on background
     const missing = [];
     if (!state.brief.position) missing.push('Role / Title (Step 1)');
     if (!state.brief.companyName) missing.push('Company Name (Step 2)');
     if (!state.brief.userName) missing.push('Your Name (Step 3)');
-    if (!state.brief.background) missing.push('Value Proposition (Step 3)');
+    // background is NOT required client-side — the server handles it gracefully
 
     if (missing.length > 0) {
       showToast(`Please fill in: ${missing[0]}`, true);
-      // Jump to the first incomplete step
       if (!state.brief.position) toggleStepAccordion('recipient');
       else if (!state.brief.companyName) toggleStepAccordion('company');
       else toggleStepAccordion('value');
@@ -513,15 +567,15 @@
 
     // Abort any prior in-flight request
     if (state.generation.controller) {
-      state.generation.controller.abort();
+      try { state.generation.controller.abort(); } catch (_) {}
     }
 
-    state.generation.controller = new AbortController();
+    const controller = new AbortController();
+    state.generation.controller = controller;
     state.generation.requestId += 1;
     const currentReqId = state.generation.requestId;
     state.generation.status = 'generating';
 
-    // UI: disable generate button, show overlay
     const genBtn = document.getElementById('generateBtn');
     if (genBtn) {
       genBtn.innerHTML = '<i data-lucide="loader-circle" class="spin" width="16"></i> Generating…';
@@ -543,7 +597,6 @@
         background: state.brief.background,
         whyContacting: state.brief.companyContext || state.brief.relationship
       },
-      // FIX: send length at top level AND inside personalization for full compat
       length: state.brief.length,
       personalization: {
         tone: state.brief.tone,
@@ -561,24 +614,28 @@
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
-        signal: state.generation.controller.signal
+        signal: controller.signal
       });
 
-      // Bail if a newer request has already started
+      // Bail silently if a newer request has superseded this one
       if (currentReqId !== state.generation.requestId) return;
 
       const data = await res.json();
       if (currentReqId !== state.generation.requestId) return;
 
       if (!res.ok) {
-        throw new Error(data.error || `Generation failed (${res.status})`);
+        const msg = data.error || `Generation failed (${res.status})`;
+        if (data.usageLimitReached) {
+          showToast(msg, true);
+          return;
+        }
+        throw new Error(msg);
       }
 
-      // Validate response shape
+      // Validate and sanitize response
       const variants = Array.isArray(data.variants) ? data.variants : [];
       if (variants.length === 0) throw new Error('No email variants were generated. Please try again.');
 
-      // Sanitize and store
       state.data.variants = variants.map(v => ({
         tone: sanitizeText(v.tone) || 'Variant',
         subject: sanitizeSubject(v.subject),
@@ -605,7 +662,6 @@
       state.data.evaluation = data.evaluation || null;
       state.data.activeVariantIndex = 0;
 
-      // Set active email from first (Professional) variant
       const activeVariant = state.data.variants[0];
       state.editor.subject = activeVariant.subject;
       state.editor.bodyHtml = plainTextToHtml(activeVariant.body);
@@ -614,14 +670,16 @@
       renderWorkspace();
 
     } catch (err) {
-      if (err.name === 'AbortError') {
-        // User triggered another generation — silent
-        return;
-      }
+      if (err.name === 'AbortError') return; // Superseded by newer request — silent
+
       console.error('[ColdEmail] Generation error:', err);
-      showToast(err.message || 'Generation failed. Please try again.', true);
-      // Inputs are preserved in state — user can retry immediately
+      const msg = err.message && err.message.length < 200
+        ? err.message
+        : 'Generation failed. Please try again.';
+      showToast(msg, true);
+
     } finally {
+      // Always restore button state — check if this request is still the current one
       if (currentReqId === state.generation.requestId) {
         state.generation.status = 'idle';
         state.generation.controller = null;
@@ -639,9 +697,7 @@
     const overlay = document.getElementById('editorGenOverlay');
     const canvas = document.getElementById('editorCanvas');
     if (overlay) overlay.classList.toggle('visible', isGenerating);
-    if (canvas) {
-      canvas.classList.toggle('cl-generating', isGenerating);
-    }
+    if (canvas) canvas.classList.toggle('cl-generating', isGenerating);
   }
 
   // ── Sanitization ─────────────────────────────────────────────────────────
@@ -652,27 +708,34 @@
 
   function sanitizeSubject(str) {
     if (!str || typeof str !== 'string') return '';
-    // Remove any "Subject:" prefix the AI might include
     return str.replace(/^subject\s*:\s*/i, '').replace(/[<>]/g, '').trim();
   }
 
   function sanitizeEmailBody(str) {
     if (!str || typeof str !== 'string') return '';
-    // Strip markdown fences, HTML tags, resume headers
     let clean = str
-      .replace(/```[\s\S]*?```/g, '')
-      .replace(/<[^>]+>/g, '')
-      .replace(/\*\*(.*?)\*\*/g, '$1')
-      .replace(/__(.*?)__/g, '$1');
+      .replace(/```[\s\S]*?```/g, '')        // strip code fences
+      .replace(/<[^>]+>/g, '')               // strip HTML tags
+      .replace(/\*\*(.*?)\*\*/g, '$1')       // strip bold markdown
+      .replace(/__(.*?)__/g, '$1')           // strip underline markdown
+      .replace(/\[object Object\]/gi, '')    // strip debug artifacts
+      .replace(/undefined|null\b/g, '');     // strip literal undefined/null
+
     // Remove resume section headers if they leaked
     const resumeHeaders = /^(education|skills|work experience|experience|summary|certifications|languages|references)\s*:?\s*$/gim;
     clean = clean.replace(resumeHeaders, '');
+
     return clean.trim();
   }
 
   function escapeHtml(str) {
     if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   /** Convert plain email text (with \n) to HTML paragraphs for the editor */
@@ -688,7 +751,6 @@
   function htmlToPlainText(html) {
     const div = document.createElement('div');
     div.innerHTML = html;
-    // Replace <br> with newlines, <p> with double newlines
     div.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
     div.querySelectorAll('p').forEach(p => {
       p.insertAdjacentText('afterend', '\n\n');
@@ -706,7 +768,6 @@
       canvas.classList.remove('cl-generating');
     }
 
-    // Hide empty states, show content
     const elVariantsEmpty = document.getElementById('variantsEmptyState');
     const elVariantsContent = document.getElementById('variantsContent');
     const elCopilotEmpty = document.getElementById('copilotEmptyState');
@@ -732,7 +793,6 @@
     if (!container) return;
     container.innerHTML = '';
 
-    // Build subject list: API subjects + active variant subject, deduplicated, max 4
     const apiSubjects = state.data.subjectLines.map(s => s.text).filter(Boolean);
     const allSubjects = [...new Set([state.editor.subject, ...apiSubjects])].filter(Boolean).slice(0, 4);
 
@@ -754,7 +814,6 @@
   function renderEditorContent() {
     const editor = document.getElementById('editorSheet');
     if (!editor) return;
-    // Only set if content has changed to avoid clobbering cursor position
     if (editor.innerHTML !== state.editor.bodyHtml) {
       editor.innerHTML = state.editor.bodyHtml;
     }
@@ -764,7 +823,6 @@
     const scoreEl = document.getElementById('copilotOverallScore');
     const labelEl = document.getElementById('copilotOverallLabel');
     const strengthsEl = document.getElementById('copilotStrengths');
-
     const ev = state.data.evaluation;
 
     if (scoreEl && ev) {
@@ -773,12 +831,10 @@
       if (score >= 85) { color = 'var(--success)'; icon = 'check-circle'; label = 'Strong'; }
       else if (score >= 70) { color = 'var(--warning)'; icon = 'alert-circle'; label = 'Good'; }
       else { color = 'var(--danger)'; icon = 'x-circle'; label = 'Needs Work'; }
-
       scoreEl.innerHTML = `<i data-lucide="${icon}" style="color:${color};" width="28" height="28"></i>`;
       if (labelEl) { labelEl.textContent = label; labelEl.style.color = color; }
     }
 
-    // Render dynamic strengths from evaluation
     if (strengthsEl && ev) {
       const strengths = Array.isArray(ev.strengths) ? ev.strengths.filter(Boolean) : [];
       const weaknesses = Array.isArray(ev.weaknesses) ? ev.weaknesses.filter(Boolean) : [];
@@ -824,20 +880,20 @@
     const toneColors = {
       professional: '#6366f1',
       friendly: '#10b981',
+      direct: '#f59e0b',
       executive: '#f59e0b',
+      networking: '#8b5cf6',
       startup: '#ef4444',
-      technical: '#3b82f6',
-      networking: '#8b5cf6'
+      technical: '#3b82f6'
     };
 
-    // Show only the 3 display variants (Friendly, Executive, Startup)
-    // and always exclude the currently active variant tone
     const activeVariant = state.data.variants[state.data.activeVariantIndex];
     const activeTone = (activeVariant?.tone || '').toLowerCase();
 
+    // Show variants that are not the currently active one
     const displayVariants = state.data.variants.filter(v => {
       const toneKey = (v.tone || '').toLowerCase();
-      return DISPLAY_VARIANT_TONES.map(t => t.toLowerCase()).includes(toneKey) && toneKey !== activeTone;
+      return toneKey !== activeTone;
     });
 
     if (displayVariants.length === 0) {
@@ -865,7 +921,6 @@
           <button type="button" class="btn btn-secondary btn-sm variant-copy-btn">Copy</button>
         </div>`;
 
-      // "Use this version" — replace active draft
       card.querySelector('.variant-use-btn').addEventListener('click', () => {
         const idx = state.data.variants.indexOf(v);
         state.data.activeVariantIndex = idx;
@@ -876,7 +931,6 @@
         showToast('Switched to ' + v.tone + ' variant.');
       });
 
-      // Copy button
       card.querySelector('.variant-copy-btn').addEventListener('click', () => {
         const text = `Subject: ${v.subject}\n\n${v.body}`;
         copyText(text, 'Variant copied to clipboard.');
@@ -905,27 +959,26 @@
         ? `<div class="ce-followup-subject">Subj: ${escapeHtml(fu.subject)}</div>`
         : '';
 
+      // Use data-* attribute for body element to avoid DOM ID collisions
       card.innerHTML = `
         <div class="ce-followup-header">
           <span class="ce-followup-title">${escapeHtml(labels[i] || `Follow-up ${i + 1}`)}</span>
           ${fu.timing ? `<span class="ce-followup-timing">${escapeHtml(fu.timing)}</span>` : ''}
         </div>
         ${subjectHtml}
-        <div class="ce-followup-body" id="followup-body-${i}">${escapeHtml(fu.body)}</div>
+        <div class="ce-followup-body" data-fu-index="${i}">${escapeHtml(fu.body)}</div>
         <div class="ce-followup-actions">
           <button type="button" class="btn btn-secondary btn-sm fu-copy-btn">Copy</button>
           <button type="button" class="btn btn-secondary btn-sm fu-edit-btn">Edit</button>
         </div>`;
 
-      const bodyEl = card.querySelector(`#followup-body-${i}`);
+      const bodyEl = card.querySelector(`[data-fu-index="${i}"]`);
 
-      // Copy
       card.querySelector('.fu-copy-btn').addEventListener('click', () => {
         const text = fu.subject ? `Subject: ${fu.subject}\n\n${fu.body}` : fu.body;
         copyText(text, 'Follow-up copied.');
       });
 
-      // Edit toggle — make body contenteditable
       const editBtn = card.querySelector('.fu-edit-btn');
       let editing = false;
       editBtn.addEventListener('click', () => {
@@ -934,14 +987,12 @@
         editBtn.textContent = editing ? 'Save' : 'Edit';
         if (editing) {
           bodyEl.focus();
-          // Move cursor to end
           const range = document.createRange();
           range.selectNodeContents(bodyEl);
           range.collapse(false);
           window.getSelection().removeAllRanges();
           window.getSelection().addRange(range);
         } else {
-          // Save edit back to state
           state.data.followUps[i] = { ...fu, body: bodyEl.textContent || bodyEl.innerText };
           saveDraftToStorage();
           showToast('Follow-up saved.');
@@ -962,14 +1013,14 @@
       {
         index: 1,
         timing: '3–5 business days after initial email',
-        subject: `Re: ${comp} — one more thought`,
-        body: `Hi ${recip},\n\nI wanted to add one more thought since my last note.\n\nGiven what I understand about your work at ${comp}${why ? ' \u2014 specifically ' + why : ''} \u2014 I think there\u2019s a genuine fit worth a quick conversation.\n\nHappy to keep it to 15 minutes if that helps.\n\nBest,\n${sender}`
+        subject: `one more thought — ${comp}`,
+        body: `Hi ${recip},\n\nOne additional angle since my last note: ${why ? why : `what you're building at ${comp}`} is something I've been thinking about.\n\nHappy to keep it brief — 15 minutes at most.\n\nBest,\n${sender}`
       },
       {
         index: 2,
         timing: '7–10 business days after follow-up 1',
-        subject: `Closing the loop — ${comp}`,
-        body: `Hi ${recip},\n\nI\u2019ll leave it here so I\u2019m not filling your inbox. If the timing ever feels right to connect, I\u2019d genuinely welcome it.\n\nEither way, I\u2019ll keep following what you\u2019re building at ${comp} \u2014 it\u2019s impressive work.\n\nAll the best,\n${sender}`
+        subject: `closing the loop — ${comp}`,
+        body: `Hi ${recip},\n\nI'll leave it here so I'm not filling your inbox. If the timing is ever right, I'd genuinely welcome a conversation.\n\nAll the best,\n${sender}`
       }
     ];
   }
@@ -987,10 +1038,7 @@
   // ── Editor Setup ────────────────────────────────────────────────────────
   function setupEditorToolbar() {
     document.querySelectorAll('.cl-toolbar-btn').forEach(btn => {
-      btn.addEventListener('mousedown', e => {
-        // Prevent blur before execCommand
-        e.preventDefault();
-      });
+      btn.addEventListener('mousedown', e => e.preventDefault());
       btn.addEventListener('click', e => {
         e.preventDefault();
         const cmd = btn.dataset.command;
@@ -1021,7 +1069,6 @@
   }
 
   function syncEditorToState(editor) {
-    // Store HTML (preserves bold/italic/underline applied via execCommand)
     state.editor.bodyHtml = editor.innerHTML;
   }
 
@@ -1062,19 +1109,32 @@
     if (window.appSdk?.ui?.copyToClipboard) {
       window.appSdk.ui.copyToClipboard(text, successMsg);
     } else {
-      navigator.clipboard.writeText(text).then(() => showToast(successMsg)).catch(() => showToast('Copy failed.', true));
+      navigator.clipboard.writeText(text)
+        .then(() => showToast(successMsg))
+        .catch(() => showToast('Copy failed.', true));
     }
   }
 
   // ── AI Copilot Actions ──────────────────────────────────────────────────
+  // Spec-compliant action set:
+  //   improve      : Rewrite the opening sentence to be more specific
+  //   shorten      : Remove 20–30% of words, preserve core message
+  //   changeAngle  : Completely different opening strategy, same facts
+  //   regenerate   : Re-run full generation with current form state
   const ACTION_FEEDBACK_MAP = {
-    improve: 'Rewrite only the opening sentence or paragraph to be more compelling and specific to the recipient. Do not change the rest of the email.',
-    persuasive: 'Make the value proposition stronger and more persuasive. Focus on concrete impact and specific benefits. Do not change the greeting or signature.',
-    concise: 'Shorten the email by removing redundant sentences and filler phrases. Preserve the core message, value proposition, and CTA. Aim for 20-30% fewer words.',
-    warm: 'Make the tone warmer and more human. Avoid corporate language. Keep the structure but adjust word choices to sound friendlier and more genuine.'
+    improve: 'Rewrite ONLY the opening sentence or opening paragraph to be more specific and relevant to the recipient and company. Do not change anything else — preserve the value proposition, CTA, and signature exactly.',
+    shorten: 'Shorten the email by 20–30% by removing filler, redundant phrases, and unnecessary words. Preserve the core message, the main value point, and the CTA exactly. Do not add new content.',
+    changeAngle: 'Rewrite the email using a completely different opening strategy and angle. Keep the same verified facts about the sender but change the framing, opening approach, and structure entirely. The result should feel meaningfully different from the original.'
   };
 
   async function triggerAiAction(action) {
+    // Special case: regenerate calls handleGenerate directly
+    if (action === 'regenerate') {
+      hideDiffView();
+      await handleGenerate();
+      return;
+    }
+
     const plainBody = htmlToPlainText(state.editor.bodyHtml);
     if (!plainBody) {
       showToast('Please generate an email first.', true);
@@ -1082,10 +1142,12 @@
     }
 
     // Prevent concurrent copilot calls
+    if (state.generation.status === 'copilot-busy') return;
     state.generation.copilotRequestId += 1;
     const currentReqId = state.generation.copilotRequestId;
+    state.generation.status = 'copilot-busy';
 
-    // Disable all action cards
+    // Disable all action cards while running
     document.querySelectorAll('.cl-action-card').forEach(b => b.disabled = true);
 
     const diffView = document.getElementById('aiDiffView');
@@ -1099,7 +1161,7 @@
     }
     if (diffView) diffView.style.display = 'block';
 
-    const feedback = ACTION_FEEDBACK_MAP[action] || `Improve the email with action: ${action}.`;
+    const feedback = ACTION_FEEDBACK_MAP[action] || `Improve the email: ${action}`;
 
     const payload = {
       action: 'optimize',
@@ -1126,45 +1188,51 @@
       if (currentReqId !== state.generation.copilotRequestId) return;
       if (!res.ok) throw new Error(data.error || 'Optimization failed');
 
-      const proposed = (data.revisedText || '').trim();
+      const proposed = sanitizeEmailBody((data.revisedText || '').trim());
       if (!proposed || proposed === plainBody.trim()) {
-        if (diffSug) diffSug.textContent = 'The AI did not produce a meaningful change. Try a different action.';
+        if (diffSug) diffSug.textContent = 'No meaningful change was produced. Try a different action.';
         return;
       }
 
-      // Store the proposed text for applyAiAction — NEVER fall back to innerText
+      // Store proposed text in data-* attribute — NEVER use innerText for apply
       if (diffSug) {
         diffSug.dataset.proposedText = proposed;
         diffSug.innerHTML = renderWordDiff(plainBody, proposed);
       }
-
-      // Show the original in before section
       if (diffOrig) diffOrig.textContent = plainBody;
 
     } catch (err) {
       if (currentReqId === state.generation.copilotRequestId) {
-        if (diffSug) diffSug.textContent = `Error: ${err.message}`;
+        const userMsg = (err.message && err.message.length < 150)
+          ? err.message
+          : 'Something went wrong. Please try again.';
+        if (diffSug) diffSug.textContent = userMsg;
       }
     } finally {
       if (currentReqId === state.generation.copilotRequestId) {
+        state.generation.status = 'idle';
         document.querySelectorAll('.cl-action-card').forEach(b => b.disabled = false);
       }
     }
   }
 
-  function rejectAiAction() {
+  function hideDiffView() {
     const diffView = document.getElementById('aiDiffView');
     if (diffView) diffView.style.display = 'none';
+    const diffSug = document.getElementById('diffSug');
+    if (diffSug) delete diffSug.dataset.proposedText;
+  }
+
+  function rejectAiAction() {
+    hideDiffView();
   }
 
   function applyAiAction() {
     const diffSug = document.getElementById('diffSug');
-    const diffView = document.getElementById('aiDiffView');
     const editor = document.getElementById('editorSheet');
-
     if (!diffSug || !editor) return;
 
-    // ALWAYS use dataset.proposedText — never fall back to innerText (which has HTML diff markup)
+    // Always use dataset.proposedText — never fall back to innerText (contains diff HTML markup)
     const proposed = diffSug.dataset.proposedText;
     if (!proposed) {
       showToast('No suggestion to apply.', true);
@@ -1173,23 +1241,26 @@
 
     state.editor.bodyHtml = plainTextToHtml(proposed);
     editor.innerHTML = state.editor.bodyHtml;
-    if (diffView) diffView.style.display = 'none';
-    delete diffSug.dataset.proposedText;
+    hideDiffView();
     saveDraftToStorage();
     updateLiveMetrics();
     showToast('AI suggestion applied.');
   }
 
-  /** Highlight word-level diff between old and new text */
+  /** Highlight word-level differences between old and new text */
   function renderWordDiff(oldText, newText) {
     const oldWords = oldText.split(/(\s+)/);
     const newWords = newText.split(/(\s+)/);
 
     let start = 0;
     while (start < oldWords.length && start < newWords.length && oldWords[start] === newWords[start]) start++;
+
     let oldEnd = oldWords.length - 1;
     let newEnd = newWords.length - 1;
-    while (oldEnd >= start && newEnd >= start && oldWords[oldEnd] === newWords[newEnd]) { oldEnd--; newEnd--; }
+    while (oldEnd >= start && newEnd >= start && oldWords[oldEnd] === newWords[newEnd]) {
+      oldEnd--;
+      newEnd--;
+    }
 
     const prefix = oldWords.slice(0, start).join('');
     const removed = oldWords.slice(start, oldEnd + 1).join('');
