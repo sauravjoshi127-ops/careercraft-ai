@@ -19,8 +19,8 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
     global.fetch = originalFetch;
   });
 
-  it('successfully generates 6 variants and subject lines (action: generate)', async () => {
-    // Mock successful Gemini response
+  it('successfully generates 4 variants and subject lines (action: generate)', async () => {
+    // Mock successful Gemini response — 4 spec-compliant variants
     global.fetch = async () => ({
       ok: true,
       status: 200,
@@ -30,32 +30,24 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
             parts: [{
               text: JSON.stringify({
                 variants: [
-                  { tone: 'Professional', subject: 'sub A.', body: 'body A.', approach: 'PAS' },
-                  { tone: 'Friendly', subject: 'sub B.', body: 'body B.', approach: 'AIDA' },
-                  { tone: 'Executive', subject: 'sub C.', body: 'body C.', approach: 'Executive' },
-                  { tone: 'Startup', subject: 'sub D.', body: 'body D.', approach: 'Startup' },
-                  { tone: 'Technical', subject: 'sub E.', body: 'body E.', approach: 'Technical' },
-                  { tone: 'Networking', subject: 'sub F.', body: 'body F.', approach: 'Networking' }
+                  { tone: 'Professional', subject: 'sub A.', body: 'body A.', approach: 'Recipient-first' },
+                  { tone: 'Friendly', subject: 'sub B.', body: 'body B.', approach: 'Value-first' },
+                  { tone: 'Direct', subject: 'sub C.', body: 'body C.', approach: 'Question-first' },
+                  { tone: 'Networking', subject: 'sub D.', body: 'body D.', approach: 'Curiosity-first' }
                 ],
                 subjectLines: [
-                  { text: 'sub A.', label: 'Conservative', openRate: '90%' },
-                  { text: 'sub B.', label: 'Curiosity', openRate: '80%' }
+                  { text: 'sub A.', label: 'Direct' },
+                  { text: 'sub B.', label: 'Curiosity' }
                 ],
                 evaluation: {
                   overallScore: 88,
-                  personalizationScore: 90,
-                  openRatePrediction: 85,
-                  recruiterEngagementScore: 80,
-                  professionalToneScore: 95,
-                  spamRiskScore: 10,
-                  grammarScore: 98,
-                  clarityScore: 90,
                   strengths: ['Strength 1'],
                   weaknesses: ['Weakness 1'],
                   suggestions: ['Suggestion 1']
                 },
-                followUp: 'follow-up text.',
-                spamWords: []
+                followUps: [
+                  { index: 1, timing: '3–5 days', subject: 'follow-up sub.', body: 'follow-up body.' }
+                ]
               })
             }]
           }
@@ -68,7 +60,7 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
       .send({
         action: 'generate',
         emailGoal: 'Job Application',
-        lengthType: 'Custom',
+        // Use integer minLength/maxLength overrides to avoid word-count validation rejection
         minLength: 1,
         maxLength: 500,
         recipient: {
@@ -79,17 +71,18 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
         userContext: {
           name: 'Alex',
           background: 'Full stack development and DevOps infrastructure.',
-          keySkills: 'Node.js, AWS, Kubernetes',
-          experience: '2 years as cloud engineer.',
           whyContacting: 'I want to discuss high-scale performance engineering.'
         }
       });
 
     assert.equal(res.status, 200);
     assert.ok(res.body.variants);
+    // New spec: 4 variants
+    assert.equal(res.body.variants.length, 4);
     assert.equal(res.body.variants[0].subject, 'sub A.');
-    assert.equal(res.body.variants[4].tone, 'Technical');
-    assert.equal(res.body.variants[5].tone, 'Networking');
+    assert.equal(res.body.variants[0].tone, 'Professional');
+    assert.equal(res.body.variants[2].tone, 'Direct');
+    assert.equal(res.body.variants[3].tone, 'Networking');
     assert.equal(res.body.subjectLines.length, 2);
     assert.equal(res.body.evaluation.overallScore, 88);
   });
@@ -104,8 +97,8 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
             parts: [{
               text: JSON.stringify({
                 subjectLines: [
-                  { text: 'regen sub 1', probability: '92%', recommended: true },
-                  { text: 'regen sub 2', probability: '78%', recommended: false }
+                  { text: 'regen sub 1', label: 'Direct' },
+                  { text: 'regen sub 2', label: 'Curiosity' }
                 ]
               })
             }]
@@ -132,6 +125,11 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
   });
 
   it('successfully optimizes tone and length (action: optimize)', async () => {
+    // Revised text must be >= 20 words to pass validateOptimizeOutput
+    const revisedText = 'The work your team is doing at Google caught my attention. ' +
+      'I have spent the past two years building high-scale distributed systems — ' +
+      'and I believe there is a genuine fit worth exploring. Would a short call next week make sense?';
+
     global.fetch = async () => ({
       ok: true,
       status: 200,
@@ -139,14 +137,10 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
         candidates: [{
           content: {
             parts: [{
+              // New API: returns revisedText (not optimizedBody)
               text: JSON.stringify({
-                optimizedBody: 'This is the optimized email body.',
-                evaluation: {
-                  overallScore: 94,
-                  strengths: ['Much more punchy'],
-                  weaknesses: [],
-                  suggestions: []
-                }
+                revisedText,
+                reason: 'Removed filler words and tightened the opening.'
               })
             }]
           }
@@ -158,26 +152,26 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
       .post('/api/cold-email')
       .send({
         action: 'optimize',
-        emailBody: 'This is a boring draft email.',
+        emailBody: 'This is a draft email that needs to be improved and made shorter.',
         feedback: 'make it punchier and shorter',
         companyName: 'Google',
         recipientName: 'Sundar',
-        position: 'CEO',
-        lengthType: 'Custom',
-        minLength: 1,
-        maxLength: 500
+        position: 'CEO'
       });
 
     assert.equal(res.status, 200);
-    assert.equal(res.body.optimizedBody, 'This is the optimized email body.');
-    assert.equal(res.body.evaluation.overallScore, 94);
+    // New API returns revisedText, not optimizedBody
+    assert.equal(res.body.revisedText, revisedText);
+    assert.ok(res.body.reason);
   });
 
-  it('triggers validation retry and successfully recovers when first attempt fails length constraint', async () => {
+  it('triggers validation retry and successfully recovers when first attempt fails word count', async () => {
     let fetchCallCount = 0;
+
     global.fetch = async () => {
       fetchCallCount++;
       if (fetchCallCount === 1) {
+        // First attempt: bodies too short — will fail validation with minLength=80
         return {
           ok: true,
           status: 200,
@@ -187,17 +181,14 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
                 parts: [{
                   text: JSON.stringify({
                     variants: [
-                      { tone: 'Professional', subject: 'sub A', body: 'too short body', approach: 'PAS' },
-                      { tone: 'Friendly', subject: 'sub B', body: 'too short body', approach: 'AIDA' },
-                      { tone: 'Executive', subject: 'sub C', body: 'too short body', approach: 'PAS' },
-                      { tone: 'Startup', subject: 'sub D', body: 'too short body', approach: 'PAS' },
-                      { tone: 'Technical', subject: 'sub E', body: 'too short body', approach: 'PAS' },
-                      { tone: 'Networking', subject: 'sub F', body: 'too short body', approach: 'PAS' }
+                      { tone: 'Professional', subject: 'sub A', body: 'too short.', approach: 'PAS' },
+                      { tone: 'Friendly', subject: 'sub B', body: 'too short.', approach: 'AIDA' },
+                      { tone: 'Direct', subject: 'sub C', body: 'too short.', approach: 'PAS' },
+                      { tone: 'Networking', subject: 'sub D', body: 'too short.', approach: 'PAS' }
                     ],
-                    subjectLines: [{ text: 'sub A', label: 'Conservative', openRate: '80%' }],
-                    evaluation: { overallScore: 85, personalizationScore: 80, openRatePrediction: 80, recruiterEngagementScore: 80, professionalToneScore: 80, spamRiskScore: 10, grammarScore: 90, clarityScore: 90, strengths: ['s'], weaknesses: ['w'], suggestions: ['s'] },
-                    followUp: 'followup text.',
-                    spamWords: []
+                    subjectLines: [{ text: 'sub A', label: 'Direct' }],
+                    evaluation: { overallScore: 85, strengths: ['s'], weaknesses: ['w'], suggestions: ['s'] },
+                    followUps: []
                   })
                 }]
               }
@@ -205,7 +196,8 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
           })
         };
       } else {
-        const validBody = Array(90).fill('word').join(' ') + '.';
+        // Second attempt: exactly 90 words — passes validation (80–100 word Standard range)
+        const validBody = Array(89).fill('word').join(' ') + '.';
         return {
           ok: true,
           status: 200,
@@ -217,15 +209,12 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
                     variants: [
                       { tone: 'Professional', subject: 'sub A', body: validBody, approach: 'PAS' },
                       { tone: 'Friendly', subject: 'sub B', body: validBody, approach: 'AIDA' },
-                      { tone: 'Executive', subject: 'sub C', body: validBody, approach: 'PAS' },
-                      { tone: 'Startup', subject: 'sub D', body: validBody, approach: 'PAS' },
-                      { tone: 'Technical', subject: 'sub E', body: validBody, approach: 'PAS' },
-                      { tone: 'Networking', subject: 'sub F', body: validBody, approach: 'PAS' }
+                      { tone: 'Direct', subject: 'sub C', body: validBody, approach: 'PAS' },
+                      { tone: 'Networking', subject: 'sub D', body: validBody, approach: 'PAS' }
                     ],
-                    subjectLines: [{ text: 'sub A', label: 'Conservative', openRate: '80%' }],
-                    evaluation: { overallScore: 85, personalizationScore: 80, openRatePrediction: 80, recruiterEngagementScore: 80, professionalToneScore: 80, spamRiskScore: 10, grammarScore: 90, clarityScore: 90, strengths: ['s'], weaknesses: ['w'], suggestions: ['s'] },
-                    followUp: 'followup text.',
-                    spamWords: []
+                    subjectLines: [{ text: 'sub A', label: 'Direct' }],
+                    evaluation: { overallScore: 85, strengths: ['s'], weaknesses: ['w'], suggestions: ['s'] },
+                    followUps: []
                   })
                 }]
               }
@@ -240,7 +229,7 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
       .send({
         action: 'generate',
         emailGoal: 'Job Application',
-        lengthType: 'Short', // 80 - 100 words range
+        // Standard length = 80–100 words; first attempt returns 2 words → fails → retries
         recipient: {
           name: 'Sarah',
           company: 'Stripe',
@@ -249,15 +238,17 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
         userContext: {
           name: 'Alex',
           background: 'Full stack development',
-          keySkills: 'Node.js',
-          experience: '2 years',
           whyContacting: 'I want to discuss engineering.'
         }
       });
 
     assert.equal(res.status, 200);
-    assert.equal(fetchCallCount, 2); // Confirm retry was made
+    assert.equal(fetchCallCount, 2); // One failed attempt + one successful retry
     assert.ok(res.body.variants);
-    assert.equal(res.body.variants[0].body.split(/\s+/).length, 90); // Confirms correct length was returned
+    // 4 variants returned
+    assert.equal(res.body.variants.length, 4);
+    // Word count: 89 words + '.' at end = body ends with period (valid)
+    const wordCount = res.body.variants[0].body.trim().split(/\s+/).length;
+    assert.ok(wordCount >= 80 && wordCount <= 100, `Expected 80–100 words, got ${wordCount}`);
   });
 });
