@@ -41,8 +41,112 @@ function cleanResumeInputs(text) {
 }
 
 /**
+ * Extracts the single most relevant, impactful proof point from a multi-sentence background.
+ *
+ * Cold emails must reference exactly ONE sender credential. This prevents the AI
+ * from receiving a 3–5 sentence resume summary and weaving all of it into the email.
+ *
+ * Scoring heuristics:
+ *  +2  sentence contains a metric or concrete achievement verb
+ *  +1  sentence contains a word from the recipient/company context
+ *  −2  sentence starts with first-person self-intro ("I am", "I have", "my background")
+ *  −1  sentence is too short or too long to be a usable proof point
+ */
+function extractSingleProofPoint(background, context) {
+  if (!background) return '';
+
+  const clean = cleanResumeInputs(background);
+
+  // Split on sentence-ending punctuation followed by whitespace
+  const raw = clean.replace(/([.!?])\s+/g, '$1\x00').split('\x00');
+  const sentences = raw
+    .map(s => s.replace(/\x00/g, '').trim())
+    .filter(s => s.length > 15 && s.length < 300);
+
+  if (sentences.length === 0) return clean.substring(0, 200).trim();
+  if (sentences.length === 1) return sentences[0];
+
+  const contextWords = (context || '').toLowerCase().split(/[\s,;]+/).filter(w => w.length > 3);
+  const achievementVerbs = /\d+[%k+]?|built|launched|led|drove|shipped|reduced|improved|increased|created|designed|scaled|delivered|grew|saved|generated|managed|deployed|architected|founded|published/i;
+  const introPatterns = /^(?:i am |i have |my background|my experience|i possess|i hold |i worked|i currently)/i;
+
+  const scored = sentences.map(sentence => {
+    const lower = sentence.toLowerCase();
+    let score = 0;
+    if (introPatterns.test(sentence)) score -= 2;
+    if (achievementVerbs.test(sentence)) score += 2;
+    if (sentence.length < 30 || sentence.length > 200) score -= 1;
+    contextWords.forEach(word => { if (lower.includes(word)) score += 1; });
+    return { sentence, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored[0].sentence;
+}
+
+/**
+ * Detects cover-letter and resume-summary anti-patterns in generated email bodies.
+ * Returns the first pattern found, or null if clean.
+ */
+function detectCoverLetterPattern(body) {
+  if (!body) return null;
+  const tests = [
+    { re: /\bi am (?:a |an )[a-z]+ (?:professional|engineer|developer|specialist|expert|manager|graduate|student)/i,  label: 'self-intro job title' },
+    { re: /my background includes/i,                                      label: 'resume summary opener' },
+    { re: /i have \d+[\+]? years? of experience/i,                        label: 'experience summary' },
+    { re: /i am writing to (?:apply|express|inquire|inform)/i,            label: 'application language' },
+    { re: /i am passionate about/i,                                        label: 'passion filler' },
+    { re: /(?:my|key)? skills include/i,                                   label: 'skills list' },
+    { re: /my experience (?:in|with|includes)/i,                          label: 'experience dump' },
+    { re: /i possess (?:strong|extensive|excellent)/i,                    label: 'generic self-praise' },
+    { re: /enclosed (?:is|please find)/i,                                  label: 'cover letter boilerplate' },
+    { re: /i would (?:love|like) to (?:join|contribute|be part of)/i,     label: 'application phrasing' },
+    { re: /throughout my career/i,                                         label: 'career narrative' },
+    { re: /(?:over|during) the (?:past|last) \d+ years/i,                label: 'career timeline' },
+    { re: /as you can see from my resume/i,                               label: 'resume reference' },
+    { re: /(?:proficient|expertise|extensive knowledge) in/i,             label: 'skills catalogue' },
+    { re: /i am (?:confident|certain|sure) that/i,                        label: 'confidence boilerplate' },
+    { re: /thank you for (?:considering|taking the time)/i,               label: 'closing boilerplate' },
+  ];
+  for (const { re, label } of tests) {
+    if (re.test(body)) return label;
+  }
+  return null;
+}
+
+/**
+ * Strips contact details, raw URLs, and resume section headers from user-provided
+ * background text to prevent resume leakage into generated email copy.
+ * (duplicate declaration guard — actual function body is above)
+ */
+function _cleanResumeInputsUnused(text) {
+  if (!text) return '';
+
+  let cleaned = text
+    .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '')
+    .replace(/\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g, '')
+    .replace(/github\.com\/[a-zA-Z0-9_-]+/gi, '')
+    .replace(/linkedin\.com\/in\/[a-zA-Z0-9_-]+/gi, '')
+    .replace(/https?:\/\/\S+/gi, '')
+    .replace(/\b(phone|email|address|contact|portfolio|github|linkedin)\b\s*:?/gi, '');
+
+  const headers = [
+    'education', 'experience', 'work experience', 'skills', 'key skills',
+    'summary', 'professional summary', 'objective', 'projects', 'languages',
+    'certifications', 'hobbies', 'interests', 'references'
+  ];
+  headers.forEach(h => {
+    const regex = new RegExp(`(^|\\n)\\s*(\\*\\*|__)?${h}(\\*\\*|__)?\\s*($|\\n|:)`, 'gi');
+    cleaned = cleaned.replace(regex, '$1');
+  });
+
+  return cleaned.trim();
+}
+
+/**
  * Validates the cold email generation output.
  * Accepts emails that end with a signature (plain name line counts as a valid ending).
+ * Rejects any output that reads like a cover letter or resume summary.
  */
 function validateColdEmailOutput(data, minLength, maxLength) {
   if (!data || !Array.isArray(data.variants) || data.variants.length < 3) {
@@ -53,6 +157,8 @@ function validateColdEmailOutput(data, minLength, maxLength) {
   const placeholderRegex = /\[[A-Za-z0-9\s_-]{2,}\]|<[A-Za-z0-9\s_-]{2,}>|\{your\s|your_placeholder/i;
   const resumeHeaderRegex = /^(education|skills|work experience|summary|languages|references|certifications)\s*:?\s*$/im;
   const debugRegex = /internal prompt|system prompt|gemini|llm|ai fallback/i;
+  // HTML tag detection — any remaining <br>, <p>, <div> etc.
+  const htmlTagRegex = /<\/?[a-zA-Z][^>]{0,100}>/;
 
   for (let i = 0; i < data.variants.length; i++) {
     const variant = data.variants[i];
@@ -60,6 +166,19 @@ function validateColdEmailOutput(data, minLength, maxLength) {
     if (!variant.subject || !variant.body || !variant.tone) {
       console.warn(`[cold-email] Validation failed: variant ${i} has empty required fields.`);
       return { isValid: false, reason: `Variant ${i} missing subject, body, or tone` };
+    }
+
+    // Cover letter / resume summary pattern detection
+    const coverLetterPattern = detectCoverLetterPattern(variant.body);
+    if (coverLetterPattern) {
+      console.warn(`[cold-email] Validation failed: cover letter pattern "${coverLetterPattern}" in variant "${variant.tone}".`);
+      return { isValid: false, reason: `Output reads like a cover letter (pattern: "${coverLetterPattern}") in variant "${variant.tone}"` };
+    }
+
+    // HTML tag leakage
+    if (htmlTagRegex.test(variant.body)) {
+      console.warn(`[cold-email] Validation failed: HTML tags in variant "${variant.tone}".`);
+      return { isValid: false, reason: `HTML tags in variant "${variant.tone}"` };
     }
 
     // Word count check
@@ -88,7 +207,7 @@ function validateColdEmailOutput(data, minLength, maxLength) {
     // Email signatures (plain name lines) are valid endings.
     const nonBlankLines = variant.body.split('\n').map(l => l.trim()).filter(Boolean);
     const lastLine = nonBlankLines[nonBlankLines.length - 1] || '';
-    const endsComplete = /[.?!'""]$/.test(lastLine) || /^[A-Z][a-z]+(\s[A-Z][a-z]+)*$/.test(lastLine);
+    const endsComplete = /[.?!'"\u201c\u201d]$/.test(lastLine) || /^[A-Z][a-z]+(\s[A-Z][a-z]+)*$/.test(lastLine);
     if (!endsComplete) {
       console.warn(`[cold-email] Validation failed: variant "${variant.tone}" does not end with complete sentence or signature. Last line: "${lastLine}"`);
       return { isValid: false, reason: `Variant "${variant.tone}" ends abruptly without complete sentence or signature.` };
@@ -100,10 +219,10 @@ function validateColdEmailOutput(data, minLength, maxLength) {
       return { isValid: false, reason: 'Internal prompt leakage detected' };
     }
 
-    // Markdown / HTML fences
-    if (variant.body.includes('```') || variant.body.includes('<html>') || variant.body.includes('<div>')) {
-      console.warn(`[cold-email] Validation failed: markdown/HTML in variant "${variant.tone}".`);
-      return { isValid: false, reason: `Markdown or HTML in variant "${variant.tone}"` };
+    // Markdown / code fences
+    if (variant.body.includes('```')) {
+      console.warn(`[cold-email] Validation failed: markdown fences in variant "${variant.tone}".`);
+      return { isValid: false, reason: `Markdown fences in variant "${variant.tone}"` };
     }
 
     // Duplicate paragraphs
@@ -152,125 +271,158 @@ function validateOptimizeOutput(data) {
  * Builds the primary generation prompt.
  *
  * LENGTH SCHEME (per spec):
- *   Short    → 50–75 words
- *   Standard → 80–100 words  (default; hard max 125 per spec)
- *   Detailed → 110–125 words (absolute max per spec)
+ *   Short    → 40–65 words
+ *   Standard → 55–85 words  (default; hard max 100 per spec)
+ *   Detailed → 90–120 words (absolute max per spec: 125)
  *
  * VARIANTS: 4 strategically different approaches
- *   1. Professional  — recipient/context-first
- *   2. Friendly      — value-first, peer-to-peer
- *   3. Direct        — question-first, decision-maker focused
- *   4. Networking    — curiosity-first, relationship-building
+ *   1. Context    — opens with specific company/role observation
+ *   2. Question   — opens with a relevant question for the recipient
+ *   3. Direct     — most stripped-down, decision-maker focused
+ *   4. Curiosity  — advice-seeking, lowest pressure
+ *
+ * CRITICAL: The sender's background is compressed to a SINGLE proof point
+ * before being inserted into the prompt. This prevents the AI from treating
+ * a 3–5 sentence resume summary as a license to write a cover letter.
  */
 function buildGeneratePrompt(data) {
-  const cleanBg = cleanResumeInputs(data.background);
   const cleanWhy = cleanResumeInputs(data.whyContacting);
 
+  // Compress sender background to a single, most relevant proof point
+  const proofPoint = extractSingleProofPoint(
+    cleanResumeInputs(data.background),
+    `${data.companyName} ${data.position} ${data.emailGoal} ${cleanWhy}`
+  );
+
   const greeting = data.recipientName ? `Hi ${data.recipientName},` : 'Hi there,';
-  const recipientCtx = [
-    data.recipientName ? `Name: ${data.recipientName}` : null,
-    data.position ? `Title: ${data.position}` : null,
-    data.companyName ? `Company: ${data.companyName}` : null
+
+  const recipientSection = [
+    `Goal: ${data.emailGoal}`,
+    data.recipientName ? `Recipient name: ${data.recipientName}` : null,
+    data.position       ? `Their role: ${data.position}`           : null,
+    data.companyName    ? `Their company: ${data.companyName}`     : null,
+    cleanWhy            ? `Context / reason for outreach: ${cleanWhy}` : null
   ].filter(Boolean).join('\n');
 
-  const senderCtx = [
-    `Name: ${data.userName}`,
-    cleanBg ? `Background / Value Proposition: ${cleanBg}` : null,
-    cleanWhy ? `Reason for reaching out / Company context: ${cleanWhy}` : null
+  const senderSection = [
+    `Sender name: ${data.userName}`,
+    proofPoint ? `ONE proof point to reference (do not use anything else): "${proofPoint}"` : null
   ].filter(Boolean).join('\n');
 
-  return `You are an elite cold-email writer for professional networking, referrals, jobs, internships, mentorship, introductions, and partnerships.
+  return `You are a cold email writer. Write a first-touch professional cold email — NOT a cover letter, NOT a resume summary, NOT an application.
 
-EMAIL GOAL: ${data.emailGoal}
+CONTEXT:
+${recipientSection}
 
-RECIPIENT:
-${recipientCtx}
+SENDER (use ONLY this — never invent facts):
+${senderSection}
 
-SENDER (use ONLY this information — never invent facts):
-${senderCtx}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WHAT A COLD EMAIL IS vs. WHAT IT IS NOT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-═══════════════════════════════════════
-CORE RULES — EVERY VARIANT MUST FOLLOW ALL OF THESE:
-═══════════════════════════════════════
+BAD (this is a cover letter — do NOT write this):
+"Hi Sarah, I am a software engineer with 5+ years of experience in distributed systems
+and infrastructure. My background includes leading teams at TechCorp, building real-time
+platforms, and extensive work with Kubernetes and AWS. I am passionate about engineering
+excellence and would love to contribute to Stripe's infrastructure team."
 
-WORD COUNT: Each variant body must contain between ${data.minLength} and ${data.maxLength} words. This is a hard constraint.
+GOOD (this is a cold email — write this):
+"Hi Sarah, Stripe's focus on payment reliability is something I follow closely.
+I recently shipped a fraud-detection layer that cut false positives by 40% — curious
+whether that maps to anything on your radar.
+Would a short call be worth it?"
 
-CONTENT:
-1. Start with the recipient, company, or a specific context observation — NEVER with the sender's self-introduction.
-2. Use exactly ONE relevant fact from the sender's background. Do not dump or summarize a resume.
-3. Connect the sender's ONE fact directly to the recipient's context or goal.
-4. End with exactly ONE clear, low-friction CTA appropriate to the goal.
-   Good CTAs: "Would you be open to a brief conversation?", "Is this something worth exploring?", "Would a short exchange next week make sense?", "Would you be the right person to connect with?"
-5. Never invent achievements, metrics, company news, mutual connections, events, publications, or recipient interests.
-6. If personalization data is unavailable, use a natural non-fabricated opening.
-7. NEVER use: "I hope this finds you well", "I came across your profile", "I wanted to introduce myself", "pick your brain", "synergy", "leverage", "I would love to connect", "Hope you're having a great week", "My name is X and I am writing to..."
-8. Never mention unrelated experience.
-9. Never use generic praise or filler phrases.
-10. Never repeat information.
-11. Never write in third person about the sender.
-12. Never use HTML, Markdown, <br>, JSON, or formatting tags in the body.
-13. Use clean paragraphs separated by a single blank line.
-14. Preserve sender's exact name: ${data.userName}
-15. Keep the signature simple: just the sender's name.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STRICT RULES — VIOLATION = REJECTION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-SUBJECT LINES: Specific, natural, under 8 words. No generic subjects like "Following up" or "Quick question".
+1. WORD COUNT: ${data.minLength}–${data.maxLength} words per variant body. Hard limit. Count carefully.
+2. STRUCTURE: 3–4 short paragraphs maximum. No bullet lists. No section headers.
+3. OPENING: Start with the recipient's world — their company, role, or a specific context.
+   NEVER start with sender's name, title, background, or credentials.
+4. ONE PROOF POINT: Reference exactly ONE fact from the sender's proof point above.
+   Do NOT list multiple achievements, skills, tools, companies, or credentials.
+   Do NOT invent achievements, metrics, or claims not in the proof point.
+5. ONE CTA: End with exactly one natural, low-friction call to action.
+   Good: "Would a short call make sense?" / "Open to a 15-minute chat?" / "Worth connecting?"
+   Bad: Multiple asks, hard demands, or no ask at all.
+6. TONE: Sound like a real person emailing a professional contact — not a marketer.
+7. BANNED PHRASES (any of these → rejection):
+   - "I am a [job title] with X years"
+   - "My background includes" / "my experience in"
+   - "I am writing to" / "I wanted to reach out"
+   - "I am passionate about" / "I would love to"
+   - "I hope this finds you well" / "Hope you're having a great week"
+   - "I came across your profile" / "I wanted to introduce myself"
+   - "pick your brain" / "synergy" / "leverage" / "per my last email"
+   - "skills include" / "proficient in" / "expertise in"
+   - Generic praise: "incredible work", "amazing company", "reputation for excellence"
+   - "Thank you for considering" / "Please find enclosed"
+8. NO HTML: No <br>, <p>, <div>, or any tag. No Markdown. Use plain text with blank lines between paragraphs.
+9. NO INVENTED FACTS: Do not invent company news, product names, funding events, team wins,
+   mutual connections, or recipient interests.
+10. SIGNATURE: Sender's name only ("${data.userName}"). No title, no company, no links.
 
-═══════════════════════════════════════
-VARIANT STRATEGY — 4 GENUINELY DIFFERENT APPROACHES:
-═══════════════════════════════════════
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VARIANT STRATEGIES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Variant 1 — Professional (Recipient-First):
-  Opening strategy: Observe something specific about the company or role, then connect sender's value to it.
-  Tone: Professional, direct, respectful.
+Variant 1 — Context (opens with company/role observation):
+  First sentence: a specific observation about the company, role, or industry.
+  Then: ONE sender proof point that's relevant to that observation.
+  Then: soft CTA.
 
-Variant 2 — Friendly (Value-First):
-  Opening strategy: Lead immediately with the one thing the sender brings that's most relevant to this recipient.
-  Tone: Warm, peer-to-peer, conversational but credible.
+Variant 2 — Question (opens with a specific relevant question):
+  First sentence: a direct, specific question that shows the sender understands this recipient's world.
+  Then: ONE proof point that makes that question credible.
+  Then: CTA.
 
-Variant 3 — Direct (Question-First):
-  Opening strategy: Open with a specific, relevant question that demonstrates the sender's understanding of the recipient's world.
-  Tone: Confident, efficient, appropriate for decision-makers.
+Variant 3 — Direct (most concise; decision-maker focused):
+  No preamble. Jump straight to the reason for contact in one sentence.
+  ONE proof point. ONE CTA. Shortest of the four variants.
 
-Variant 4 — Networking (Curiosity-First):
-  Opening strategy: Express genuine, specific curiosity about the recipient's work. Advice-seeking, low-pressure. No hard ask.
-  Tone: Human, warm, naturally curious.
+Variant 4 — Curiosity (advice-seeking, lowest pressure):
+  First sentence: genuine curiosity about the recipient's work or perspective.
+  Then: ONE proof point that makes the question credible.
+  CTA: ask for their perspective, not a sales call. No hard ask.
 
-═══════════════════════════════════════
-OUTPUT — Return ONLY valid JSON, no backticks, no markdown, no extra text:
-═══════════════════════════════════════
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OUTPUT: Return ONLY valid JSON. No backticks, no markdown, no extra text.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 {
   "variants": [
     {
-      "tone": "Professional",
-      "subject": "[specific natural subject, under 8 words]",
-      "body": "${greeting}\\n\\n[recipient-first email body — ${data.minLength} to ${data.maxLength} words]\\n\\nBest,\\n${data.userName}",
-      "approach": "Recipient/context-first. Connects one sender fact to company context. Soft CTA."
+      "tone": "Context",
+      "subject": "[specific subject, under 8 words, relevant to company/role]",
+      "body": "${greeting}\\n\\n[company/role observation — 1 sentence]\\n\\n[ONE proof point from sender — 1 sentence] [soft CTA — 1 sentence]\\n\\nBest,\\n${data.userName}",
+      "approach": "Company/role observation → one proof point → soft CTA"
     },
     {
-      "tone": "Friendly",
-      "subject": "[specific natural subject, under 8 words]",
-      "body": "${greeting}\\n\\n[value-first email body — ${data.minLength} to ${data.maxLength} words]\\n\\nBest,\\n${data.userName}",
-      "approach": "Value-first. Leads with sender's strongest relevant credential. Peer-to-peer tone."
+      "tone": "Question",
+      "subject": "[specific question-style subject, under 8 words]",
+      "body": "${greeting}\\n\\n[specific relevant question — 1 sentence]\\n\\n[ONE proof point that makes the question credible — 1 sentence] [CTA — 1 sentence]\\n\\nBest,\\n${data.userName}",
+      "approach": "Specific question → one proof point → CTA"
     },
     {
       "tone": "Direct",
-      "subject": "[specific natural subject, under 8 words]",
-      "body": "${greeting}\\n\\n[question-first email body — ${data.minLength} to ${data.maxLength} words]\\n\\nBest,\\n${data.userName}",
-      "approach": "Question-first. Demonstrates understanding of recipient's world. Decision-maker focused."
+      "subject": "[direct subject, under 8 words]",
+      "body": "${greeting}\\n\\n[direct reason for contact — 1 sentence] [ONE proof point — 1 sentence] [CTA — 1 sentence]\\n\\nBest,\\n${data.userName}",
+      "approach": "Most concise. Direct reason → one proof point → CTA"
     },
     {
-      "tone": "Networking",
-      "subject": "[specific natural subject, under 8 words]",
-      "body": "${greeting}\\n\\n[curiosity-first email body — ${data.minLength} to ${data.maxLength} words]\\n\\nWarmly,\\n${data.userName}",
-      "approach": "Curiosity-first. Genuine interest in recipient's work. Advice-seeking, no hard ask."
+      "tone": "Curiosity",
+      "subject": "[curiosity subject, under 8 words]",
+      "body": "${greeting}\\n\\n[genuine curiosity about recipient's work — 1 sentence]\\n\\n[ONE proof point that makes the curiosity credible — 1 sentence] [low-pressure ask — 1 sentence]\\n\\nWarmly,\\n${data.userName}",
+      "approach": "Curiosity about recipient → one proof point → low-pressure ask"
     }
   ],
   "subjectLines": [
-    { "text": "[specific subject — direct angle]", "label": "Direct" },
-    { "text": "[specific subject — curiosity angle]", "label": "Curiosity" },
-    { "text": "[specific subject — value angle]", "label": "Value" },
-    { "text": "[specific subject — personal angle]", "label": "Personal" }
+    { "text": "[specific subject — direct]", "label": "Direct" },
+    { "text": "[specific subject — question]", "label": "Question" },
+    { "text": "[specific subject — context]", "label": "Context" },
+    { "text": "[specific subject — curiosity]", "label": "Curiosity" }
   ],
   "evaluation": {
     "overallScore": 0,
@@ -282,14 +434,14 @@ OUTPUT — Return ONLY valid JSON, no backticks, no markdown, no extra text:
     {
       "index": 1,
       "timing": "3–5 business days after initial email",
-      "subject": "[follow-up subject referencing original context — not 'Following up']",
-      "body": "${greeting}\\n\\n[Adds a new angle, fact, or thought — NOT just 'circling back'. 50–75 words max.]\\n\\nBest,\\n${data.userName}"
+      "subject": "[follow-up subject specific to context — not 'Following up']",
+      "body": "${greeting}\\n\\n[New angle or thought — not 'just circling back'. 40–60 words max.]\\n\\nBest,\\n${data.userName}"
     },
     {
       "index": 2,
       "timing": "7–10 business days after follow-up 1",
-      "subject": "[final follow-up subject — graceful, non-pushy close]",
-      "body": "${greeting}\\n\\n[Respectful closing message. Acknowledges they may not be interested. Leaves door open. No pressure. 40–60 words max.]\\n\\nAll the best,\\n${data.userName}"
+      "subject": "[graceful close — not 'Following up']",
+      "body": "${greeting}\\n\\n[Respectful close. No pressure. Leaves door open. 30–45 words max.]\\n\\nAll the best,\\n${data.userName}"
     }
   ]
 }`;
@@ -504,26 +656,26 @@ module.exports = async function handler(req, res) {
   ).trim();
 
   // ── Length mapping (spec-compliant) ──────────────────────────────────────
-  // Short    → 50–75w
-  // Standard → 80–100w (default, hard max 125 per spec)
-  // Detailed → 110–125w
+  // Short    → 40–65w
+  // Standard → 55–85w  (default; user spec: 50–100, hard max 125)
+  // Detailed → 90–120w (absolute max per spec: 125)
   let lengthType = personalization.length || body.lengthType || body.length || 'Standard';
   let minLength, maxLength;
 
   const norm = String(lengthType).toLowerCase();
   if (norm.includes('short')) {
     lengthType = 'Short';
-    minLength = 50;
-    maxLength = 75;
+    minLength = 40;
+    maxLength = 65;
   } else if (norm.includes('detail') || norm.includes('long')) {
     lengthType = 'Detailed';
-    minLength = 110;
-    maxLength = 125;
+    minLength = 90;
+    maxLength = 120;
   } else {
     // Standard (default) and anything else
     lengthType = 'Standard';
-    minLength = 80;
-    maxLength = 100;
+    minLength = 55;
+    maxLength = 85;
   }
 
   // Allow explicit numeric overrides (advanced usage)
