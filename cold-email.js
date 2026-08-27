@@ -47,6 +47,7 @@
       copilotRequestId: 0
     },
     data: {
+      // Each variant: { tone, subject, greeting, paragraphs[], cta, signOff, senderName, wordCount, approach }
       variants: [],
       subjectLines: [],
       followUps: [],
@@ -55,7 +56,7 @@
     },
     editor: {
       subject: '',
-      bodyHtml: '' // stores innerHTML for round-trip fidelity
+      bodyHtml: '' // stores the rendered semantic email HTML
     },
     resume: {
       loadedId: null,
@@ -636,12 +637,15 @@
       const variants = Array.isArray(data.variants) ? data.variants : [];
       if (variants.length === 0) throw new Error('No email variants were generated. Please try again.');
 
-      state.data.variants = variants.map(v => ({
-        tone: sanitizeText(v.tone) || 'Variant',
-        subject: sanitizeSubject(v.subject),
-        body: finalSanitize(sanitizeEmailBody(v.body)),
-        approach: sanitizeText(v.approach) || ''
-      }));
+      // Normalize all variants — handles both new structured and legacy flat formats
+      const normalizedVariants = variants
+        .map(v => normalizeClientVariant(v, state.brief.userName))
+        .filter(Boolean)
+        .filter(v => validateStructuredVariant(v) || (v.paragraphs && v.paragraphs.length > 0));
+
+      if (normalizedVariants.length === 0) throw new Error('Email generation returned invalid data. Please try again.');
+
+      state.data.variants = normalizedVariants;
 
       state.data.subjectLines = Array.isArray(data.subjectLines)
         ? data.subjectLines.slice(0, 4).map(s => ({
@@ -651,12 +655,9 @@
         : [];
 
       state.data.followUps = Array.isArray(data.followUps)
-        ? data.followUps.map(f => ({
-            index: f.index || 1,
-            timing: sanitizeText(f.timing) || '',
-            subject: sanitizeSubject(f.subject),
-            body: finalSanitize(sanitizeEmailBody(f.body))
-          }))
+        ? data.followUps
+            .map(f => normalizeClientFollowUp(f, state.brief.userName))
+            .filter(Boolean)
         : [];
 
       state.data.evaluation = data.evaluation || null;
@@ -664,8 +665,8 @@
 
       const activeVariant = state.data.variants[0];
       state.editor.subject = activeVariant.subject;
-      // Apply finalSanitize before converting to HTML so <br> never appears as text in editor
-      state.editor.bodyHtml = plainTextToHtml(finalSanitize(activeVariant.body));
+      // Build semantic email HTML from the structured variant
+      state.editor.bodyHtml = variantToEmailHtml(activeVariant);
 
       saveDraftToStorage();
       renderWorkspace();
@@ -694,6 +695,35 @@
     }
   }
 
+  // ── Sanitization ─────────────────────────────────────────────────────────
+  /**
+   * Client-side field sanitizer: strips HTML, decodes entities, removes artifacts.
+   * Applied to each structured field (greeting, paragraph, cta, signOff, senderName)
+   * individually — never on a concatenated blob.
+   */
+  function sanitizeClientField(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<p[^>]*>/gi, '')
+      .replace(/<[^>]{0,200}>/g, '')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/__(.*?)__/g, '$1')
+      .replace(/\[object Object\]/gi, '')
+      .replace(/\bundefined\b/g, '')
+      .replace(/\bnull\b/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
   function setEditorGenerating(isGenerating) {
     const overlay = document.getElementById('editorGenOverlay');
     const canvas = document.getElementById('editorCanvas');
@@ -701,7 +731,7 @@
     if (canvas) canvas.classList.toggle('cl-generating', isGenerating);
   }
 
-  // ── Sanitization ─────────────────────────────────────────────────────────
+  // ── Legacy sanitization (used for optimize revisedText only) ─────────────
   function sanitizeText(str) {
     if (!str || typeof str !== 'string') return '';
     return str.replace(/[<>]/g, '').trim();
@@ -781,24 +811,216 @@
       .replace(/'/g, '&#39;');
   }
 
-  /** Convert plain email text (with \n) to HTML paragraphs for the editor */
+  /**
+   * Validate a structured variant object on the client side.
+   * Returns true if the variant is safe to render.
+   */
+  function validateStructuredVariant(v) {
+    if (!v || typeof v !== 'object') return false;
+    if (!v.subject || typeof v.subject !== 'string') return false;
+    if (!Array.isArray(v.paragraphs) || v.paragraphs.length === 0) return false;
+    if (v.paragraphs.some(p => !p || typeof p !== 'string')) return false;
+    if (!v.greeting || typeof v.greeting !== 'string') return false;
+    // Check no HTML artifacts in any field
+    const htmlTagRe = /<[a-zA-Z][^>]{0,100}>/;
+    const fields = [v.greeting, ...v.paragraphs, v.cta || '', v.signOff || '', v.senderName || ''];
+    if (fields.some(f => htmlTagRe.test(f))) return false;
+    // Check no raw undefined/null/JSON artifacts
+    const artifactRe = /\[object Object\]|\bundefined\b|\bnull\b/;
+    if (fields.some(f => artifactRe.test(f))) return false;
+    return true;
+  }
+
+  /**
+   * Assemble a normalized structured variant from a raw API response.
+   * Handles both new structured format and legacy flat body string.
+   */
+  function normalizeClientVariant(v, userName) {
+    if (!v || typeof v !== 'object') return null;
+    const clean = (s) => sanitizeClientField(String(s || ''));
+
+    // New structured format: has paragraphs[]
+    if (Array.isArray(v.paragraphs) && v.paragraphs.length > 0) {
+      const paragraphs = v.paragraphs.map(p => clean(String(p || ''))).filter(Boolean);
+      return {
+        tone: clean(v.tone) || 'Variant',
+        subject: sanitizeSubject(v.subject),
+        greeting: clean(v.greeting) || (v.recipientName ? `Hi ${v.recipientName},` : 'Hi there,'),
+        paragraphs: paragraphs.length > 0 ? paragraphs : [''],
+        cta: clean(v.cta),
+        signOff: clean(v.signOff) || 'Best,',
+        senderName: clean(v.senderName) || userName || '',
+        wordCount: v.wordCount || paragraphs.join(' ').split(/\s+/).filter(Boolean).length,
+        approach: clean(v.approach) || ''
+      };
+    }
+
+    // Legacy flat body string: parse structure out of it
+    if (typeof v.body === 'string') {
+      const bodyClean = sanitizeEmailBody(finalSanitize(v.body));
+      const lines = bodyClean.split('\n').map(l => l.trim()).filter(Boolean);
+
+      let greeting = '';
+      let restLines = lines;
+      if (lines.length > 0 && /^(hi|hello|dear)\b/i.test(lines[0])) {
+        greeting = lines[0];
+        restLines = lines.slice(1);
+      }
+
+      let signOff = 'Best,';
+      let senderName = userName || '';
+      const lastLine = restLines[restLines.length - 1] || '';
+      const secondLastLine = restLines[restLines.length - 2] || '';
+      const looksLikeName = /^[A-Z][a-z]+([\s-][A-Z][a-z]+)*$/.test(lastLine);
+      const looksLikeSignOff = /^(best|warmly|regards|sincerely|cheers|thanks|all the best)[,.]?$/i.test(secondLastLine);
+
+      if (looksLikeName && looksLikeSignOff) {
+        senderName = lastLine; signOff = secondLastLine;
+        restLines = restLines.slice(0, -2);
+      } else if (looksLikeName) {
+        senderName = lastLine;
+        restLines = restLines.slice(0, -1);
+      }
+
+      let cta = '';
+      if (restLines.length > 0 && restLines[restLines.length - 1].endsWith('?')) {
+        cta = restLines[restLines.length - 1];
+        restLines = restLines.slice(0, -1);
+      }
+
+      const paragraphs = restLines.filter(l => l.length > 0);
+      return {
+        tone: clean(v.tone) || 'Variant',
+        subject: sanitizeSubject(v.subject),
+        greeting: greeting || 'Hi there,',
+        paragraphs: paragraphs.length > 0 ? paragraphs : [bodyClean],
+        cta,
+        signOff,
+        senderName: senderName || userName || '',
+        wordCount: paragraphs.join(' ').split(/\s+/).filter(Boolean).length,
+        approach: clean(v.approach) || ''
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Normalize a follow-up entry (structured or legacy flat body).
+   */
+  function normalizeClientFollowUp(fu, userName) {
+    if (!fu || typeof fu !== 'object') return null;
+    const clean = (s) => sanitizeClientField(String(s || ''));
+
+    if (Array.isArray(fu.paragraphs) && fu.paragraphs.length > 0) {
+      return {
+        index: fu.index || 1,
+        timing: clean(fu.timing) || '',
+        subject: sanitizeSubject(fu.subject),
+        greeting: clean(fu.greeting) || '',
+        paragraphs: fu.paragraphs.map(p => clean(String(p || ''))).filter(Boolean),
+        cta: clean(fu.cta) || '',
+        signOff: clean(fu.signOff) || 'Best,',
+        senderName: clean(fu.senderName) || userName || ''
+      };
+    }
+
+    // Legacy flat body
+    const bodyClean = sanitizeEmailBody(finalSanitize(String(fu.body || '')));
+    return {
+      index: fu.index || 1,
+      timing: clean(fu.timing) || '',
+      subject: sanitizeSubject(fu.subject),
+      greeting: '',
+      paragraphs: bodyClean ? [bodyClean] : [],
+      cta: '',
+      signOff: 'Best,',
+      senderName: clean(fu.senderName) || userName || ''
+    };
+  }
+
+  /** Convert plain text to paragraph HTML (fallback, used by applyAiAction for revisedText) */
   function plainTextToHtml(text) {
     if (!text) return '';
     return text
       .split(/\n\n+/)
-      .map(para => `<p>${escapeHtml(para.replace(/\n/g, '<br>'))}</p>`)
+      .map(para => `<p class="ce-email-paragraph">${escapeHtml(para.replace(/\n/g, '<br>'))}</p>`)
       .join('');
   }
 
-  /** Extract plain text from editor HTML for copy/metrics */
+  /**
+   * Build the semantic email HTML from a structured variant.
+   * This is the primary rendering path — produces proper email structure,
+   * not a text blob. Each field is individually escaped to prevent HTML injection.
+   */
+  function variantToEmailHtml(variant) {
+    if (!variant) return '';
+    const parts = [];
+
+    // Greeting
+    if (variant.greeting) {
+      parts.push(`<div class="ce-email-greeting">${escapeHtml(variant.greeting)}</div>`);
+    }
+
+    // Body paragraphs
+    if (Array.isArray(variant.paragraphs)) {
+      variant.paragraphs.forEach(para => {
+        if (para && para.trim()) {
+          parts.push(`<p class="ce-email-paragraph">${escapeHtml(para.trim())}</p>`);
+        }
+      });
+    }
+
+    // CTA paragraph
+    if (variant.cta && variant.cta.trim()) {
+      parts.push(`<p class="ce-email-paragraph ce-email-cta">${escapeHtml(variant.cta.trim())}</p>`);
+    }
+
+    // Signature block
+    const signOff = variant.signOff || 'Best,';
+    const senderName = variant.senderName || state.brief.userName || '';
+    parts.push(`<div class="ce-email-signature">${escapeHtml(signOff)}<br>${escapeHtml(senderName)}</div>`);
+
+    return parts.join('');
+  }
+
+  /**
+   * Extract plain text from the semantic email HTML for copy/metrics.
+   * Understands the new email structure: greeting, paragraphs, cta, signature.
+   */
   function htmlToPlainText(html) {
+    if (!html) return '';
     const div = document.createElement('div');
     div.innerHTML = html;
-    div.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
-    div.querySelectorAll('p').forEach(p => {
-      p.insertAdjacentText('afterend', '\n\n');
+
+    let result = '';
+    div.childNodes.forEach(node => {
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+      const tag = node.tagName.toLowerCase();
+      const text = (node.textContent || node.innerText || '').trim();
+      if (!text) return;
+
+      if (tag === 'div') {
+        // Greeting or signature — expand inner <br> then add as a line
+        const inner = node.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+        const innerDiv = document.createElement('div');
+        innerDiv.innerHTML = inner;
+        result += (innerDiv.textContent || innerDiv.innerText || '').trim() + '\n';
+      } else if (tag === 'p') {
+        // Paragraphs and CTA: expand <br>, add double newline
+        node.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+        result += (node.textContent || node.innerText || '').trim() + '\n\n';
+      }
     });
-    return (div.textContent || div.innerText || '').trim();
+
+    // Fallback for plain <p> editors (non-semantic HTML)
+    if (!result.trim()) {
+      div.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+      div.querySelectorAll('p, div').forEach(el => el.insertAdjacentText('afterend', '\n\n'));
+      result = (div.textContent || div.innerText || '').trim();
+    }
+
+    return result.trim();
   }
 
   // ── Render Workspace ────────────────────────────────────────────────────
@@ -857,6 +1079,7 @@
   function renderEditorContent() {
     const editor = document.getElementById('editorSheet');
     if (!editor) return;
+    // Only update if content has genuinely changed to avoid caret loss during typing
     if (editor.innerHTML !== state.editor.bodyHtml) {
       editor.innerHTML = state.editor.bodyHtml;
     }
@@ -921,10 +1144,12 @@
     varCont.innerHTML = '';
 
     const toneColors = {
+      context: '#6366f1',
+      question: '#10b981',
+      direct: '#f59e0b',
+      curiosity: '#8b5cf6',
       professional: '#6366f1',
       friendly: '#10b981',
-      direct: '#f59e0b',
-      executive: '#f59e0b',
       networking: '#8b5cf6',
       startup: '#ef4444',
       technical: '#3b82f6'
@@ -949,6 +1174,12 @@
       const badgeColor = toneColors[toneKey] || 'var(--accent)';
       const safeApproach = v.approach || '';
 
+      // Assemble plain text body from structured fields for display
+      const displayBody = [
+        ...(v.paragraphs || []),
+        v.cta || ''
+      ].filter(Boolean).join('\n\n');
+
       const card = document.createElement('div');
       card.className = 'ce-variant-card';
 
@@ -958,7 +1189,12 @@
           <span class="ce-variant-subject" title="${escapeHtml(v.subject)}">Subj: ${escapeHtml(v.subject)}</span>
         </div>
         ${safeApproach ? `<div class="ce-variant-approach">${escapeHtml(safeApproach)}</div>` : ''}
-        <div class="ce-variant-body">${escapeHtml(v.body)}</div>
+        <div class="ce-variant-email-preview">
+          <div class="ce-variant-greeting">${escapeHtml(v.greeting || '')}</div>
+          ${(v.paragraphs || []).map(p => `<p class="ce-variant-para">${escapeHtml(p)}</p>`).join('')}
+          ${v.cta ? `<p class="ce-variant-para ce-variant-cta">${escapeHtml(v.cta)}</p>` : ''}
+          <div class="ce-variant-sig">${escapeHtml(v.signOff || 'Best,')}<br>${escapeHtml(v.senderName || '')}</div>
+        </div>
         <div class="ce-variant-actions">
           <button type="button" class="btn btn-primary btn-sm variant-use-btn">Use this version</button>
           <button type="button" class="btn btn-secondary btn-sm variant-copy-btn">Copy</button>
@@ -968,14 +1204,24 @@
         const idx = state.data.variants.indexOf(v);
         state.data.activeVariantIndex = idx;
         state.editor.subject = v.subject;
-        state.editor.bodyHtml = plainTextToHtml(v.body);
+        state.editor.bodyHtml = variantToEmailHtml(v);
         saveDraftToStorage();
         renderWorkspace();
         showToast('Switched to ' + v.tone + ' variant.');
       });
 
       card.querySelector('.variant-copy-btn').addEventListener('click', () => {
-        const text = `Subject: ${v.subject}\n\n${v.body}`;
+        const plainBody = [
+          v.greeting || '',
+          '',
+          ...(v.paragraphs || []),
+          '',
+          v.cta || '',
+          '',
+          v.signOff || 'Best,',
+          v.senderName || ''
+        ].filter((line, i, arr) => !(line === '' && (arr[i-1] === '' || i === 0 || i === arr.length - 1))).join('\n');
+        const text = `Subject: ${v.subject}\n\n${plainBody}`;
         copyText(text, 'Variant copied to clipboard.');
       });
 
@@ -998,18 +1244,33 @@
       const card = document.createElement('div');
       card.className = 'ce-followup-card';
 
+      // Assemble the display body from structured fields
+      const fuGreeting = fu.greeting || '';
+      const fuParagraphs = Array.isArray(fu.paragraphs) ? fu.paragraphs : [];
+      const fuCta = fu.cta || '';
+      const fuSignOff = fu.signOff || 'Best,';
+      const fuSenderName = fu.senderName || state.brief.userName || '';
+
+      // Build display HTML for the follow-up body
+      let bodyHtml = '';
+      if (fuGreeting) bodyHtml += `<div class="ce-fu-greeting">${escapeHtml(fuGreeting)}</div>`;
+      fuParagraphs.forEach(p => {
+        if (p && p.trim()) bodyHtml += `<p class="ce-fu-para">${escapeHtml(p)}</p>`;
+      });
+      if (fuCta && fuCta.trim()) bodyHtml += `<p class="ce-fu-para">${escapeHtml(fuCta)}</p>`;
+      bodyHtml += `<div class="ce-fu-sig">${escapeHtml(fuSignOff)}<br>${escapeHtml(fuSenderName)}</div>`;
+
       const subjectHtml = fu.subject
         ? `<div class="ce-followup-subject">Subj: ${escapeHtml(fu.subject)}</div>`
         : '';
 
-      // Use data-* attribute for body element to avoid DOM ID collisions
       card.innerHTML = `
         <div class="ce-followup-header">
           <span class="ce-followup-title">${escapeHtml(labels[i] || `Follow-up ${i + 1}`)}</span>
           ${fu.timing ? `<span class="ce-followup-timing">${escapeHtml(fu.timing)}</span>` : ''}
         </div>
         ${subjectHtml}
-        <div class="ce-followup-body" data-fu-index="${i}">${escapeHtml(fu.body)}</div>
+        <div class="ce-followup-body" data-fu-index="${i}">${bodyHtml}</div>
         <div class="ce-followup-actions">
           <button type="button" class="btn btn-secondary btn-sm fu-copy-btn">Copy</button>
           <button type="button" class="btn btn-secondary btn-sm fu-edit-btn">Edit</button>
@@ -1018,7 +1279,17 @@
       const bodyEl = card.querySelector(`[data-fu-index="${i}"]`);
 
       card.querySelector('.fu-copy-btn').addEventListener('click', () => {
-        const text = fu.subject ? `Subject: ${fu.subject}\n\n${fu.body}` : fu.body;
+        // Assemble plain text for copy
+        const parts = [];
+        if (fuGreeting) parts.push(fuGreeting);
+        parts.push('');
+        fuParagraphs.forEach(p => { if (p) parts.push(p); });
+        if (fuCta) { parts.push(''); parts.push(fuCta); }
+        parts.push('');
+        parts.push(fuSignOff);
+        parts.push(fuSenderName);
+        const plainText = parts.join('\n').trim();
+        const text = fu.subject ? `Subject: ${fu.subject}\n\n${plainText}` : plainText;
         copyText(text, 'Follow-up copied.');
       });
 
@@ -1027,8 +1298,18 @@
       editBtn.addEventListener('click', () => {
         editing = !editing;
         bodyEl.contentEditable = editing ? 'true' : 'false';
+        bodyEl.classList.toggle('ce-followup-body--editing', editing);
         editBtn.textContent = editing ? 'Save' : 'Edit';
         if (editing) {
+          // Switch to plain text for editing
+          const plainParts = [];
+          if (fuGreeting) plainParts.push(fuGreeting);
+          fuParagraphs.forEach(p => { if (p) { plainParts.push(''); plainParts.push(p); } });
+          if (fuCta) { plainParts.push(''); plainParts.push(fuCta); }
+          plainParts.push('');
+          plainParts.push(fuSignOff);
+          plainParts.push(fuSenderName);
+          bodyEl.textContent = plainParts.join('\n').trim();
           bodyEl.focus();
           const range = document.createRange();
           range.selectNodeContents(bodyEl);
@@ -1036,7 +1317,17 @@
           window.getSelection().removeAllRanges();
           window.getSelection().addRange(range);
         } else {
-          state.data.followUps[i] = { ...fu, body: bodyEl.textContent || bodyEl.innerText };
+          // Save back to state as flat text (follow-up is simpler to store)
+          const rawText = bodyEl.textContent || bodyEl.innerText || '';
+          state.data.followUps[i] = {
+            ...fu,
+            paragraphs: [rawText.trim()],
+            greeting: '',
+            cta: ''
+          };
+          // Restore display HTML
+          bodyEl.innerHTML = bodyHtml;
+          bodyEl.contentEditable = 'false';
           saveDraftToStorage();
           showToast('Follow-up saved.');
         }
@@ -1049,21 +1340,37 @@
   function buildDefaultFollowUps() {
     const recip = state.brief.recipientName || 'there';
     const comp = state.brief.companyName || 'your organization';
-    const sender = state.brief.userName || 'there';
-    const why = state.brief.companyContext || state.brief.relationship || 'this opportunity';
+    const sender = state.brief.userName || '';
+    const why = state.brief.companyContext || state.brief.relationship || '';
+    const greeting = state.brief.recipientName ? `Hi ${recip},` : 'Hi there,';
 
     return [
       {
         index: 1,
         timing: '3–5 business days after initial email',
         subject: `one more thought — ${comp}`,
-        body: `Hi ${recip},\n\nOne additional angle since my last note: ${why ? why : `what you're building at ${comp}`} is something I've been thinking about.\n\nHappy to keep it brief — 15 minutes at most.\n\nBest,\n${sender}`
+        greeting,
+        paragraphs: [
+          why
+            ? `One additional angle since my last note: ${why} is something I've been thinking about.`
+            : `One additional thought since my last note — I think what you're building at ${comp} is worth a quick conversation.`,
+          'Happy to keep it brief — 15 minutes at most.'
+        ],
+        cta: 'Would that work?',
+        signOff: 'Best,',
+        senderName: sender
       },
       {
         index: 2,
         timing: '7–10 business days after follow-up 1',
         subject: `closing the loop — ${comp}`,
-        body: `Hi ${recip},\n\nI'll leave it here so I'm not filling your inbox. If the timing is ever right, I'd genuinely welcome a conversation.\n\nAll the best,\n${sender}`
+        greeting,
+        paragraphs: [
+          `I'll leave it here so I'm not filling your inbox. If the timing is ever right, I'd genuinely welcome a conversation.`
+        ],
+        cta: '',
+        signOff: 'All the best,',
+        senderName: sender
       }
     ];
   }
@@ -1127,7 +1434,23 @@
     const copyBtn = document.getElementById('copyBtn');
     if (copyBtn) {
       copyBtn.addEventListener('click', () => {
-        const plainBody = htmlToPlainText(state.editor.bodyHtml);
+        // Assemble plain text from the active structured variant for clean copy
+        const activeVariant = state.data.variants[state.data.activeVariantIndex];
+        let plainBody = '';
+        if (activeVariant && Array.isArray(activeVariant.paragraphs)) {
+          const parts = [];
+          if (activeVariant.greeting) parts.push(activeVariant.greeting);
+          parts.push('');
+          activeVariant.paragraphs.forEach(p => { if (p) parts.push(p); });
+          if (activeVariant.cta) { parts.push(''); parts.push(activeVariant.cta); }
+          parts.push('');
+          parts.push(activeVariant.signOff || 'Best,');
+          parts.push(activeVariant.senderName || state.brief.userName || '');
+          plainBody = parts.join('\n').trim();
+        } else {
+          // Fallback: extract from editor HTML
+          plainBody = htmlToPlainText(state.editor.bodyHtml);
+        }
         if (!plainBody) return showToast('No email to copy.', true);
         const text = state.editor.subject
           ? `Subject: ${state.editor.subject}\n\n${plainBody}`

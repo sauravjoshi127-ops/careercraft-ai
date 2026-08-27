@@ -354,12 +354,126 @@
       margin-top: 1px;
     }
 
+
     /* ── Spin animation (shared) ── */
     .spin { animation: ceSpinAnim 0.8s linear infinite; }
 
     /* ── Metrics bar — 3 columns only ── */
     .cl-live-metrics-bar { grid-template-columns: repeat(3, 1fr) !important; }
+
+    /* ── Email Canvas Override ──────────────────────────────────────────────
+       The shared .cl-editor-paper is styled as an A4 document (Georgia font,
+       48px padding, min-height 560px). For cold emails we want a compact,
+       email-like canvas. We scope overrides to the cold-email context.
+    ─────────────────────────────────────────────────────────────────────── */
+    #editorSheet.cl-editor-paper {
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+      font-size: 0.94rem !important;
+      line-height: 1.68 !important;
+      padding: 28px 32px !important;
+      min-height: auto !important;
+      /* Shadow stays, gives the "floating card" feel */
+    }
+    #editorSheet.cl-editor-paper * {
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+      font-size: inherit !important;
+    }
+
+    /* ── Semantic email structure elements ────────────────────────────────── */
+    .ce-email-greeting {
+      font-weight: 500;
+      color: #111 !important;
+      margin-bottom: 14px;
+      display: block;
+    }
+    .ce-email-paragraph {
+      color: #111 !important;
+      margin: 0 0 14px 0;
+      padding: 0;
+      line-height: 1.7;
+    }
+    .ce-email-paragraph:last-of-type {
+      margin-bottom: 14px;
+    }
+    .ce-email-cta {
+      /* CTA gets subtle visual separation via color — still plain prose */
+      color: #1a1a1a !important;
+    }
+    .ce-email-signature {
+      color: #111 !important;
+      margin-top: 20px;
+      line-height: 1.5;
+      display: block;
+    }
+
+    /* ── Variant card email preview ────────────────────────────────────────── */
+    .ce-variant-email-preview {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 0.84rem;
+      line-height: 1.65;
+      color: var(--text-2);
+      margin: 10px 0 12px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .ce-variant-greeting {
+      font-weight: 500;
+      color: var(--text-1);
+      margin-bottom: 8px;
+    }
+    .ce-variant-para {
+      margin: 0 0 8px 0;
+      padding: 0;
+      color: var(--text-2);
+    }
+    .ce-variant-cta {
+      color: var(--text-1);
+      font-style: italic;
+    }
+    .ce-variant-sig {
+      margin-top: 10px;
+      color: var(--text-3);
+      font-size: 0.82rem;
+      line-height: 1.4;
+    }
+
+    /* ── Follow-up structured display ────────────────────────────────────── */
+    .ce-fu-greeting {
+      font-weight: 500;
+      color: var(--text-1);
+      margin-bottom: 8px;
+    }
+    .ce-fu-para {
+      margin: 0 0 8px 0;
+      padding: 0;
+      color: var(--text-2);
+      font-size: 0.86rem;
+      line-height: 1.65;
+    }
+    .ce-fu-sig {
+      margin-top: 10px;
+      color: var(--text-3);
+      font-size: 0.82rem;
+      line-height: 1.4;
+    }
+
+    /* Follow-up body editing mode */
+    .ce-followup-body--editing {
+      background: rgba(255,255,255,0.04) !important;
+      border: 1px solid var(--accent) !important;
+      border-radius: 6px;
+      padding: 10px 12px !important;
+      white-space: pre-wrap;
+      color: var(--text-1) !important;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 0.86rem;
+      line-height: 1.65;
+      outline: none;
+    }
   </style>
+
 </head>
 <body>
 
