@@ -199,7 +199,7 @@
 
     syncStateFromForm();
 
-    // Validate required fields
+    // Validate required fields (ONLY Company and Sender Name required)
     if (!state.brief.company) {
       showToast('Please enter the recipient\'s Company name.', true);
       document.getElementById('ceCompany')?.focus();
@@ -208,11 +208,6 @@
     if (!state.brief.senderName) {
       showToast('Please enter Your Name.', true);
       document.getElementById('ceSenderName')?.focus();
-      return;
-    }
-    if (!state.brief.background) {
-      showToast('Please add a short background or value proposition.', true);
-      document.getElementById('ceBackground')?.focus();
       return;
     }
 
@@ -231,19 +226,19 @@
 
     const payload = {
       action: 'generate',
-      emailGoal: state.brief.purpose,
+      emailGoal: state.brief.purpose || 'Networking',
       recipient: {
-        name:     state.brief.recipientName,
-        company:  state.brief.company,
-        position: state.brief.position
+        name:     state.brief.recipientName || '',
+        company:  state.brief.company || '',
+        position: state.brief.position || ''
       },
       userContext: {
-        name:          state.brief.senderName,
-        background:    state.brief.background,
-        whyContacting: state.brief.context
+        name:          state.brief.senderName || '',
+        background:    state.brief.background || '',
+        whyContacting: state.brief.context || ''
       },
       personalization: {
-        tone:     state.brief.tone,
+        tone:     state.brief.tone || 'Professional',
         length:   'Standard',
         ctaStyle: 'Soft Ask'
       }
@@ -353,15 +348,15 @@
 
     const payload = {
       action:        'optimize',
-      emailGoal:     state.brief.purpose,
+      emailGoal:     state.brief.purpose || 'Networking',
       emailBody:     plainBody,
       feedback,
-      recipientName: state.brief.recipientName,
-      companyName:   state.brief.company,
-      position:      state.brief.position,
-      userName:      state.brief.senderName,
-      background:    state.brief.background,
-      whyContacting: state.brief.context
+      recipientName: state.brief.recipientName || '',
+      companyName:   state.brief.company || '',
+      position:      state.brief.position || '',
+      userName:      state.brief.senderName || '',
+      background:    state.brief.background || '',
+      whyContacting: state.brief.context || ''
     };
 
     try {
