@@ -921,13 +921,14 @@ module.exports = async function handler(req, res) {
   };
 
   // ── Request validation ───────────────────────────────────────────────────
-  // REQUIRED: sender name (userName), company name (companyName), purpose (emailGoal)
-  // OPTIONAL: recipient name, recipient role/title (position), context/details (whyContacting), background
+  // REQUIRED: sender name (userName), company name (companyName), purpose (emailGoal), background
+  // OPTIONAL: recipient name, recipient role/title (position), context/details (whyContacting)
   if (action === 'generate') {
     const missingFields = [];
     if (!userName) missingFields.push('userName (sender name)');
     if (!companyName) missingFields.push('companyName (recipient company)');
     if (!emailGoal) missingFields.push('emailGoal (purpose)');
+    if (!background) missingFields.push('background (background/value)');
     if (missingFields.length > 0) {
       return res.status(400).json({
         error: `Missing required fields: ${missingFields.join(', ')}`,

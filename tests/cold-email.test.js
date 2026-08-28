@@ -63,7 +63,8 @@ describe('POST /api/cold-email', () => {
       .send({
         company: 'Stripe',
         senderName: 'Alex Johnson',
-        purpose: 'Networking'
+        purpose: 'Networking',
+        background: 'I build systems.'
       });
 
     assert.equal(res.status, 200);
@@ -113,7 +114,7 @@ describe('POST /api/cold-email', () => {
         },
         userContext: {
           name: 'Alex Johnson',
-          background: '',
+          background: 'I build systems.',
           whyContacting: ''
         },
         emailGoal: 'Networking'
@@ -139,7 +140,8 @@ describe('POST /api/cold-email', () => {
         company: 'Acme Corp',
         recipientName: 'Sarah',
         senderName: 'Alex',
-        purpose: 'Job Opportunity'
+        purpose: 'Job Opportunity',
+        background: 'I build systems.'
       });
 
     assert.equal(res.status, 200);
@@ -161,7 +163,8 @@ describe('POST /api/cold-email', () => {
         recipientName: 'Sarah',
         position: 'VP of Engineering',
         senderName: 'Alex',
-        purpose: 'Job Opportunity'
+        purpose: 'Job Opportunity',
+        background: 'I build systems.'
       });
 
     assert.equal(res.status, 200);
@@ -187,11 +190,26 @@ describe('POST /api/cold-email', () => {
       .post('/api/cold-email')
       .send({
         company: 'Stripe',
-        purpose: 'Networking'
+        purpose: 'Networking',
+        background: 'I build systems.'
       });
 
     assert.equal(res.status, 400);
     assert.ok(res.body.error);
     assert.ok(res.body.missingFields.some(f => f.includes('userName')));
+  });
+
+  it('fails with 400 when background is missing', async () => {
+    const res = await request(app)
+      .post('/api/cold-email')
+      .send({
+        company: 'Stripe',
+        senderName: 'Alex',
+        purpose: 'Networking'
+      });
+
+    assert.equal(res.status, 400);
+    assert.ok(res.body.error);
+    assert.ok(res.body.missingFields.some(f => f.includes('background')));
   });
 });

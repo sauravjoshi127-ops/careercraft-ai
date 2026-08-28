@@ -199,7 +199,7 @@
 
     syncStateFromForm();
 
-    // Validate required fields (ONLY Company and Sender Name required)
+    // Validate required fields: Company, Sender Name, Background
     if (!state.brief.company) {
       showToast('Please enter the recipient\'s Company name.', true);
       document.getElementById('ceCompany')?.focus();
@@ -208,6 +208,11 @@
     if (!state.brief.senderName) {
       showToast('Please enter Your Name.', true);
       document.getElementById('ceSenderName')?.focus();
+      return;
+    }
+    if (!state.brief.background) {
+      showToast('Please enter your short background/value proposition.', true);
+      document.getElementById('ceBackground')?.focus();
       return;
     }
 
