@@ -490,7 +490,7 @@ ${proofRule}
 8. NO HTML: No <br>, <p>, <div>, or any tag. paragraphs[] must be plain text strings.
 9. NO INVENTED FACTS: Do not invent company news, product names, funding events, team wins, mutual connections, or recipient interests.
 10. SIGNATURE: signOff is always "Best," (use "Warmly," for Curiosity variant only). senderName is exactly "${data.userName}".
-11. FIRST PERSON: Write from the sender's perspective (I, my). Never describe the sender in third-person.
+11. STRICT SEPARATION: Write in first person from the sender's perspective ("I", "my"). NEVER describe the sender in the third person. NEVER use the sender's name in the greeting. NEVER use the recipient's name in the signOff.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 VARIANT STRATEGIES:
@@ -885,19 +885,23 @@ module.exports = async function handler(req, res) {
   let minLength, maxLength;
 
   const norm = String(lengthType).toLowerCase();
-  if (norm.includes('short')) {
-    lengthType = 'Short';
+  if (norm.includes('very')) {
+    lengthType = 'Very Short';
     minLength = 40;
-    maxLength = 65;
+    maxLength = 60;
   } else if (norm.includes('detail') || norm.includes('long')) {
     lengthType = 'Detailed';
+    minLength = 120;
+    maxLength = 160;
+  } else if (norm.includes('standard')) {
+    lengthType = 'Standard';
     minLength = 90;
     maxLength = 120;
   } else {
-    // Standard (default) and anything else
-    lengthType = 'Standard';
-    minLength = 55;
-    maxLength = 85;
+    // Short (default)
+    lengthType = 'Short';
+    minLength = 60;
+    maxLength = 90;
   }
 
   // Allow explicit numeric overrides (advanced usage)

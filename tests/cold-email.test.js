@@ -212,4 +212,37 @@ describe('POST /api/cold-email', () => {
     assert.ok(res.body.error);
     assert.ok(res.body.missingFields.some(f => f.includes('background')));
   });
+
+  it('respects explicitly provided minLength and maxLength', async () => {
+    let capturedPrompt = '';
+    global.fetch = async (_, options) => {
+      if (options && options.body) {
+        try {
+          const body = JSON.parse(options.body);
+          capturedPrompt = body.contents[0].parts[0].text;
+        } catch (e) {}
+      }
+      return {
+        ok: false,
+        status: 503,
+        text: async () => 'Service Unavailable'
+      };
+    };
+
+    const res = await request(app)
+      .post('/api/cold-email')
+      .send({
+        company: 'Stripe',
+        senderName: 'Alex',
+        background: 'I build systems.',
+        purpose: 'Networking',
+        minLength: 15,
+        maxLength: 35
+      });
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.fallbackUsed, true);
+    // The explicit bounds should have been passed to the generator and included in the prompt
+    assert.match(capturedPrompt, /15–35 words/);
+  });
 });
