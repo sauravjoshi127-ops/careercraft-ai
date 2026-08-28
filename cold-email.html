@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Cold Email Workspace - CareerCraft</title>
-  <meta name="description" content="Build, polish and optimize personalized cold emails on CareerCraft." />
+  <title>Cold Email Generator - CareerCraft</title>
+  <meta name="description" content="Generate personalized, professional cold emails in seconds. AI-powered outreach for networking, job opportunities, mentorship, and more." />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="storage-manager.js" defer></script>
   <script src="auth-manager.js" defer></script>
@@ -21,212 +21,89 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
-    /* ── Goal grid cards ── */
-    .goal-grid {
+    /* ── Purpose grid ── */
+    .ce-purpose-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      gap: 7px;
       margin-top: 4px;
     }
-    .goal-card {
-      background: rgba(255, 255, 255, 0.02);
+    .ce-purpose-card {
+      background: rgba(255,255,255,0.025);
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 10px;
+      border-radius: var(--r-sm);
+      padding: 9px 10px;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.83rem;
       font-weight: 500;
       color: var(--text-2);
-      transition: all 0.2s;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
+      user-select: none;
     }
-    .goal-card:hover { border-color: var(--text-3); }
-    .goal-card.active {
+    .ce-purpose-card:hover { border-color: var(--border-hover); color: var(--text-1); }
+    .ce-purpose-card.active {
       background: rgba(99, 102, 241, 0.1);
       border-color: var(--accent);
       color: var(--accent);
     }
 
-    /* ── Subject pills ── */
-    .subject-pill {
-      display: inline-flex;
-      align-items: center;
-      padding: 5px 12px;
-      background: rgba(255, 255, 255, 0.02);
+    /* ── Tone pills ── */
+    .ce-tone-group {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .ce-tone-pill {
+      padding: 6px 14px;
+      background: rgba(255,255,255,0.025);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      font-size: 0.82rem;
-      font-family: inherit;
+      border-radius: var(--r-full);
+      font-size: 0.83rem;
+      font-weight: 500;
+      color: var(--text-2);
       cursor: pointer;
-      margin-right: 6px;
-      margin-bottom: 6px;
-      transition: all 0.18s;
-      color: var(--text-2);
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      user-select: none;
     }
-    .subject-pill:hover { border-color: var(--text-3); color: var(--text-1); }
-    .subject-pill.active {
+    .ce-tone-pill:hover { border-color: var(--border-hover); color: var(--text-1); }
+    .ce-tone-pill.active {
       background: rgba(99, 102, 241, 0.1);
       border-color: var(--accent);
       color: var(--accent);
     }
-    .subject-pill:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 2px;
-    }
 
-    /* ── Subject label row ── */
-    .subject-label-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .subject-label {
+    /* ── Brief section separator ── */
+    .ce-section-label {
       font-size: 0.7rem;
-      color: var(--text-3);
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      font-weight: 700;
+      letter-spacing: 0.07em;
+      color: var(--text-3);
+      margin: 0 0 10px 0;
     }
 
-    /* ── Variant cards — natural height, no artificial cap ── */
-    #variantsContainer {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .ce-variant-card {
-      background: rgba(255, 255, 255, 0.025);
+    .ce-brief-section {
+      background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--r-md);
       padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      margin-bottom: 10px;
       transition: border-color 0.15s;
     }
-    .ce-variant-card:hover { border-color: var(--border-hover); }
-    .ce-variant-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .ce-tone-badge {
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 10px;
-      flex-shrink: 0;
-    }
-    .ce-variant-subject {
-      font-size: 0.78rem;
-      color: var(--text-3);
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .ce-variant-approach {
-      font-size: 0.74rem;
-      color: var(--text-3);
-      font-style: italic;
-      line-height: 1.4;
-    }
-    .ce-variant-body {
-      font-size: 0.85rem;
-      color: var(--text-2);
-      white-space: pre-wrap;
-      line-height: 1.7;
-      /* Thin themed scrollbar on very long variants */
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255,255,255,0.1) transparent;
-    }
-    .ce-variant-body::-webkit-scrollbar { width: 4px; }
-    .ce-variant-body::-webkit-scrollbar-track { background: transparent; }
-    .ce-variant-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-    .ce-variant-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+    .ce-brief-section:hover { border-color: var(--border-hover); }
 
-    /* ── Follow-up cards ── */
-    #followUpsContainer {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .ce-followup-card {
-      background: rgba(255, 255, 255, 0.025);
-      border: 1px solid var(--border);
-      border-radius: var(--r-md);
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      transition: border-color 0.15s;
-    }
-    .ce-followup-card:hover { border-color: var(--border-hover); }
-    .ce-followup-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .ce-followup-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--text-1);
-    }
-    .ce-followup-timing {
-      font-size: 0.72rem;
-      color: var(--text-3);
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 2px 8px;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .ce-followup-subject {
-      font-size: 0.77rem;
-      color: var(--text-3);
-      font-style: italic;
-    }
-    .ce-followup-body {
-      font-size: 0.85rem;
-      color: var(--text-2);
-      white-space: pre-wrap;
-      line-height: 1.7;
-      outline: none;
-    }
-    .ce-followup-body[contenteditable="true"] {
-      border: 1px solid var(--border-focus);
-      border-radius: var(--r-sm);
-      padding: 8px;
-      background: rgba(99,102,241,0.04);
-    }
-    .ce-followup-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    /* ── Resume selection state chip ── */
+    /* ── Resume chip ── */
     .ce-resume-chip {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       padding: 5px 10px;
-      background: rgba(16, 185, 129, 0.08);
-      border: 1px solid rgba(16, 185, 129, 0.25);
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.25);
       border-radius: var(--r-sm);
       font-size: 0.8rem;
       color: #34d399;
@@ -245,50 +122,38 @@
     }
     .ce-resume-chip-change:hover { color: var(--text-1); }
 
-    /* ── AI diff view (before/after) ── */
-    .ce-diff-view {
-      display: none;
-      margin-top: 16px;
+    /* ── Subject pills ── */
+    .ce-subject-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 13px;
+      background: rgba(255,255,255,0.025);
       border: 1px solid var(--border);
-      border-radius: var(--r-md);
-      overflow: hidden;
+      border-radius: var(--r-full);
+      font-size: 0.82rem;
+      font-family: inherit;
+      cursor: pointer;
+      margin: 0 6px 6px 0;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      color: var(--text-2);
+      user-select: none;
     }
-    .ce-diff-section {
-      padding: 12px 14px;
+    .ce-subject-pill:hover { border-color: var(--border-hover); color: var(--text-1); }
+    .ce-subject-pill.active {
+      background: rgba(99,102,241,0.1);
+      border-color: var(--accent);
+      color: var(--accent);
     }
-    .ce-diff-section + .ce-diff-section {
-      border-top: 1px solid var(--border);
-    }
-    .ce-diff-label {
-      font-size: 0.68rem;
+    .ce-subject-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* ── Subject label row ── */
+    .ce-subject-header {
+      font-size: 0.7rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 6px;
-    }
-    .ce-diff-label.before { color: #fca5a5; }
-    .ce-diff-label.after { color: #86efac; }
-    .ce-diff-text {
-      font-size: 0.85rem;
-      color: var(--text-2);
-      white-space: pre-wrap;
-      line-height: 1.6;
-    }
-    .diff-del {
-      background: rgba(239, 68, 68, 0.1);
-      color: #fca5a5;
-      text-decoration: line-through;
-    }
-    .diff-ins {
-      background: rgba(16, 185, 129, 0.1);
-      color: #86efac;
-    }
-    .ce-diff-actions {
-      display: flex;
-      gap: 8px;
-      padding: 10px 14px;
-      border-top: 1px solid var(--border);
-      background: rgba(255,255,255,0.01);
+      letter-spacing: 0.06em;
+      color: var(--text-3);
+      margin-bottom: 8px;
     }
 
     /* ── Loading overlay for editor canvas ── */
@@ -296,7 +161,7 @@
       display: none;
       position: absolute;
       inset: 0;
-      background: rgba(13, 15, 24, 0.88);
+      background: rgba(13,15,24,0.88);
       border-radius: inherit;
       z-index: 20;
       flex-direction: column;
@@ -308,7 +173,7 @@
     .ce-gen-spinner {
       width: 36px;
       height: 36px;
-      border: 3px solid rgba(99, 102, 241, 0.15);
+      border: 3px solid rgba(99,102,241,0.15);
       border-top-color: var(--accent);
       border-radius: 50%;
       animation: ceSpinAnim 0.8s linear infinite;
@@ -320,66 +185,22 @@
       color: var(--text-1);
       letter-spacing: -0.01em;
     }
-
-    /* ── Copilot strengths list ── */
-    .ce-strength-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .ce-strength-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      font-size: 0.85rem;
-      color: var(--text-2);
-    }
-    .ce-strength-icon {
-      color: var(--success);
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-    .ce-weakness-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      font-size: 0.85rem;
-      color: var(--text-2);
-      margin-bottom: 8px;
-    }
-    .ce-weakness-icon {
-      color: var(--warning);
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-
-
-    /* ── Spin animation (shared) ── */
     .spin { animation: ceSpinAnim 0.8s linear infinite; }
 
-    /* ── Metrics bar — 3 columns only ── */
-    .cl-live-metrics-bar { grid-template-columns: repeat(3, 1fr) !important; }
-
-    /* ── Email Canvas Override ──────────────────────────────────────────────
-       The shared .cl-editor-paper is styled as an A4 document (Georgia font,
-       48px padding, min-height 560px). For cold emails we want a compact,
-       email-like canvas. We scope overrides to the cold-email context.
-    ─────────────────────────────────────────────────────────────────────── */
-    #editorSheet.cl-editor-paper {
+    /* ── Email canvas overrides (compact, not A4) ── */
+    #ceEditorSheet.cl-editor-paper {
       font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
       font-size: 0.94rem !important;
-      line-height: 1.68 !important;
+      line-height: 1.7 !important;
       padding: 28px 32px !important;
       min-height: auto !important;
-      /* Shadow stays, gives the "floating card" feel */
     }
-    #editorSheet.cl-editor-paper * {
+    #ceEditorSheet.cl-editor-paper * {
       font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
       font-size: inherit !important;
     }
 
-    /* ── Semantic email structure elements ────────────────────────────────── */
+    /* ── Semantic email elements inside the editor ── */
     .ce-email-greeting {
       font-weight: 500;
       color: #111 !important;
@@ -392,13 +213,8 @@
       padding: 0;
       line-height: 1.7;
     }
-    .ce-email-paragraph:last-of-type {
-      margin-bottom: 14px;
-    }
-    .ce-email-cta {
-      /* CTA gets subtle visual separation via color — still plain prose */
-      color: #1a1a1a !important;
-    }
+    .ce-email-paragraph:last-of-type { margin-bottom: 14px; }
+    .ce-email-cta { color: #1a1a1a !important; }
     .ce-email-signature {
       color: #111 !important;
       margin-top: 20px;
@@ -406,72 +222,79 @@
       display: block;
     }
 
-    /* ── Variant card email preview ────────────────────────────────────────── */
-    .ce-variant-email-preview {
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 0.84rem;
-      line-height: 1.65;
-      color: var(--text-2);
-      margin: 10px 0 12px;
-      padding: 12px 14px;
+    /* ── AI actions bar ── */
+    .ce-actions-bar {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      background: rgba(255,255,255,0.012);
+      border-radius: 0 0 var(--r-lg) var(--r-lg);
+    }
+    .ce-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
       background: rgba(255,255,255,0.04);
-      border-radius: 8px;
       border: 1px solid var(--border);
-    }
-    .ce-variant-greeting {
-      font-weight: 500;
-      color: var(--text-1);
-      margin-bottom: 8px;
-    }
-    .ce-variant-para {
-      margin: 0 0 8px 0;
-      padding: 0;
+      border-radius: var(--r-sm);
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-family: inherit;
       color: var(--text-2);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      white-space: nowrap;
     }
-    .ce-variant-cta {
+    .ce-action-btn:hover {
+      background: rgba(99,102,241,0.1);
+      border-color: rgba(99,102,241,0.3);
       color: var(--text-1);
-      font-style: italic;
     }
-    .ce-variant-sig {
-      margin-top: 10px;
-      color: var(--text-3);
-      font-size: 0.82rem;
-      line-height: 1.4;
+    .ce-action-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .ce-action-btn.ce-action-copy {
+      margin-left: auto;
+      color: var(--accent);
+      border-color: rgba(99,102,241,0.3);
+    }
+    .ce-action-btn.ce-action-copy:hover {
+      background: rgba(99,102,241,0.12);
+      color: var(--accent);
     }
 
-    /* ── Follow-up structured display ────────────────────────────────────── */
-    .ce-fu-greeting {
-      font-weight: 500;
-      color: var(--text-1);
-      margin-bottom: 8px;
-    }
-    .ce-fu-para {
-      margin: 0 0 8px 0;
-      padding: 0;
-      color: var(--text-2);
-      font-size: 0.86rem;
-      line-height: 1.65;
-    }
-    .ce-fu-sig {
-      margin-top: 10px;
+    /* ── Word count metric ── */
+    .ce-word-count {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
       color: var(--text-3);
-      font-size: 0.82rem;
-      line-height: 1.4;
+      padding: 6px 16px 0;
+    }
+    .ce-word-count-num {
+      font-weight: 700;
+      color: var(--text-2);
     }
 
-    /* Follow-up body editing mode */
-    .ce-followup-body--editing {
-      background: rgba(255,255,255,0.04) !important;
-      border: 1px solid var(--accent) !important;
-      border-radius: 6px;
-      padding: 10px 12px !important;
-      white-space: pre-wrap;
-      color: var(--text-1) !important;
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 0.86rem;
-      line-height: 1.65;
-      outline: none;
+    /* ── Metrics bar override — 3 col only ── */
+    .cl-live-metrics-bar { grid-template-columns: repeat(3, 1fr) !important; }
+
+    /* ── Autosave indicator ── */
+    .ce-autosave {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.74rem;
+      color: var(--text-3);
+      opacity: 0;
+      transition: opacity 0.3s;
     }
+    .ce-autosave.visible { opacity: 1; }
   </style>
 
 </head>
@@ -487,375 +310,193 @@
     <!-- Page Header -->
     <div class="cl-page-header">
       <div>
-        <h1 class="cl-page-title heading-gradient">Cold Email Workspace</h1>
-        <p class="cl-page-subtitle">Create concise, personalized outreach that gets noticed and encourages a response.</p>
+        <h1 class="cl-page-title heading-gradient">Cold Email Generator</h1>
+        <p class="cl-page-subtitle">Fill in the brief, click Generate — get a professional email ready to send.</p>
       </div>
     </div>
 
     <!-- Two-column workspace -->
     <div class="cl-workspace">
 
-      <!-- LEFT PANEL: Guided Progressive Workflow -->
-      <aside class="cl-left-panel" aria-label="Cold email workflow">
-        <div class="cl-panel-header">
-          <h2 class="cl-panel-title">Email Brief</h2>
-          <span id="stepProgressLabel" class="cl-step-progress-label">STEP 1 OF 4</span>
-        </div>
-        <p class="cl-panel-subtitle">Complete the steps below to craft your message.</p>
+      <!-- LEFT PANEL: Brief -->
+      <aside class="cl-left-panel" aria-label="Email brief">
 
-        <!-- Step 1: Recipient -->
-        <div class="cl-step-accordion active" id="step-recipient">
-          <div class="cl-step-header" role="button" tabindex="0" aria-expanded="true" onclick="toggleStepAccordion('recipient')">
-            <div class="cl-step-title-group">
-              <div class="cl-step-num" aria-hidden="true">1</div>
-              <div class="cl-step-title">Recipient</div>
-            </div>
-            <span class="cl-step-badge" aria-hidden="true">Required *</span>
+        <!-- Hidden file input for resume import -->
+        <input type="file" id="ceResumeFileInput" style="display:none;" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+
+        <!-- Recipient -->
+        <div class="ce-brief-section">
+          <div class="ce-section-label">Recipient</div>
+          <div class="input-wrapper">
+            <label for="ceRecipientName">Name <span class="cl-optional-label">(optional)</span></label>
+            <input id="ceRecipientName" placeholder="e.g. Sarah" autocomplete="off" />
           </div>
-          <div class="cl-step-body">
-            <div class="input-wrapper">
-              <label for="recipientName">Name <span class="cl-optional-label">(optional)</span></label>
-              <input id="recipientName" placeholder="e.g. Adam" />
-            </div>
-            <div class="input-wrapper">
-              <label for="position">Role / Title *</label>
-              <input id="position" placeholder="e.g. VP of Engineering" required />
-            </div>
-            <div class="input-wrapper">
-              <label for="relationship">How do you know them? <span class="cl-optional-label">(optional)</span></label>
-              <input id="relationship" placeholder="e.g. We met at TechCrunch Disrupt" />
-            </div>
-            <div class="cl-step-actions cl-step-actions--end">
-              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('company')">Next: Company &amp; Context →</button>
-            </div>
+          <div class="input-wrapper">
+            <label for="cePosition">Role / Title <span class="cl-optional-label">(optional)</span></label>
+            <input id="cePosition" placeholder="e.g. VP of Engineering" autocomplete="off" />
+          </div>
+          <div class="input-wrapper" style="margin-bottom:0;">
+            <label for="ceCompany">Company *</label>
+            <input id="ceCompany" placeholder="e.g. Stripe" autocomplete="off" required />
           </div>
         </div>
 
-        <!-- Step 2: Company -->
-        <div class="cl-step-accordion" id="step-company">
-          <div class="cl-step-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleStepAccordion('company')">
-            <div class="cl-step-title-group">
-              <div class="cl-step-num" aria-hidden="true">2</div>
-              <div class="cl-step-title">Company &amp; Context</div>
-            </div>
-            <span class="cl-step-badge" aria-hidden="true">Target</span>
+        <!-- Context -->
+        <div class="ce-brief-section">
+          <div class="ce-section-label">Context</div>
+          <div class="input-wrapper">
+            <label for="ceContext">Why are you contacting them? <span class="cl-optional-label">(optional)</span></label>
+            <textarea id="ceContext" placeholder="e.g. I noticed their recent series B and expansion into fintech…" style="min-height:72px; resize:vertical;"></textarea>
           </div>
-          <div class="cl-step-body">
-            <div class="input-wrapper">
-              <label for="companyName">Company Name *</label>
-              <input id="companyName" placeholder="e.g. Acme Corp" required />
-            </div>
-            <div class="input-wrapper">
-              <label for="companyContext">What caught your attention? <span class="cl-optional-label">(optional)</span></label>
-              <textarea id="companyContext" placeholder="e.g. Your recent expansion into legal technology…" style="min-height:80px; resize:vertical;"></textarea>
-            </div>
-            <div class="cl-step-actions cl-step-actions--between">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('recipient')">← Back</button>
-              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('value')">Next: Your Value →</button>
-            </div>
+          <div class="input-wrapper" style="margin-bottom:0;">
+            <label for="ceRecipientDetail">Any relevant recipient detail <span class="cl-optional-label">(optional)</span></label>
+            <input id="ceRecipientDetail" placeholder="e.g. We met briefly at PyCon 2024" autocomplete="off" />
           </div>
         </div>
 
-        <!-- Step 3: Your Value (Resume Integration) -->
-        <div class="cl-step-accordion" id="step-value">
-          <div class="cl-step-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleStepAccordion('value')">
-            <div class="cl-step-title-group">
-              <div class="cl-step-num" aria-hidden="true">3</div>
-              <div class="cl-step-title">Your Value</div>
-            </div>
-            <span class="cl-step-badge" aria-hidden="true">Smart Import</span>
+        <!-- About You -->
+        <div class="ce-brief-section">
+          <div class="ce-section-label">About You</div>
+
+          <!-- Resume import controls — populated by JS -->
+          <div id="ceResumeImportContainer" style="margin-bottom:14px;"></div>
+
+          <div class="input-wrapper">
+            <label for="ceSenderName">Your Name *</label>
+            <input id="ceSenderName" placeholder="e.g. Alex Johnson" autocomplete="off" required />
           </div>
-          <div class="cl-step-body">
-
-            <!-- Hidden file input for PDF/DOCX upload -->
-            <input type="file" id="resumeFileInput" style="display:none;" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
-
-            <!-- Resume import controls — dynamically populated by JS -->
-            <div id="resumeImportActionContainer" style="margin-bottom: 16px;"></div>
-
-            <div class="input-wrapper">
-              <label for="userName">Your Name *</label>
-              <input id="userName" placeholder="e.g. Alex Johnson" required />
-            </div>
-
-            <div class="input-wrapper">
-              <label for="background">Value Proposition *</label>
-              <textarea id="background" placeholder="e.g. I have 3 years of experience in React and recently built a real-time analytics dashboard that reduced load times by 60%…" style="min-height:100px; resize:vertical;" required></textarea>
-              <div class="input-helper">Keep it concise. Highlight your strongest, most relevant angle.</div>
-            </div>
-
-            <div class="cl-step-actions cl-step-actions--between">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('company')">← Back</button>
-              <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('goal')">Next: Goal &amp; Tone →</button>
-            </div>
+          <div class="input-wrapper" style="margin-bottom:0;">
+            <label for="ceBackground">Short background / value proposition *</label>
+            <textarea id="ceBackground" placeholder="e.g. I recently shipped a fraud-detection layer that cut false positives by 40% at a Series B fintech." style="min-height:90px; resize:vertical;" required></textarea>
+            <div class="input-helper">Keep it to 1–2 sentences. Highlight your strongest relevant point.</div>
           </div>
         </div>
 
-        <!-- Step 4: Goal & Tone -->
-        <div class="cl-step-accordion" id="step-goal">
-          <div class="cl-step-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleStepAccordion('goal')">
-            <div class="cl-step-title-group">
-              <div class="cl-step-num" aria-hidden="true">4</div>
-              <div class="cl-step-title">Goal &amp; Tone</div>
+        <!-- Purpose -->
+        <div class="ce-brief-section">
+          <div class="ce-section-label">Purpose</div>
+          <div class="ce-purpose-grid" id="cePurposeGrid">
+            <div class="ce-purpose-card active" data-value="Networking">
+              <i data-lucide="users" width="15" height="15"></i> Networking
             </div>
-            <span class="cl-step-badge" aria-hidden="true">Strategy</span>
-          </div>
-          <div class="cl-step-body">
-
-            <div class="input-wrapper">
-              <label>Goal *</label>
-              <div class="goal-grid" id="goalGrid">
-                <div class="goal-card active" data-value="Networking"><i data-lucide="users" width="16"></i> Networking</div>
-                <div class="goal-card" data-value="Job Opportunity"><i data-lucide="briefcase" width="16"></i> Job Opportunity</div>
-                <div class="goal-card" data-value="Referral"><i data-lucide="link" width="16"></i> Referral</div>
-                <div class="goal-card" data-value="Internship"><i data-lucide="graduation-cap" width="16"></i> Internship</div>
-                <div class="goal-card" data-value="Mentorship"><i data-lucide="compass" width="16"></i> Mentorship</div>
-                <div class="goal-card" data-value="Partnership"><i data-lucide="handshake" width="16"></i> Partnership</div>
-                <div class="goal-card" data-value="Info Request"><i data-lucide="info" width="16"></i> Info Request</div>
-                <div class="goal-card" data-value="Introduction"><i data-lucide="user-plus" width="16"></i> Introduction</div>
-              </div>
-              <input type="hidden" id="emailGoal" value="Networking" required />
+            <div class="ce-purpose-card" data-value="Job Opportunity">
+              <i data-lucide="briefcase" width="15" height="15"></i> Job Opportunity
             </div>
-
-            <div class="form-row" style="margin-top: 16px;">
-              <div class="input-wrapper">
-                <label for="tone">Tone</label>
-                <select id="tone">
-                  <option selected>Professional</option>
-                  <option>Warm</option>
-                  <option>Confident</option>
-                  <option>Conversational</option>
-                  <option>Direct</option>
-                </select>
-              </div>
-              <div class="input-wrapper">
-                <label for="length">Length</label>
-                <select id="length">
-                  <option>Short</option>
-                  <option selected>Standard</option>
-                  <option>Detailed</option>
-                </select>
-              </div>
+            <div class="ce-purpose-card" data-value="Internship">
+              <i data-lucide="graduation-cap" width="15" height="15"></i> Internship
             </div>
-
-            <div class="input-wrapper">
-              <label for="ctaStyle">Call to Action</label>
-              <select id="ctaStyle">
-                <option selected>Soft Ask</option>
-                <option>Meeting Request</option>
-                <option>Referral Ask</option>
-                <option>Advice Request</option>
-                <option>Direct Ask</option>
-              </select>
+            <div class="ce-purpose-card" data-value="Referral">
+              <i data-lucide="link" width="15" height="15"></i> Referral
             </div>
-
-            <div class="cl-step-actions cl-step-actions--between" style="margin-top:16px;">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('value')">← Back</button>
+            <div class="ce-purpose-card" data-value="Mentorship">
+              <i data-lucide="compass" width="15" height="15"></i> Mentorship
+            </div>
+            <div class="ce-purpose-card" data-value="Partnership">
+              <i data-lucide="handshake" width="15" height="15"></i> Partnership
+            </div>
+            <div class="ce-purpose-card" data-value="Info Request">
+              <i data-lucide="info" width="15" height="15"></i> Info Request
             </div>
           </div>
+          <input type="hidden" id="cePurpose" value="Networking" />
         </div>
 
-        <!-- Sticky Workflow Footer -->
+        <!-- Tone -->
+        <div class="ce-brief-section" style="margin-bottom:0;">
+          <div class="ce-section-label">Tone</div>
+          <div class="ce-tone-group" id="ceToneGroup">
+            <div class="ce-tone-pill active" data-value="Professional">Professional</div>
+            <div class="ce-tone-pill" data-value="Friendly">Friendly</div>
+            <div class="ce-tone-pill" data-value="Direct">Direct</div>
+          </div>
+          <input type="hidden" id="ceTone" value="Professional" />
+        </div>
+
+        <!-- Generate Button -->
         <div class="cl-workflow-footer">
-          <button id="generateBtn" class="btn btn-primary btn-lg cl-generate-primary-btn">
+          <button id="ceGenerateBtn" class="btn btn-primary btn-lg cl-generate-primary-btn">
             Generate Email <i data-lucide="sparkles" width="16"></i>
           </button>
         </div>
 
       </aside>
 
-      <!-- RIGHT PANEL: Editor & AI Suite -->
-      <section class="cl-right-panel" aria-label="Cold email workspace" style="display: flex; flex-direction: column; gap: 24px;">
+      <!-- RIGHT PANEL: Email output -->
+      <section class="cl-right-panel" aria-label="Email output" style="display:flex; flex-direction:column; gap:0;">
 
-        <!-- EDITOR SECTION -->
-        <div class="cl-editor-container">
-          <!-- Minimal toolbar: undo/redo, bold, italic, underline, clear -->
-          <div class="cl-editor-toolbar-sticky" id="editorToolbar">
-            <div class="cl-toolbar-group">
-              <button type="button" class="cl-toolbar-btn" data-command="undo" title="Undo (Ctrl+Z)" aria-label="Undo">
-                <svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
-              </button>
-              <button type="button" class="cl-toolbar-btn" data-command="redo" title="Redo (Ctrl+Y)" aria-label="Redo">
-                <svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
-              </button>
-            </div>
+        <div class="cl-editor-container" style="padding:0; gap:0; overflow:hidden;">
 
-            <div class="cl-toolbar-divider"></div>
+          <!-- Editor canvas -->
+          <div class="cl-editor-canvas" id="ceEditorCanvas">
 
-            <div class="cl-toolbar-group">
-              <button type="button" class="cl-toolbar-btn" data-command="bold" title="Bold (Ctrl+B)" aria-label="Bold">
-                <svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M14 12a4 4 0 0 0 0-8H6v8"/><path d="M15 20a4 4 0 0 0 0-8H6v8Z"/></svg>
-              </button>
-              <button type="button" class="cl-toolbar-btn" data-command="italic" title="Italic (Ctrl+I)" aria-label="Italic">
-                <svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
-              </button>
-              <button type="button" class="cl-toolbar-btn" data-command="underline" title="Underline (Ctrl+U)" aria-label="Underline">
-                <svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg>
-              </button>
-            </div>
-
-            <div class="cl-toolbar-divider"></div>
-
-            <div class="cl-toolbar-group">
-              <button type="button" class="cl-toolbar-btn" data-command="removeFormat" title="Clear Formatting" aria-label="Clear Formatting">
-                <svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M4 7V4h16v3"/><path d="M5 20h6"/><path d="M13 4 8 20"/><path d="m15 15 5 5"/><path d="m20 15-5 5"/></svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- Editor Canvas — state toggled via cl-has-draft / cl-generating CSS classes -->
-          <div class="cl-editor-canvas" id="editorCanvas">
-
-            <!-- Generation loading overlay -->
-            <div class="ce-gen-overlay" id="editorGenOverlay" aria-live="polite" aria-label="Generating email">
+            <!-- Generation overlay -->
+            <div class="ce-gen-overlay" id="ceGenOverlay" aria-live="polite" aria-label="Generating email">
               <div class="ce-gen-spinner"></div>
-              <div class="ce-gen-text" id="editorGenText">Generating your email…</div>
+              <div class="ce-gen-text">Crafting your email…</div>
             </div>
 
-            <!-- Empty State -->
-            <div class="cl-empty-state" id="editorEmptyState">
+            <!-- Empty state -->
+            <div class="cl-empty-state" id="ceEmptyState">
               <div class="cl-empty-icon"><i data-lucide="mail-open" width="40" height="40"></i></div>
-              <div class="cl-empty-title">Email Workspace</div>
-              <div class="cl-empty-desc">Your personalized email will appear here.<br>Complete the brief on the left to get started.</div>
-              <div class="cl-empty-actions">
-                <button type="button" class="btn btn-primary btn-sm" onclick="toggleStepAccordion('recipient')">Fill Brief</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleStepAccordion('value')">Add Your Background</button>
-              </div>
+              <div class="cl-empty-title">Your email will appear here</div>
+              <div class="cl-empty-desc">Fill in the brief on the left and click <strong>Generate Email</strong> to get started.</div>
             </div>
 
-            <!-- Document Frame — shown when cl-has-draft is set on editorCanvas -->
-            <div class="cl-document-frame" id="editorDocumentFrame">
+            <!-- Document frame — shown once email is generated -->
+            <div class="cl-document-frame" id="ceDocumentFrame">
 
-              <!-- Subject line pills -->
-              <div style="padding: 20px 48px 0;">
-                <div class="subject-label-row">
-                  <span class="subject-label">Subject Lines</span>
-                </div>
-                <div id="subjectContainer"></div>
+              <!-- Subject pills -->
+              <div style="padding: 20px 20px 0;">
+                <div class="ce-subject-header">Subject Lines</div>
+                <div id="ceSubjectContainer"></div>
               </div>
 
               <!-- White paper editor -->
               <div class="cl-editor-paper"
-                id="editorSheet"
+                id="ceEditorSheet"
                 contenteditable="true"
                 spellcheck="true"
                 role="textbox"
                 aria-multiline="true"
                 aria-label="Email editor"
                 data-placeholder="Your generated email will appear here."
-                style="margin: 16px 0 0;"></div>
-            </div>
+                style="margin: 16px 20px 20px; flex:1;">
+              </div>
 
+            </div>
           </div>
+
+          <!-- AI action bar — visible only when email exists -->
+          <div class="ce-actions-bar" id="ceActionsBar" style="display:none;" role="toolbar" aria-label="Email actions">
+            <button type="button" class="ce-action-btn" id="ceActionRegenerate" aria-label="Regenerate email">
+              <i data-lucide="refresh-cw" width="14"></i> Regenerate
+            </button>
+            <button type="button" class="ce-action-btn" id="ceActionShorten" aria-label="Shorten email">
+              <i data-lucide="minimize-2" width="14"></i> Shorten
+            </button>
+            <button type="button" class="ce-action-btn" id="ceActionMoreDirect" aria-label="Make more direct">
+              <i data-lucide="zap" width="14"></i> More Direct
+            </button>
+            <button type="button" class="ce-action-btn" id="ceActionWarmer" aria-label="Make warmer tone">
+              <i data-lucide="sun" width="14"></i> Warmer
+            </button>
+            <button type="button" class="ce-action-btn ce-action-copy" id="ceActionCopy" aria-label="Copy email">
+              <i data-lucide="copy" width="14"></i> Copy
+            </button>
+          </div>
+
         </div>
 
-        <!-- Live Metrics Bar -->
-        <div class="cl-live-metrics-bar">
-          <div class="cl-metric-item">
-            <span class="cl-metric-num" id="wordCount">0</span>
-            <span class="cl-metric-lbl">Words</span>
-          </div>
-          <div class="cl-metric-item">
-            <span class="cl-metric-num" id="charCount">0</span>
-            <span class="cl-metric-lbl">Characters</span>
-          </div>
-          <div class="cl-metric-item">
-            <span class="cl-metric-num" id="readTime">0m</span>
-            <span class="cl-metric-lbl">Read Time</span>
-          </div>
-        </div>
-
-        <!-- Primary Action Bar -->
-        <div class="cl-action-bar">
-          <div class="cl-action-bar-left">
-            <button id="saveDraftBtn" class="btn btn-primary btn-sm">Save Draft</button>
-            <button id="copyBtn" class="btn btn-secondary btn-sm">Copy Email</button>
-          </div>
-          <div class="autosave-status" id="autosaveLabel" aria-live="polite" aria-atomic="true" style="opacity:0;">
-            <span aria-hidden="true"><i data-lucide="check-circle" width="14"></i></span>
-            <span id="autosaveLabelText">Saved</span>
-          </div>
-        </div>
-
-        <!-- AI Copilot Section -->
-        <div class="cl-copilot-section" id="pane-copilotPane" aria-label="AI Copilot">
-
-          <!-- Empty state -->
-          <div id="copilotEmptyState" class="cl-copilot-empty">
-            <div class="cl-copilot-empty-icon"><i data-lucide="sparkles" width="32" height="32"></i></div>
-            <div class="cl-copilot-empty-title">AI Copilot</div>
-            <div class="cl-copilot-empty-desc">Generate an email to activate quality analysis and AI-powered improvement actions.</div>
-          </div>
-
-          <!-- Populated state -->
-          <div id="copilotContent" style="display:none;">
-
-            <!-- Score header -->
-            <div class="cl-copilot-score-header" id="copilotScoreHeader">
-              <div class="cl-copilot-overall">
-                <span class="cl-copilot-overall-num" id="copilotOverallScore"></span>
-                <span class="cl-copilot-overall-label" id="copilotOverallLabel">Strong</span>
-              </div>
-              <div class="cl-copilot-header-info">
-                <h3>AI Copilot</h3>
-                <p>Quality analysis and targeted improvement actions for your email.</p>
-              </div>
-            </div>
-
-            <!-- Why this works — dynamic from evaluation -->
-            <div class="cl-action-cards-title" style="margin-top:16px;">What's Working</div>
-            <div class="ce-strength-list" id="copilotStrengths"></div>
-
-            <!-- Quick Actions -->
-            <div class="cl-action-cards-title">Quick Actions</div>
-            <div class="cl-action-cards">
-              <button type="button" class="cl-action-card" id="actionImprove" onclick="triggerAiAction('improve')" aria-label="Improve opening">
-                <i data-lucide="zap" width="16" class="cl-action-icon"></i> Improve
-              </button>
-              <button type="button" class="cl-action-card" id="actionShorten" onclick="triggerAiAction('shorten')" aria-label="Shorten email">
-                <i data-lucide="shrink" width="16" class="cl-action-icon"></i> Shorten
-              </button>
-              <button type="button" class="cl-action-card" id="actionChangeAngle" onclick="triggerAiAction('changeAngle')" aria-label="Change angle">
-                <i data-lucide="refresh-cw" width="16" class="cl-action-icon"></i> Change Angle
-              </button>
-              <button type="button" class="cl-action-card" id="actionRegenerate" onclick="triggerAiAction('regenerate')" aria-label="Regenerate email">
-                <i data-lucide="sparkles" width="16" class="cl-action-icon"></i> Regenerate
-              </button>
-            </div>
-
-            <!-- Before/After diff view -->
-            <div class="ce-diff-view" id="aiDiffView">
-              <div class="ce-diff-section">
-                <div class="ce-diff-label before">Before</div>
-                <div class="ce-diff-text" id="diffOrig"></div>
-              </div>
-              <div class="ce-diff-section">
-                <div class="ce-diff-label after">After</div>
-                <div class="ce-diff-text" id="diffSug"></div>
-              </div>
-              <div class="ce-diff-actions">
-                <button class="btn btn-secondary btn-sm" onclick="rejectAiAction()">Discard</button>
-                <button class="btn btn-primary btn-sm" onclick="applyAiAction()">Apply</button>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- Variants & Follow-Ups Section -->
-        <div class="cl-section-card" id="pane-variantsPane" aria-label="Variants and follow-ups">
-          <h3 class="cl-tab-pane-title">Variants &amp; Follow-Ups</h3>
-          <p class="cl-tab-pane-subtitle" style="margin-bottom:16px;">Alternative tone strategies and a recommended follow-up sequence.</p>
-
-          <div id="variantsEmptyState" class="cl-empty-hint">Generate an email to see tone variants and follow-up messages.</div>
-
-          <div id="variantsContent" style="display:none;">
-            <h4 style="font-size:0.85rem; font-weight:700; margin-bottom:12px; margin-top:4px; color:var(--text-1);">Alternative Variants</h4>
-            <div id="variantsContainer"></div>
-
-            <h4 style="font-size:0.85rem; font-weight:700; margin-bottom:12px; margin-top:24px; color:var(--text-1);">Follow-up Sequence</h4>
-            <div id="followUpsContainer"></div>
-          </div>
+        <!-- Word / char count -->
+        <div class="ce-word-count" id="ceWordCountBar" style="display:none;">
+          <span class="ce-word-count-num" id="ceWordCount">0</span>
+          <span>words</span>
+          <span style="margin:0 4px;">·</span>
+          <span class="ce-word-count-num" id="ceCharCount">0</span>
+          <span>chars</span>
+          <span style="margin-left:auto;" class="ce-autosave" id="ceAutosave">
+            <i data-lucide="check-circle" width="12"></i> Saved
+          </span>
         </div>
 
       </section>
