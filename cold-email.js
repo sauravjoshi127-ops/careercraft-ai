@@ -32,7 +32,8 @@
       senderName: '',
       background: '',
       purpose: 'Networking',
-      tone: 'Professional'
+      tone: 'Professional',
+      length: 'Short'
     },
     // Generated email data
     email: {
@@ -41,6 +42,7 @@
       bodyHtml: '',      // semantic HTML shown in editor
       variant: null      // raw variant object from API (for plain-text copy)
     },
+    variants: [],        // Alternative versions
     // Generation control
     generating: false,
     actionBusy: false,
@@ -64,6 +66,7 @@
       currentUser = session.user;
 
       setupPurposeGrid();
+      setupLengthPills();
       setupTonePills();
       setupActionBar();
       await loadResumeControls();
@@ -98,7 +101,19 @@
     });
   }
 
-  // ── Tone pills ─────────────────────────────────────────────────────────
+  // ── Tone & Length pills ────────────────────────────────────────────────
+  function setupLengthPills() {
+    const pills = document.querySelectorAll('#ceLengthGroup .ce-tone-pill');
+    const hiddenInput = document.getElementById('ceLength');
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        pills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        if (hiddenInput) hiddenInput.value = pill.dataset.value;
+        state.brief.length = pill.dataset.value;
+      });
+    });
+  }
   function setupTonePills() {
     const pills = document.querySelectorAll('.ce-tone-pill');
     const hiddenInput = document.getElementById('ceTone');
@@ -163,6 +178,7 @@
     state.brief.background = get('ceBackground');
     state.brief.purpose    = get('cePurpose') || state.brief.purpose;
     state.brief.tone       = get('ceTone') || state.brief.tone;
+    state.brief.length     = get('ceLength') || state.brief.length;
   }
 
   // ── State → DOM sync (for draft restore) ──────────────────────────────
@@ -185,11 +201,18 @@
     set('cePurpose', state.brief.purpose);
 
     // Restore tone pills
-    document.querySelectorAll('.ce-tone-pill').forEach(pill => {
+    document.querySelectorAll('#ceToneGroup .ce-tone-pill').forEach(pill => {
       const isActive = pill.dataset.value === state.brief.tone;
       pill.classList.toggle('active', isActive);
     });
     set('ceTone', state.brief.tone);
+
+    // Restore length pills
+    document.querySelectorAll('#ceLengthGroup .ce-tone-pill').forEach(pill => {
+      const isActive = pill.dataset.value === state.brief.length;
+      pill.classList.toggle('active', isActive);
+    });
+    set('ceLength', state.brief.length);
   }
 
   // ── Generation ─────────────────────────────────────────────────────────
@@ -244,10 +267,22 @@
       },
       personalization: {
         tone:     state.brief.tone || 'Professional',
-        length:   'Standard',
+        lengthType: state.brief.length || 'Short',
         ctaStyle: 'Soft Ask'
       }
     };
+    
+    // Convert string length into min/max bounds for the prompt.
+    // Ensure we send bounds so the AI respects them tightly.
+    const lengthMap = {
+      'Very Short': { min: 40, max: 60 },
+      'Short':      { min: 60, max: 90 },
+      'Standard':   { min: 90, max: 120 },
+      'Detailed':   { min: 120, max: 160 }
+    };
+    const range = lengthMap[payload.personalization.lengthType] || lengthMap['Short'];
+    payload.minLength = range.min;
+    payload.maxLength = range.max;
 
     try {
       const session = await window.appSdk.auth.getSession();
@@ -309,6 +344,8 @@
       state.email.subjects = allSubjects;
       state.email.subject  = allSubjects[0]?.text || primary.subject;
       state.email.bodyHtml = variantToHtml(primary);
+
+      state.variants = variants.slice(1, 4).map(v => normalizeVariant(v, state.brief.senderName)).filter(Boolean);
 
       saveDraft();
       renderEmail();
@@ -465,6 +502,7 @@
 
     renderSubjectPills();
     renderEditorContent();
+    renderVariants();
     updateWordCount();
 
     if (window.lucide) window.lucide.createIcons();
@@ -489,6 +527,71 @@
       });
       container.appendChild(btn);
     });
+  }
+
+  function renderVariants() {
+    const container = document.getElementById('ceVariantsContainer');
+    const list = document.getElementById('ceVariantsList');
+    if (!container || !list) return;
+
+    if (!state.variants || state.variants.length === 0) {
+      container.style.display = 'none';
+      return;
+    }
+
+    list.innerHTML = '';
+    state.variants.forEach((variant, index) => {
+      const typeLabel = variant.tone === 'Question' ? 'Warm' : 
+                        variant.tone === 'Direct' ? 'Executive' : 
+                        variant.tone === 'Curiosity' ? 'Direct' : 
+                        variant.tone || 'Variant';
+      
+      const plainBody = htmlToPlainText(variantToHtml(variant));
+      const wordCount = plainBody.split(/\s+/).filter(Boolean).length;
+      
+      const card = document.createElement('div');
+      card.className = 'ce-variant-card';
+      card.innerHTML = `
+        <div class="ce-variant-meta">
+          <span class="ce-variant-type">${typeLabel}</span>
+          <span class="ce-variant-word-count">${wordCount} words</span>
+        </div>
+        <div class="ce-variant-subject">Subject: ${variant.subject}</div>
+        <div class="ce-variant-body-preview">${escapeHtml(plainBody)}</div>
+        <div class="ce-variant-actions">
+          <button type="button" class="ce-variant-btn ce-variant-btn-primary" data-index="${index}">Use this version</button>
+          <button type="button" class="ce-variant-btn ce-variant-btn-secondary" data-index="${index}">Copy</button>
+        </div>
+      `;
+
+      // Use version
+      card.querySelector('.ce-variant-btn-primary').addEventListener('click', () => {
+        state.email.variant = variant;
+        state.email.subject = variant.subject;
+        state.email.bodyHtml = variantToHtml(variant);
+        renderSubjectPills();
+        renderEditorContent();
+        updateWordCount();
+        saveDraft();
+        showToast('Switched to alternative version.');
+      });
+
+      // Copy version
+      card.querySelector('.ce-variant-btn-secondary').addEventListener('click', () => {
+        const text = `Subject: ${variant.subject}\n\n${plainBody}`;
+        if (window.appSdk?.ui?.copyToClipboard) {
+          window.appSdk.ui.copyToClipboard(text, 'Alternative version copied to clipboard.');
+        } else {
+          navigator.clipboard.writeText(text)
+            .then(() => showToast('Alternative version copied to clipboard.'))
+            .catch(() => showToast('Copy failed. Please copy manually.', true));
+        }
+      });
+
+      list.appendChild(card);
+    });
+
+    container.style.display = 'flex';
   }
 
   function renderEditorContent() {
@@ -553,8 +656,13 @@
     const chars = plain.length;
     const wc = document.getElementById('ceWordCount');
     const cc = document.getElementById('ceCharCount');
+    const rt = document.getElementById('ceReadTime');
     if (wc) wc.textContent = words;
     if (cc) cc.textContent = chars;
+    if (rt) {
+      const mins = Math.max(1, Math.round(words / 200));
+      rt.textContent = `~${mins} min read`;
+    }
   }
 
   // ── Autosave flash ─────────────────────────────────────────────────────

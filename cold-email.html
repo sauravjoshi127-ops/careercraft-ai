@@ -295,6 +295,96 @@
       transition: opacity 0.3s;
     }
     .ce-autosave.visible { opacity: 1; }
+
+    /* ── Alternative Variants ── */
+    .ce-variants-container {
+      margin-top: 24px;
+      display: none; /* Shown after generation */
+      flex-direction: column;
+      gap: 12px;
+    }
+    .ce-variants-header {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-3);
+      margin-bottom: 4px;
+      padding: 0 16px;
+    }
+    .ce-variant-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .ce-variant-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ce-variant-type {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(99,102,241,0.1);
+      padding: 3px 8px;
+      border-radius: var(--r-sm);
+      text-transform: uppercase;
+    }
+    .ce-variant-word-count {
+      font-size: 0.75rem;
+      color: var(--text-3);
+    }
+    .ce-variant-subject {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-1);
+    }
+    .ce-variant-body-preview {
+      font-size: 0.85rem;
+      color: var(--text-2);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .ce-variant-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .ce-variant-btn {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .ce-variant-btn-primary {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-1);
+    }
+    .ce-variant-btn-primary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .ce-variant-btn-secondary {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-3);
+    }
+    .ce-variant-btn-secondary:hover {
+      color: var(--text-1);
+      background: rgba(255,255,255,0.05);
+    }
   </style>
 
 </head>
@@ -401,15 +491,30 @@
           <input type="hidden" id="cePurpose" value="Networking" />
         </div>
 
-        <!-- Tone -->
+        <!-- Email Preferences -->
         <div class="ce-brief-section" style="margin-bottom:0;">
-          <div class="ce-section-label">Tone</div>
-          <div class="ce-tone-group" id="ceToneGroup">
-            <div class="ce-tone-pill active" data-value="Professional">Professional</div>
-            <div class="ce-tone-pill" data-value="Friendly">Friendly</div>
-            <div class="ce-tone-pill" data-value="Direct">Direct</div>
+          <div class="ce-section-label">Email Preferences</div>
+          
+          <div style="margin-bottom:12px;">
+            <label style="font-size:0.75rem; color:var(--text-3); margin-bottom:4px; display:block;">Length</label>
+            <div class="ce-tone-group" id="ceLengthGroup">
+              <div class="ce-tone-pill" data-value="Very Short">Very Short</div>
+              <div class="ce-tone-pill active" data-value="Short">Short</div>
+              <div class="ce-tone-pill" data-value="Standard">Standard</div>
+              <div class="ce-tone-pill" data-value="Detailed">Detailed</div>
+            </div>
+            <input type="hidden" id="ceLength" value="Short" />
           </div>
-          <input type="hidden" id="ceTone" value="Professional" />
+
+          <div>
+            <label style="font-size:0.75rem; color:var(--text-3); margin-bottom:4px; display:block;">Tone</label>
+            <div class="ce-tone-group" id="ceToneGroup">
+              <div class="ce-tone-pill active" data-value="Professional">Professional</div>
+              <div class="ce-tone-pill" data-value="Friendly">Friendly</div>
+              <div class="ce-tone-pill" data-value="Direct">Direct</div>
+            </div>
+            <input type="hidden" id="ceTone" value="Professional" />
+          </div>
         </div>
 
         <!-- Generate Button -->
@@ -494,9 +599,17 @@
           <span style="margin:0 4px;">·</span>
           <span class="ce-word-count-num" id="ceCharCount">0</span>
           <span>chars</span>
+          <span style="margin:0 4px;">·</span>
+          <span id="ceReadTime">~0 min read</span>
           <span style="margin-left:auto;" class="ce-autosave" id="ceAutosave">
             <i data-lucide="check-circle" width="12"></i> Saved
           </span>
+        </div>
+
+        <!-- Alternative Variants Container -->
+        <div class="ce-variants-container" id="ceVariantsContainer">
+          <div class="ce-variants-header">Alternative Versions</div>
+          <div id="ceVariantsList"></div>
         </div>
 
       </section>

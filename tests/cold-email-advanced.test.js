@@ -196,8 +196,8 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
           })
         };
       } else {
-        // Second attempt: 70 words — passes Standard validation (55–85 words)
-        const validBody = Array(69).fill('word').join(' ') + '.';
+        // Second attempt: 100 words — passes Standard validation (90–120 words)
+        const validBody = Array(99).fill('word').join(' ') + '.';
         return {
           ok: true,
           status: 200,
@@ -246,8 +246,8 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
     assert.ok(res.body.variants);
     // 4 variants returned
     assert.equal(res.body.variants.length, 4);
-    // Word count: 70 words (within Standard 55–85) ending with period
+    // Word count: 100 words (within Standard 90–120) ending with period
     const wordCount = res.body.variants[0].body.trim().split(/\s+/).length;
-    assert.ok(wordCount >= 55 && wordCount <= 85, `Expected 55–85 words (Standard), got ${wordCount}`);
+    assert.ok(wordCount >= 90 && wordCount <= 120, `Expected 90–120 words (Standard), got ${wordCount}`);
   });
 });
