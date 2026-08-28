@@ -185,15 +185,17 @@ function normalizeVariant(v, userName) {
     }
 
     const paragraphs = restLines.filter(l => l.length > 0);
+    const bodyResult = paragraphs.length > 0 ? paragraphs.join('\n\n') : bodyClean;
     return {
       tone: clean(v.tone) || 'Variant',
       subject: clean(v.subject),
       greeting: greeting || 'Hi there,',
       paragraphs: paragraphs.length > 0 ? paragraphs : [bodyClean],
+      body: bodyResult,
       cta,
       signOff,
       senderName: senderName || userName || '',
-      wordCount: paragraphs.join(' ').split(/\s+/).filter(Boolean).length,
+      wordCount: paragraphs.join(' ').split(/\s+/).filter(Boolean).length || bodyClean.split(/\s+/).filter(Boolean).length,
       approach: clean(v.approach) || ''
     };
   }
@@ -203,15 +205,18 @@ function normalizeVariant(v, userName) {
     ? v.paragraphs.map(p => clean(String(p || ''))).filter(Boolean)
     : [];
 
+  const bodyResult = paragraphs.join('\n\n') || (typeof v.body === 'string' ? clean(v.body) : '');
+
   return {
     tone: clean(v.tone) || 'Variant',
     subject: clean(v.subject),
     greeting: clean(v.greeting) || 'Hi there,',
-    paragraphs: paragraphs.length > 0 ? paragraphs : [''],
+    paragraphs: paragraphs.length > 0 ? paragraphs : (bodyResult ? [bodyResult] : ['']),
+    body: bodyResult,
     cta: clean(v.cta),
     signOff: clean(v.signOff) || 'Best,',
     senderName: clean(v.senderName) || userName || '',
-    wordCount: v.wordCount || paragraphs.join(' ').split(/\s+/).filter(Boolean).length,
+    wordCount: v.wordCount || paragraphs.join(' ').split(/\s+/).filter(Boolean).length || bodyResult.split(/\s+/).filter(Boolean).length,
     approach: clean(v.approach) || ''
   };
 }
@@ -230,6 +235,7 @@ function normalizeFollowUp(fu, userName) {
       subject: clean(fu.subject),
       greeting: '',
       paragraphs: [clean(fu.body)],
+      body: clean(fu.body),
       cta: '',
       signOff: 'Best,',
       senderName: userName || ''
@@ -240,12 +246,15 @@ function normalizeFollowUp(fu, userName) {
     ? fu.paragraphs.map(p => clean(String(p || ''))).filter(Boolean)
     : [];
 
+  const bodyResult = paragraphs.join('\n\n') || (typeof fu.body === 'string' ? clean(fu.body) : '');
+
   return {
     index: fu.index || 1,
     timing: clean(fu.timing) || '',
     subject: clean(fu.subject),
     greeting: clean(fu.greeting) || '',
     paragraphs,
+    body: bodyResult,
     cta: clean(fu.cta) || '',
     signOff: clean(fu.signOff) || 'Best,',
     senderName: clean(fu.senderName) || userName || ''
@@ -396,27 +405,30 @@ function validateOptimizeOutput(data) {
  *   4. Curiosity  — advice-seeking, lowest pressure
  */
 function buildGeneratePrompt(data) {
-  const cleanWhy = cleanResumeInputs(data.whyContacting);
+  const cleanWhy = cleanResumeInputs(data.whyContacting || '');
+  const cleanBg = cleanResumeInputs(data.background || '');
 
-  // Compress sender background to a single, most relevant proof point
-  const proofPoint = extractSingleProofPoint(
-    cleanResumeInputs(data.background),
-    `${data.companyName} ${data.position} ${data.emailGoal} ${cleanWhy}`
-  );
+  // Compress sender background to a single proof point if provided
+  const proofPoint = cleanBg
+    ? extractSingleProofPoint(
+        cleanBg,
+        `${data.companyName || ''} ${data.position || ''} ${data.emailGoal || ''} ${cleanWhy}`
+      )
+    : '';
 
   const greeting = data.recipientName ? `Hi ${data.recipientName},` : 'Hi there,';
 
   const recipientSection = [
-    `Goal: ${data.emailGoal}`,
-    data.recipientName ? `Recipient name: ${data.recipientName}` : null,
-    data.position       ? `Their role: ${data.position}`           : null,
-    data.companyName    ? `Their company: ${data.companyName}`     : null,
+    `Goal: ${data.emailGoal || 'Networking'}`,
+    data.companyName    ? `Their company: ${data.companyName}`         : null,
+    data.recipientName  ? `Recipient name: ${data.recipientName}`     : null,
+    data.position       ? `Their role/title: ${data.position}`         : null,
     cleanWhy            ? `Context / reason for outreach: ${cleanWhy}` : null
   ].filter(Boolean).join('\n');
 
   const senderSection = [
-    `Sender name: ${data.userName}`,
-    proofPoint ? `ONE proof point to reference (do not use anything else): "${proofPoint}"` : null
+    `Sender name: ${data.userName || ''}`,
+    proofPoint ? `Proof point to reference: "${proofPoint}"` : null
   ].filter(Boolean).join('\n');
 
   const ctaGuide = {
@@ -430,6 +442,10 @@ function buildGeneratePrompt(data) {
     'Introduction':    'Ask whether a brief call would be welcome.'
   };
   const ctaInstruction = ctaGuide[data.emailGoal] || 'Ask whether they\'d be open to a brief conversation.';
+
+  const proofRule = proofPoint
+    ? '4. ONE PROOF POINT: Reference exactly ONE fact from the sender\'s proof point above. Do NOT list multiple achievements, skills, tools, companies, or credentials. Do NOT invent achievements or metrics.'
+    : '4. CONCISE & RELEVANT: Keep the message concise and relevant to the recipient and company. Do NOT invent unverified claims or achievements for the sender.';
 
   return `You are an elite cold email writer. Write 4 first-touch professional cold email VARIANTS — NOT cover letters, NOT resume summaries, NOT applications.
 
@@ -457,9 +473,7 @@ STRICT RULES — VIOLATION = REJECTION
 2. STRUCTURE: 1–3 short paragraphs. No bullet lists. No section headers.
 3. OPENING: First paragraph starts with the RECIPIENT'S world — their company, role, or specific context.
    NEVER start with sender's name, title, background, or credentials.
-4. ONE PROOF POINT: Reference exactly ONE fact from the sender's proof point above.
-   Do NOT list multiple achievements, skills, tools, companies, or credentials.
-   Do NOT invent achievements, metrics, or claims not in the proof point.
+${proofRule}
 5. ONE CTA: ${ctaInstruction} Exactly one ask. Natural and low-friction.
 6. TONE: Sound like a real person emailing a professional contact — not a marketer.
 7. BANNED PHRASES (any of these → rejection):
@@ -588,13 +602,19 @@ Each variant MUST use this structure — paragraphs[] are plain text strings, no
 }
 
 function buildRegenSubjectsPrompt(data) {
+  const recipientDesc = [
+    data.recipientName || null,
+    data.position ? `(${data.position})` : null,
+    data.companyName ? `at ${data.companyName}` : null
+  ].filter(Boolean).join(' ') || (data.companyName ? `Team at ${data.companyName}` : 'Hiring Team');
+
   return `You are a high-converting cold outreach copywriter. Review the following email context and generate subject lines.
 
-Email Goal: ${data.emailGoal}
-Recipient: ${data.recipientName || 'Hiring Manager'} at ${data.companyName} (${data.position})
+Email Goal: ${data.emailGoal || 'Networking'}
+Recipient: ${recipientDesc}
 
 Email Body (for context only — do not copy from it directly):
-${data.emailBody}
+${data.emailBody || ''}
 
 Generate exactly 4 fresh, specific subject lines. They must be genuinely different from each other.
 Rules:
@@ -617,17 +637,23 @@ Return ONLY a valid JSON object — no backticks, no markdown, no extra text:
 }
 
 function buildOptimizePrompt(data) {
+  const recipientDesc = [
+    data.recipientName || 'the recipient',
+    data.companyName ? `at ${data.companyName}` : '',
+    data.position ? `(${data.position})` : ''
+  ].filter(Boolean).join(' ');
+
   return `You are an elite cold email editor. Revise the following email body based on the user's specific instruction.
 
 CURRENT EMAIL:
-${data.emailBody}
+${data.emailBody || ''}
 
-USER INSTRUCTION: "${data.feedback}"
+USER INSTRUCTION: "${data.feedback || ''}"
 
 CONTEXT:
-- Goal: ${data.emailGoal}
-- Recipient: ${data.recipientName || 'the recipient'} at ${data.companyName || 'the company'} (${data.position || 'their role'})
-- Sender name: ${data.userName}
+- Goal: ${data.emailGoal || 'Networking'}
+- Recipient: ${recipientDesc}
+- Sender name: ${data.userName || ''}
 
 RULES:
 1. Apply ONLY the change requested. Do not rewrite parts the instruction does not mention.
@@ -672,15 +698,27 @@ function buildFallbackColdEmail(data) {
   const company = data.companyName || 'your organization';
   const recipientName = data.recipientName || '';
   const greeting = recipientName ? `Hi ${recipientName},` : 'Hi there,';
-  const position = data.position || 'your team';
-  const sender = data.userName || 'there';
+  const position = data.position || '';
+  const sender = data.userName || '';
   const bg = data.background
     ? cleanResumeInputs(data.background).split('.')[0].trim()
     : null;
   const why = cleanResumeInputs(data.whyContacting || '');
 
   const contextLine = why ? why : `the work happening at ${company}`;
-  const valueLine = bg ? bg : `a background relevant to ${position}`;
+  const valueLine = bg
+    ? bg
+    : (position
+        ? `a background relevant to ${position} and ${company}`
+        : `a background relevant to ${company}`);
+
+  const directSubject = position
+    ? `${position} at ${company} — a question`
+    : `${company} — a question`;
+
+  const questionSubject = position
+    ? `${position} at ${company}`
+    : `a question regarding ${company}`;
 
   const variants = [
     {
@@ -718,7 +756,7 @@ function buildFallbackColdEmail(data) {
     },
     {
       tone: 'Direct',
-      subject: `${position} at ${company} — a question`,
+      subject: directSubject,
       greeting,
       paragraphs: [
         `${valueLine} — and I think there may be a fit worth exploring at ${company}.`
@@ -743,14 +781,43 @@ function buildFallbackColdEmail(data) {
       wordCount: 0,
       approach: 'Curiosity-first. Advice-seeking, no hard ask.'
     }
-  ];
+  ].map(v => ({
+    ...v,
+    body: (v.paragraphs || []).join('\n\n')
+  }));
 
   const subjectLines = [
     { text: `${company} — worth connecting?`, label: 'Direct' },
     { text: `a thought on ${company}`, label: 'Curiosity' },
-    { text: `${position} at ${company}`, label: 'Question' },
+    { text: questionSubject, label: 'Question' },
     { text: `your work at ${company}`, label: 'Context' }
   ];
+
+  const followUps = [
+    {
+      index: 1,
+      timing: '3–5 business days after initial email',
+      subject: `one more thought — ${company}`,
+      greeting,
+      paragraphs: [`One additional thought since my last note: ${valueLine}. I think there's a genuine fit worth exploring.`],
+      cta: 'Happy to keep it brief.',
+      signOff: 'Best,',
+      senderName: sender
+    },
+    {
+      index: 2,
+      timing: '7–10 business days after follow-up 1',
+      subject: `closing the loop — ${company}`,
+      greeting,
+      paragraphs: [`I'll leave it here so I'm not filling your inbox. If the timing is ever right to connect, I'd welcome it.`],
+      cta: '',
+      signOff: 'All the best,',
+      senderName: sender
+    }
+  ].map(fu => ({
+    ...fu,
+    body: (fu.paragraphs || []).join('\n\n')
+  }));
 
   return {
     variants,
@@ -768,40 +835,19 @@ function buildFallbackColdEmail(data) {
         `Reference a specific initiative or product at ${company} for deeper personalization`
       ]
     },
-    followUps: [
-      {
-        index: 1,
-        timing: '3–5 business days after initial email',
-        subject: `one more thought — ${company}`,
-        greeting,
-        paragraphs: [`One additional thought since my last note: ${valueLine}. I think there's a genuine fit worth exploring.`],
-        cta: 'Happy to keep it brief.',
-        signOff: 'Best,',
-        senderName: sender
-      },
-      {
-        index: 2,
-        timing: '7–10 business days after follow-up 1',
-        subject: `closing the loop — ${company}`,
-        greeting,
-        paragraphs: [`I'll leave it here so I'm not filling your inbox. If the timing is ever right to connect, I'd welcome it.`],
-        cta: '',
-        signOff: 'All the best,',
-        senderName: sender
-      }
-    ],
+    followUps,
     fallbackUsed: true
   };
 }
 
 function buildFallbackSubjects(data) {
   const company = data.companyName || 'your company';
-  const position = data.position || 'your role';
+  const position = data.position || '';
   return {
     subjectLines: [
       { text: `${company} — worth connecting?`, label: 'Direct' },
       { text: `a thought on ${company}`, label: 'Curiosity' },
-      { text: `${position} at ${company}`, label: 'Value' },
+      { text: position ? `${position} at ${company}` : `connecting with ${company}`, label: 'Value' },
       { text: `your work at ${company}`, label: 'Personal' },
       { text: `quick question for you`, label: 'Question' }
     ],
@@ -828,7 +874,7 @@ module.exports = async function handler(req, res) {
   const userName = String(userContext.name || body.senderName || body.userName || '').trim();
   const background = String(userContext.background || body.background || '').trim();
   const whyContacting = String(
-    userContext.whyContacting || body.companyContext || body.valueProposition || ''
+    userContext.whyContacting || body.companyContext || body.context || body.valueProposition || ''
   ).trim();
 
   // ── Length mapping (spec-compliant) ──────────────────────────────────────
@@ -859,13 +905,13 @@ module.exports = async function handler(req, res) {
   if (Number.isInteger(body.maxLength) && body.maxLength > minLength) maxLength = body.maxLength;
 
   const dataFields = {
-    emailGoal,
-    recipientName,
-    companyName,
-    position,
-    userName,
-    background,
-    whyContacting,
+    emailGoal: emailGoal || 'Networking',
+    recipientName: recipientName || '',
+    companyName: companyName || '',
+    position: position || '',
+    userName: userName || '',
+    background: background || '',
+    whyContacting: whyContacting || '',
     length: lengthType,
     lengthType,
     minLength,
@@ -875,14 +921,13 @@ module.exports = async function handler(req, res) {
   };
 
   // ── Request validation ───────────────────────────────────────────────────
-  // Note: whyContacting (companyContext) is intentionally optional — NEVER block on it.
-  // Note: background is required for generate; omitting it server-side gives a clean error.
+  // REQUIRED: sender name (userName), company name (companyName), purpose (emailGoal)
+  // OPTIONAL: recipient name, recipient role/title (position), context/details (whyContacting), background
   if (action === 'generate') {
     const missingFields = [];
-    if (!companyName) missingFields.push('companyName (recipient company)');
-    if (!position) missingFields.push('position (recipient title/role)');
     if (!userName) missingFields.push('userName (sender name)');
-    if (!background) missingFields.push('background (sender value proposition)');
+    if (!companyName) missingFields.push('companyName (recipient company)');
+    if (!emailGoal) missingFields.push('emailGoal (purpose)');
     if (missingFields.length > 0) {
       return res.status(400).json({
         error: `Missing required fields: ${missingFields.join(', ')}`,
