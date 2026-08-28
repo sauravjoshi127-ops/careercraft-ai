@@ -1,79 +1,59 @@
 /**
- * cold-email.js — CareerCraft Cold Email Workspace Controller
+ * cold-email.js — CareerCraft Cold Email Generator
  *
  * Architecture:
  *  - Single source of truth: `state` object.
- *  - Unidirectional flow: user input → state → renderWorkspace().
- *  - All DOM mutations go through render functions; no ad-hoc manipulation.
- *  - Editor stores HTML (preserves rich-text formatting); plain-text copy
- *    uses innerText at copy time only.
- *  - Generation is guarded by `state.generation.status` to prevent duplicates.
- *  - Resume auto-loading: if exactly 1 saved resume exists, it is silently
- *    applied on page load without requiring user interaction.
- *  - Follow-ups come from the API response (AI-generated, not hard-coded).
- *  - AI Copilot diff uses dataset.proposedText exclusively — never innerText.
- *
- * AI Actions (spec-compliant):
- *  - Improve    : rewrite only the opening sentence to be more specific
- *  - Shorten    : remove 20–30% of words while preserving core message
- *  - Change Angle: completely different opening strategy, same facts
- *  - Regenerate : re-run the full generation with current form state
+ *  - Generation is guarded by `state.generating` (boolean single-flight lock).
+ *  - All DOM mutations go through render functions — no ad-hoc innerHTML
+ *    except within dedicated render helpers.
+ *  - Editor stores semantic HTML; plain-text copy uses innerText at copy time.
+ *  - Resume controls: "Use My Resume" loads from Supabase; "Import Resume"
+ *    parses a PDF/DOCX via the upload API.
+ *  - AI actions (Regenerate, Shorten, More Direct, Warmer) call /api/cold-email
+ *    with action:"generate" or action:"optimize" and apply the result.
+ *  - Draft persisted to localStorage on generate and on action apply.
+ *  - No debounced input listeners — state is only synced on Generate click.
  */
 (function () {
   'use strict';
 
   let client = null;
   let currentUser = null;
+  let savedResumes = [];
 
-  // ── Single Source of Truth ──────────────────────────────────────────────
-  let state = {
+  // ── Single Source of Truth ─────────────────────────────────────────────
+  const state = {
+    // Form inputs
     brief: {
       recipientName: '',
       position: '',
-      relationship: '',
-      companyName: '',
-      companyContext: '',
-      userName: '',
+      company: '',
+      context: '',       // why contacting + recipient detail combined
+      senderName: '',
       background: '',
-      emailGoal: 'Networking',
-      tone: 'Professional',
-      length: 'Standard',
-      ctaStyle: 'Soft Ask'
+      purpose: 'Networking',
+      tone: 'Professional'
     },
-    generation: {
-      status: 'idle', // 'idle' | 'generating' | 'copilot-busy' | 'error'
-      controller: null,
-      requestId: 0,
-      copilotRequestId: 0
+    // Generated email data
+    email: {
+      subject: '',       // currently selected subject
+      subjects: [],      // array of {text, label} from API
+      bodyHtml: '',      // semantic HTML shown in editor
+      variant: null      // raw variant object from API (for plain-text copy)
     },
-    data: {
-      // Each variant: { tone, subject, greeting, paragraphs[], cta, signOff, senderName, wordCount, approach }
-      variants: [],
-      subjectLines: [],
-      followUps: [],
-      evaluation: null,
-      activeVariantIndex: 0
-    },
-    editor: {
-      subject: '',
-      bodyHtml: '' // stores the rendered semantic email HTML
-    },
+    // Generation control
+    generating: false,
+    actionBusy: false,
+    genController: null,
+    genRequestId: 0,
+    // Resume
     resume: {
       loadedId: null,
-      loadedName: null,
-      autoLoaded: false
+      loadedName: null
     }
   };
 
-  let savedResumes = [];
-  let debounceTimer = null;
-  let autosaveTimer = null;
-
-  // Variant tones displayed as "alternatives" (active tone is excluded from this list)
-  const DISPLAY_VARIANT_TONES = ['Friendly', 'Direct', 'Networking'];
-  const STEP_ORDER = ['recipient', 'company', 'value', 'goal'];
-
-  // ── Initialization ──────────────────────────────────────────────────────
+  // ── Init ───────────────────────────────────────────────────────────────
   async function init() {
     try {
       await window.appSdk.ready;
@@ -83,26 +63,18 @@
       client = window.appSdk.client;
       currentUser = session.user;
 
-      // Expose handlers needed by inline HTML onclick attributes
-      window.toggleStepAccordion = toggleStepAccordion;
-      window.triggerAiAction = triggerAiAction;
-      window.rejectAiAction = rejectAiAction;
-      window.applyAiAction = applyAiAction;
-
-      setupGoalGrid();
-      setupEditorToolbar();
+      setupPurposeGrid();
+      setupTonePills();
       setupActionBar();
-      setupEditorSync();
       await loadResumeControls();
-      await hydrateState();
-
+      hydrateFromStorage();
     } catch (err) {
       console.error('[ColdEmail] Init error:', err);
       showToast('Initialization error. Please refresh.', true);
     }
   }
 
-  // ── Toast ───────────────────────────────────────────────────────────────
+  // ── Toast ──────────────────────────────────────────────────────────────
   function showToast(msg, isError = false) {
     const type = isError ? 'error' : 'success';
     if (window.appSdk?.ui?.showToast) {
@@ -112,94 +84,532 @@
     }
   }
 
-  // ── Draft persistence ───────────────────────────────────────────────────
-  function saveDraftToStorage() {
+  // ── Purpose grid ───────────────────────────────────────────────────────
+  function setupPurposeGrid() {
+    const cards = document.querySelectorAll('.ce-purpose-card');
+    const hiddenInput = document.getElementById('cePurpose');
+    cards.forEach(card => {
+      card.addEventListener('click', () => {
+        cards.forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        if (hiddenInput) hiddenInput.value = card.dataset.value;
+        state.brief.purpose = card.dataset.value;
+      });
+    });
+  }
+
+  // ── Tone pills ─────────────────────────────────────────────────────────
+  function setupTonePills() {
+    const pills = document.querySelectorAll('.ce-tone-pill');
+    const hiddenInput = document.getElementById('ceTone');
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        pills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        if (hiddenInput) hiddenInput.value = pill.dataset.value;
+        state.brief.tone = pill.dataset.value;
+      });
+    });
+  }
+
+  // ── Action bar setup ───────────────────────────────────────────────────
+  function setupActionBar() {
+    const genBtn = document.getElementById('ceGenerateBtn');
+    if (genBtn) genBtn.addEventListener('click', handleGenerate);
+
+    const actionMap = {
+      ceActionRegenerate: () => handleGenerate(),
+      ceActionShorten:    () => handleAiAction('shorten'),
+      ceActionMoreDirect: () => handleAiAction('more-direct'),
+      ceActionWarmer:     () => handleAiAction('warmer'),
+      ceActionCopy:       () => handleCopy()
+    };
+
+    Object.entries(actionMap).forEach(([id, fn]) => {
+      const btn = document.getElementById(id);
+      if (btn) btn.addEventListener('click', fn);
+    });
+
+    // Editor content → state sync (for manual edits)
+    const editor = document.getElementById('ceEditorSheet');
+    if (editor) {
+      let autosaveTimer = null;
+      editor.addEventListener('input', () => {
+        state.email.bodyHtml = editor.innerHTML;
+        clearTimeout(autosaveTimer);
+        autosaveTimer = setTimeout(() => {
+          updateWordCount();
+          saveDraft();
+          flashAutosave();
+        }, 1200);
+      });
+    }
+  }
+
+  // ── State sync (read form → state) ────────────────────────────────────
+  function syncStateFromForm() {
+    const get = id => {
+      const el = document.getElementById(id);
+      return el ? (el.value || '').trim() : '';
+    };
+    state.brief.recipientName = get('ceRecipientName');
+    state.brief.position      = get('cePosition');
+    state.brief.company       = get('ceCompany');
+    // Combine context and recipient detail into a single context string
+    const ctx    = get('ceContext');
+    const detail = get('ceRecipientDetail');
+    state.brief.context    = [ctx, detail].filter(Boolean).join('. ');
+    state.brief.senderName = get('ceSenderName');
+    state.brief.background = get('ceBackground');
+    state.brief.purpose    = get('cePurpose') || state.brief.purpose;
+    state.brief.tone       = get('ceTone') || state.brief.tone;
+  }
+
+  // ── State → DOM sync (for draft restore) ──────────────────────────────
+  function syncDOMFromState() {
+    const set = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val || '';
+    };
+    set('ceRecipientName', state.brief.recipientName);
+    set('cePosition',      state.brief.position);
+    set('ceCompany',       state.brief.company);
+    set('ceSenderName',    state.brief.senderName);
+    set('ceBackground',    state.brief.background);
+
+    // Restore purpose grid
+    document.querySelectorAll('.ce-purpose-card').forEach(card => {
+      const isActive = card.dataset.value === state.brief.purpose;
+      card.classList.toggle('active', isActive);
+    });
+    set('cePurpose', state.brief.purpose);
+
+    // Restore tone pills
+    document.querySelectorAll('.ce-tone-pill').forEach(pill => {
+      const isActive = pill.dataset.value === state.brief.tone;
+      pill.classList.toggle('active', isActive);
+    });
+    set('ceTone', state.brief.tone);
+  }
+
+  // ── Generation ─────────────────────────────────────────────────────────
+  async function handleGenerate() {
+    // Single-flight lock
+    if (state.generating) return;
+
+    syncStateFromForm();
+
+    // Validate required fields
+    if (!state.brief.company) {
+      showToast('Please enter the recipient\'s Company name.', true);
+      document.getElementById('ceCompany')?.focus();
+      return;
+    }
+    if (!state.brief.senderName) {
+      showToast('Please enter Your Name.', true);
+      document.getElementById('ceSenderName')?.focus();
+      return;
+    }
+    if (!state.brief.background) {
+      showToast('Please add a short background or value proposition.', true);
+      document.getElementById('ceBackground')?.focus();
+      return;
+    }
+
+    // Abort any prior in-flight request
+    if (state.genController) {
+      try { state.genController.abort(); } catch (_) {}
+    }
+
+    const controller = new AbortController();
+    state.genController = controller;
+    state.genRequestId += 1;
+    const reqId = state.genRequestId;
+    state.generating = true;
+
+    setGeneratingUI(true);
+
+    const payload = {
+      action: 'generate',
+      emailGoal: state.brief.purpose,
+      recipient: {
+        name:     state.brief.recipientName,
+        company:  state.brief.company,
+        position: state.brief.position
+      },
+      userContext: {
+        name:          state.brief.senderName,
+        background:    state.brief.background,
+        whyContacting: state.brief.context
+      },
+      personalization: {
+        tone:     state.brief.tone,
+        length:   'Standard',
+        ctaStyle: 'Soft Ask'
+      }
+    };
+
+    try {
+      const session = await window.appSdk.auth.getSession();
+      const headers = { 'Content-Type': 'application/json' };
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+
+      const res = await fetch('/api/cold-email', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+
+      // Bail if superseded
+      if (reqId !== state.genRequestId) return;
+
+      const data = await res.json();
+      if (reqId !== state.genRequestId) return;
+
+      if (!res.ok) {
+        const msg = data.error || `Generation failed (${res.status})`;
+        if (data.usageLimitReached) { showToast(msg, true); return; }
+        throw new Error(msg);
+      }
+
+      // Pick the first (best) variant as primary email
+      const variants = Array.isArray(data.variants) ? data.variants : [];
+      if (variants.length === 0) throw new Error('No email was generated. Please try again.');
+
+      const primary = normalizeVariant(variants[0], state.brief.senderName);
+      if (!primary) throw new Error('Generated email could not be rendered. Please try again.');
+
+      // Validate sender/recipient separation before rendering
+      const greeting = primary.greeting || '';
+      if (state.brief.senderName && greeting.toLowerCase().includes(state.brief.senderName.toLowerCase())) {
+        // Sender name in greeting — this is a bug; fix greeting
+        primary.greeting = state.brief.recipientName
+          ? `Hi ${state.brief.recipientName},`
+          : 'Hi there,';
+      }
+
+      // Ensure senderName is correct
+      primary.senderName = state.brief.senderName;
+
+      // Build subject list (dedup, max 4)
+      const apiSubjects = Array.isArray(data.subjectLines)
+        ? data.subjectLines.map(s => ({ text: sanitizeSubject(s.text || s), label: sanitizeText(s.label) || '' })).filter(s => s.text)
+        : [];
+      const primarySubject = { text: sanitizeSubject(primary.subject), label: '' };
+      const allSubjects = [primarySubject, ...apiSubjects]
+        .filter(s => s.text)
+        .reduce((acc, s) => {
+          if (!acc.find(x => x.text === s.text)) acc.push(s);
+          return acc;
+        }, [])
+        .slice(0, 4);
+
+      state.email.variant  = primary;
+      state.email.subjects = allSubjects;
+      state.email.subject  = allSubjects[0]?.text || primary.subject;
+      state.email.bodyHtml = variantToHtml(primary);
+
+      saveDraft();
+      renderEmail();
+
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      console.error('[ColdEmail] Generation error:', err);
+      const msg = err.message && err.message.length < 200
+        ? err.message
+        : 'Generation failed. Please try again.';
+      showToast(msg, true);
+    } finally {
+      if (reqId === state.genRequestId) {
+        state.generating = false;
+        state.genController = null;
+        setGeneratingUI(false);
+      }
+    }
+  }
+
+  // ── AI Actions ─────────────────────────────────────────────────────────
+  const ACTION_FEEDBACK = {
+    'shorten':     'Shorten the email by 20–30% by removing filler and redundant phrases. Preserve the core message, main value point, and CTA exactly. Do not add new content.',
+    'more-direct': 'Rewrite the email to be more direct and concise. Remove any preamble, pleasantries, or indirect phrasing. Get straight to the point immediately.',
+    'warmer':      'Rewrite the email with a warmer, more personable tone. Keep all facts exactly the same — only adjust the phrasing to feel more human and conversational.'
+  };
+
+  async function handleAiAction(action) {
+    if (state.generating || state.actionBusy) return;
+    if (!state.email.bodyHtml) {
+      showToast('Please generate an email first.', true);
+      return;
+    }
+
+    const plainBody = htmlToPlainText(state.email.bodyHtml);
+    if (!plainBody) return;
+
+    state.actionBusy = true;
+    setActionButtonsDisabled(true, action);
+
+    const feedback = ACTION_FEEDBACK[action] || 'Improve the email.';
+
+    const payload = {
+      action:        'optimize',
+      emailGoal:     state.brief.purpose,
+      emailBody:     plainBody,
+      feedback,
+      recipientName: state.brief.recipientName,
+      companyName:   state.brief.company,
+      position:      state.brief.position,
+      userName:      state.brief.senderName,
+      background:    state.brief.background,
+      whyContacting: state.brief.context
+    };
+
+    try {
+      const session = await window.appSdk.auth.getSession();
+      const headers = { 'Content-Type': 'application/json' };
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+
+      const res = await fetch('/api/cold-email', { method: 'POST', headers, body: JSON.stringify(payload) });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Action failed');
+
+      const revised = sanitizeEmailBody((data.revisedText || '').trim());
+      if (!revised) throw new Error('No meaningful change was produced. Try again.');
+
+      // Apply final validation: ensure sender not in greeting
+      const lines = revised.split('\n');
+      const firstLine = (lines[0] || '').trim();
+      if (state.brief.senderName && firstLine.toLowerCase().includes(state.brief.senderName.toLowerCase())) {
+        // Fix greeting in revised text
+        const newGreeting = state.brief.recipientName
+          ? `Hi ${state.brief.recipientName},`
+          : 'Hi there,';
+        lines[0] = newGreeting;
+      }
+
+      const fixedRevised = lines.join('\n');
+      state.email.bodyHtml = plainTextToHtml(finalSanitize(fixedRevised));
+      renderEditorContent();
+      updateWordCount();
+      saveDraft();
+      flashAutosave();
+
+    } catch (err) {
+      console.error('[ColdEmail] Action error:', err);
+      const msg = err.message && err.message.length < 150
+        ? err.message
+        : 'Something went wrong. Please try again.';
+      showToast(msg, true);
+    } finally {
+      state.actionBusy = false;
+      setActionButtonsDisabled(false, null);
+    }
+  }
+
+  // ── Copy ───────────────────────────────────────────────────────────────
+  function handleCopy() {
+    const v = state.email.variant;
+    let plainBody = '';
+
+    if (v && Array.isArray(v.paragraphs)) {
+      // Build from structured variant for clean copy
+      const parts = [];
+      if (v.greeting) parts.push(v.greeting);
+      parts.push('');
+      v.paragraphs.forEach(p => { if (p) parts.push(p); });
+      if (v.cta) { parts.push(''); parts.push(v.cta); }
+      parts.push('');
+      parts.push(v.signOff || 'Best,');
+      parts.push(state.brief.senderName || v.senderName || '');
+      plainBody = parts.join('\n').trim();
+    } else {
+      // Fallback: extract from current editor HTML
+      plainBody = htmlToPlainText(state.email.bodyHtml);
+    }
+
+    if (!plainBody) {
+      showToast('No email to copy.', true);
+      return;
+    }
+
+    const selectedSubject = state.email.subject;
+    const text = selectedSubject
+      ? `Subject: ${selectedSubject}\n\n${plainBody}`
+      : plainBody;
+
+    if (window.appSdk?.ui?.copyToClipboard) {
+      window.appSdk.ui.copyToClipboard(text, 'Email copied to clipboard.');
+    } else {
+      navigator.clipboard.writeText(text)
+        .then(() => showToast('Email copied to clipboard.'))
+        .catch(() => showToast('Copy failed. Please select and copy manually.', true));
+    }
+  }
+
+  // ── Render email ───────────────────────────────────────────────────────
+  function renderEmail() {
+    const canvas = document.getElementById('ceEditorCanvas');
+    if (canvas) {
+      canvas.classList.add('cl-has-draft');
+      canvas.classList.remove('cl-generating');
+    }
+
+    // Show action bar
+    const actionBar = document.getElementById('ceActionsBar');
+    if (actionBar) actionBar.style.display = 'flex';
+
+    // Show word count bar
+    const wcBar = document.getElementById('ceWordCountBar');
+    if (wcBar) wcBar.style.display = 'flex';
+
+    renderSubjectPills();
+    renderEditorContent();
+    updateWordCount();
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  function renderSubjectPills() {
+    const container = document.getElementById('ceSubjectContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    state.email.subjects.forEach(s => {
+      if (!s.text) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ce-subject-pill' + (s.text === state.email.subject ? ' active' : '');
+      btn.textContent = s.text;
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.ce-subject-pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        state.email.subject = s.text;
+        saveDraft();
+      });
+      container.appendChild(btn);
+    });
+  }
+
+  function renderEditorContent() {
+    const editor = document.getElementById('ceEditorSheet');
+    if (!editor) return;
+    if (editor.innerHTML !== state.email.bodyHtml) {
+      editor.innerHTML = state.email.bodyHtml;
+    }
+  }
+
+  // ── UI state helpers ───────────────────────────────────────────────────
+  function setGeneratingUI(isGenerating) {
+    const overlay = document.getElementById('ceGenOverlay');
+    const canvas  = document.getElementById('ceEditorCanvas');
+    if (overlay) overlay.classList.toggle('visible', isGenerating);
+    if (canvas) canvas.classList.toggle('cl-generating', isGenerating);
+
+    const genBtn = document.getElementById('ceGenerateBtn');
+    if (genBtn) {
+      if (isGenerating) {
+        genBtn.innerHTML = '<i data-lucide="loader-circle" class="spin" width="16"></i> Generating…';
+        genBtn.disabled = true;
+      } else {
+        genBtn.innerHTML = 'Generate Email <i data-lucide="sparkles" width="16"></i>';
+        genBtn.disabled = false;
+      }
+      if (window.lucide) window.lucide.createIcons();
+    }
+  }
+
+  function setActionButtonsDisabled(disabled, activeAction) {
+    const actionIds = ['ceActionRegenerate', 'ceActionShorten', 'ceActionMoreDirect', 'ceActionWarmer', 'ceActionCopy'];
+    actionIds.forEach(id => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.disabled = disabled;
+      // Show spinner on the active action button
+      if (disabled && activeAction) {
+        const actionBtnMap = {
+          'shorten':     'ceActionShorten',
+          'more-direct': 'ceActionMoreDirect',
+          'warmer':      'ceActionWarmer'
+        };
+        if (actionBtnMap[activeAction] === id) {
+          const origText = btn.textContent.trim();
+          btn.dataset.origHtml = btn.innerHTML;
+          btn.innerHTML = '<i data-lucide="loader-circle" class="spin" width="14"></i> Working…';
+          if (window.lucide) window.lucide.createIcons();
+        }
+      } else if (!disabled && btn.dataset.origHtml) {
+        btn.innerHTML = btn.dataset.origHtml;
+        delete btn.dataset.origHtml;
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+  }
+
+  // ── Word count ─────────────────────────────────────────────────────────
+  function updateWordCount() {
+    const plain = htmlToPlainText(state.email.bodyHtml);
+    const words = plain.trim() ? plain.trim().split(/\s+/).filter(Boolean).length : 0;
+    const chars = plain.length;
+    const wc = document.getElementById('ceWordCount');
+    const cc = document.getElementById('ceCharCount');
+    if (wc) wc.textContent = words;
+    if (cc) cc.textContent = chars;
+  }
+
+  // ── Autosave flash ─────────────────────────────────────────────────────
+  function flashAutosave() {
+    const el = document.getElementById('ceAutosave');
+    if (!el) return;
+    el.classList.add('visible');
+    setTimeout(() => el.classList.remove('visible'), 2200);
+  }
+
+  // ── Draft persistence ──────────────────────────────────────────────────
+  function saveDraft() {
     if (!window.StorageManager) return;
     try {
-      const snapshot = {
+      window.StorageManager.set('cc_cold_email_v2', JSON.stringify({
         brief: state.brief,
-        data: state.data,
-        editor: state.editor,
+        email: state.email,
         resume: state.resume
-      };
-      window.StorageManager.set('careercraft_cold_email_draft', JSON.stringify(snapshot));
+      }));
     } catch (e) {
       console.warn('[ColdEmail] Draft save failed:', e);
     }
   }
 
-  async function hydrateState() {
+  function hydrateFromStorage() {
     if (!window.StorageManager) return;
-    const saved = window.StorageManager.get('careercraft_cold_email_draft');
-    if (!saved) return;
+    const raw = window.StorageManager.get('cc_cold_email_v2');
+    if (!raw) return;
     try {
-      const parsed = JSON.parse(saved);
-      if (parsed.brief) state.brief = { ...state.brief, ...parsed.brief };
-      if (parsed.data) state.data = { ...state.data, ...parsed.data };
-      if (parsed.editor) state.editor = { ...state.editor, ...parsed.editor };
-      if (parsed.resume) state.resume = { ...state.resume, ...parsed.resume };
+      const parsed = JSON.parse(raw);
+      if (parsed.brief)  Object.assign(state.brief,  parsed.brief);
+      if (parsed.email)  Object.assign(state.email,  parsed.email);
+      if (parsed.resume) Object.assign(state.resume, parsed.resume);
       syncDOMFromState();
-      if (state.data.variants.length > 0) {
-        renderWorkspace();
+      if (state.email.bodyHtml && state.email.subjects.length > 0) {
+        renderEmail();
       }
     } catch (e) {
       console.warn('[ColdEmail] Draft hydration failed:', e);
     }
   }
 
-  // ── Accordion ───────────────────────────────────────────────────────────
-  function toggleStepAccordion(stepId) {
-    document.querySelectorAll('.cl-step-accordion').forEach(acc => {
-      const isActive = acc.id === `step-${stepId}`;
-      acc.classList.toggle('active', isActive);
-      const header = acc.querySelector('.cl-step-header[role="button"]');
-      if (header) header.setAttribute('aria-expanded', isActive ? 'true' : 'false');
-    });
-    const stepIndex = STEP_ORDER.indexOf(stepId);
-    const progressLabel = document.getElementById('stepProgressLabel');
-    if (progressLabel && stepIndex !== -1) {
-      progressLabel.textContent = `STEP ${stepIndex + 1} OF ${STEP_ORDER.length}`;
-    }
-  }
-
-  // ── Goal grid ───────────────────────────────────────────────────────────
-  function setupGoalGrid() {
-    const goals = document.querySelectorAll('.goal-card');
-    const goalInput = document.getElementById('emailGoal');
-    goals.forEach(g => {
-      g.addEventListener('click', () => {
-        goals.forEach(c => c.classList.remove('active'));
-        g.classList.add('active');
-        if (goalInput) goalInput.value = g.dataset.value;
-        state.brief.emailGoal = g.dataset.value;
-      });
-    });
-
-    // Debounced state sync on all panel inputs
-    document.querySelectorAll('.cl-left-panel input:not([type=file]), .cl-left-panel textarea, .cl-left-panel select').forEach(el => {
-      el.addEventListener('input', () => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(syncStateFromInputs, 400);
-      });
-    });
-  }
-
-  // ── Resume Integration ───────────────────────────────────────────────────
-  // Auto-loads the user's single saved resume silently on page init.
-  // If multiple resumes exist, shows a selection dropdown.
-  // All resume controls live inside #resumeImportActionContainer.
+  // ── Resume integration ─────────────────────────────────────────────────
   async function loadResumeControls() {
-    const container = document.getElementById('resumeImportActionContainer');
+    const container = document.getElementById('ceResumeImportContainer');
     if (!container) return;
 
-    // Bind hidden file input once
-    const fileInput = document.getElementById('resumeFileInput');
+    // Bind file input
+    const fileInput = document.getElementById('ceResumeFileInput');
     if (fileInput && !fileInput.dataset.bound) {
       fileInput.dataset.bound = 'true';
       fileInput.addEventListener('change', handleComputerImport);
     }
 
-    // If a resume was already loaded from hydrated state, just show the chip
+    // If resume already loaded (from draft), show chip
     if (state.resume.loadedId || state.resume.loadedName) {
       renderResumeChip(state.resume.loadedName || 'Resume', container);
       return;
@@ -215,7 +625,7 @@
       if (error) throw error;
       savedResumes = data || [];
 
-      // Auto-load if exactly 1 resume exists — silent, no dialog, no toast
+      // Auto-load if exactly 1 resume — silent, no dialog
       if (savedResumes.length === 1) {
         await autoLoadResume(savedResumes[0], container);
         return;
@@ -223,28 +633,23 @@
 
       renderResumeImportUI(container);
     } catch (err) {
-      console.error('[ColdEmail] Failed to load saved resumes:', err);
-      renderResumeImportUI(container, true /* fallback mode */);
+      console.error('[ColdEmail] Resume load failed:', err);
+      renderResumeImportUI(container, true);
     }
   }
 
-  /**
-   * Silently pre-populates name and triggers background value-prop extraction
-   * for the given resume. Does NOT block the UI.
-   */
   async function autoLoadResume(resumeData, container) {
-    // Pre-populate name immediately (no API call needed)
-    const nameInput = document.getElementById('userName');
+    // Pre-populate name immediately
+    const nameInput = document.getElementById('ceSenderName');
     if (nameInput && !(nameInput.value || '').trim() && resumeData.full_name) {
       nameInput.value = resumeData.full_name;
-      state.brief.userName = resumeData.full_name;
+      state.brief.senderName = resumeData.full_name;
     }
 
-    state.resume.loadedId = resumeData.id;
+    state.resume.loadedId   = resumeData.id;
     state.resume.loadedName = resumeData.full_name || 'Resume';
     state.resume.autoLoaded = true;
 
-    // Show chip immediately with loading indicator
     renderResumeChip(`${state.resume.loadedName} (loading…)`, container);
 
     try {
@@ -257,23 +662,20 @@
         headers,
         body: JSON.stringify({ section: 'cold-email-value', resumeData })
       });
-
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const result = await res.json();
       const valueText = (result.suggestions || '').trim();
       if (!valueText) throw new Error('Empty value proposition from server.');
 
-      const backgroundInput = document.getElementById('background');
-      if (backgroundInput && !(backgroundInput.value || '').trim()) {
-        backgroundInput.value = valueText;
+      const bgInput = document.getElementById('ceBackground');
+      if (bgInput && !(bgInput.value || '').trim()) {
+        bgInput.value = valueText;
         state.brief.background = valueText;
       }
-
       renderResumeChip(state.resume.loadedName, container);
-      saveDraftToStorage();
+      saveDraft();
     } catch (err) {
       console.warn('[ColdEmail] Auto-load value-prop failed (non-blocking):', err.message);
-      // Show chip without loading indicator — user can still generate
       renderResumeChip(state.resume.loadedName, container);
     }
   }
@@ -283,20 +685,20 @@
 
     if (!fallback && savedResumes.length > 0) {
       if (savedResumes.length === 1) {
-        html += `<button type="button" class="btn btn-secondary btn-sm" id="btnUseResume" data-resume-id="${savedResumes[0].id}">
+        html += `<button type="button" class="btn btn-secondary btn-sm" id="ceBtnUseResume" data-resume-id="${savedResumes[0].id}">
           <i data-lucide="file-text" width="15" height="15" style="margin-right:5px;"></i>Use My Resume
         </button>`;
       } else {
-        html += `<select id="savedResumeSelect" style="background:var(--bg-input,rgba(255,255,255,0.05));border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font-size:0.85rem;padding:6px 10px;max-width:200px;cursor:pointer;">
+        html += `<select id="ceSavedResumeSelect" style="background:var(--bg-input,rgba(255,255,255,0.05));border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font-size:0.85rem;padding:6px 10px;max-width:200px;cursor:pointer;">
           <option value="">— Select Resume —</option>`;
         savedResumes.forEach(r => {
           const label = r.full_name
             ? `${r.full_name}${r.professional_headline ? ' · ' + r.professional_headline.substring(0, 28) : ''}`
             : 'Resume – ' + new Date(r.created_at).toLocaleDateString();
-          html += `<option value="${r.id}">${label}</option>`;
+          html += `<option value="${r.id}">${escapeHtml(label)}</option>`;
         });
         html += `</select>
-        <button type="button" class="btn btn-secondary btn-sm" id="btnUseResume">
+        <button type="button" class="btn btn-secondary btn-sm" id="ceBtnUseResume">
           <i data-lucide="file-text" width="15" height="15" style="margin-right:5px;"></i>Use Resume
         </button>`;
       }
@@ -308,19 +710,19 @@
       html += `<span style="font-size:0.85rem;color:var(--text-3);">Could not load resumes.</span>`;
     }
 
-    html += `<button type="button" class="btn btn-secondary btn-sm" id="btnImportResume">
-      <i data-lucide="upload" width="15" height="15" style="margin-right:5px;"></i>Import File
+    html += `<button type="button" class="btn btn-secondary btn-sm" id="ceBtnImportResume">
+      <i data-lucide="upload" width="15" height="15" style="margin-right:5px;"></i>Import Resume
     </button>`;
     html += '</div>';
 
     container.innerHTML = html;
 
-    const useBtn = document.getElementById('btnUseResume');
+    const useBtn = document.getElementById('ceBtnUseResume');
     if (useBtn) useBtn.addEventListener('click', handleUseMyResume);
 
-    const importBtn = document.getElementById('btnImportResume');
+    const importBtn = document.getElementById('ceBtnImportResume');
     if (importBtn) importBtn.addEventListener('click', () => {
-      document.getElementById('resumeFileInput').click();
+      document.getElementById('ceResumeFileInput').click();
     });
 
     if (window.lucide) window.lucide.createIcons();
@@ -331,27 +733,25 @@
       <div class="ce-resume-chip">
         <i data-lucide="check-circle" width="14" height="14"></i>
         ${escapeHtml(name)} loaded
-        <button class="ce-resume-chip-change" id="btnChangeResume" type="button">Change</button>
+        <button class="ce-resume-chip-change" id="ceBtnChangeResume" type="button">Change</button>
       </div>`;
 
-    const changeBtn = document.getElementById('btnChangeResume');
+    const changeBtn = document.getElementById('ceBtnChangeResume');
     if (changeBtn) {
       changeBtn.addEventListener('click', () => {
-        state.resume.loadedId = null;
+        state.resume.loadedId   = null;
         state.resume.loadedName = null;
-        state.resume.autoLoaded = false;
         renderResumeImportUI(container);
       });
     }
-
     if (window.lucide) window.lucide.createIcons();
   }
 
   async function handleUseMyResume() {
-    const container = document.getElementById('resumeImportActionContainer');
+    const container = document.getElementById('ceResumeImportContainer');
     let resumeData = null;
 
-    const selectEl = document.getElementById('savedResumeSelect');
+    const selectEl = document.getElementById('ceSavedResumeSelect');
     if (selectEl) {
       const selectedId = selectEl.value;
       if (!selectedId) {
@@ -368,13 +768,12 @@
       return;
     }
 
-    const backgroundInput = document.getElementById('background');
-    if ((backgroundInput?.value || '').trim().length > 0) {
+    const bgInput = document.getElementById('ceBackground');
+    if ((bgInput?.value || '').trim().length > 0) {
       if (!confirm('Replace your current value proposition with information from this resume?')) return;
     }
 
-    const useBtn = document.getElementById('btnUseResume');
-    const origHTML = useBtn ? useBtn.innerHTML : '';
+    const useBtn = document.getElementById('ceBtnUseResume');
     if (useBtn) {
       useBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="15" height="15" style="margin-right:5px;"></i>Loading…';
       useBtn.disabled = true;
@@ -382,10 +781,10 @@
     }
 
     try {
-      const nameInput = document.getElementById('userName');
+      const nameInput = document.getElementById('ceSenderName');
       if (nameInput && !(nameInput.value || '').trim() && resumeData.full_name) {
         nameInput.value = resumeData.full_name;
-        state.brief.userName = resumeData.full_name;
+        state.brief.senderName = resumeData.full_name;
       }
 
       const session = await window.appSdk.auth.getSession();
@@ -397,28 +796,23 @@
         headers,
         body: JSON.stringify({ section: 'cold-email-value', resumeData })
       });
-
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const result = await res.json();
       const valueText = (result.suggestions || '').trim();
       if (!valueText) throw new Error('No value proposition could be generated from this resume.');
 
-      if (backgroundInput) backgroundInput.value = valueText;
+      if (bgInput) bgInput.value = valueText;
       state.brief.background = valueText;
 
-      state.resume.loadedId = resumeData.id;
+      state.resume.loadedId   = resumeData.id;
       state.resume.loadedName = resumeData.full_name || 'Resume';
       renderResumeChip(state.resume.loadedName, container);
-      saveDraftToStorage();
+      saveDraft();
       showToast('Resume loaded successfully.');
     } catch (err) {
       console.error('[ColdEmail] handleUseMyResume error:', err);
       showToast("Couldn't import your resume. Try entering your background manually.", true);
-      if (useBtn) {
-        useBtn.innerHTML = origHTML;
-        useBtn.disabled = false;
-        if (window.lucide) window.lucide.createIcons();
-      }
+      renderResumeImportUI(container);
     }
   }
 
@@ -435,15 +829,15 @@
       return;
     }
 
-    const backgroundInput = document.getElementById('background');
-    if ((backgroundInput?.value || '').trim().length > 0) {
+    const bgInput = document.getElementById('ceBackground');
+    if ((bgInput?.value || '').trim().length > 0) {
       if (!confirm('Replace your current value proposition with information from this file?')) {
         e.target.value = '';
         return;
       }
     }
 
-    const importBtn = document.getElementById('btnImportResume');
+    const importBtn = document.getElementById('ceBtnImportResume');
     if (importBtn) {
       importBtn.innerHTML = '<i data-lucide="loader-2" class="spin" width="15" height="15" style="margin-right:5px;"></i>Reading…';
       importBtn.disabled = true;
@@ -462,7 +856,6 @@
         headers,
         body: JSON.stringify({ section: 'cold-email-extract', content: extractedText })
       });
-
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const result = await res.json();
 
@@ -477,385 +870,55 @@
       const valueProp = (extracted.valueProposition || '').trim();
       if (!valueProp) throw new Error('Could not extract a value proposition from this file.');
 
-      if (backgroundInput) backgroundInput.value = valueProp;
+      if (bgInput) bgInput.value = valueProp;
       state.brief.background = valueProp;
 
-      const nameInput = document.getElementById('userName');
+      const nameInput = document.getElementById('ceSenderName');
       if (nameInput && !(nameInput.value || '').trim() && extracted.name) {
         nameInput.value = extracted.name;
-        state.brief.userName = extracted.name;
+        state.brief.senderName = extracted.name;
       }
 
-      state.resume.loadedId = 'imported-file';
+      state.resume.loadedId   = 'imported-file';
       state.resume.loadedName = file.name.replace(/\.[^.]+$/, '');
-      const container = document.getElementById('resumeImportActionContainer');
+      const container = document.getElementById('ceResumeImportContainer');
       if (container) renderResumeChip(state.resume.loadedName, container);
-      saveDraftToStorage();
+      saveDraft();
       showToast('Resume imported successfully.');
     } catch (err) {
       console.error('[ColdEmail] handleComputerImport error:', err);
       showToast(`Import failed: ${err.message || 'Please try again.'}`, true);
-      const container = document.getElementById('resumeImportActionContainer');
+      const container = document.getElementById('ceResumeImportContainer');
       if (container) renderResumeImportUI(container);
     } finally {
       e.target.value = '';
     }
   }
 
-  // ── State sync ──────────────────────────────────────────────────────────
-  function syncStateFromInputs() {
-    const get = id => {
-      const el = document.getElementById(id);
-      return el ? (el.value || '').trim() : '';
-    };
-    state.brief.recipientName = get('recipientName');
-    state.brief.position = get('position');
-    state.brief.relationship = get('relationship');
-    state.brief.companyName = get('companyName');
-    state.brief.companyContext = get('companyContext');
-    state.brief.userName = get('userName');
-    state.brief.background = get('background');
-    state.brief.emailGoal = get('emailGoal') || state.brief.emailGoal;
-    state.brief.tone = get('tone');
-    state.brief.length = get('length');
-    state.brief.ctaStyle = get('ctaStyle');
-  }
-
-  function syncDOMFromState() {
-    const set = (id, val) => {
-      const el = document.getElementById(id);
-      if (el) el.value = val || '';
-    };
-    set('recipientName', state.brief.recipientName);
-    set('position', state.brief.position);
-    set('relationship', state.brief.relationship);
-    set('companyName', state.brief.companyName);
-    set('companyContext', state.brief.companyContext);
-    set('userName', state.brief.userName);
-    set('background', state.brief.background);
-    set('emailGoal', state.brief.emailGoal);
-    set('tone', state.brief.tone);
-    set('length', state.brief.length);
-    set('ctaStyle', state.brief.ctaStyle);
-
-    // Sync goal grid active state
-    document.querySelectorAll('.goal-card').forEach(g => {
-      g.classList.toggle('active', g.dataset.value === state.brief.emailGoal);
-    });
-  }
-
-  // ── Generation ──────────────────────────────────────────────────────────
-  async function handleGenerate() {
-    // Guard: single-flight lock
-    if (state.generation.status === 'generating') return;
-
-    syncStateFromInputs();
-
-    // Validate required fields — send server-side errors rather than blocking client-side on background
-    const missing = [];
-    if (!state.brief.position) missing.push('Role / Title (Step 1)');
-    if (!state.brief.companyName) missing.push('Company Name (Step 2)');
-    if (!state.brief.userName) missing.push('Your Name (Step 3)');
-    // background is NOT required client-side — the server handles it gracefully
-
-    if (missing.length > 0) {
-      showToast(`Please fill in: ${missing[0]}`, true);
-      if (!state.brief.position) toggleStepAccordion('recipient');
-      else if (!state.brief.companyName) toggleStepAccordion('company');
-      else toggleStepAccordion('value');
-      return;
-    }
-
-    // Abort any prior in-flight request
-    if (state.generation.controller) {
-      try { state.generation.controller.abort(); } catch (_) {}
-    }
-
-    const controller = new AbortController();
-    state.generation.controller = controller;
-    state.generation.requestId += 1;
-    const currentReqId = state.generation.requestId;
-    state.generation.status = 'generating';
-
-    const genBtn = document.getElementById('generateBtn');
-    if (genBtn) {
-      genBtn.innerHTML = '<i data-lucide="loader-circle" class="spin" width="16"></i> Generating…';
-      genBtn.disabled = true;
-      if (window.lucide) window.lucide.createIcons();
-    }
-    setEditorGenerating(true);
-
-    const payload = {
-      action: 'generate',
-      emailGoal: state.brief.emailGoal,
-      recipient: {
-        name: state.brief.recipientName,
-        company: state.brief.companyName,
-        position: state.brief.position
-      },
-      userContext: {
-        name: state.brief.userName,
-        background: state.brief.background,
-        whyContacting: state.brief.companyContext || state.brief.relationship
-      },
-      length: state.brief.length,
-      personalization: {
-        tone: state.brief.tone,
-        length: state.brief.length,
-        ctaStyle: state.brief.ctaStyle
-      }
-    };
-
-    try {
-      const session = await window.appSdk.auth.getSession();
-      const headers = { 'Content-Type': 'application/json' };
-      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
-
-      const res = await fetch('/api/cold-email', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-
-      // Bail silently if a newer request has superseded this one
-      if (currentReqId !== state.generation.requestId) return;
-
-      const data = await res.json();
-      if (currentReqId !== state.generation.requestId) return;
-
-      if (!res.ok) {
-        const msg = data.error || `Generation failed (${res.status})`;
-        if (data.usageLimitReached) {
-          showToast(msg, true);
-          return;
-        }
-        throw new Error(msg);
-      }
-
-      // Validate and sanitize response
-      const variants = Array.isArray(data.variants) ? data.variants : [];
-      if (variants.length === 0) throw new Error('No email variants were generated. Please try again.');
-
-      // Normalize all variants — handles both new structured and legacy flat formats
-      const normalizedVariants = variants
-        .map(v => normalizeClientVariant(v, state.brief.userName))
-        .filter(Boolean)
-        .filter(v => validateStructuredVariant(v) || (v.paragraphs && v.paragraphs.length > 0));
-
-      if (normalizedVariants.length === 0) throw new Error('Email generation returned invalid data. Please try again.');
-
-      state.data.variants = normalizedVariants;
-
-      state.data.subjectLines = Array.isArray(data.subjectLines)
-        ? data.subjectLines.slice(0, 4).map(s => ({
-            text: sanitizeSubject(s.text || s),
-            label: sanitizeText(s.label) || ''
-          }))
-        : [];
-
-      state.data.followUps = Array.isArray(data.followUps)
-        ? data.followUps
-            .map(f => normalizeClientFollowUp(f, state.brief.userName))
-            .filter(Boolean)
-        : [];
-
-      state.data.evaluation = data.evaluation || null;
-      state.data.activeVariantIndex = 0;
-
-      const activeVariant = state.data.variants[0];
-      state.editor.subject = activeVariant.subject;
-      // Build semantic email HTML from the structured variant
-      state.editor.bodyHtml = variantToEmailHtml(activeVariant);
-
-      saveDraftToStorage();
-      renderWorkspace();
-
-    } catch (err) {
-      if (err.name === 'AbortError') return; // Superseded by newer request — silent
-
-      console.error('[ColdEmail] Generation error:', err);
-      const msg = err.message && err.message.length < 200
-        ? err.message
-        : 'Generation failed. Please try again.';
-      showToast(msg, true);
-
-    } finally {
-      // Always restore button state — check if this request is still the current one
-      if (currentReqId === state.generation.requestId) {
-        state.generation.status = 'idle';
-        state.generation.controller = null;
-        setEditorGenerating(false);
-        if (genBtn) {
-          genBtn.innerHTML = 'Generate Email <i data-lucide="sparkles" width="16"></i>';
-          genBtn.disabled = false;
-          if (window.lucide) window.lucide.createIcons();
-        }
-      }
-    }
-  }
-
-  // ── Sanitization ─────────────────────────────────────────────────────────
+  // ── Normalization ──────────────────────────────────────────────────────
   /**
-   * Client-side field sanitizer: strips HTML, decodes entities, removes artifacts.
-   * Applied to each structured field (greeting, paragraph, cta, signOff, senderName)
-   * individually — never on a concatenated blob.
+   * Normalize a raw API variant into a clean structured object.
+   * Handles both new structured format (paragraphs[]) and legacy flat body string.
    */
-  function sanitizeClientField(str) {
-    if (!str || typeof str !== 'string') return '';
-    return str
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
-      .replace(/<\/p>/gi, '\n')
-      .replace(/<p[^>]*>/gi, '')
-      .replace(/<[^>]{0,200}>/g, '')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&nbsp;/g, ' ')
-      .replace(/\*\*(.*?)\*\*/g, '$1')
-      .replace(/__(.*?)__/g, '$1')
-      .replace(/\[object Object\]/gi, '')
-      .replace(/\bundefined\b/g, '')
-      .replace(/\bnull\b/g, '')
-      .replace(/\n{3,}/g, '\n\n')
-      .trim();
-  }
-
-  function setEditorGenerating(isGenerating) {
-    const overlay = document.getElementById('editorGenOverlay');
-    const canvas = document.getElementById('editorCanvas');
-    if (overlay) overlay.classList.toggle('visible', isGenerating);
-    if (canvas) canvas.classList.toggle('cl-generating', isGenerating);
-  }
-
-  // ── Legacy sanitization (used for optimize revisedText only) ─────────────
-  function sanitizeText(str) {
-    if (!str || typeof str !== 'string') return '';
-    return str.replace(/[<>]/g, '').trim();
-  }
-
-  function sanitizeSubject(str) {
-    if (!str || typeof str !== 'string') return '';
-    return str.replace(/^subject\s*:\s*/i, '').replace(/[<>]/g, '').trim();
-  }
-
-  function sanitizeEmailBody(str) {
-    if (!str || typeof str !== 'string') return '';
-    let clean = str
-      // CRITICAL: Convert HTML line-break variants to actual newlines BEFORE stripping tags.
-      // This preserves paragraph structure when AI uses <br> or </p><p> instead of \n.
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
-      .replace(/<\/p>/gi, '\n')
-      .replace(/<p[^>]*>/gi, '')
-      // Strip all remaining HTML tags
-      .replace(/<[^>]*>/g, '')
-      // Decode common HTML entities that AI may produce
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&nbsp;/g, ' ')
-      // Strip markdown formatting
-      .replace(/```[\s\S]*?```/g, '')
-      .replace(/\*\*(.*?)\*\*/g, '$1')
-      .replace(/__(.*?)__/g, '$1')
-      // Strip debug artifacts
-      .replace(/\[object Object\]/gi, '')
-      .replace(/\bundefined\b/g, '')
-      .replace(/\bnull\b/g, '');
-
-    // Remove resume section headers if they leaked through
-    const resumeHeaders = /^(education|skills|work experience|experience|summary|certifications|languages|references)\s*:?\s*$/gim;
-    clean = clean.replace(resumeHeaders, '');
-
-    // Collapse 3+ consecutive blank lines to 2
-    clean = clean.replace(/\n{3,}/g, '\n\n');
-
-    return clean.trim();
-  }
-
-  /**
-   * Final sanitization pass applied immediately before any text goes into
-   * plainTextToHtml() or innerHTML. Acts as a last-line defense against:
-   * - Residual HTML tags that survived sanitizeEmailBody (e.g., escaped entities
-   *   that got decoded to tags in a second pass)
-   * - Literal strings like "<br>" appearing as text in the editor
-   * - Any undefined/null/object artifacts from variant rendering
-   */
-  function finalSanitize(text) {
-    if (!text || typeof text !== 'string') return '';
-    return text
-      // Strip any tags that are literally the text <br>, <p>, etc. (not already stripped)
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<[^>]{0,200}>/g, '')
-      // Remove literal escape sequences that might appear as text
-      .replace(/\\n/g, '\n')
-      .replace(/\\t/g, ' ')
-      .replace(/\[object Object\]/gi, '')
-      .replace(/\bundefined\b/g, '')
-      .trim();
-  }
-
-  function escapeHtml(str) {
-    if (!str) return '';
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
-  /**
-   * Validate a structured variant object on the client side.
-   * Returns true if the variant is safe to render.
-   */
-  function validateStructuredVariant(v) {
-    if (!v || typeof v !== 'object') return false;
-    if (!v.subject || typeof v.subject !== 'string') return false;
-    if (!Array.isArray(v.paragraphs) || v.paragraphs.length === 0) return false;
-    if (v.paragraphs.some(p => !p || typeof p !== 'string')) return false;
-    if (!v.greeting || typeof v.greeting !== 'string') return false;
-    // Check no HTML artifacts in any field
-    const htmlTagRe = /<[a-zA-Z][^>]{0,100}>/;
-    const fields = [v.greeting, ...v.paragraphs, v.cta || '', v.signOff || '', v.senderName || ''];
-    if (fields.some(f => htmlTagRe.test(f))) return false;
-    // Check no raw undefined/null/JSON artifacts
-    const artifactRe = /\[object Object\]|\bundefined\b|\bnull\b/;
-    if (fields.some(f => artifactRe.test(f))) return false;
-    return true;
-  }
-
-  /**
-   * Assemble a normalized structured variant from a raw API response.
-   * Handles both new structured format and legacy flat body string.
-   */
-  function normalizeClientVariant(v, userName) {
+  function normalizeVariant(v, userName) {
     if (!v || typeof v !== 'object') return null;
-    const clean = (s) => sanitizeClientField(String(s || ''));
+    const clean = s => sanitizeClientField(String(s || ''));
 
-    // New structured format: has paragraphs[]
     if (Array.isArray(v.paragraphs) && v.paragraphs.length > 0) {
       const paragraphs = v.paragraphs.map(p => clean(String(p || ''))).filter(Boolean);
       return {
-        tone: clean(v.tone) || 'Variant',
-        subject: sanitizeSubject(v.subject),
-        greeting: clean(v.greeting) || (v.recipientName ? `Hi ${v.recipientName},` : 'Hi there,'),
+        tone:       clean(v.tone) || 'Professional',
+        subject:    sanitizeSubject(v.subject),
+        greeting:   clean(v.greeting) || (v.recipientName ? `Hi ${v.recipientName},` : 'Hi there,'),
         paragraphs: paragraphs.length > 0 ? paragraphs : [''],
-        cta: clean(v.cta),
-        signOff: clean(v.signOff) || 'Best,',
+        cta:        clean(v.cta),
+        signOff:    clean(v.signOff) || 'Best,',
         senderName: clean(v.senderName) || userName || '',
-        wordCount: v.wordCount || paragraphs.join(' ').split(/\s+/).filter(Boolean).length,
-        approach: clean(v.approach) || ''
+        approach:   clean(v.approach) || ''
       };
     }
 
-    // Legacy flat body string: parse structure out of it
+    // Legacy flat body
     if (typeof v.body === 'string') {
       const bodyClean = sanitizeEmailBody(finalSanitize(v.body));
       const lines = bodyClean.split('\n').map(l => l.trim()).filter(Boolean);
@@ -888,758 +951,192 @@
         restLines = restLines.slice(0, -1);
       }
 
-      const paragraphs = restLines.filter(l => l.length > 0);
       return {
-        tone: clean(v.tone) || 'Variant',
-        subject: sanitizeSubject(v.subject),
-        greeting: greeting || 'Hi there,',
-        paragraphs: paragraphs.length > 0 ? paragraphs : [bodyClean],
+        tone:       clean(v.tone) || 'Professional',
+        subject:    sanitizeSubject(v.subject),
+        greeting:   greeting || 'Hi there,',
+        paragraphs: restLines.filter(Boolean),
         cta,
         signOff,
         senderName: senderName || userName || '',
-        wordCount: paragraphs.join(' ').split(/\s+/).filter(Boolean).length,
-        approach: clean(v.approach) || ''
+        approach:   ''
       };
     }
 
     return null;
   }
 
+  // ── HTML building ──────────────────────────────────────────────────────
   /**
-   * Normalize a follow-up entry (structured or legacy flat body).
+   * Build semantic email HTML from a structured variant.
+   * Each field is individually escaped — no HTML injection possible.
    */
-  function normalizeClientFollowUp(fu, userName) {
-    if (!fu || typeof fu !== 'object') return null;
-    const clean = (s) => sanitizeClientField(String(s || ''));
-
-    if (Array.isArray(fu.paragraphs) && fu.paragraphs.length > 0) {
-      return {
-        index: fu.index || 1,
-        timing: clean(fu.timing) || '',
-        subject: sanitizeSubject(fu.subject),
-        greeting: clean(fu.greeting) || '',
-        paragraphs: fu.paragraphs.map(p => clean(String(p || ''))).filter(Boolean),
-        cta: clean(fu.cta) || '',
-        signOff: clean(fu.signOff) || 'Best,',
-        senderName: clean(fu.senderName) || userName || ''
-      };
-    }
-
-    // Legacy flat body
-    const bodyClean = sanitizeEmailBody(finalSanitize(String(fu.body || '')));
-    return {
-      index: fu.index || 1,
-      timing: clean(fu.timing) || '',
-      subject: sanitizeSubject(fu.subject),
-      greeting: '',
-      paragraphs: bodyClean ? [bodyClean] : [],
-      cta: '',
-      signOff: 'Best,',
-      senderName: clean(fu.senderName) || userName || ''
-    };
-  }
-
-  /** Convert plain text to paragraph HTML (fallback, used by applyAiAction for revisedText) */
-  function plainTextToHtml(text) {
-    if (!text) return '';
-    return text
-      .split(/\n\n+/)
-      .map(para => `<p class="ce-email-paragraph">${escapeHtml(para.replace(/\n/g, '<br>'))}</p>`)
-      .join('');
-  }
-
-  /**
-   * Build the semantic email HTML from a structured variant.
-   * This is the primary rendering path — produces proper email structure,
-   * not a text blob. Each field is individually escaped to prevent HTML injection.
-   */
-  function variantToEmailHtml(variant) {
+  function variantToHtml(variant) {
     if (!variant) return '';
     const parts = [];
 
-    // Greeting
     if (variant.greeting) {
       parts.push(`<div class="ce-email-greeting">${escapeHtml(variant.greeting)}</div>`);
     }
-
-    // Body paragraphs
-    if (Array.isArray(variant.paragraphs)) {
-      variant.paragraphs.forEach(para => {
-        if (para && para.trim()) {
-          parts.push(`<p class="ce-email-paragraph">${escapeHtml(para.trim())}</p>`);
-        }
-      });
-    }
-
-    // CTA paragraph
+    (variant.paragraphs || []).forEach(para => {
+      if (para && para.trim()) {
+        parts.push(`<p class="ce-email-paragraph">${escapeHtml(para.trim())}</p>`);
+      }
+    });
     if (variant.cta && variant.cta.trim()) {
       parts.push(`<p class="ce-email-paragraph ce-email-cta">${escapeHtml(variant.cta.trim())}</p>`);
     }
 
-    // Signature block
-    const signOff = variant.signOff || 'Best,';
-    const senderName = variant.senderName || state.brief.userName || '';
+    const signOff    = variant.signOff || 'Best,';
+    const senderName = state.brief.senderName || variant.senderName || '';
     parts.push(`<div class="ce-email-signature">${escapeHtml(signOff)}<br>${escapeHtml(senderName)}</div>`);
 
     return parts.join('');
   }
 
-  /**
-   * Extract plain text from the semantic email HTML for copy/metrics.
-   * Understands the new email structure: greeting, paragraphs, cta, signature.
-   */
+  /** Build semantic email HTML from plain text (used after AI action). */
+  function plainTextToHtml(text) {
+    if (!text) return '';
+    // Detect greeting on first non-empty line
+    const lines = text.split('\n');
+    let idx = 0;
+    let html = '';
+
+    // Greeting
+    const firstNonEmpty = lines.findIndex(l => l.trim());
+    if (firstNonEmpty >= 0 && /^(hi|hello|dear)\b/i.test(lines[firstNonEmpty].trim())) {
+      html += `<div class="ce-email-greeting">${escapeHtml(lines[firstNonEmpty].trim())}</div>`;
+      idx = firstNonEmpty + 1;
+    }
+
+    // Paragraphs (split on blank lines)
+    const remaining = lines.slice(idx).join('\n');
+    const paras = remaining.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+
+    paras.forEach(para => {
+      html += `<p class="ce-email-paragraph">${escapeHtml(para.replace(/\n/g, ' '))}</p>`;
+    });
+
+    return html;
+  }
+
+  /** Extract plain text from semantic email HTML. */
   function htmlToPlainText(html) {
     if (!html) return '';
     const div = document.createElement('div');
     div.innerHTML = html;
-
     let result = '';
+
     div.childNodes.forEach(node => {
       if (node.nodeType !== Node.ELEMENT_NODE) return;
-      const tag = node.tagName.toLowerCase();
-      const text = (node.textContent || node.innerText || '').trim();
+      const tag  = node.tagName.toLowerCase();
+      const text = (node.textContent || '').trim();
       if (!text) return;
 
       if (tag === 'div') {
-        // Greeting or signature — expand inner <br> then add as a line
+        // Greeting or signature
         const inner = node.innerHTML.replace(/<br\s*\/?>/gi, '\n');
-        const innerDiv = document.createElement('div');
-        innerDiv.innerHTML = inner;
-        result += (innerDiv.textContent || innerDiv.innerText || '').trim() + '\n';
+        const tmp = document.createElement('div');
+        tmp.innerHTML = inner;
+        result += (tmp.textContent || '').trim() + '\n';
       } else if (tag === 'p') {
-        // Paragraphs and CTA: expand <br>, add double newline
         node.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
-        result += (node.textContent || node.innerText || '').trim() + '\n\n';
+        result += (node.textContent || '').trim() + '\n\n';
       }
     });
 
-    // Fallback for plain <p> editors (non-semantic HTML)
     if (!result.trim()) {
       div.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
       div.querySelectorAll('p, div').forEach(el => el.insertAdjacentText('afterend', '\n\n'));
-      result = (div.textContent || div.innerText || '').trim();
+      result = (div.textContent || '').trim();
     }
 
     return result.trim();
   }
 
-  // ── Render Workspace ────────────────────────────────────────────────────
-  function renderWorkspace() {
-    if (state.data.variants.length === 0) return;
-
-    const canvas = document.getElementById('editorCanvas');
-    if (canvas) {
-      canvas.classList.add('cl-has-draft');
-      canvas.classList.remove('cl-generating');
-    }
-
-    const elVariantsEmpty = document.getElementById('variantsEmptyState');
-    const elVariantsContent = document.getElementById('variantsContent');
-    const elCopilotEmpty = document.getElementById('copilotEmptyState');
-    const elCopilotContent = document.getElementById('copilotContent');
-
-    if (elVariantsEmpty) elVariantsEmpty.style.display = 'none';
-    if (elVariantsContent) elVariantsContent.style.display = 'block';
-    if (elCopilotEmpty) elCopilotEmpty.style.display = 'none';
-    if (elCopilotContent) elCopilotContent.style.display = 'block';
-
-    renderSubjectPills();
-    renderEditorContent();
-    renderCopilot();
-    renderVariants();
-    renderFollowUps();
-    updateLiveMetrics();
-
-    if (window.lucide) window.lucide.createIcons();
+  // ── Sanitization helpers ───────────────────────────────────────────────
+  function sanitizeClientField(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<p[^>]*>/gi, '')
+      .replace(/<[^>]{0,200}>/g, '')
+      .replace(/&amp;/g,  '&')
+      .replace(/&lt;/g,   '<')
+      .replace(/&gt;/g,   '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g,  "'")
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/__(.*?)__/g, '$1')
+      .replace(/\[object Object\]/gi, '')
+      .replace(/\bundefined\b/g, '')
+      .replace(/\bnull\b/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
   }
 
-  function renderSubjectPills() {
-    const container = document.getElementById('subjectContainer');
-    if (!container) return;
-    container.innerHTML = '';
-
-    const apiSubjects = state.data.subjectLines.map(s => s.text).filter(Boolean);
-    const allSubjects = [...new Set([state.editor.subject, ...apiSubjects])].filter(Boolean).slice(0, 4);
-
-    allSubjects.forEach(txt => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'subject-pill' + (txt === state.editor.subject ? ' active' : '');
-      btn.textContent = txt;
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.subject-pill').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        state.editor.subject = txt;
-        saveDraftToStorage();
-      });
-      container.appendChild(btn);
-    });
+  function sanitizeText(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str.replace(/[<>]/g, '').trim();
   }
 
-  function renderEditorContent() {
-    const editor = document.getElementById('editorSheet');
-    if (!editor) return;
-    // Only update if content has genuinely changed to avoid caret loss during typing
-    if (editor.innerHTML !== state.editor.bodyHtml) {
-      editor.innerHTML = state.editor.bodyHtml;
-    }
+  function sanitizeSubject(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str.replace(/^subject\s*:\s*/i, '').replace(/[<>]/g, '').trim();
   }
 
-  function renderCopilot() {
-    const scoreEl = document.getElementById('copilotOverallScore');
-    const labelEl = document.getElementById('copilotOverallLabel');
-    const strengthsEl = document.getElementById('copilotStrengths');
-    const ev = state.data.evaluation;
+  function sanitizeEmailBody(str) {
+    if (!str || typeof str !== 'string') return '';
+    let clean = str
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<p[^>]*>/gi, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&amp;/g,  '&')
+      .replace(/&lt;/g,   '<')
+      .replace(/&gt;/g,   '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g,  "'")
+      .replace(/&nbsp;/g, ' ')
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      .replace(/__(.*?)__/g, '$1')
+      .replace(/\[object Object\]/gi, '')
+      .replace(/\bundefined\b/g, '')
+      .replace(/\bnull\b/g, '');
 
-    if (scoreEl && ev) {
-      const score = ev.overallScore || 0;
-      let color, icon, label;
-      if (score >= 85) { color = 'var(--success)'; icon = 'check-circle'; label = 'Strong'; }
-      else if (score >= 70) { color = 'var(--warning)'; icon = 'alert-circle'; label = 'Good'; }
-      else { color = 'var(--danger)'; icon = 'x-circle'; label = 'Needs Work'; }
-      scoreEl.innerHTML = `<i data-lucide="${icon}" style="color:${color};" width="28" height="28"></i>`;
-      if (labelEl) { labelEl.textContent = label; labelEl.style.color = color; }
-    }
-
-    if (strengthsEl && ev) {
-      const strengths = Array.isArray(ev.strengths) ? ev.strengths.filter(Boolean) : [];
-      const weaknesses = Array.isArray(ev.weaknesses) ? ev.weaknesses.filter(Boolean) : [];
-
-      let html = '';
-      strengths.slice(0, 3).forEach(s => {
-        html += `<div class="ce-strength-item">
-          <i data-lucide="check" width="15" height="15" class="ce-strength-icon"></i>
-          <span>${escapeHtml(s)}</span>
-        </div>`;
-      });
-      weaknesses.slice(0, 1).forEach(w => {
-        html += `<div class="ce-weakness-item">
-          <i data-lucide="alert-circle" width="15" height="15" class="ce-weakness-icon"></i>
-          <span>${escapeHtml(w)}</span>
-        </div>`;
-      });
-
-      if (!html) {
-        html = `<div class="ce-strength-item">
-          <i data-lucide="check" width="15" height="15" class="ce-strength-icon"></i>
-          <span>Personalized opening relevant to the recipient</span>
-        </div>
-        <div class="ce-strength-item">
-          <i data-lucide="check" width="15" height="15" class="ce-strength-icon"></i>
-          <span>Clear value proposition without resume jargon</span>
-        </div>
-        <div class="ce-strength-item">
-          <i data-lucide="check" width="15" height="15" class="ce-strength-icon"></i>
-          <span>Low-friction call to action</span>
-        </div>`;
-      }
-
-      strengthsEl.innerHTML = html;
-    }
+    const resumeHeaders = /^(education|skills|work experience|experience|summary|certifications|languages|references)\s*:?\s*$/gim;
+    clean = clean.replace(resumeHeaders, '');
+    clean = clean.replace(/\n{3,}/g, '\n\n');
+    return clean.trim();
   }
 
-  function renderVariants() {
-    const varCont = document.getElementById('variantsContainer');
-    if (!varCont) return;
-    varCont.innerHTML = '';
-
-    const toneColors = {
-      context: '#6366f1',
-      question: '#10b981',
-      direct: '#f59e0b',
-      curiosity: '#8b5cf6',
-      professional: '#6366f1',
-      friendly: '#10b981',
-      networking: '#8b5cf6',
-      startup: '#ef4444',
-      technical: '#3b82f6'
-    };
-
-    const activeVariant = state.data.variants[state.data.activeVariantIndex];
-    const activeTone = (activeVariant?.tone || '').toLowerCase();
-
-    // Show variants that are not the currently active one
-    const displayVariants = state.data.variants.filter(v => {
-      const toneKey = (v.tone || '').toLowerCase();
-      return toneKey !== activeTone;
-    });
-
-    if (displayVariants.length === 0) {
-      varCont.innerHTML = '<p style="font-size:0.84rem;color:var(--text-3);">No alternative variants available.</p>';
-      return;
-    }
-
-    displayVariants.forEach(v => {
-      const toneKey = (v.tone || '').toLowerCase();
-      const badgeColor = toneColors[toneKey] || 'var(--accent)';
-      const safeApproach = v.approach || '';
-
-      // Assemble plain text body from structured fields for display
-      const displayBody = [
-        ...(v.paragraphs || []),
-        v.cta || ''
-      ].filter(Boolean).join('\n\n');
-
-      const card = document.createElement('div');
-      card.className = 'ce-variant-card';
-
-      card.innerHTML = `
-        <div class="ce-variant-header">
-          <span class="ce-tone-badge" style="color:${badgeColor};background:${badgeColor}1a;">${escapeHtml(v.tone)}</span>
-          <span class="ce-variant-subject" title="${escapeHtml(v.subject)}">Subj: ${escapeHtml(v.subject)}</span>
-        </div>
-        ${safeApproach ? `<div class="ce-variant-approach">${escapeHtml(safeApproach)}</div>` : ''}
-        <div class="ce-variant-email-preview">
-          <div class="ce-variant-greeting">${escapeHtml(v.greeting || '')}</div>
-          ${(v.paragraphs || []).map(p => `<p class="ce-variant-para">${escapeHtml(p)}</p>`).join('')}
-          ${v.cta ? `<p class="ce-variant-para ce-variant-cta">${escapeHtml(v.cta)}</p>` : ''}
-          <div class="ce-variant-sig">${escapeHtml(v.signOff || 'Best,')}<br>${escapeHtml(v.senderName || '')}</div>
-        </div>
-        <div class="ce-variant-actions">
-          <button type="button" class="btn btn-primary btn-sm variant-use-btn">Use this version</button>
-          <button type="button" class="btn btn-secondary btn-sm variant-copy-btn">Copy</button>
-        </div>`;
-
-      card.querySelector('.variant-use-btn').addEventListener('click', () => {
-        const idx = state.data.variants.indexOf(v);
-        state.data.activeVariantIndex = idx;
-        state.editor.subject = v.subject;
-        state.editor.bodyHtml = variantToEmailHtml(v);
-        saveDraftToStorage();
-        renderWorkspace();
-        showToast('Switched to ' + v.tone + ' variant.');
-      });
-
-      card.querySelector('.variant-copy-btn').addEventListener('click', () => {
-        const plainBody = [
-          v.greeting || '',
-          '',
-          ...(v.paragraphs || []),
-          '',
-          v.cta || '',
-          '',
-          v.signOff || 'Best,',
-          v.senderName || ''
-        ].filter((line, i, arr) => !(line === '' && (arr[i-1] === '' || i === 0 || i === arr.length - 1))).join('\n');
-        const text = `Subject: ${v.subject}\n\n${plainBody}`;
-        copyText(text, 'Variant copied to clipboard.');
-      });
-
-      varCont.appendChild(card);
-    });
+  function finalSanitize(text) {
+    if (!text || typeof text !== 'string') return '';
+    return text
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]{0,200}>/g, '')
+      .replace(/\\n/g, '\n')
+      .replace(/\\t/g, ' ')
+      .replace(/\[object Object\]/gi, '')
+      .replace(/\bundefined\b/g, '')
+      .trim();
   }
 
-  function renderFollowUps() {
-    const folCont = document.getElementById('followUpsContainer');
-    if (!folCont) return;
-    folCont.innerHTML = '';
-
-    const followUps = state.data.followUps.length > 0
-      ? state.data.followUps
-      : buildDefaultFollowUps();
-
-    const labels = ['Follow-up 1', 'Final Follow-up'];
-
-    followUps.slice(0, 2).forEach((fu, i) => {
-      const card = document.createElement('div');
-      card.className = 'ce-followup-card';
-
-      // Assemble the display body from structured fields
-      const fuGreeting = fu.greeting || '';
-      const fuParagraphs = Array.isArray(fu.paragraphs) ? fu.paragraphs : [];
-      const fuCta = fu.cta || '';
-      const fuSignOff = fu.signOff || 'Best,';
-      const fuSenderName = fu.senderName || state.brief.userName || '';
-
-      // Build display HTML for the follow-up body
-      let bodyHtml = '';
-      if (fuGreeting) bodyHtml += `<div class="ce-fu-greeting">${escapeHtml(fuGreeting)}</div>`;
-      fuParagraphs.forEach(p => {
-        if (p && p.trim()) bodyHtml += `<p class="ce-fu-para">${escapeHtml(p)}</p>`;
-      });
-      if (fuCta && fuCta.trim()) bodyHtml += `<p class="ce-fu-para">${escapeHtml(fuCta)}</p>`;
-      bodyHtml += `<div class="ce-fu-sig">${escapeHtml(fuSignOff)}<br>${escapeHtml(fuSenderName)}</div>`;
-
-      const subjectHtml = fu.subject
-        ? `<div class="ce-followup-subject">Subj: ${escapeHtml(fu.subject)}</div>`
-        : '';
-
-      card.innerHTML = `
-        <div class="ce-followup-header">
-          <span class="ce-followup-title">${escapeHtml(labels[i] || `Follow-up ${i + 1}`)}</span>
-          ${fu.timing ? `<span class="ce-followup-timing">${escapeHtml(fu.timing)}</span>` : ''}
-        </div>
-        ${subjectHtml}
-        <div class="ce-followup-body" data-fu-index="${i}">${bodyHtml}</div>
-        <div class="ce-followup-actions">
-          <button type="button" class="btn btn-secondary btn-sm fu-copy-btn">Copy</button>
-          <button type="button" class="btn btn-secondary btn-sm fu-edit-btn">Edit</button>
-        </div>`;
-
-      const bodyEl = card.querySelector(`[data-fu-index="${i}"]`);
-
-      card.querySelector('.fu-copy-btn').addEventListener('click', () => {
-        // Assemble plain text for copy
-        const parts = [];
-        if (fuGreeting) parts.push(fuGreeting);
-        parts.push('');
-        fuParagraphs.forEach(p => { if (p) parts.push(p); });
-        if (fuCta) { parts.push(''); parts.push(fuCta); }
-        parts.push('');
-        parts.push(fuSignOff);
-        parts.push(fuSenderName);
-        const plainText = parts.join('\n').trim();
-        const text = fu.subject ? `Subject: ${fu.subject}\n\n${plainText}` : plainText;
-        copyText(text, 'Follow-up copied.');
-      });
-
-      const editBtn = card.querySelector('.fu-edit-btn');
-      let editing = false;
-      editBtn.addEventListener('click', () => {
-        editing = !editing;
-        bodyEl.contentEditable = editing ? 'true' : 'false';
-        bodyEl.classList.toggle('ce-followup-body--editing', editing);
-        editBtn.textContent = editing ? 'Save' : 'Edit';
-        if (editing) {
-          // Switch to plain text for editing
-          const plainParts = [];
-          if (fuGreeting) plainParts.push(fuGreeting);
-          fuParagraphs.forEach(p => { if (p) { plainParts.push(''); plainParts.push(p); } });
-          if (fuCta) { plainParts.push(''); plainParts.push(fuCta); }
-          plainParts.push('');
-          plainParts.push(fuSignOff);
-          plainParts.push(fuSenderName);
-          bodyEl.textContent = plainParts.join('\n').trim();
-          bodyEl.focus();
-          const range = document.createRange();
-          range.selectNodeContents(bodyEl);
-          range.collapse(false);
-          window.getSelection().removeAllRanges();
-          window.getSelection().addRange(range);
-        } else {
-          // Save back to state as flat text (follow-up is simpler to store)
-          const rawText = bodyEl.textContent || bodyEl.innerText || '';
-          state.data.followUps[i] = {
-            ...fu,
-            paragraphs: [rawText.trim()],
-            greeting: '',
-            cta: ''
-          };
-          // Restore display HTML
-          bodyEl.innerHTML = bodyHtml;
-          bodyEl.contentEditable = 'false';
-          saveDraftToStorage();
-          showToast('Follow-up saved.');
-        }
-      });
-
-      folCont.appendChild(card);
-    });
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g,  '&amp;')
+      .replace(/</g,  '&lt;')
+      .replace(/>/g,  '&gt;')
+      .replace(/"/g,  '&quot;')
+      .replace(/'/g,  '&#39;');
   }
 
-  function buildDefaultFollowUps() {
-    const recip = state.brief.recipientName || 'there';
-    const comp = state.brief.companyName || 'your organization';
-    const sender = state.brief.userName || '';
-    const why = state.brief.companyContext || state.brief.relationship || '';
-    const greeting = state.brief.recipientName ? `Hi ${recip},` : 'Hi there,';
-
-    return [
-      {
-        index: 1,
-        timing: '3–5 business days after initial email',
-        subject: `one more thought — ${comp}`,
-        greeting,
-        paragraphs: [
-          why
-            ? `One additional angle since my last note: ${why} is something I've been thinking about.`
-            : `One additional thought since my last note — I think what you're building at ${comp} is worth a quick conversation.`,
-          'Happy to keep it brief — 15 minutes at most.'
-        ],
-        cta: 'Would that work?',
-        signOff: 'Best,',
-        senderName: sender
-      },
-      {
-        index: 2,
-        timing: '7–10 business days after follow-up 1',
-        subject: `closing the loop — ${comp}`,
-        greeting,
-        paragraphs: [
-          `I'll leave it here so I'm not filling your inbox. If the timing is ever right, I'd genuinely welcome a conversation.`
-        ],
-        cta: '',
-        signOff: 'All the best,',
-        senderName: sender
-      }
-    ];
-  }
-
-  // ── Live Metrics ────────────────────────────────────────────────────────
-  function updateLiveMetrics() {
-    const plainText = htmlToPlainText(state.editor.bodyHtml);
-    const words = plainText.trim() === '' ? 0 : plainText.trim().split(/\s+/).filter(Boolean).length;
-    const el = id => document.getElementById(id);
-    if (el('wordCount')) el('wordCount').textContent = words;
-    if (el('charCount')) el('charCount').textContent = plainText.length;
-    if (el('readTime')) el('readTime').textContent = Math.max(1, Math.ceil(words / 200)) + 'm';
-  }
-
-  // ── Editor Setup ────────────────────────────────────────────────────────
-  function setupEditorToolbar() {
-    document.querySelectorAll('.cl-toolbar-btn').forEach(btn => {
-      btn.addEventListener('mousedown', e => e.preventDefault());
-      btn.addEventListener('click', e => {
-        e.preventDefault();
-        const cmd = btn.dataset.command;
-        if (!cmd) return;
-        document.execCommand(cmd, false, null);
-        const editor = document.getElementById('editorSheet');
-        if (editor) {
-          editor.focus();
-          syncEditorToState(editor);
-        }
-      });
-    });
-  }
-
-  function setupEditorSync() {
-    const editor = document.getElementById('editorSheet');
-    if (!editor) return;
-
-    editor.addEventListener('input', () => {
-      syncEditorToState(editor);
-      clearTimeout(autosaveTimer);
-      autosaveTimer = setTimeout(() => {
-        saveDraftToStorage();
-        flashAutosave();
-        updateLiveMetrics();
-      }, 1200);
-    });
-  }
-
-  function syncEditorToState(editor) {
-    state.editor.bodyHtml = editor.innerHTML;
-  }
-
-  function flashAutosave() {
-    const label = document.getElementById('autosaveLabel');
-    if (!label) return;
-    label.style.opacity = '1';
-    setTimeout(() => { label.style.opacity = '0'; }, 2000);
-  }
-
-  // ── Action Bar ──────────────────────────────────────────────────────────
-  function setupActionBar() {
-    const copyBtn = document.getElementById('copyBtn');
-    if (copyBtn) {
-      copyBtn.addEventListener('click', () => {
-        // Assemble plain text from the active structured variant for clean copy
-        const activeVariant = state.data.variants[state.data.activeVariantIndex];
-        let plainBody = '';
-        if (activeVariant && Array.isArray(activeVariant.paragraphs)) {
-          const parts = [];
-          if (activeVariant.greeting) parts.push(activeVariant.greeting);
-          parts.push('');
-          activeVariant.paragraphs.forEach(p => { if (p) parts.push(p); });
-          if (activeVariant.cta) { parts.push(''); parts.push(activeVariant.cta); }
-          parts.push('');
-          parts.push(activeVariant.signOff || 'Best,');
-          parts.push(activeVariant.senderName || state.brief.userName || '');
-          plainBody = parts.join('\n').trim();
-        } else {
-          // Fallback: extract from editor HTML
-          plainBody = htmlToPlainText(state.editor.bodyHtml);
-        }
-        if (!plainBody) return showToast('No email to copy.', true);
-        const text = state.editor.subject
-          ? `Subject: ${state.editor.subject}\n\n${plainBody}`
-          : plainBody;
-        copyText(text, 'Email copied to clipboard.');
-      });
-    }
-
-    const saveDraftBtn = document.getElementById('saveDraftBtn');
-    if (saveDraftBtn) {
-      saveDraftBtn.addEventListener('click', () => {
-        saveDraftToStorage();
-        showToast('Draft saved.');
-      });
-    }
-
-    const genBtn = document.getElementById('generateBtn');
-    if (genBtn) genBtn.addEventListener('click', handleGenerate);
-  }
-
-  function copyText(text, successMsg) {
-    if (window.appSdk?.ui?.copyToClipboard) {
-      window.appSdk.ui.copyToClipboard(text, successMsg);
-    } else {
-      navigator.clipboard.writeText(text)
-        .then(() => showToast(successMsg))
-        .catch(() => showToast('Copy failed.', true));
-    }
-  }
-
-  // ── AI Copilot Actions ──────────────────────────────────────────────────
-  // Spec-compliant action set:
-  //   improve      : Rewrite the opening sentence to be more specific
-  //   shorten      : Remove 20–30% of words, preserve core message
-  //   changeAngle  : Completely different opening strategy, same facts
-  //   regenerate   : Re-run full generation with current form state
-  const ACTION_FEEDBACK_MAP = {
-    improve: 'Rewrite ONLY the opening sentence or opening paragraph to be more specific and relevant to the recipient and company. Do not change anything else — preserve the value proposition, CTA, and signature exactly.',
-    shorten: 'Shorten the email by 20–30% by removing filler, redundant phrases, and unnecessary words. Preserve the core message, the main value point, and the CTA exactly. Do not add new content.',
-    changeAngle: 'Rewrite the email using a completely different opening strategy and angle. Keep the same verified facts about the sender but change the framing, opening approach, and structure entirely. The result should feel meaningfully different from the original.'
-  };
-
-  async function triggerAiAction(action) {
-    // Special case: regenerate calls handleGenerate directly
-    if (action === 'regenerate') {
-      hideDiffView();
-      await handleGenerate();
-      return;
-    }
-
-    const plainBody = htmlToPlainText(state.editor.bodyHtml);
-    if (!plainBody) {
-      showToast('Please generate an email first.', true);
-      return;
-    }
-
-    // Prevent concurrent copilot calls
-    if (state.generation.status === 'copilot-busy') return;
-    state.generation.copilotRequestId += 1;
-    const currentReqId = state.generation.copilotRequestId;
-    state.generation.status = 'copilot-busy';
-
-    // Disable all action cards while running
-    document.querySelectorAll('.cl-action-card').forEach(b => b.disabled = true);
-
-    const diffView = document.getElementById('aiDiffView');
-    const diffOrig = document.getElementById('diffOrig');
-    const diffSug = document.getElementById('diffSug');
-
-    if (diffOrig) diffOrig.textContent = '';
-    if (diffSug) {
-      diffSug.innerHTML = '<i data-lucide="loader-2" class="spin" width="14" style="margin-right:6px;vertical-align:middle;"></i> Applying improvement…';
-      if (window.lucide) window.lucide.createIcons();
-    }
-    if (diffView) diffView.style.display = 'block';
-
-    const feedback = ACTION_FEEDBACK_MAP[action] || `Improve the email: ${action}`;
-
-    const payload = {
-      action: 'optimize',
-      emailGoal: state.brief.emailGoal,
-      emailBody: plainBody,
-      feedback,
-      recipientName: state.brief.recipientName,
-      companyName: state.brief.companyName,
-      position: state.brief.position,
-      userName: state.brief.userName,
-      background: state.brief.background,
-      whyContacting: state.brief.companyContext || state.brief.relationship,
-      length: state.brief.length
-    };
-
-    try {
-      const session = await window.appSdk.auth.getSession();
-      const headers = { 'Content-Type': 'application/json' };
-      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
-
-      const res = await fetch('/api/cold-email', { method: 'POST', headers, body: JSON.stringify(payload) });
-      const data = await res.json();
-
-      if (currentReqId !== state.generation.copilotRequestId) return;
-      if (!res.ok) throw new Error(data.error || 'Optimization failed');
-
-      const proposed = sanitizeEmailBody((data.revisedText || '').trim());
-      if (!proposed || proposed === plainBody.trim()) {
-        if (diffSug) diffSug.textContent = 'No meaningful change was produced. Try a different action.';
-        return;
-      }
-
-      // Store proposed text in data-* attribute — NEVER use innerText for apply
-      if (diffSug) {
-        diffSug.dataset.proposedText = proposed;
-        diffSug.innerHTML = renderWordDiff(plainBody, proposed);
-      }
-      if (diffOrig) diffOrig.textContent = plainBody;
-
-    } catch (err) {
-      if (currentReqId === state.generation.copilotRequestId) {
-        const userMsg = (err.message && err.message.length < 150)
-          ? err.message
-          : 'Something went wrong. Please try again.';
-        if (diffSug) diffSug.textContent = userMsg;
-      }
-    } finally {
-      if (currentReqId === state.generation.copilotRequestId) {
-        state.generation.status = 'idle';
-        document.querySelectorAll('.cl-action-card').forEach(b => b.disabled = false);
-      }
-    }
-  }
-
-  function hideDiffView() {
-    const diffView = document.getElementById('aiDiffView');
-    if (diffView) diffView.style.display = 'none';
-    const diffSug = document.getElementById('diffSug');
-    if (diffSug) delete diffSug.dataset.proposedText;
-  }
-
-  function rejectAiAction() {
-    hideDiffView();
-  }
-
-  function applyAiAction() {
-    const diffSug = document.getElementById('diffSug');
-    const editor = document.getElementById('editorSheet');
-    if (!diffSug || !editor) return;
-
-    // Always use dataset.proposedText — never fall back to innerText (contains diff HTML markup)
-    const proposed = diffSug.dataset.proposedText;
-    if (!proposed) {
-      showToast('No suggestion to apply.', true);
-      return;
-    }
-
-    // Apply finalSanitize before converting to HTML so <br> never appears as text
-    state.editor.bodyHtml = plainTextToHtml(finalSanitize(proposed));
-    editor.innerHTML = state.editor.bodyHtml;
-    hideDiffView();
-    saveDraftToStorage();
-    updateLiveMetrics();
-    showToast('AI suggestion applied.');
-  }
-
-  /** Highlight word-level differences between old and new text */
-  function renderWordDiff(oldText, newText) {
-    const oldWords = oldText.split(/(\s+)/);
-    const newWords = newText.split(/(\s+)/);
-
-    let start = 0;
-    while (start < oldWords.length && start < newWords.length && oldWords[start] === newWords[start]) start++;
-
-    let oldEnd = oldWords.length - 1;
-    let newEnd = newWords.length - 1;
-    while (oldEnd >= start && newEnd >= start && oldWords[oldEnd] === newWords[newEnd]) {
-      oldEnd--;
-      newEnd--;
-    }
-
-    const prefix = oldWords.slice(0, start).join('');
-    const removed = oldWords.slice(start, oldEnd + 1).join('');
-    const added = newWords.slice(start, newEnd + 1).join('');
-    const suffix = oldWords.slice(oldEnd + 1).join('');
-
-    let html = escapeHtml(prefix);
-    if (removed) html += `<span class="diff-del">${escapeHtml(removed)}</span>`;
-    if (added) html += `<span class="diff-ins">${escapeHtml(added)}</span>`;
-    html += escapeHtml(suffix);
-    return html;
-  }
-
+  // ── Boot ───────────────────────────────────────────────────────────────
   init();
 })();
