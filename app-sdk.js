@@ -420,9 +420,10 @@
       }
       
       let cleanUrl = config.supabaseUrl.trim().replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
+      let cleanKey = config.supabaseKey.trim();
 
       if (window.supabase && typeof window.supabase.createClient === 'function') {
-        appSdk.client = window.supabase.createClient(cleanUrl, config.supabaseKey, {
+        appSdk.client = window.supabase.createClient(cleanUrl, cleanKey, {
           auth: {
             persistSession: true,
             autoRefreshToken: true,

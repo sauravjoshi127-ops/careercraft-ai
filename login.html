@@ -281,7 +281,13 @@
                 });
 
                 if (error) {
-                    throw new Error(error.message);
+                    console.error('[Supabase Auth Failure]', {
+                        message: error.message,
+                        name: error.name,
+                        status: error.status,
+                        code: error.code || 'N/A'
+                    });
+                    throw error;
                 }
 
                 if (!data.user) {
