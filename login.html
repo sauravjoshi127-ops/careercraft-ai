@@ -123,6 +123,10 @@
     <!-- Top Navigation — rendered by NavigationManager -->
     <nav class="ch-nav" aria-label="Main navigation"></nav>
 
+    <div id="loadingState" style="text-align: center; margin-top: 10rem; color: var(--text-2);">
+        <h2>Loading sign-in...</h2>
+    </div>
+
     <div class="auth-wrapper glass-card" id="authWrapper">
         <h1>Sign In</h1>
         <p class="subtitle">Welcome back! Sign in to your account.</p>
@@ -177,48 +181,67 @@
             const lower = message.toLowerCase();
 
             if (!client) {
-                return 'Sign in service could not load. Please refresh the page or check your internet connection.';
+                return 'Sign-in service is temporarily unavailable.';
             }
 
-            if (!navigator.onLine || lower.includes('failed to fetch') || lower.includes('networkerror') || lower.includes('load failed')) {
-                return 'We could not reach the sign in service. Please check your internet connection and try again.';
+            if (!navigator.onLine || lower.includes('failed to fetch') || lower.includes('networkerror') || lower.includes('load failed') || lower.includes('timeout')) {
+                return 'Sign-in service is temporarily unavailable.';
             }
 
             if (lower.includes('invalid login credentials')) {
-                return 'Invalid email or password. Please try again.';
+                return 'Incorrect email or password.';
             }
 
             if (lower.includes('email not confirmed')) {
-                return 'Please verify your email before signing in.';
+                return 'Please confirm your email before signing in.';
             }
 
-            return message || 'Unable to sign in right now. Please try again.';
+            return 'Sign-in service is temporarily unavailable.';
         }
 
         // Redirect if already logged in (hidden initially to prevent FOUC glitch)
         async function checkExistingSession() {
-            await window.appSdk.ready;
-            client = window.appSdk.client;
+            const loadingState = document.getElementById('loadingState');
+            const authWrapper = document.getElementById('authWrapper');
             const urlParams = new URLSearchParams(window.location.search);
             const hasError = urlParams.has('error') || urlParams.has('loop');
 
             try {
+                // Add explicit timeout to avoid indefinite blank screen
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000));
+                await Promise.race([window.appSdk.ready, timeoutPromise]);
+                client = window.appSdk.client;
+            } catch (err) {
+                console.error('Session/Config check error:', err);
+                client = null;
+            }
+
+            try {
+                // Wait for session resolution. If client is null, getSession() handles it gracefully returning null.
                 const session = await window.appSdk.auth.getSession();
+                
                 if (session && !hasError) {
                     // Check for redirect param
                     const redirect = urlParams.get('redirect') || 'dashboard.html';
                     window.location.href = redirect;
+                    return; // Return early, leaving the loading UI visible while page navigates away
                 } else {
-                    if (hasError && session && window.appSdk.client) {
+                    if (hasError && session && client) {
                         console.warn('Redirect loop detected. Clearing session.');
-                        await window.appSdk.client.auth.signOut().catch(() => {});
+                        await client.auth.signOut().catch(() => {});
                         localStorage.clear();
                     }
-                    document.getElementById('authWrapper').classList.add('show');
                 }
             } catch (err) {
-                console.error('Session check error:', err);
-                document.getElementById('authWrapper').classList.add('show');
+                console.error('Session retrieve error:', err);
+            }
+
+            loadingState.style.display = 'none';
+            authWrapper.classList.add('show');
+            
+            if (!client) {
+                showMessage(document.getElementById('errorMsg'), 'Sign-in service is temporarily unavailable.');
+                document.getElementById('submitBtn').disabled = true;
             }
         }
         checkExistingSession();
@@ -282,12 +305,7 @@
 
             } catch (error) {
                 console.error('Login error:', error);
-                let message = getFriendlyAuthError(error);
-                if (message.includes('Invalid login credentials')) {
-                    message = 'Invalid email or password. Please try again.';
-                } else if (message.includes('Email not confirmed')) {
-                    message = 'Please verify your email before signing in.';
-                }
+                const message = getFriendlyAuthError(error);
                 showMessage(errorMsg, message);
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Sign In';

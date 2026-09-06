@@ -402,25 +402,59 @@
     }
 
     try {
-      const configRes = await fetch('/api/config');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const configRes = await fetch('/api/config', { signal: controller.signal });
+      clearTimeout(timeoutId);
+
       if (!configRes.ok) {
-        throw new Error(`Failed to load configuration: ${configRes.status}`);
+        let errDesc = configRes.statusText;
+        try { const d = await configRes.json(); errDesc = d.error || d.message || errDesc; } catch (e) {}
+        throw new Error(`Failed to load configuration: ${configRes.status} - ${errDesc}`);
       }
+      
       const config = await configRes.json();
       if (!config.supabaseUrl || !config.supabaseKey) {
         throw new Error('Missing required fields in configuration');
       }
+      
+      let cleanUrl = config.supabaseUrl.trim().replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
+
       if (window.supabase && typeof window.supabase.createClient === 'function') {
-        appSdk.client = window.supabase.createClient(config.supabaseUrl, config.supabaseKey);
+        appSdk.client = window.supabase.createClient(cleanUrl, config.supabaseKey, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
+          }
+        });
+        
+        // Listen for auth state changes to keep sessions active
         appSdk.client.auth.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_OUT') {
+            if (window.AuthManager) window.AuthManager.sessionCache = null;
+            sessionStorage.removeItem('careercraft_session');
+          } else if (session) {
+            if (window.AuthManager) {
+               window.AuthManager.sessionCache = session;
+               sessionStorage.setItem('careercraft_session', JSON.stringify(session));
+            }
+          }
           resolveAuthReady(session);
         });
+
+        // Trigger initial resolve if no session is immediately active but client is ready
+        // (Supabase will also fire INITIAL_SESSION event async)
+        const initialSession = await appSdk.client.auth.getSession();
+        resolveAuthReady(initialSession.data.session);
+
       } else {
         console.error('Supabase library not available.');
         resolveAuthReady(null);
       }
     } catch (err) {
-      console.error('[SDK] Failed to initialize Supabase client.', err);
+      console.error('[SDK] Failed to initialize Supabase client:', err);
       resolveAuthReady(null);
     }
   })();
