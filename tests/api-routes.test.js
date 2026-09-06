@@ -57,8 +57,13 @@ describe('local API route wiring', () => {
   it('returns runtime Supabase config only when env vars are defined', async () => {
     const originalUrl = process.env.SUPABASE_URL;
     const originalAnon = process.env.SUPABASE_ANON_KEY;
+    const originalNextUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const originalNextAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     try {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
       process.env.SUPABASE_URL = 'https://example.supabase.co';
       process.env.SUPABASE_ANON_KEY = 'public-anon-key';
       let res = await request(app).get('/api/config');
@@ -75,6 +80,8 @@ describe('local API route wiring', () => {
     } finally {
       restoreEnvVar('SUPABASE_URL', originalUrl);
       restoreEnvVar('SUPABASE_ANON_KEY', originalAnon);
+      restoreEnvVar('NEXT_PUBLIC_SUPABASE_URL', originalNextUrl);
+      restoreEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY', originalNextAnon);
     }
   });
 });

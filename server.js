@@ -93,6 +93,11 @@ app.post('/api/generate-pdf', generatePdfHandler);
 app.post('/api/create-order', createOrderHandler);
 app.post('/api/verify-payment', verifyPaymentHandler);
 
+// Catch-all for API routes to prevent serving HTML for missing API endpoints
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ error: `API route not found: ${req.method} ${req.originalUrl}` });
+});
+
 // Serve index for all non-API routes (SPA fallback)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
