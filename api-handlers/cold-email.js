@@ -59,11 +59,13 @@ function extractSingleProofPoint(background, context) {
 
   // Split on sentence-ending punctuation followed by whitespace
   const raw = clean.replace(/([.!?])\s+/g, '$1\x00').split('\x00');
-  const sentences = raw
-    .map(s => s.replace(/\x00/g, '').trim())
-    .filter(s => s.length > 15 && s.length < 300);
+  const sentences = raw.map(s => s.trim()).filter(s => {
+    if (s.length < 15 || s.length > 300) return false;
+    if (detectTruncatedSentence(s)) return false;
+    return true;
+  });
 
-  if (sentences.length === 0) return clean.substring(0, 200).trim();
+  if (sentences.length === 0) return '';
   if (sentences.length === 1) return sentences[0];
 
   const contextWords = (context || '').toLowerCase().split(/[\s,;]+/).filter(w => w.length > 3);
@@ -94,16 +96,25 @@ function extractSingleProofPoint(background, context) {
  */
 function detectTruncatedSentence(text) {
   if (!text) return null;
-  // Single capital letter followed by period at end of a word-boundary (truncated degree/name)
-  const truncDegreeRe = /\b[A-Z]\.(?:\s|$)/;
-  // "undefined" or "null" literally in the text
-  const literalRe = /\b(undefined|null)\b/i;
-  // Unfilled placeholder brackets with common template words
-  const bracketRe = /\[(?:Your|Recipient|Company|Name|Role|Title|Position|Sender)[^\]]*\]/i;
+  const lower = text.toLowerCase();
+  
+  // Truncated degree (e.g. B., M., LL.)
+  if (/\b(?:[A-Z]\.|LL\.)(?:\s|$)/.test(text)) return 'truncated degree abbreviation';
+  
+  // Truncated trailing fragments common in cut-off generation
+  if (/(?:\(Hons\.|pursuing|experience in|at)\s*$/i.test(text)) return 'abrupt ending fragment';
+  
+  // Unclosed parenthesis or bracket
+  const openParen = (text.match(/\(/g) || []).length;
+  const closeParen = (text.match(/\)/g) || []).length;
+  if (openParen > closeParen) return 'unclosed parenthesis';
 
-  if (truncDegreeRe.test(text)) return 'truncated degree abbreviation';
-  if (literalRe.test(text)) return 'literal undefined/null';
-  if (bracketRe.test(text)) return 'unfilled placeholder bracket';
+  // "undefined" or "null" literally in the text
+  if (/\b(undefined|null)\b/i.test(text)) return 'literal undefined/null';
+  
+  // Unfilled placeholder brackets
+  if (/\[(?:Your|Recipient|Company|Name|Role|Title|Position|Sender|First Name|Last Name)[^\]]*\]/i.test(text)) return 'unfilled placeholder bracket';
+  
   return null;
 }
 
