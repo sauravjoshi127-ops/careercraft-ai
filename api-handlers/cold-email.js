@@ -85,6 +85,29 @@ function extractSingleProofPoint(background, context) {
 }
 
 /**
+ * Detects truncated sentences — hallmarks of AI cutting off mid-word or mid-phrase.
+ * Patterns:
+ *   "third-year B."  → truncated degree ("B." alone after a word)
+ *   "Currently pursuing my B." → same
+ *   "A highly motivated M." → truncated MBA/Masters
+ * Returns the matched fragment, or null if clean.
+ */
+function detectTruncatedSentence(text) {
+  if (!text) return null;
+  // Single capital letter followed by period at end of a word-boundary (truncated degree/name)
+  const truncDegreeRe = /\b[A-Z]\.(?:\s|$)/;
+  // "undefined" or "null" literally in the text
+  const literalRe = /\b(undefined|null)\b/i;
+  // Unfilled placeholder brackets with common template words
+  const bracketRe = /\[(?:Your|Recipient|Company|Name|Role|Title|Position|Sender)[^\]]*\]/i;
+
+  if (truncDegreeRe.test(text)) return 'truncated degree abbreviation';
+  if (literalRe.test(text)) return 'literal undefined/null';
+  if (bracketRe.test(text)) return 'unfilled placeholder bracket';
+  return null;
+}
+
+/**
  * Detects cover-letter and resume-summary anti-patterns in generated email text.
  * Returns the first pattern found, or null if clean.
  */
@@ -146,7 +169,26 @@ function sanitizeField(str) {
  * Sanitizes and normalizes a parsed variant, handling both old-format (body string)
  * and new structured format (greeting, paragraphs[], cta, signOff, senderName).
  */
-function normalizeVariant(v, userName) {
+/**
+ * Enforces greeting safety: if the sender's name appears in the greeting,
+ * replace the greeting with a safe alternative.
+ * This is a hard guard — it runs regardless of what the AI returned.
+ *
+ * @param {string} greeting - The greeting line from the AI
+ * @param {string} senderName - The authenticated sender's name
+ * @param {string} recipientName - The recipient's name (may be empty)
+ * @returns {string} - Safe greeting
+ */
+function guardGreeting(greeting, senderName, recipientName) {
+  if (!greeting) return recipientName ? `Hi ${recipientName},` : 'Hi there,';
+  // If sender name appears in greeting → this is the critical bug
+  if (senderName && greeting.toLowerCase().includes(senderName.toLowerCase())) {
+    return recipientName ? `Hi ${recipientName},` : 'Hi there,';
+  }
+  return greeting;
+}
+
+function normalizeVariant(v, userName, recipientName) {
   if (!v || typeof v !== 'object') return null;
   const clean = (s) => sanitizeField(String(s || ''));
 
@@ -186,15 +228,17 @@ function normalizeVariant(v, userName) {
 
     const paragraphs = restLines.filter(l => l.length > 0);
     const bodyResult = paragraphs.length > 0 ? paragraphs.join('\n\n') : bodyClean;
+    // Apply greeting guard — sender name must never appear in greeting
+    const safeGreeting = guardGreeting(greeting || 'Hi there,', userName, recipientName);
     return {
       tone: clean(v.tone) || 'Variant',
       subject: clean(v.subject),
-      greeting: greeting || 'Hi there,',
+      greeting: safeGreeting,
       paragraphs: paragraphs.length > 0 ? paragraphs : [bodyClean],
       body: bodyResult,
       cta,
       signOff,
-      senderName: senderName || userName || '',
+      senderName: userName || senderName || '',
       wordCount: paragraphs.join(' ').split(/\s+/).filter(Boolean).length || bodyClean.split(/\s+/).filter(Boolean).length,
       approach: clean(v.approach) || ''
     };
@@ -206,16 +250,18 @@ function normalizeVariant(v, userName) {
     : [];
 
   const bodyResult = paragraphs.join('\n\n') || (typeof v.body === 'string' ? clean(v.body) : '');
+  // Apply greeting guard — sender name must never appear in greeting
+  const safeGreeting = guardGreeting(clean(v.greeting) || 'Hi there,', userName, recipientName);
 
   return {
     tone: clean(v.tone) || 'Variant',
     subject: clean(v.subject),
-    greeting: clean(v.greeting) || 'Hi there,',
+    greeting: safeGreeting,
     paragraphs: paragraphs.length > 0 ? paragraphs : (bodyResult ? [bodyResult] : ['']),
     body: bodyResult,
     cta: clean(v.cta),
     signOff: clean(v.signOff) || 'Best,',
-    senderName: clean(v.senderName) || userName || '',
+    senderName: userName || clean(v.senderName) || '',
     wordCount: v.wordCount || paragraphs.join(' ').split(/\s+/).filter(Boolean).length || bodyResult.split(/\s+/).filter(Boolean).length,
     approach: clean(v.approach) || ''
   };
@@ -340,6 +386,13 @@ function validateColdEmailOutput(data, minLength, maxLength) {
     if (lastContent && !/[.?!'"\u2019\u201d]$/.test(lastContent)) {
       console.warn(`[cold-email] Validation failed: variant "${v.tone}" ends abruptly. Last: "${lastContent.slice(-40)}"`);
       return { isValid: false, reason: `Variant "${v.tone}" ends abruptly without complete sentence.` };
+    }
+
+    // Truncation detection across all body text
+    const truncation = detectTruncatedSentence(fullBodyText);
+    if (truncation) {
+      console.warn(`[cold-email] Validation failed: truncated content in variant "${v.tone}": ${truncation}`);
+      return { isValid: false, reason: `Truncated content in variant "${v.tone}": ${truncation}` };
     }
 
     // Debug/internal leakage
@@ -488,9 +541,21 @@ ${proofRule}
    - Generic praise: "incredible work", "amazing company", "reputation for excellence"
    - "Thank you for considering" / "Please find enclosed"
 8. NO HTML: No <br>, <p>, <div>, or any tag. paragraphs[] must be plain text strings.
-9. NO INVENTED FACTS: Do not invent company news, product names, funding events, team wins, mutual connections, or recipient interests.
+9. NO INVENTED FACTS: Do not invent company news, product names, funding events, team wins, mutual connections, or recipient interests. If company context was not supplied, do not pretend to know specific facts about the company.
 10. SIGNATURE: signOff is always "Best," (use "Warmly," for Curiosity variant only). senderName is exactly "${data.userName}".
-11. STRICT SEPARATION: Write in first person from the sender's perspective ("I", "my"). NEVER describe the sender in the third person. NEVER use the sender's name in the greeting. NEVER use the recipient's name in the signOff.
+11. STRICT SEPARATION: Write in first person from the sender's perspective ("I", "my"). NEVER describe the sender in the third person. NEVER use the recipient's name in the signOff.
+
+CRITICAL — GREETING RULE (most common model error — read carefully):
+   The greeting field addresses the RECIPIENT, not the sender.
+   ${data.userName} is the SENDER — the person writing this email.
+   ${data.userName} must NEVER appear in the greeting field.
+   ${data.recipientName ? `The recipient is "${data.recipientName}". Use: "greeting": "Hi ${data.recipientName},"` : `No recipient name was provided. Use: "greeting": "Hi there,"`}
+
+   WRONG (this error appears frequently — never do this):
+   "greeting": "Hi ${data.userName},"  ← this greets the sender with their own name. FORBIDDEN.
+
+   CORRECT:
+   ${data.recipientName ? `"greeting": "Hi ${data.recipientName},"` : `"greeting": "Hi there,"`}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 VARIANT STRATEGIES:
@@ -726,10 +791,12 @@ function buildFallbackColdEmail(data) {
       subject: `${company} — worth connecting?`,
       greeting,
       paragraphs: [
-        // Use whyContacting text directly if it's a complete sentence; otherwise append tail
+        // Use whyContacting text directly if it's a complete sentence; otherwise use clean fallback
         why && /[.!?]$/.test(why.trim())
           ? why.trim()
-          : `${contextLine} is something I've been following closely.`,
+          : position
+            ? `I'm reaching out regarding ${position} opportunities at ${company}.`
+            : `I'd like to explore a potential fit at ${company}.`,
         `${valueLine}.`
       ],
       cta: 'Would you be open to a brief conversation?',
@@ -745,8 +812,10 @@ function buildFallbackColdEmail(data) {
       paragraphs: [
         why && /[.!?]$/.test(why.trim())
           ? why.trim()
-          : `Is ${contextLine} a current priority for your team at ${company}?`,
-        `${valueLine} — happy to share a concrete example if that's useful.`
+          : position
+            ? `Is your team at ${company} currently considering candidates for ${position} roles?`
+            : `I'm curious whether ${company} is open to connecting with candidates who have ${valueLine}.`,
+        `${valueLine} — happy to share a concrete example if useful.`
       ],
       cta: 'Would a short exchange next week make sense?',
       signOff: 'Best,',
@@ -772,8 +841,12 @@ function buildFallbackColdEmail(data) {
       subject: `curious about your work at ${company}`,
       greeting,
       paragraphs: [
-        `The work your team is doing at ${company} caught my attention.`,
-        `${valueLine}, and I'd genuinely value your perspective.`
+        why && /[.!?]$/.test(why.trim())
+          ? why.trim()
+          : position
+            ? `I've been exploring ${position} opportunities and ${company} came up as a team worth reaching out to.`
+            : `I'm genuinely interested in the work your team is doing at ${company}.`,
+        `${valueLine}, and I'd value your perspective.`
       ],
       cta: 'Would you be open to a short conversation?',
       signOff: 'Warmly,',
@@ -1074,10 +1147,11 @@ module.exports = async function handler(req, res) {
       const parsed = parseGeminiResponse(rawText, action);
 
       if (action === 'generate') {
-        // Normalize all variants before validation
+        // Normalize all variants before validation.
+        // Pass recipientName so guardGreeting can produce the correct safe greeting.
         if (parsed && Array.isArray(parsed.variants)) {
           parsed.variants = parsed.variants
-            .map(v => normalizeVariant(v, dataFields.userName))
+            .map(v => normalizeVariant(v, dataFields.userName, dataFields.recipientName))
             .filter(Boolean);
           if (Array.isArray(parsed.followUps)) {
             parsed.followUps = parsed.followUps

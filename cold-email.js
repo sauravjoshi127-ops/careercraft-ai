@@ -87,6 +87,30 @@
     }
   }
 
+  // ── Background sanitization ────────────────────────────────────────────
+  /**
+   * Strips truncated sentences from auto-filled background text.
+   * Catches patterns like "A highly motivated third-year B." where B. is a
+   * truncated degree abbreviation (the AI cut off "B.Tech" or "B.A.").
+   * Only removes sentences that are clearly fragments; leaves everything else.
+   */
+  function stripTruncatedSentences(text) {
+    if (!text) return text;
+    // Split into sentences
+    const sentences = text.split(/(?<=[.!?])\s+/);
+    const cleaned = sentences.filter(s => {
+      const trimmed = s.trim();
+      // Drop sentences ending with single capital letter + period (truncated degree)
+      // e.g. "third-year B." or "pursuing my M."
+      if (/\b[A-Z]\.$/.test(trimmed)) return false;
+      // Drop sentences that are suspiciously short fragments (< 8 words) and end abruptly
+      const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
+      if (wordCount < 5 && /[A-Z]\.$/.test(trimmed)) return false;
+      return true;
+    });
+    return cleaned.join(' ').trim() || text.trim();
+  }
+
   // ── Purpose grid ───────────────────────────────────────────────────────
   function setupPurposeGrid() {
     const cards = document.querySelectorAll('.ce-purpose-card');
@@ -262,7 +286,8 @@
       },
       userContext: {
         name:          state.brief.senderName || '',
-        background:    state.brief.background || '',
+        // Strip any truncated sentences from auto-filled background before sending to API
+        background:    stripTruncatedSentences(state.brief.background || ''),
         whyContacting: state.brief.context || ''
       },
       personalization: {
@@ -315,17 +340,21 @@
       const primary = normalizeVariant(variants[0], state.brief.senderName);
       if (!primary) throw new Error('Generated email could not be rendered. Please try again.');
 
-      // Validate sender/recipient separation before rendering
-      const greeting = primary.greeting || '';
-      if (state.brief.senderName && greeting.toLowerCase().includes(state.brief.senderName.toLowerCase())) {
-        // Sender name in greeting — this is a bug; fix greeting
-        primary.greeting = state.brief.recipientName
-          ? `Hi ${state.brief.recipientName},`
-          : 'Hi there,';
+      // ── Critical: enforce sender/recipient separation on ALL variants ──
+      // The backend normalizeVariant already ran guardGreeting, but the
+      // frontend also has a local normalizeVariant. Apply the same guard here.
+      function applyGreetingGuard(variant) {
+        if (!variant) return variant;
+        const sn = (state.brief.senderName || '').toLowerCase();
+        const rn = state.brief.recipientName || '';
+        if (sn && (variant.greeting || '').toLowerCase().includes(sn)) {
+          variant.greeting = rn ? `Hi ${rn},` : 'Hi there,';
+        }
+        // Also ensure senderName in signature is always the sender, not the recipient
+        variant.senderName = state.brief.senderName || variant.senderName;
+        return variant;
       }
-
-      // Ensure senderName is correct
-      primary.senderName = state.brief.senderName;
+      applyGreetingGuard(primary);
 
       // Build subject list (dedup, max 4)
       const apiSubjects = Array.isArray(data.subjectLines)
@@ -345,7 +374,10 @@
       state.email.subject  = allSubjects[0]?.text || primary.subject;
       state.email.bodyHtml = variantToHtml(primary);
 
-      state.variants = variants.slice(1, 4).map(v => normalizeVariant(v, state.brief.senderName)).filter(Boolean);
+      // Apply greeting guard to ALL alternative variants before storing
+      state.variants = variants.slice(1, 4)
+        .map(v => applyGreetingGuard(normalizeVariant(v, state.brief.senderName)))
+        .filter(Boolean);
 
       saveDraft();
       renderEmail();
