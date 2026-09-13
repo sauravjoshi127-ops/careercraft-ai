@@ -528,7 +528,7 @@ STRICT RULES — VIOLATION = REJECTION
    NEVER start with sender's name, title, background, or credentials.
 ${proofRule}
 5. ONE CTA: ${ctaInstruction} Exactly one ask. Natural and low-friction.
-6. TONE: Sound like a real person emailing a professional contact — not a marketer.
+6. TONE: The user requested a "${data.tone}" tone. All variants must be written in a ${data.tone} tone. Sound like a real person emailing a professional contact — not a marketer.
 7. BANNED PHRASES (any of these → rejection):
    - "I am a [job title] with X years"
    - "My background includes" / "my experience in"
@@ -997,6 +997,7 @@ module.exports = async function handler(req, res) {
     lengthType,
     minLength,
     maxLength,
+    tone: body.tone || personalization.tone || 'Professional',
     emailBody: String(body.emailBody || '').trim(),
     feedback: String(body.feedback || '').trim()
   };

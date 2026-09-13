@@ -139,7 +139,7 @@
     });
   }
   function setupTonePills() {
-    const pills = document.querySelectorAll('.ce-tone-pill');
+    const pills = document.querySelectorAll('#ceToneGroup .ce-tone-pill');
     const hiddenInput = document.getElementById('ceTone');
     pills.forEach(pill => {
       pill.addEventListener('click', () => {
@@ -294,7 +294,9 @@
         tone:     state.brief.tone || 'Professional',
         lengthType: state.brief.length || 'Short',
         ctaStyle: 'Soft Ask'
-      }
+      },
+      length: state.brief.length || 'Short',
+      tone: state.brief.tone || 'Professional'
     };
     
     // Convert string length into min/max bounds for the prompt.
