@@ -2,11 +2,14 @@ require('./utils/env-loader');
 const path = require('path');
 const express = require('express');
 
-// Schema synchronization safeguard
+// Schema synchronization safeguard (development only)
+// NOTE: Never call process.exit() here — on Vercel serverless it kills the Lambda
+// cold-start container, causing ALL API routes (including /api/config) to return 503.
 try {
   require('./verify-schema')();
 } catch (err) {
-  process.exit(1);
+  console.error('[server] Schema verification failed:', err.message);
+  // Log and continue — do not exit; the server must stay alive for /api/config
 }
 
 // Modular API Handlers

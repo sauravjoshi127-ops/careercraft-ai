@@ -34,7 +34,8 @@ function verifySchema() {
         console.error('\n❌ [CRITICAL] SCHEMA MISMATCH ERROR ❌');
         console.error('The frontend expects fields that are not in the database schema: ' + missingFields.join(', '));
         console.error('Please create a database migration to add these columns to the resumes table.\n');
-        process.exit(1);
+        // Throw instead of process.exit — callers must not crash the server in production
+        throw new Error('Schema mismatch: missing fields: ' + missingFields.join(', '));
     }
     console.log('✅ [Schema] Synchronization verified.');
 }

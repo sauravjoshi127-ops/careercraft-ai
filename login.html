@@ -177,25 +177,87 @@
         }
 
         function getFriendlyAuthError(error) {
-            const message = String(error?.message || error || '').trim();
-            const lower = message.toLowerCase();
+            // Always log the raw error for debugging (never logs password/tokens)
+            if (error && error.message !== undefined) {
+                console.error('[Auth Debug] Supabase error details:', {
+                    message: error.message,
+                    name: error.name,
+                    status: error.status,
+                    code: error.code || 'N/A'
+                });
+            }
 
             if (!client) {
+                return 'Sign-in is temporarily unavailable. Please try again later.';
+            }
+
+            const message = String(error?.message || error || '').trim();
+            const lower = message.toLowerCase();
+            const status = error?.status;
+            const code = error?.code || '';
+
+            // Network / fetch failure (actual connection problem)
+            const isNetworkError = (
+                lower.includes('failed to fetch') ||
+                lower.includes('networkerror') ||
+                lower.includes('load failed') ||
+                lower.includes('network request failed')
+            );
+            if (isNetworkError) {
                 return 'Sign-in service is temporarily unavailable.';
             }
 
-            if (!navigator.onLine || lower.includes('failed to fetch') || lower.includes('networkerror') || lower.includes('load failed') || lower.includes('timeout')) {
+            // Timeout
+            if (lower.includes('timeout') || lower.includes('aborted')) {
                 return 'Sign-in service is temporarily unavailable.';
             }
 
-            if (lower.includes('invalid login credentials')) {
+            // Invalid credentials
+            if (
+                lower.includes('invalid login credentials') ||
+                lower.includes('invalid credentials') ||
+                lower.includes('wrong password') ||
+                lower.includes('user not found') ||
+                lower.includes('invalid email or password') ||
+                status === 400 ||
+                code === 'invalid_credentials'
+            ) {
                 return 'Incorrect email or password.';
             }
 
-            if (lower.includes('email not confirmed')) {
-                return 'Please confirm your email before signing in.';
+            // Email not confirmed
+            if (
+                lower.includes('email not confirmed') ||
+                lower.includes('email address not confirmed') ||
+                lower.includes('email_not_confirmed') ||
+                code === 'email_not_confirmed'
+            ) {
+                return 'Please verify your email before signing in.';
             }
 
+            // Rate limiting
+            if (
+                lower.includes('too many requests') ||
+                lower.includes('rate limit') ||
+                lower.includes('email rate limit') ||
+                status === 429 ||
+                code === 'over_email_send_rate_limit' ||
+                code === 'too_many_requests'
+            ) {
+                return 'Too many attempts. Please wait and try again.';
+            }
+
+            // OAuth provider disabled
+            if (lower.includes('provider is not enabled') || lower.includes('oauth provider')) {
+                return 'This sign-in method is currently unavailable.';
+            }
+
+            // Supabase service-level 5xx errors
+            if (status >= 500 && status < 600) {
+                return 'Sign-in service is temporarily unavailable.';
+            }
+
+            // Fallback — true service/config unavailability
             return 'Sign-in service is temporarily unavailable.';
         }
 
@@ -339,7 +401,22 @@
                 }
                 await window.appSdk.auth.oauthLogin(provider);
             } catch (err) {
-                if(errorMsg) showMessage(errorMsg, `${provider === 'github' ? 'GitHub' : 'Google'} sign-in could not be completed. Please try again.`);
+                console.error(`[Auth Debug] OAuth ${provider} error:`, {
+                    message: err?.message,
+                    status: err?.status,
+                    code: err?.code
+                });
+                const providerLabel = provider === 'github' ? 'GitHub' : 'Google';
+                const errMsg = String(err?.message || '').toLowerCase();
+                let msg;
+                if (errMsg.includes('provider is not enabled') || errMsg.includes('oauth provider') || errMsg.includes('not enabled')) {
+                    msg = `${providerLabel} sign-in is currently unavailable.`;
+                } else if (errMsg.includes('failed to fetch') || errMsg.includes('networkerror')) {
+                    msg = `${providerLabel} sign-in is currently unavailable.`;
+                } else {
+                    msg = `${providerLabel} sign-in could not be completed. Please try again.`;
+                }
+                if(errorMsg) showMessage(errorMsg, msg);
                 allSocialBtns.forEach(b => b.disabled = false);
                 btn.textContent = originalText;
             }
