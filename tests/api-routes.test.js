@@ -57,8 +57,13 @@ describe('local API route wiring', () => {
   it('returns runtime Supabase config only when env vars are defined', async () => {
     const originalUrl = process.env.SUPABASE_URL;
     const originalAnon = process.env.SUPABASE_ANON_KEY;
+    const originalNextUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const originalNextAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     try {
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
       process.env.SUPABASE_URL = 'https://example.supabase.co';
       process.env.SUPABASE_ANON_KEY = 'public-anon-key';
       let res = await request(app).get('/api/config');
@@ -71,10 +76,15 @@ describe('local API route wiring', () => {
       res = await request(app).get('/api/config');
       assert.equal(res.status, 503);
       assert.match(res.type, /json/);
-      assert.match(res.body.error, /Missing SUPABASE_URL or SUPABASE_ANON_KEY/);
+      assert.match(res.body.error, /not configured/);
+      assert.ok(Array.isArray(res.body.missing), 'missing array should be present');
+      assert.ok(res.body.missing.includes('SUPABASE_URL'), 'missing should list SUPABASE_URL');
+      assert.ok(res.body.missing.includes('SUPABASE_ANON_KEY'), 'missing should list SUPABASE_ANON_KEY');
     } finally {
       restoreEnvVar('SUPABASE_URL', originalUrl);
       restoreEnvVar('SUPABASE_ANON_KEY', originalAnon);
+      restoreEnvVar('NEXT_PUBLIC_SUPABASE_URL', originalNextUrl);
+      restoreEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY', originalNextAnon);
     }
   });
 });

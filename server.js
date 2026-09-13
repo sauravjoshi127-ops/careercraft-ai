@@ -2,11 +2,12 @@ require('./utils/env-loader');
 const path = require('path');
 const express = require('express');
 
-// Schema synchronization safeguard
-try {
-  require('./verify-schema')();
-} catch (err) {
-  process.exit(1);
+// Schema synchronization safeguard (development-time only).
+// verifySchema() returns true/false and never throws or calls process.exit().
+// A schema mismatch is logged as a warning — it must NOT take down auth or any other route.
+const schemaOk = require('./verify-schema')();
+if (!schemaOk) {
+  console.warn('[server] Schema mismatch detected. Resume save/load may have issues, but all other routes are unaffected.');
 }
 
 // Modular API Handlers
@@ -63,17 +64,26 @@ app.use(express.static(path.join(__dirname), { extensions: ['html'] }));
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
 app.get('/api/config', (req, res) => {
+  // Accept both plain and NEXT_PUBLIC_ prefixed names for flexibility
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !supabaseKey) {
+  const missing = [];
+  if (!supabaseUrl) missing.push('SUPABASE_URL');
+  if (!supabaseKey) missing.push('SUPABASE_ANON_KEY');
+
+  if (missing.length > 0) {
+    // Log server-side so the Vercel function log shows exactly what is missing
+    console.error('[config] Missing required environment variables:', missing.join(', '));
     return res.status(503).json({
-      error: 'Missing SUPABASE_URL or SUPABASE_ANON_KEY. Configure these server environment variables (see README: Environment Variables & Secrets).'
+      error: 'Authentication service is not configured.',
+      missing: missing   // tells the client WHICH variable is absent, without leaking values
     });
   }
+
   res.json({
-    supabaseUrl: supabaseUrl,
-    supabaseKey: supabaseKey
+    supabaseUrl,
+    supabaseKey
   });
 });
 
@@ -92,6 +102,11 @@ app.post('/api/interview-coach', aiLimiter, interviewCoachHandler);
 app.post('/api/generate-pdf', generatePdfHandler);
 app.post('/api/create-order', createOrderHandler);
 app.post('/api/verify-payment', verifyPaymentHandler);
+
+// Catch-all for API routes to prevent serving HTML for missing API endpoints
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ error: `API route not found: ${req.method} ${req.originalUrl}` });
+});
 
 // Serve index for all non-API routes (SPA fallback)
 app.get('*', (req, res) => {
