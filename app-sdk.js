@@ -409,16 +409,25 @@
       clearTimeout(timeoutId);
 
       if (!configRes.ok) {
-        let errDesc = configRes.statusText;
-        try { const d = await configRes.json(); errDesc = d.error || d.message || errDesc; } catch (e) {}
-        throw new Error(`Failed to load configuration: ${configRes.status} - ${errDesc}`);
+        let errBody = {};
+        try { errBody = await configRes.json(); } catch (e) {}
+        const errDesc = errBody.error || configRes.statusText || 'unknown';
+        // Store error details for the UI to inspect (e.g. missing env var names)
+        appSdk._configError = { status: configRes.status, error: errDesc, missing: errBody.missing || null };
+        console.error('[SDK] /api/config returned', configRes.status, '-', errDesc,
+          errBody.missing ? '| Missing vars: ' + errBody.missing.join(', ') : '');
+        resolveAuthReady(null);
+        return;
       }
-      
+
       const config = await configRes.json();
       if (!config.supabaseUrl || !config.supabaseKey) {
-        throw new Error('Missing required fields in configuration');
+        appSdk._configError = { status: 200, error: 'supabaseUrl or supabaseKey missing from response' };
+        console.error('[SDK] /api/config response missing supabaseUrl or supabaseKey');
+        resolveAuthReady(null);
+        return;
       }
-      
+
       let cleanUrl = config.supabaseUrl.trim().replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
       let cleanKey = config.supabaseKey.trim();
 
@@ -445,17 +454,16 @@
           resolveAuthReady(session);
         });
 
-        // Trigger initial resolve if no session is immediately active but client is ready
-        // (Supabase will also fire INITIAL_SESSION event async)
+        // Trigger initial resolve — Supabase will also fire INITIAL_SESSION async
         const initialSession = await appSdk.client.auth.getSession();
         resolveAuthReady(initialSession.data.session);
 
       } else {
-        console.error('Supabase library not available.');
+        console.error('[SDK] Supabase library not available on window.supabase');
         resolveAuthReady(null);
       }
     } catch (err) {
-      console.error('[SDK] Failed to initialize Supabase client:', err);
+      console.error('[SDK] Failed to initialize Supabase client:', err.message || err);
       resolveAuthReady(null);
     }
   })();

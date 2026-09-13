@@ -300,9 +300,14 @@
 
             loadingState.style.display = 'none';
             authWrapper.classList.add('show');
-            
+
             if (!client) {
-                showMessage(document.getElementById('errorMsg'), 'Sign-in service is temporarily unavailable.');
+                // Distinguish: config missing (env vars not set) vs transient service error
+                const configErr = window.appSdk && window.appSdk._configError;
+                const msg = configErr && configErr.missing
+                    ? 'Sign-in is temporarily unavailable. Please try again later.'
+                    : 'Sign-in service is temporarily unavailable.';
+                showMessage(document.getElementById('errorMsg'), msg);
                 document.getElementById('submitBtn').disabled = true;
             }
         }

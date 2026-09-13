@@ -76,7 +76,10 @@ describe('local API route wiring', () => {
       res = await request(app).get('/api/config');
       assert.equal(res.status, 503);
       assert.match(res.type, /json/);
-      assert.match(res.body.error, /Missing SUPABASE_URL or SUPABASE_ANON_KEY/);
+      assert.match(res.body.error, /not configured/);
+      assert.ok(Array.isArray(res.body.missing), 'missing array should be present');
+      assert.ok(res.body.missing.includes('SUPABASE_URL'), 'missing should list SUPABASE_URL');
+      assert.ok(res.body.missing.includes('SUPABASE_ANON_KEY'), 'missing should list SUPABASE_ANON_KEY');
     } finally {
       restoreEnvVar('SUPABASE_URL', originalUrl);
       restoreEnvVar('SUPABASE_ANON_KEY', originalAnon);

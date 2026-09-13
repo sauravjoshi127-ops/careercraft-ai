@@ -2,14 +2,12 @@ require('./utils/env-loader');
 const path = require('path');
 const express = require('express');
 
-// Schema synchronization safeguard (development only)
-// NOTE: Never call process.exit() here — on Vercel serverless it kills the Lambda
-// cold-start container, causing ALL API routes (including /api/config) to return 503.
-try {
-  require('./verify-schema')();
-} catch (err) {
-  console.error('[server] Schema verification failed:', err.message);
-  // Log and continue — do not exit; the server must stay alive for /api/config
+// Schema synchronization safeguard (development-time only).
+// verifySchema() returns true/false and never throws or calls process.exit().
+// A schema mismatch is logged as a warning — it must NOT take down auth or any other route.
+const schemaOk = require('./verify-schema')();
+if (!schemaOk) {
+  console.warn('[server] Schema mismatch detected. Resume save/load may have issues, but all other routes are unaffected.');
 }
 
 // Modular API Handlers
@@ -66,17 +64,26 @@ app.use(express.static(path.join(__dirname), { extensions: ['html'] }));
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
 app.get('/api/config', (req, res) => {
+  // Accept both plain and NEXT_PUBLIC_ prefixed names for flexibility
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !supabaseKey) {
+  const missing = [];
+  if (!supabaseUrl) missing.push('SUPABASE_URL');
+  if (!supabaseKey) missing.push('SUPABASE_ANON_KEY');
+
+  if (missing.length > 0) {
+    // Log server-side so the Vercel function log shows exactly what is missing
+    console.error('[config] Missing required environment variables:', missing.join(', '));
     return res.status(503).json({
-      error: 'Missing SUPABASE_URL or SUPABASE_ANON_KEY. Configure these server environment variables (see README: Environment Variables & Secrets).'
+      error: 'Authentication service is not configured.',
+      missing: missing   // tells the client WHICH variable is absent, without leaking values
     });
   }
+
   res.json({
-    supabaseUrl: supabaseUrl,
-    supabaseKey: supabaseKey
+    supabaseUrl,
+    supabaseKey
   });
 });
 
