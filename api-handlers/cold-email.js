@@ -765,9 +765,13 @@ function buildFallbackColdEmail(data) {
   const greeting = recipientName ? `Hi ${recipientName},` : 'Hi there,';
   const position = data.position || '';
   const sender = data.userName || '';
-  const bg = data.background
-    ? cleanResumeInputs(data.background).split('.')[0].trim()
-    : null;
+  let bg = null;
+  if (data.background) {
+    const rawBg = cleanResumeInputs(data.background);
+    if (!detectTruncatedSentence(rawBg)) {
+      bg = rawBg.split('.')[0].trim();
+    }
+  }
   const why = cleanResumeInputs(data.whyContacting || '');
 
   const contextLine = why ? why : `the work happening at ${company}`;

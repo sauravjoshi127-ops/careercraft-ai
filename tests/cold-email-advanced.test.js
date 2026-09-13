@@ -30,14 +30,14 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
             parts: [{
               text: JSON.stringify({
                 variants: [
-                  { tone: 'Professional', subject: 'sub A.', body: 'body A.', approach: 'Recipient-first' },
-                  { tone: 'Friendly', subject: 'sub B.', body: 'body B.', approach: 'Value-first' },
-                  { tone: 'Direct', subject: 'sub C.', body: 'body C.', approach: 'Question-first' },
-                  { tone: 'Networking', subject: 'sub D.', body: 'body D.', approach: 'Curiosity-first' }
+                  { tone: 'Professional', subject: 'sub 1.', body: 'body 1.', approach: 'Recipient-first' },
+                  { tone: 'Friendly', subject: 'sub 2.', body: 'body 2.', approach: 'Value-first' },
+                  { tone: 'Direct', subject: 'sub 3.', body: 'body 3.', approach: 'Question-first' },
+                  { tone: 'Networking', subject: 'sub 4.', body: 'body 4.', approach: 'Curiosity-first' }
                 ],
                 subjectLines: [
-                  { text: 'sub A.', label: 'Direct' },
-                  { text: 'sub B.', label: 'Curiosity' }
+                  { text: 'sub 1.', label: 'Direct' },
+                  { text: 'sub 2.', label: 'Curiosity' }
                 ],
                 evaluation: {
                   overallScore: 88,
@@ -79,7 +79,7 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
     assert.ok(res.body.variants);
     // New spec: 4 variants
     assert.equal(res.body.variants.length, 4);
-    assert.equal(res.body.variants[0].subject, 'sub A.');
+    assert.equal(res.body.variants[0].subject, 'sub 1.');
     assert.equal(res.body.variants[0].tone, 'Professional');
     assert.equal(res.body.variants[2].tone, 'Direct');
     assert.equal(res.body.variants[3].tone, 'Networking');
@@ -181,12 +181,12 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
                 parts: [{
                   text: JSON.stringify({
                     variants: [
-                      { tone: 'Context', subject: 'sub A', body: 'too short.', approach: 'Recipient-first' },
-                      { tone: 'Question', subject: 'sub B', body: 'too short.', approach: 'Question-first' },
-                      { tone: 'Direct', subject: 'sub C', body: 'too short.', approach: 'Direct' },
-                      { tone: 'Curiosity', subject: 'sub D', body: 'too short.', approach: 'Curiosity' }
+                      { tone: 'Context', subject: 'sub 1', body: 'too short.', approach: 'Recipient-first' },
+                      { tone: 'Question', subject: 'sub 2', body: 'too short.', approach: 'Question-first' },
+                      { tone: 'Direct', subject: 'sub 3', body: 'too short.', approach: 'Direct' },
+                      { tone: 'Curiosity', subject: 'sub 4', body: 'too short.', approach: 'Curiosity' }
                     ],
-                    subjectLines: [{ text: 'sub A', label: 'Direct' }],
+                    subjectLines: [{ text: 'sub 1', label: 'Direct' }],
                     evaluation: { overallScore: 85, strengths: ['s'], weaknesses: ['w'], suggestions: ['s'] },
                     followUps: []
                   })
@@ -207,12 +207,12 @@ describe('POST /api/cold-email (Advanced Actions)', () => {
                 parts: [{
                   text: JSON.stringify({
                     variants: [
-                      { tone: 'Context', subject: 'sub A', body: validBody, approach: 'Recipient-first' },
-                      { tone: 'Question', subject: 'sub B', body: validBody, approach: 'Question-first' },
-                      { tone: 'Direct', subject: 'sub C', body: validBody, approach: 'Direct' },
-                      { tone: 'Curiosity', subject: 'sub D', body: validBody, approach: 'Curiosity' }
+                      { tone: 'Context', subject: 'sub 1', body: validBody, approach: 'Recipient-first' },
+                      { tone: 'Question', subject: 'sub 2', body: validBody, approach: 'Question-first' },
+                      { tone: 'Direct', subject: 'sub 3', body: validBody, approach: 'Direct' },
+                      { tone: 'Curiosity', subject: 'sub 4', body: validBody, approach: 'Curiosity' }
                     ],
-                    subjectLines: [{ text: 'sub A', label: 'Direct' }],
+                    subjectLines: [{ text: 'sub 1', label: 'Direct' }],
                     evaluation: { overallScore: 85, strengths: ['s'], weaknesses: ['w'], suggestions: ['s'] },
                     followUps: []
                   })
