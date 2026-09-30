@@ -273,14 +273,14 @@ function classifyPersonalization(data) {
 function detectTruncatedSentence(text) {
   if (!text) return null;
   if (/\b(?:[A-Z]\.|LL\.)(?:\s|$)/.test(text)) return 'truncated degree abbreviation';
-  if (/\(Hons\.?\s*$/.test(text)) return 'truncated Hons fragment';
-  if (/\(Hons\.(?!\))/.test(text)) return 'unclosed Hons parenthesis';
-  if (/(?:\(Hons\.|pursuing|experience in|at)\s*$/i.test(text)) return 'abrupt ending fragment';
+  if (/\(Hons[^)]*(?:\s|$)/i.test(text)) return 'unclosed Hons parenthesis';
+  if (/(?:\b(?:pursuing|experience in|at|degree|bachelor|master|student))\s*$/i.test(text)) return 'abrupt ending fragment';
   const openParen = (text.match(/\(/g) || []).length;
   const closeParen = (text.match(/\)/g) || []).length;
   if (openParen > closeParen) return 'unclosed parenthesis';
   if (/\b(undefined|null)\b/i.test(text)) return 'literal undefined/null';
   if (/\[(?:Your|Recipient|Company|Name|Role|Title|Position|Sender|First Name|Last Name)[^\]]*\]/i.test(text)) return 'unfilled placeholder bracket';
+  if (/\(Hons/i.test(text) && !/\(Hons[^)]*\)/i.test(text)) return 'unclosed Hons parenthesis';
   return null;
 }
 
@@ -546,7 +546,11 @@ function buildGeneratePrompt(data) {
     data.companyName ? `RECIPIENT ORGANIZATION: ${data.companyName}` : null,
     data.recipientName ? `RECIPIENT NAME: ${data.recipientName}` : null,
     data.position ? `RECIPIENT ROLE: ${data.position}` : null,
-    cleanWhy ? `REASON FOR OUTREACH: ${cleanWhy}` : null
+    data.detail ? `RECIPIENT DETAIL: ${data.detail}` : null,
+    data.practiceArea ? `PRACTICE AREA / INDUSTRY: ${data.practiceArea}` : null,
+    data.period ? `OPPORTUNITY PERIOD: ${data.period}` : null,
+    cleanWhy ? `REASON FOR OUTREACH (Why reaching out): ${cleanWhy}` : null,
+    data.instructions ? `ADDITIONAL INSTRUCTIONS: ${data.instructions}` : null
   ].filter(Boolean).join('\n');
 
   const senderSection = [
@@ -770,11 +774,16 @@ module.exports = async function handler(req, res) {
   const recipientName = String(recipient.name || body.recipientName || '').trim();
   const companyName = String(recipient.company || body.company || body.companyName || '').trim();
   const position = String(recipient.position || body.recipientTitle || body.position || '').trim();
+  const detail = String(recipient.detail || body.recipientDetail || '').trim();
   const userContext = body.userContext || {};
   const personalization = body.personalization || {};
   const userName = String(userContext.name || body.senderName || body.userName || '').trim();
   const background = String(userContext.background || body.background || '').trim();
-  const whyContacting = String(userContext.whyContacting || body.companyContext || body.context || body.valueProposition || '').trim();
+  const practiceArea = String(userContext.practiceArea || body.practiceArea || '').trim();
+  const reason = String(userContext.reason || body.reason || '').trim();
+  const period = String(userContext.period || body.period || '').trim();
+  const instructions = String(userContext.instructions || body.instructions || '').trim();
+  const whyContacting = [String(userContext.whyContacting || body.context || '').trim(), reason].filter(Boolean).join('. ');
 
   let lengthType = personalization.length || body.lengthType || body.length || 'Standard';
   let minLength, maxLength;
@@ -786,7 +795,7 @@ module.exports = async function handler(req, res) {
   if (Number.isInteger(body.minLength) && body.minLength > 0) minLength = body.minLength;
   if (Number.isInteger(body.maxLength) && body.maxLength > minLength) maxLength = body.maxLength;
 
-  const dataFields = { emailGoal: emailGoal || 'Networking', recipientName: recipientName || '', companyName: companyName || '', position: position || '', userName: userName || '', background: background || '', whyContacting: whyContacting || '', length: lengthType, lengthType, minLength, maxLength, tone: body.tone || personalization.tone || 'Professional', emailBody: String(body.emailBody || '').trim(), feedback: String(body.feedback || '').trim() };
+  const dataFields = { emailGoal, recipientName, companyName, position, detail, userName, background, practiceArea, reason, period, instructions, whyContacting, length: lengthType, lengthType, minLength, maxLength, tone: body.tone || personalization.tone || 'Professional', emailBody: String(body.emailBody || '').trim(), feedback: String(body.feedback || '').trim() };
 
   if (action === 'generate') {
     const missingFields = [];

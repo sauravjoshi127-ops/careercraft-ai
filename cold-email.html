@@ -414,39 +414,44 @@
         <!-- Hidden file input for resume import -->
         <input type="file" id="ceResumeFileInput" style="display:none;" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
 
-        <!-- Recipient -->
+        <!-- Step 1: Who are you contacting? -->
         <div class="ce-brief-section">
-          <div class="ce-section-label">Recipient</div>
+          <div class="ce-section-label">1. Who are you contacting?</div>
           <div class="input-wrapper">
-            <label for="ceRecipientName">Name <span class="cl-optional-label">(optional)</span></label>
+            <label for="ceRecipientName">Recipient Name <span class="cl-optional-label">(optional)</span></label>
             <input id="ceRecipientName" placeholder="e.g. Sarah" autocomplete="off" />
           </div>
           <div class="input-wrapper">
-            <label for="cePosition">Role / Title <span class="cl-optional-label">(optional)</span></label>
+            <label for="cePosition">Recipient Role <span class="cl-optional-label">(optional)</span></label>
             <input id="cePosition" placeholder="e.g. VP of Engineering" autocomplete="off" />
           </div>
           <div class="input-wrapper" style="margin-bottom:0;">
-            <label for="ceCompany">Company *</label>
+            <label for="ceCompany">Company or Organization *</label>
             <input id="ceCompany" placeholder="e.g. Stripe" autocomplete="off" required />
           </div>
         </div>
 
-        <!-- Context -->
+        <!-- Step 2: What is your purpose? -->
         <div class="ce-brief-section">
-          <div class="ce-section-label">Context</div>
-          <div class="input-wrapper">
-            <label for="ceContext">Why are you contacting them? <span class="cl-optional-label">(optional)</span></label>
-            <textarea id="ceContext" placeholder="e.g. I noticed their recent series B and expansion into fintech…" style="min-height:72px; resize:vertical;"></textarea>
+          <div class="ce-section-label">2. What is your purpose?</div>
+          <div class="ce-purpose-grid" id="cePurposeGrid">
+            <div class="ce-purpose-card active" data-value="Internship">Internship enquiry</div>
+            <div class="ce-purpose-card" data-value="Job Opportunity">Job opportunity</div>
+            <div class="ce-purpose-card" data-value="Networking">Networking</div>
+            <div class="ce-purpose-card" data-value="Info Request">Informational interview</div>
+            <div class="ce-purpose-card" data-value="Referral">Referral request</div>
+            <div class="ce-purpose-card" data-value="Research">Research collaboration</div>
+            <div class="ce-purpose-card" data-value="Mentorship">Mentorship</div>
+            <div class="ce-purpose-card" data-value="Partnership">Business development</div>
+            <div class="ce-purpose-card" data-value="Sales">Sales outreach</div>
+            <div class="ce-purpose-card" data-value="Introduction">General professional introduction</div>
           </div>
-          <div class="input-wrapper" style="margin-bottom:0;">
-            <label for="ceRecipientDetail">Any relevant recipient detail <span class="cl-optional-label">(optional)</span></label>
-            <input id="ceRecipientDetail" placeholder="e.g. We met briefly at PyCon 2024" autocomplete="off" />
-          </div>
+          <input type="hidden" id="cePurpose" value="Internship" />
         </div>
 
-        <!-- About You -->
+        <!-- Step 3: What should the email include? -->
         <div class="ce-brief-section">
-          <div class="ce-section-label">About You</div>
+          <div class="ce-section-label">3. What should the email include?</div>
 
           <!-- Resume import controls — populated by JS -->
           <div id="ceResumeImportContainer" style="margin-bottom:14px;"></div>
@@ -455,45 +460,36 @@
             <label for="ceSenderName">Your Name *</label>
             <input id="ceSenderName" placeholder="e.g. Alex Johnson" autocomplete="off" required />
           </div>
+
+          <div class="input-wrapper">
+            <label for="cePracticeArea">Practice area or industry <span class="cl-optional-label">(optional)</span></label>
+            <input id="cePracticeArea" placeholder="e.g. Corporate Law, Frontend Engineering" autocomplete="off" />
+          </div>
+
+          <div class="input-wrapper">
+            <label for="ceReason">Specific reason for contacting them <span class="cl-optional-label">(optional)</span></label>
+            <textarea id="ceReason" placeholder="e.g. I admired your recent publication on AI." style="min-height:50px; resize:vertical;"></textarea>
+          </div>
+
+          <div class="input-wrapper">
+            <label for="ceRecipientDetail">Relevant recipient or company context <span class="cl-optional-label">(optional)</span></label>
+            <textarea id="ceRecipientDetail" placeholder="e.g. We met briefly at PyCon 2024." style="min-height:50px; resize:vertical;"></textarea>
+          </div>
+
+          <div class="input-wrapper">
+            <label for="cePeriod">Opportunity period <span class="cl-optional-label">(optional)</span></label>
+            <input id="cePeriod" placeholder="e.g. Summer 2027" autocomplete="off" />
+          </div>
+
           <div class="input-wrapper" style="margin-bottom:0;">
-            <label for="ceBackground">Short background / value proposition *</label>
-            <textarea id="ceBackground" placeholder="e.g. I recently shipped a fraud-detection layer that cut false positives by 40% at a Series B fintech." style="min-height:90px; resize:vertical;" required></textarea>
-            <div class="input-helper">Keep it to 1–2 sentences. Highlight your strongest relevant point.</div>
+            <label for="ceInstructions">Additional instructions <span class="cl-optional-label">(optional)</span></label>
+            <textarea id="ceInstructions" placeholder="e.g. Mention my background in NLP." style="min-height:50px; resize:vertical;"></textarea>
           </div>
         </div>
 
-        <!-- Purpose -->
-        <div class="ce-brief-section">
-          <div class="ce-section-label">Purpose</div>
-          <div class="ce-purpose-grid" id="cePurposeGrid">
-            <div class="ce-purpose-card active" data-value="Networking">
-              <i data-lucide="users" width="15" height="15"></i> Networking
-            </div>
-            <div class="ce-purpose-card" data-value="Job Opportunity">
-              <i data-lucide="briefcase" width="15" height="15"></i> Job Opportunity
-            </div>
-            <div class="ce-purpose-card" data-value="Internship">
-              <i data-lucide="graduation-cap" width="15" height="15"></i> Internship
-            </div>
-            <div class="ce-purpose-card" data-value="Referral">
-              <i data-lucide="link" width="15" height="15"></i> Referral
-            </div>
-            <div class="ce-purpose-card" data-value="Mentorship">
-              <i data-lucide="compass" width="15" height="15"></i> Mentorship
-            </div>
-            <div class="ce-purpose-card" data-value="Partnership">
-              <i data-lucide="handshake" width="15" height="15"></i> Partnership
-            </div>
-            <div class="ce-purpose-card" data-value="Info Request">
-              <i data-lucide="info" width="15" height="15"></i> Info Request
-            </div>
-          </div>
-          <input type="hidden" id="cePurpose" value="Networking" />
-        </div>
-
-        <!-- Email Preferences -->
+        <!-- Step 4: Email Preferences -->
         <div class="ce-brief-section" style="margin-bottom:0;">
-          <div class="ce-section-label">Email Preferences</div>
+          <div class="ce-section-label">4. Email Preferences</div>
           
           <div style="margin-bottom:12px;">
             <label style="font-size:0.75rem; color:var(--text-3); margin-bottom:4px; display:block;">Length</label>

@@ -28,10 +28,14 @@
       recipientName: '',
       position: '',
       company: '',
-      context: '',       // why contacting + recipient detail combined
       senderName: '',
-      background: '',
-      purpose: 'Networking',
+      practiceArea: '',
+      reason: '',
+      recipientDetail: '',
+      period: '',
+      instructions: '',
+      background: '',    // Pulled from resume import, hidden from direct edit
+      purpose: 'Internship',
       tone: 'Professional',
       length: 'Short'
     },
@@ -194,13 +198,13 @@
     state.brief.recipientName = get('ceRecipientName');
     state.brief.position      = get('cePosition');
     state.brief.company       = get('ceCompany');
-    // Combine context and recipient detail into a single context string
-    const ctx    = get('ceContext');
-    const detail = get('ceRecipientDetail');
-    state.brief.context    = [ctx, detail].filter(Boolean).join('. ');
-    state.brief.senderName = get('ceSenderName');
-    state.brief.background = get('ceBackground');
-    state.brief.purpose    = get('cePurpose') || state.brief.purpose;
+    state.brief.senderName    = get('ceSenderName');
+    state.brief.practiceArea  = get('cePracticeArea');
+    state.brief.reason        = get('ceReason');
+    state.brief.recipientDetail = get('ceRecipientDetail');
+    state.brief.period        = get('cePeriod');
+    state.brief.instructions  = get('ceInstructions');
+    state.brief.purpose       = get('cePurpose') || state.brief.purpose;
     state.brief.tone       = get('ceTone') || state.brief.tone;
     state.brief.length     = get('ceLength') || state.brief.length;
   }
@@ -215,7 +219,11 @@
     set('cePosition',      state.brief.position);
     set('ceCompany',       state.brief.company);
     set('ceSenderName',    state.brief.senderName);
-    set('ceBackground',    state.brief.background);
+    set('cePracticeArea',  state.brief.practiceArea);
+    set('ceReason',        state.brief.reason);
+    set('ceRecipientDetail', state.brief.recipientDetail);
+    set('cePeriod',        state.brief.period);
+    set('ceInstructions',  state.brief.instructions);
 
     // Restore purpose grid
     document.querySelectorAll('.ce-purpose-card').forEach(card => {
@@ -246,7 +254,7 @@
 
     syncStateFromForm();
 
-    // Validate required fields: Company, Sender Name, Background
+    // Validate required fields: Company, Sender Name
     if (!state.brief.company) {
       showToast('Please enter the recipient\'s Company name.', true);
       document.getElementById('ceCompany')?.focus();
@@ -257,9 +265,8 @@
       document.getElementById('ceSenderName')?.focus();
       return;
     }
-    if (!state.brief.background) {
-      showToast('Please enter your short background/value proposition.', true);
-      document.getElementById('ceBackground')?.focus();
+    if (!state.brief.background && !state.resume.loadedId && !state.resume.loadedName) {
+      showToast('Please attach a resume or provide your background.', true);
       return;
     }
 
@@ -282,13 +289,17 @@
       recipient: {
         name:     state.brief.recipientName || '',
         company:  state.brief.company || '',
-        position: state.brief.position || ''
+        position: state.brief.position || '',
+        detail:   state.brief.recipientDetail || ''
       },
       userContext: {
         name:          state.brief.senderName || '',
         // Strip any truncated sentences from auto-filled background before sending to API
         background:    stripTruncatedSentences(state.brief.background || ''),
-        whyContacting: state.brief.context || ''
+        practiceArea:  state.brief.practiceArea || '',
+        reason:        state.brief.reason || '',
+        period:        state.brief.period || '',
+        instructions:  state.brief.instructions || ''
       },
       personalization: {
         tone:     state.brief.tone || 'Professional',
